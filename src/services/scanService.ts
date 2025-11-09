@@ -1,81 +1,242 @@
-import { performSiteInfoScan } from './siteInfoService';
 import { performFullHeaderAnalysis } from './headerService';
 import { performWhoisLookup } from './whoisService';
-import { performGeoIPLookup } from './geoipService';
-import { performDNSLookup } from './dnsService';
-import { performMXLookup } from './mxService';
-import { calculateSubnet } from './subnetService';
-import { scanCommonPorts } from './portService';
 import { enumerateSubdomains } from './subdomainService';
-import { performReverseIPLookup } from './reverseIPService';
+import { scanCommonPorts } from './portService';
+import { performGeoIPLookup } from './geoipService';
 import { performSQLScan } from './sqlScanService';
 import { performXSSScan } from './xssScanService';
+import { performSiteInfoScan } from './siteInfoService';
+import { performDNSLookup } from './dnsService';
+import { performMXLookup } from './mxService';
+import { performReverseIPLookup } from './reverseIPService';
 import { performWordPressScan } from './wordpressService';
 import { performSEOAnalysis } from './seoService';
+import { calculateSubnet } from './subnetService';
+import { setProxyList } from './apiUtils';
+import { getSettings } from './settingsService';
 
-export interface ScanConfig {
+interface ScanConfig {
   target: string;
-  siteInfo?: boolean;
-  headers?: boolean;
-  whois?: boolean;
-  geoip?: boolean;
-  dns?: boolean;
-  mx?: boolean;
-  subnet?: boolean;
-  ports?: boolean;
-  subdomains?: boolean;
-  reverseip?: boolean;
-  sqlinjection?: boolean;
-  xss?: boolean;
-  wordpress?: boolean;
-  seo?: boolean;
-  useProxy?: boolean;
-  threads?: number;
-}
-
-export interface ScanProgress {
-  current: number;
-  total: number;
-  stage: string;
+  siteInfo: boolean;
+  headers: boolean;
+  whois: boolean;
+  geoip: boolean;
+  dns: boolean;
+  mx: boolean;
+  subnet: boolean;
+  ports: boolean;
+  subdomains: boolean;
+  reverseip: boolean;
+  sqlinjection: boolean;
+  xss: boolean;
+  wordpress: boolean;
+  seo: boolean;
+  useProxy: boolean;
+  threads: number;
 }
 
 export interface Scan {
   id: string;
   target: string;
-  status: 'pending' | 'running' | 'paused' | 'completed' | 'stopped' | 'failed';
+  status: 'running' | 'completed' | 'failed' | 'paused' | 'stopped';
   timestamp: string;
   completedAt?: string;
   config: ScanConfig;
-  progress: ScanProgress;
-  results: any;
+  results: {
+    siteInfo?: any;
+    headers?: any;
+    whois?: any;
+    geoip?: any;
+    dns?: any;
+    mx?: any;
+    subnet?: any;
+    ports?: any[];
+    subdomains?: string[];
+    reverseip?: any;
+    sqlinjection?: any;
+    xss?: any;
+    wordpress?: any;
+    seo?: any;
+  };
   errors?: string[];
+  progress?: {
+    current: number;
+    total: number;
+    stage: string;
+  };
 }
 
-interface ScanController {
-  paused: boolean;
-  stopped: boolean;
-}
+const STORAGE_KEY = 'abspider-scans';
+const scanControllers = new Map<string, { paused: boolean; stopped: boolean }>();
 
-const scans: Map<string, Scan> = new Map();
-const scanControllers: Map<string, ScanController> = new Map();
+const loadScansFromStorage = (): Scan[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('[Storage] Failed to load scans:', error);
+    return [];
+  }
+};
 
-const updateScan = (scan: Scan) => {
-  scans.set(scan.id, { ...scan });
+const saveScansToStorage = (scans: Scan[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(scans));
+  } catch (error) {
+    console.error('[Storage] Failed to save:', error);
+  }
+};
+
+let scansCache: Scan[] = loadScansFromStorage();
+
+export const getScanHistory = async (): Promise<Scan[]> => {
+  console.log('[Scan History] Loading from storage');
+  return [...scansCache].sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+};
+
+export const getScanById = async (id: string): Promise<Scan | null> => {
+  console.log(`[Get Scan] Loading scan ${id}. Cache size: ${scansCache.length}`);
+  const foundScan = scansCache.find(s => s.id === id);
+  if (!foundScan) {
+    console.log(`[Get Scan] Scan ${id} NOT found in cache.`);
+  } else {
+    console.log(`[Get Scan] Scan ${id} found:`, foundScan);
+  }
+  return foundScan || null;
+};
+
+const updateScan = (scan: Scan): Scan => {
+  const index = scansCache.findIndex(s => s.id === scan.id);
+  if (index !== -1) {
+    scansCache[index] = { ...scan };
+  } else {
+    scansCache.unshift(scan);
+  }
+  saveScansToStorage(scansCache);
+  return scansCache[index !== -1 ? index : 0];
+};
+
+export const pauseScan = (id: string) => {
+  console.log(`[Scan Control] Pausing scan ${id}`);
+  const controller = scanControllers.get(id);
+  if (controller) {
+    controller.paused = true;
+  }
+  
+  const scan = scansCache.find(s => s.id === id);
+  if (scan && scan.status === 'running') {
+    scan.status = 'paused';
+    updateScan(scan);
+  }
+};
+
+export const resumeScan = (id: string) => {
+  console.log(`[Scan Control] Resuming scan ${id}`);
+  const controller = scanControllers.get(id);
+  if (controller) {
+    controller.paused = false;
+  }
+  
+  const scan = scansCache.find(s => s.id === id);
+  if (scan && scan.status === 'paused') {
+    scan.status = 'running';
+    updateScan(scan);
+  }
+};
+
+export const stopScan = (id: string) => {
+  console.log(`[Scan Control] Stopping scan ${id}`);
+  const controller = scanControllers.get(id);
+  if (controller) {
+    controller.stopped = true;
+  }
+  
+  const scan = scansCache.find(s => s.id === id);
+  if (scan && (scan.status === 'running' || scan.status === 'paused')) {
+    scan.status = 'stopped';
+    scan.completedAt = new Date().toISOString();
+    updateScan(scan);
+  }
+};
+
+export const stopAllScans = () => {
+  console.log('[Scan Control] Stopping all scans');
+  scanControllers.forEach((controller) => {
+    controller.stopped = true;
+  });
+  
+  scansCache.forEach(scan => {
+    if (scan.status === 'running' || scan.status === 'paused') {
+      scan.status = 'stopped';
+      scan.completedAt = new Date().toISOString();
+      updateScan(scan);
+    }
+  });
+};
+
+export const startScan = async (config: ScanConfig): Promise<string> => {
+  console.log('[Start Scan] Initiating comprehensive scan', config);
+  
+  const newScan: Scan = {
+    id: `scan-${Date.now()}`,
+    target: config.target,
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    config,
+    results: {},
+    errors: [],
+    progress: {
+      current: 0,
+      total: 0,
+      stage: 'Initializing',
+    },
+  };
+
+  scanControllers.set(newScan.id, { paused: false, stopped: false });
+
+  const settings = getSettings();
+  if (config.useProxy && settings.proxyList) {
+    const proxies = settings.proxyList.split('\n').filter(p => p.trim());
+    setProxyList(proxies);
+    console.log(`[Start Scan] Loaded ${proxies.length} proxies`);
+  }
+
+  updateScan(newScan);
+
+  performScan(newScan).catch((error) => {
+    console.error(`[Scan Failed] Scan ${newScan.id} encountered critical error:`, error);
+    newScan.status = 'completed';
+    newScan.completedAt = new Date().toISOString();
+    newScan.errors?.push(`Critical error: ${error.message}`);
+    updateScan(newScan);
+  }).finally(() => {
+    scanControllers.delete(newScan.id);
+  });
+
+  return newScan.id;
 };
 
 const checkScanControl = async (scanId: string): Promise<boolean> => {
   const controller = scanControllers.get(scanId);
   if (!controller) return false;
-  
+
   if (controller.stopped) {
+    console.log(`[Scan Control] Scan ${scanId} stopped by user`);
     return true;
   }
-  
+
   while (controller.paused) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    if (controller.stopped) return true;
+    console.log(`[Scan Control] Scan ${scanId} paused, waiting...`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    if (controller.stopped) {
+      console.log(`[Scan Control] Scan ${scanId} stopped while paused`);
+      return true;
+    }
   }
-  
+
   return false;
 };
 
@@ -83,7 +244,6 @@ const performScan = async (scan: Scan) => {
   const { config } = scan;
   const tasks: string[] = [];
   
-  // Count enabled modules
   if (config.siteInfo) tasks.push('siteInfo');
   if (config.headers) tasks.push('headers');
   if (config.whois) tasks.push('whois');
@@ -108,7 +268,6 @@ const performScan = async (scan: Scan) => {
 
   let completed = 0;
 
-  // Site Info Scan
   if (config.siteInfo) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -119,11 +278,8 @@ const performScan = async (scan: Scan) => {
       console.log('[Site Info] ✓ Success');
     } catch (error: any) {
       console.error('[Site Info] ✗ Error:', error);
-      scan.errors?.push(`Site Info: ${error.message || 'Scan failed - site may be blocking requests'}`);
-      scan.results.siteInfo = {
-        cloudflare: false,
-        technologies: [],
-      };
+      scan.errors?.push(`Site Info: ${error.message || 'Scan failed'}`);
+      scan.results.siteInfo = { cloudflare: false, technologies: [] };
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -131,18 +287,25 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // Headers Scan
   if (config.headers) {
     if (await checkScanControl(scan.id)) return;
     try {
       scan.progress.stage = 'Analyzing HTTP headers';
       updateScan(scan);
-      const result = await performFullHeaderAnalysis(config.target);
-      scan.results.headers = result;
+      const result = await performFullHeaderAnalysis(config.target, config.useProxy);
+      scan.results.headers = result.headers;
+      scan.results.headers._analysis = {
+        statusCode: result.statusCode,
+        securityHeaders: result.securityHeaders,
+        technologies: result.technologies,
+        cookies: result.cookies,
+        cacheControl: result.cacheControl,
+        cors: result.cors,
+      };
       console.log('[Headers] ✓ Success');
     } catch (error: any) {
       console.error('[Headers] ✗ Error:', error);
-      scan.errors?.push(`Headers: ${error.message || 'Failed to fetch headers'}`);
+      scan.errors?.push(`Headers: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -150,7 +313,6 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // WHOIS Lookup
   if (config.whois) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -161,7 +323,7 @@ const performScan = async (scan: Scan) => {
       console.log('[WHOIS] ✓ Success');
     } catch (error: any) {
       console.error('[WHOIS] ✗ Error:', error);
-      scan.errors?.push(`WHOIS: ${error.message || 'Lookup failed'}`);
+      scan.errors?.push(`WHOIS: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -169,7 +331,6 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // GeoIP Lookup
   if (config.geoip) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -180,7 +341,7 @@ const performScan = async (scan: Scan) => {
       console.log('[GeoIP] ✓ Success');
     } catch (error: any) {
       console.error('[GeoIP] ✗ Error:', error);
-      scan.errors?.push(`GeoIP: ${error.message || 'Lookup failed'}`);
+      scan.errors?.push(`GeoIP: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -188,7 +349,6 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // DNS Lookup
   if (config.dns) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -199,7 +359,7 @@ const performScan = async (scan: Scan) => {
       console.log('[DNS] ✓ Success');
     } catch (error: any) {
       console.error('[DNS] ✗ Error:', error);
-      scan.errors?.push(`DNS: ${error.message || 'Lookup failed'}`);
+      scan.errors?.push(`DNS: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -207,7 +367,6 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // MX Lookup
   if (config.mx) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -218,7 +377,7 @@ const performScan = async (scan: Scan) => {
       console.log('[MX] ✓ Success');
     } catch (error: any) {
       console.error('[MX] ✗ Error:', error);
-      scan.errors?.push(`MX: ${error.message || 'Lookup failed'}`);
+      scan.errors?.push(`MX: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -226,25 +385,17 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // Subnet Calculation
-  if (config.subnet) {
+  if (config.subnet && scan.results.geoip?.ip) {
     if (await checkScanControl(scan.id)) return;
     try {
       scan.progress.stage = 'Calculating subnet information';
       updateScan(scan);
-      // Get IP from geoip results or resolve target
-      let ip = scan.results.geoip?.ip;
-      if (!ip) {
-        // Fallback: try to resolve domain to IP
-        const geoip = await performGeoIPLookup(config.target);
-        ip = geoip.ip;
-      }
-      const result = calculateSubnet(ip, 24); // Default to /24 subnet
+      const result = calculateSubnet(scan.results.geoip.ip, 24);
       scan.results.subnet = result;
       console.log('[Subnet] ✓ Success');
     } catch (error: any) {
       console.error('[Subnet] ✗ Error:', error);
-      scan.errors?.push(`Subnet: ${error.message || 'Calculation failed'}`);
+      scan.errors?.push(`Subnet: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -252,18 +403,17 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // Port Scan
   if (config.ports) {
     if (await checkScanControl(scan.id)) return;
     try {
       scan.progress.stage = 'Scanning ports';
       updateScan(scan);
-      const result = await scanCommonPorts(config.target);
+      const result = await scanCommonPorts(config.target, config.threads);
       scan.results.ports = result;
       console.log('[Ports] ✓ Success');
     } catch (error: any) {
       console.error('[Ports] ✗ Error:', error);
-      scan.errors?.push(`Ports: ${error.message || 'Scan failed'}`);
+      scan.errors?.push(`Ports: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -271,18 +421,18 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // Subdomain Enumeration
   if (config.subdomains) {
     if (await checkScanControl(scan.id)) return;
     try {
       scan.progress.stage = 'Enumerating subdomains';
       updateScan(scan);
-      const result = await enumerateSubdomains(config.target);
-      scan.results.subdomains = result;
+      const result = await enumerateSubdomains(config.target, config.threads);
+      scan.results.subdomains = Array.isArray(result) ? result : (result?.subdomains || []);
       console.log('[Subdomains] ✓ Success');
     } catch (error: any) {
       console.error('[Subdomains] ✗ Error:', error);
       scan.errors?.push(`Subdomains: ${error.message || 'Enumeration failed'}`);
+      scan.results.subdomains = [];
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -290,7 +440,6 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // Reverse IP Lookup
   if (config.reverseip) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -301,7 +450,7 @@ const performScan = async (scan: Scan) => {
       console.log('[Reverse IP] ✓ Success');
     } catch (error: any) {
       console.error('[Reverse IP] ✗ Error:', error);
-      scan.errors?.push(`Reverse IP: ${error.message || 'Lookup failed'}`);
+      scan.errors?.push(`Reverse IP: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -309,18 +458,17 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // SQL Injection Scan
   if (config.sqlinjection) {
     if (await checkScanControl(scan.id)) return;
     try {
-      scan.progress.stage = 'Testing for SQL injection';
+      scan.progress.stage = 'Testing SQL injection';
       updateScan(scan);
       const result = await performSQLScan(config.target);
       scan.results.sqlinjection = result;
       console.log('[SQL Injection] ✓ Success');
     } catch (error: any) {
       console.error('[SQL Injection] ✗ Error:', error);
-      scan.errors?.push(`SQL Injection: ${error.message || 'Scan failed - CORS restrictions may apply'}`);
+      scan.errors?.push(`SQL Injection: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -328,18 +476,17 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // XSS Scan
   if (config.xss) {
     if (await checkScanControl(scan.id)) return;
     try {
-      scan.progress.stage = 'Testing for XSS vulnerabilities';
+      scan.progress.stage = 'Testing XSS vulnerabilities';
       updateScan(scan);
       const result = await performXSSScan(config.target);
       scan.results.xss = result;
       console.log('[XSS] ✓ Success');
     } catch (error: any) {
       console.error('[XSS] ✗ Error:', error);
-      scan.errors?.push(`XSS: ${error.message || 'Scan failed - CORS restrictions may apply'}`);
+      scan.errors?.push(`XSS: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -347,7 +494,6 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // WordPress Scan
   if (config.wordpress) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -358,7 +504,7 @@ const performScan = async (scan: Scan) => {
       console.log('[WordPress] ✓ Success');
     } catch (error: any) {
       console.error('[WordPress] ✗ Error:', error);
-      scan.errors?.push(`WordPress: ${error.message || 'Scan failed - CORS restrictions may apply'}`);
+      scan.errors?.push(`WordPress: ${error.message}`);
       scan.results.wordpress = {
         isWordPress: false,
         vulnerabilities: [],
@@ -373,7 +519,6 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  // SEO Analysis
   if (config.seo) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -384,7 +529,7 @@ const performScan = async (scan: Scan) => {
       console.log('[SEO] ✓ Success');
     } catch (error: any) {
       console.error('[SEO] ✗ Error:', error);
-      scan.errors?.push(`SEO: ${error.message || 'Analysis failed - CORS restrictions may apply'}`);
+      scan.errors?.push(`SEO: ${error.message}`);
     } finally {
       completed++;
       scan.progress.current = completed;
@@ -407,94 +552,9 @@ const performScan = async (scan: Scan) => {
   console.log(`[Scan ${scan.id}] ${scan.status}: ${successCount}/${tasks.length} modules successful`);
 };
 
-export const startScan = async (config: ScanConfig): Promise<Scan> => {
-  const scan: Scan = {
-    id: Date.now().toString(),
-    target: config.target,
-    status: 'running',
-    timestamp: new Date().toISOString(),
-    config,
-    progress: {
-      current: 0,
-      total: 0,
-      stage: 'Initializing scan',
-    },
-    results: {},
-    errors: [],
-  };
-
-  scans.set(scan.id, scan);
-  scanControllers.set(scan.id, { paused: false, stopped: false });
-  
-  console.log('[Scan Service] Starting comprehensive scan:', scan.id, config);
-  
-  performScan(scan).catch((error) => {
-    console.error('[Scan Service] Fatal error:', error);
-    scan.status = 'failed';
-    scan.errors?.push(`Fatal error: ${error.message}`);
-    updateScan(scan);
-  });
-
-  return scan;
-};
-
-export const getScanById = (id: string): Scan | undefined => {
-  return scans.get(id);
-};
-
-export const getScanHistory = (): Scan[] => {
-  return Array.from(scans.values()).sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
-};
-
-export const pauseScan = (id: string): void => {
-  const controller = scanControllers.get(id);
-  if (controller) {
-    controller.paused = true;
-    const scan = scans.get(id);
-    if (scan) {
-      scan.status = 'paused';
-      updateScan(scan);
-    }
-  }
-};
-
-export const resumeScan = (id: string): void => {
-  const controller = scanControllers.get(id);
-  if (controller) {
-    controller.paused = false;
-    const scan = scans.get(id);
-    if (scan) {
-      scan.status = 'running';
-      updateScan(scan);
-    }
-  }
-};
-
-export const stopScan = (id: string): void => {
-  const controller = scanControllers.get(id);
-  if (controller) {
-    controller.stopped = true;
-    controller.paused = false;
-    const scan = scans.get(id);
-    if (scan) {
-      scan.status = 'stopped';
-      scan.completedAt = new Date().toISOString();
-      updateScan(scan);
-    }
-  }
-};
-
-export const stopAllScans = (): void => {
-  scanControllers.forEach((controller, id) => {
-    controller.stopped = true;
-    controller.paused = false;
-    const scan = scans.get(id);
-    if (scan && (scan.status === 'running' || scan.status === 'paused')) {
-      scan.status = 'stopped';
-      scan.completedAt = new Date().toISOString();
-      updateScan(scan);
-    }
-  });
+export const deleteScan = (id: string) => {
+  console.log(`[Delete Scan] Removing scan ${id}`);
+  scansCache = scansCache.filter(s => s.id !== id);
+  saveScansToStorage(scansCache);
+  scanControllers.delete(id);
 };

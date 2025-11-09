@@ -5,8 +5,7 @@ interface APIKeys {
   builtwith?: string;
   hunter?: string;
   clearbit?: string;
-  alexa?: string;
-  moz?: string;
+  opencage?: string;
 }
 
 const API_KEYS_STORAGE = 'abspider-api-keys';

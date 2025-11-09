@@ -3,7 +3,24 @@ const CORS_PROXIES = [
   'https://corsproxy.io/?',
   'https://api.codetabs.com/v1/proxy?quest=',
   'https://thingproxy.freeboard.io/fetch/',
+  'https://cors.bridged.cc/',
+  'https://cors-anywhere.herokuapp.com/',
 ];
+
+// Cloudflare bypass headers
+const CLOUDFLARE_BYPASS_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.5',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'DNT': '1',
+  'Connection': 'keep-alive',
+  'Upgrade-Insecure-Requests': '1',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+  'Cache-Control': 'max-age=0',
+};
 
 interface FetchOptions {
   method?: string;
@@ -15,26 +32,28 @@ interface FetchOptions {
 export class CORSBypass {
   private workingProxies: string[] = [...CORS_PROXIES];
   private currentIndex = 0;
+  private failedAttempts = new Map<string, number>();
 
   async fetch(url: string, options: FetchOptions = {}): Promise<Response> {
-    const { method = 'GET', headers = {}, body, timeout = 15000 } = options;
+    const { method = 'GET', headers = {}, body, timeout = 20000 } = options;
     const errors: string[] = [];
 
-    // Try direct fetch first
+    // Try direct fetch with Cloudflare bypass headers
     try {
-      console.log(`[CORS Bypass] Attempting direct fetch: ${url}`);
+      console.log(`[CORS Bypass] Attempting direct fetch with CF bypass: ${url}`);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       const response = await fetch(url, {
         method,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          ...CLOUDFLARE_BYPASS_HEADERS,
           ...headers,
         },
         body,
         signal: controller.signal,
         mode: 'cors',
+        credentials: 'omit',
       });
 
       clearTimeout(timeoutId);
@@ -42,6 +61,14 @@ export class CORSBypass {
       if (response.ok || (response.status >= 200 && response.status < 400)) {
         console.log(`[CORS Bypass] ✓ Direct fetch successful`);
         return response;
+      }
+      
+      // Check if blocked by Cloudflare
+      if (response.status === 403 || response.status === 503) {
+        const text = await response.text();
+        if (text.includes('cloudflare') || text.includes('cf-ray')) {
+          console.log(`[CORS Bypass] Cloudflare protection detected, trying proxies...`);
+        }
       }
     } catch (error: any) {
       errors.push(`Direct: ${error.message}`);
@@ -52,6 +79,13 @@ export class CORSBypass {
     for (let attempt = 0; attempt < this.workingProxies.length; attempt++) {
       const proxyIndex = (this.currentIndex + attempt) % this.workingProxies.length;
       const proxy = this.workingProxies[proxyIndex];
+
+      // Skip proxies that have failed too many times
+      const failures = this.failedAttempts.get(proxy) || 0;
+      if (failures > 3) {
+        console.log(`[CORS Bypass] Skipping proxy ${proxy} (too many failures)`);
+        continue;
+      }
 
       try {
         console.log(`[CORS Bypass] Trying proxy ${attempt + 1}/${this.workingProxies.length}: ${proxy}`);
@@ -69,15 +103,20 @@ export class CORSBypass {
         if (response.ok) {
           console.log(`[CORS Bypass] ✓ Success with proxy: ${proxy}`);
           this.currentIndex = proxyIndex;
+          this.failedAttempts.set(proxy, 0); // Reset failure count
           return response;
         }
       } catch (error: any) {
         errors.push(`Proxy ${attempt + 1}: ${error.message}`);
         console.log(`[CORS Bypass] Proxy ${attempt + 1} failed: ${error.message}`);
+        
+        // Increment failure count
+        const failures = this.failedAttempts.get(proxy) || 0;
+        this.failedAttempts.set(proxy, failures + 1);
       }
     }
 
-    throw new Error(`All CORS bypass attempts failed. Errors: ${errors.join(' | ')}`);
+    throw new Error(`All CORS bypass attempts failed. The site may have strong protection. Errors: ${errors.join(' | ')}`);
   }
 
   async fetchText(url: string, options?: FetchOptions): Promise<string> {

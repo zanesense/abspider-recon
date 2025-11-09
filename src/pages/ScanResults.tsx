@@ -36,14 +36,13 @@ const ScanResults = () => {
       const data = query.state.data;
       return data?.status === 'running' || data?.status === 'paused' ? 2000 : false;
     },
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const handleDownloadReport = () => {
     if (!scan) return;
-    
-    console.log('[UI] Generating comprehensive PDF report for scan:', scan.id);
     generatePDFReport(scan);
-    
     toast({
       title: "Report Generated",
       description: "Comprehensive PDF report has been downloaded successfully",
@@ -52,11 +51,8 @@ const ScanResults = () => {
 
   const handleSendToDiscord = async () => {
     if (!scan) return;
-    
     try {
-      console.log('[UI] Sending comprehensive results to Discord webhook');
       await sendDiscordWebhook(scan);
-      
       toast({
         title: "Sent to Discord",
         description: "Comprehensive scan results have been sent to your Discord webhook",
@@ -74,30 +70,21 @@ const ScanResults = () => {
     if (!scan) return;
     pauseScan(scan.id);
     queryClient.invalidateQueries({ queryKey: ['scan', id] });
-    toast({
-      title: "Scan Paused",
-      description: "The scan has been paused",
-    });
+    toast({ title: "Scan Paused", description: "The scan has been paused" });
   };
 
   const handleResumeScan = () => {
     if (!scan) return;
     resumeScan(scan.id);
     queryClient.invalidateQueries({ queryKey: ['scan', id] });
-    toast({
-      title: "Scan Resumed",
-      description: "The scan has been resumed",
-    });
+    toast({ title: "Scan Resumed", description: "The scan has been resumed" });
   };
 
   const handleStopScan = () => {
     if (!scan) return;
     stopScan(scan.id);
     queryClient.invalidateQueries({ queryKey: ['scan', id] });
-    toast({
-      title: "Scan Stopped",
-      description: "The scan has been stopped",
-    });
+    toast({ title: "Scan Stopped", description: "The scan has been stopped" });
   };
 
   if (isLoading) {
@@ -144,73 +131,37 @@ const ScanResults = () => {
         <div className="flex gap-2">
           {scan.status === 'running' && (
             <>
-              <Button
-                onClick={handlePauseScan}
-                variant="outline"
-                size="sm"
-                className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800"
-              >
-                <Pause className="h-4 w-4 mr-2" />
-                Pause
+              <Button onClick={handlePauseScan} variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800">
+                <Pause className="h-4 w-4 mr-2" /> Pause
               </Button>
-              <Button
-                onClick={handleStopScan}
-                variant="outline"
-                size="sm"
-                className="border-red-700 text-red-400 hover:text-red-300 hover:bg-red-900/20"
-              >
-                <StopCircle className="h-4 w-4 mr-2" />
-                Stop
+              <Button onClick={handleStopScan} variant="outline" size="sm" className="border-red-700 text-red-400 hover:text-red-300 hover:bg-red-900/20">
+                <StopCircle className="h-4 w-4 mr-2" /> Stop
               </Button>
             </>
           )}
           {scan.status === 'paused' && (
             <>
-              <Button
-                onClick={handleResumeScan}
-                variant="outline"
-                size="sm"
-                className="border-green-700 text-green-400 hover:text-green-300 hover:bg-green-900/20"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Resume
+              <Button onClick={handleResumeScan} variant="outline" size="sm" className="border-green-700 text-green-400 hover:text-green-300 hover:bg-green-900/20">
+                <Play className="h-4 w-4 mr-2" /> Resume
               </Button>
-              <Button
-                onClick={handleStopScan}
-                variant="outline"
-                size="sm"
-                className="border-red-700 text-red-400 hover:text-red-300 hover:bg-red-900/20"
-              >
-                <StopCircle className="h-4 w-4 mr-2" />
-                Stop
+              <Button onClick={handleStopScan} variant="outline" size="sm" className="border-red-700 text-red-400 hover:text-red-300 hover:bg-red-900/20">
+                <StopCircle className="h-4 w-4 mr-2" /> Stop
               </Button>
             </>
           )}
-          <Button
-            onClick={handleSendToDiscord}
-            disabled={scan.status === 'running' || scan.status === 'paused'}
-            variant="outline"
-            className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            Send to Discord
+          <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800">
+            <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
-          <Button
-            onClick={handleDownloadReport}
-            disabled={scan.status === 'running' || scan.status === 'paused'}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download Report
+          <Button onClick={handleDownloadReport} disabled={scan.status === 'running' || scan.status === 'paused'} className="bg-cyan-600 hover:bg-cyan-700 text-white">
+            <Download className="h-4 w-4 mr-2" /> Download Report
           </Button>
         </div>
       </header>
-      
+
       <main className="flex-1 overflow-auto p-6 bg-slate-950">
         <div className="max-w-7xl mx-auto space-y-6">
           <ScanStatus scan={scan} />
-          
-          {/* Display all scan results */}
+
           {scan.results.siteInfo && <SiteInfo siteInfo={scan.results.siteInfo} />}
           {scan.results.geoip && <GeoIPInfo geoip={scan.results.geoip} />}
           {scan.results.headers && <HeadersAnalysis headers={scan.results.headers} />}
@@ -219,13 +170,13 @@ const ScanResults = () => {
           {scan.results.mx && <MXInfo mx={scan.results.mx} />}
           {scan.results.subnet && <SubnetInfo subnet={scan.results.subnet} />}
           {scan.results.ports && <PortScanResults ports={scan.results.ports} />}
-          {scan.results.subdomains?.subdomains && <SubdomainList subdomains={scan.results.subdomains.subdomains} />}
+          {scan.results.subdomains && <SubdomainList subdomains={scan.results.subdomains} />}
           {scan.results.reverseip && <ReverseIPInfo reverseip={scan.results.reverseip} />}
           {scan.results.sqlinjection && <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />}
           {scan.results.xss && <XSSVulnerabilities xss={scan.results.xss} />}
           {scan.results.wordpress && <WordPressInfo wordpress={scan.results.wordpress} />}
           {scan.results.seo && <SEOInfo seo={scan.results.seo} />}
-          
+
           {scan.errors && scan.errors.length > 0 && (
             <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
               <h3 className="text-red-400 font-semibold mb-2">Errors Encountered</h3>

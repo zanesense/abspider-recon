@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, AlertTriangle, CheckCircle, Server } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
 
 interface HeadersAnalysisProps {
   headers: Record<string, any>;
@@ -10,93 +11,174 @@ const HeadersAnalysis = ({ headers }: HeadersAnalysisProps) => {
   const actualHeaders = { ...headers };
   delete actualHeaders._analysis;
 
-  const securityHeaders = analysis?.securityHeaders || {
+  if (!analysis) {
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-cyan-500" />
+            HTTP Headers Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No header analysis available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const securityHeaders = analysis.securityHeaders || {
     present: [],
     missing: [],
+    score: 0,
+    grade: 'N/A',
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'text-red-500';
+      case 'high': return 'text-orange-500';
+      case 'medium': return 'text-yellow-500';
+      case 'low': return 'text-blue-500';
+      default: return 'text-gray-500';
+    }
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <Shield className="h-5 w-5 text-cyan-400" />
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="h-5 w-5 text-cyan-500" />
           HTTP Headers Analysis
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {analysis && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-slate-800">
-            <div className="bg-slate-800 rounded-lg p-4">
-              <p className="text-sm text-slate-400 mb-1">Status Code</p>
-              <p className="text-2xl font-bold text-cyan-400">{analysis.statusCode}</p>
-            </div>
-            <div className="bg-slate-800 rounded-lg p-4">
-              <p className="text-sm text-slate-400 mb-1">Security Score</p>
-              <p className="text-2xl font-bold text-green-400">
-                {securityHeaders.present.length}/{securityHeaders.present.length + securityHeaders.missing.length}
-              </p>
-            </div>
-            <div className="bg-slate-800 rounded-lg p-4">
-              <p className="text-sm text-slate-400 mb-1">Technologies</p>
-              <p className="text-sm text-white">
-                {analysis.technologies.length > 0 ? analysis.technologies.join(', ') : 'None detected'}
-              </p>
-            </div>
+      <CardContent className="space-y-6">
+        {/* Security Score */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Status Code</p>
+            <p className="text-2xl font-bold text-primary">{analysis.statusCode}</p>
           </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-green-400 flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Present Security Headers ({securityHeaders.present.length})
-            </h4>
-            <div className="space-y-1">
-              {securityHeaders.present.length > 0 ? (
-                securityHeaders.present.map((header: string) => (
-                  <div key={header} className="text-sm text-slate-300 bg-slate-800 px-3 py-2 rounded flex items-center gap-2">
-                    <CheckCircle className="h-3 w-3 text-green-400" />
-                    {header}
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500 italic">No security headers found</p>
-              )}
-            </div>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Security Grade</p>
+            <p className="text-2xl font-bold text-green-500">{securityHeaders.grade}</p>
           </div>
-          
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-yellow-400 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Missing Security Headers ({securityHeaders.missing.length})
-            </h4>
-            <div className="space-y-1">
-              {securityHeaders.missing.length > 0 ? (
-                securityHeaders.missing.map((header: string) => (
-                  <div key={header} className="text-sm text-slate-400 bg-slate-800 px-3 py-2 rounded flex items-center gap-2">
-                    <AlertTriangle className="h-3 w-3 text-yellow-400" />
-                    {header}
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-green-400 italic">All security headers present!</p>
-              )}
-            </div>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Score</p>
+            <p className="text-2xl font-bold text-cyan-500">{securityHeaders.score}</p>
+          </div>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Technologies</p>
+            <p className="text-sm text-foreground">
+              {analysis.technologies?.length > 0 ? analysis.technologies.join(', ') : 'None'}
+            </p>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-slate-300 flex items-center gap-2">
-            <Server className="h-4 w-4" />
-            All Headers ({Object.keys(actualHeaders).length})
+        {/* Security Headers */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Security Headers
           </h4>
-          <div className="bg-slate-800 rounded-lg p-4 space-y-2 max-h-64 overflow-y-auto">
-            {Object.entries(actualHeaders).map(([key, value]) => (
-              <div key={key} className="text-sm">
-                <span className="text-cyan-400 font-mono">{key}:</span>
-                <span className="text-slate-300 ml-2 break-all">{String(value)}</span>
+          
+          {/* Present Headers */}
+          {securityHeaders.present && securityHeaders.present.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Present ({securityHeaders.present.length})</p>
+              {securityHeaders.present.map((header: any, index: number) => (
+                <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-green-500">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {header.secure ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        )}
+                        <span className="font-medium text-foreground">{header.name}</span>
+                        <Badge className={`${getSeverityColor(header.severity)} text-xs`}>
+                          {header.severity}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground font-mono">{header.value}</p>
+                      {header.recommendation && (
+                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
+                          ⚠️ {header.recommendation}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Missing Headers */}
+          {securityHeaders.missing && securityHeaders.missing.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Missing ({securityHeaders.missing.length})</p>
+              {securityHeaders.missing.map((header: any, index: number) => (
+                <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-red-500">
+                  <div className="flex items-start gap-2">
+                    <XCircle className="h-4 w-4 text-red-500 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-foreground">{header.name}</span>
+                        <Badge className={`${getSeverityColor(header.severity)} text-xs`}>
+                          {header.severity}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{header.recommendation}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Cookies Analysis */}
+        {analysis.cookies && analysis.cookies.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Cookies ({analysis.cookies.length})
+            </h4>
+            {analysis.cookies.map((cookie: any, index: number) => (
+              <div key={index} className="bg-muted rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-foreground">{cookie.name}</span>
+                  <div className="flex gap-2">
+                    {cookie.secure && <Badge className="bg-green-500/20 text-green-500">Secure</Badge>}
+                    {cookie.httpOnly && <Badge className="bg-blue-500/20 text-blue-500">HttpOnly</Badge>}
+                    {cookie.sameSite && <Badge className="bg-purple-500/20 text-purple-500">{cookie.sameSite}</Badge>}
+                  </div>
+                </div>
+                {cookie.issues && cookie.issues.length > 0 && (
+                  <div className="text-xs text-yellow-600 dark:text-yellow-500">
+                    {cookie.issues.map((issue: string, i: number) => (
+                      <div key={i}>⚠️ {issue}</div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* All Headers */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold text-foreground">All Headers</h4>
+          <div className="bg-muted rounded-lg p-4 max-h-64 overflow-y-auto">
+            <div className="space-y-1 font-mono text-xs">
+              {Object.entries(actualHeaders).map(([key, value]) => (
+                <div key={key} className="flex gap-2">
+                  <span className="text-cyan-500">{key}:</span>
+                  <span className="text-muted-foreground break-all">{String(value)}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </CardContent>

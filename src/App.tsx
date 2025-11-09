@@ -1,11 +1,10 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import NewScan from "@/pages/NewScan";
@@ -15,51 +14,46 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
-  const [showSubdomainPopup, setShowSubdomainPopup] = useState(true);
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <BrowserRouter>
-            <Toaster />
-            <Sonner />
-            <AlertDialog open={showSubdomainPopup} onOpenChange={setShowSubdomainPopup}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>⚠️ Disclaimer</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    <b>DO NOT</b> use active testing modules or scan systems, networks, or domains unless you own them or have explicit, written permission from the owner. Unauthorized scanning and testing may be illegal in your jurisdiction and carries severe legal penalties.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogAction onClick={() => setShowSubdomainPopup(false)}>I Understand</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <SidebarProvider>
-              <div className="flex min-h-screen w-full">
-                <AppSidebar />
-                <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
-                  <div className="flex-1">
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/new-scan" element={<NewScan />} />
-                      <Route path="/scan/:id" element={<ScanResults />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </div>
-                  <Footer />
-                </SidebarInset>
-              </div>
-            </SidebarProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <TooltipProvider>
+            <BrowserRouter>
+              <Toaster />
+              <Sonner />
+              <SidebarProvider>
+                <div className="flex min-h-screen w-full">
+                  <AppSidebar />
+                  <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
+                    <div className="flex-1">
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/new-scan" element={<NewScan />} />
+                        <Route path="/scan/:id" element={<ScanResults />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </div>
+                    <Footer />
+                  </SidebarInset>
+                </div>
+              </SidebarProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

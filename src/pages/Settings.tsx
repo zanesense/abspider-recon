@@ -5,7 +5,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -62,44 +61,6 @@ const Settings = () => {
       });
     } finally {
       setIsTesting(false);
-    }
-  };
-
-  const testAPIKey = async (service: string, key: string) => {
-    setTestResults(prev => ({ ...prev, [service]: 'testing' }));
-    
-    try {
-      let testUrl = '';
-      
-      switch (service) {
-        case 'shodan':
-          testUrl = `https://api.shodan.io/api-info?key=${key}`;
-          break;
-        case 'virustotal':
-          testUrl = `https://www.virustotal.com/api/v3/users/${key}`;
-          break;
-        default:
-          throw new Error('API test not implemented for this service');
-      }
-
-      const response = await fetch(testUrl);
-      
-      if (response.ok) {
-        setTestResults(prev => ({ ...prev, [service]: 'success' }));
-        toast({
-          title: "API Key Valid",
-          description: `${service} API key is working correctly`,
-        });
-      } else {
-        throw new Error('Invalid API key');
-      }
-    } catch (error: any) {
-      setTestResults(prev => ({ ...prev, [service]: 'error' }));
-      toast({
-        title: "API Key Invalid",
-        description: `${service} API key test failed: ${error.message}`,
-        variant: "destructive",
-      });
     }
   };
 
@@ -230,7 +191,7 @@ const Settings = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Key className="h-5 w-5 text-primary" />
-                API Keys (Optional)
+                API Keys (Optional - For Enhanced Results)
               </CardTitle>
               <CardDescription>
                 Configure API keys for enhanced scanning capabilities
@@ -251,19 +212,7 @@ const Settings = () => {
                     value={apiKeys.shodan || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, shodan: e.target.value })}
                   />
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">Enhanced port scanning and banner grabbing</p>
-                    {apiKeys.shodan && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => testAPIKey('shodan', apiKeys.shodan!)}
-                        disabled={testResults.shodan === 'testing'}
-                      >
-                        Test
-                      </Button>
-                    )}
-                  </div>
+                  <p className="text-xs text-muted-foreground">Enhanced port scanning, banner grabbing, and vulnerability detection</p>
                 </div>
 
                 {/* VirusTotal */}
@@ -279,19 +228,7 @@ const Settings = () => {
                     value={apiKeys.virustotal || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, virustotal: e.target.value })}
                   />
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">Domain reputation and malware scanning</p>
-                    {apiKeys.virustotal && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => testAPIKey('virustotal', apiKeys.virustotal!)}
-                        disabled={testResults.virustotal === 'testing'}
-                      >
-                        Test
-                      </Button>
-                    )}
-                  </div>
+                  <p className="text-xs text-muted-foreground">Domain reputation, malware scanning, and threat intelligence</p>
                 </div>
 
                 {/* SecurityTrails */}
@@ -307,7 +244,7 @@ const Settings = () => {
                     value={apiKeys.securitytrails || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, securitytrails: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">Historical DNS data and subdomain discovery</p>
+                  <p className="text-xs text-muted-foreground">Historical DNS data, subdomain discovery, and WHOIS history</p>
                 </div>
 
                 {/* BuiltWith */}
@@ -323,7 +260,55 @@ const Settings = () => {
                     value={apiKeys.builtwith || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, builtwith: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">Technology stack detection and analytics</p>
+                  <p className="text-xs text-muted-foreground">Technology stack detection, analytics, and framework identification</p>
+                </div>
+
+                {/* OpenCage */}
+                <div className="space-y-2 p-4 border border-border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="opencage" className="text-base font-semibold">OpenCage API Key</Label>
+                    {getStatusIcon('opencage')}
+                  </div>
+                  <Input
+                    id="opencage"
+                    type="password"
+                    placeholder="Enter OpenCage API key"
+                    value={apiKeys.opencage || ''}
+                    onChange={(e) => setApiKeys({ ...apiKeys, opencage: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">Enhanced geocoding, reverse geocoding, and detailed location data</p>
+                </div>
+
+                {/* Hunter.io */}
+                <div className="space-y-2 p-4 border border-border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="hunter" className="text-base font-semibold">Hunter.io API Key</Label>
+                    {getStatusIcon('hunter')}
+                  </div>
+                  <Input
+                    id="hunter"
+                    type="password"
+                    placeholder="Enter Hunter.io API key"
+                    value={apiKeys.hunter || ''}
+                    onChange={(e) => setApiKeys({ ...apiKeys, hunter: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">Email discovery, domain search, and email verification</p>
+                </div>
+
+                {/* Clearbit */}
+                <div className="space-y-2 p-4 border border-border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="clearbit" className="text-base font-semibold">Clearbit API Key</Label>
+                    {getStatusIcon('clearbit')}
+                  </div>
+                  <Input
+                    id="clearbit"
+                    type="password"
+                    placeholder="Enter Clearbit API key"
+                    value={apiKeys.clearbit || ''}
+                    onChange={(e) => setApiKeys({ ...apiKeys, clearbit: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">Company data enrichment, logo API, and business intelligence</p>
                 </div>
               </div>
               
