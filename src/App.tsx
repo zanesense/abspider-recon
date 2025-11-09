@@ -29,13 +29,13 @@ function App() {
             <AlertDialog open={showSubdomainPopup} onOpenChange={setShowSubdomainPopup}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>⚠️ Feature Under Development.</AlertDialogTitle>
+                  <AlertDialogTitle>⚠️ Disclaimer</AlertDialogTitle>
                   <AlertDialogDescription>
-                    We are working hard to bring you an awesome <b>subdomain</b> feature! It's currently under development and will be available in a future update. Please note that it may give errors for some users, so it's better to uncheck that one for now. Stay tuned for more! 🎉
+                    <b>DO NOT</b> use active testing modules or scan systems, networks, or domains unless you own them or have explicit, written permission from the owner. Unauthorized scanning and testing may be illegal in your jurisdiction and carries severe legal penalties.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogAction onClick={() => setShowSubdomainPopup(false)}>Awesome!</AlertDialogAction>
+                  <AlertDialogAction onClick={() => setShowSubdomainPopup(false)}>I Understand</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

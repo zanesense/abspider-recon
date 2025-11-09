@@ -219,7 +219,7 @@ const ScanResults = () => {
           {scan.results.mx && <MXInfo mx={scan.results.mx} />}
           {scan.results.subnet && <SubnetInfo subnet={scan.results.subnet} />}
           {scan.results.ports && <PortScanResults ports={scan.results.ports} />}
-          {scan.results.subdomains && <SubdomainList subdomains={scan.results.subdomains} />}
+          {scan.results.subdomains?.subdomains && <SubdomainList subdomains={scan.results.subdomains.subdomains} />}
           {scan.results.reverseip && <ReverseIPInfo reverseip={scan.results.reverseip} />}
           {scan.results.sqlinjection && <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />}
           {scan.results.xss && <XSSVulnerabilities xss={scan.results.xss} />}
