@@ -111,6 +111,8 @@ const ScanResults = () => {
     );
   }
 
+  const blockClass = "bg-slate-900/20 border border-slate-800 rounded-lg p-4";
+
   return (
     <div className="flex flex-col h-full w-full">
       <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-slate-800 bg-slate-900 px-6 py-4">
@@ -160,25 +162,96 @@ const ScanResults = () => {
 
       <main className="flex-1 overflow-auto p-6 bg-slate-950">
         <div className="max-w-7xl mx-auto space-y-6">
-          <ScanStatus scan={scan} />
+          <div className={blockClass}>
+            <ScanStatus scan={scan} />
+          </div>
 
-          {scan.results.siteInfo && <SiteInfo siteInfo={scan.results.siteInfo} />}
-          {scan.results.geoip && <GeoIPInfo geoip={scan.results.geoip} />}
-          {scan.results.headers && <HeadersAnalysis headers={scan.results.headers} />}
-          {scan.results.whois && <WhoisInfo whois={scan.results.whois} />}
-          {scan.results.dns && <DNSInfo dns={scan.results.dns} />}
-          {scan.results.mx && <MXInfo mx={scan.results.mx} />}
-          {scan.results.subnet && <SubnetInfo subnet={scan.results.subnet} />}
-          {scan.results.ports && <PortScanResults ports={scan.results.ports} />}
-          {scan.results.subdomains && <SubdomainList subdomains={scan.results.subdomains} />}
-          {scan.results.reverseip && <ReverseIPInfo reverseip={scan.results.reverseip} />}
-          {scan.results.sqlinjection && <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />}
-          {scan.results.xss && <XSSVulnerabilities xss={scan.results.xss} />}
-          {scan.results.wordpress && <WordPressInfo wordpress={scan.results.wordpress} />}
-          {scan.results.seo && <SEOInfo seo={scan.results.seo} />}
+          {scan.results.siteInfo && (
+            <div className={blockClass}>
+              <SiteInfo siteInfo={scan.results.siteInfo} />
+            </div>
+          )}
+
+          {scan.results.geoip && (
+            <div className={blockClass}>
+              <GeoIPInfo geoip={scan.results.geoip} />
+            </div>
+          )}
+
+          {scan.results.headers && (
+            <div className={blockClass}>
+              <HeadersAnalysis headers={scan.results.headers} />
+            </div>
+          )}
+
+          {scan.results.whois && (
+            <div className={blockClass}>
+              <WhoisInfo whois={scan.results.whois} />
+            </div>
+          )}
+
+          {scan.results.dns && (
+            <div className={blockClass}>
+              <DNSInfo dns={scan.results.dns} />
+            </div>
+          )}
+
+          {scan.results.mx && (
+            <div className={blockClass}>
+              <MXInfo mx={scan.results.mx} />
+            </div>
+          )}
+
+          {scan.results.subnet && (
+            <div className={blockClass}>
+              <SubnetInfo subnet={scan.results.subnet} />
+            </div>
+          )}
+
+          {scan.results.ports && (
+            <div className={blockClass}>
+              <PortScanResults ports={scan.results.ports} />
+            </div>
+          )}
+
+          {scan.results.subdomains && (
+            <div className={blockClass}>
+              <SubdomainList subdomains={scan.results.subdomains} />
+            </div>
+          )}
+
+          {scan.results.reverseip && (
+            <div className={blockClass}>
+              <ReverseIPInfo reverseip={scan.results.reverseip} />
+            </div>
+          )}
+
+          {scan.results.sqlinjection && (
+            <div className={blockClass}>
+              <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />
+            </div>
+          )}
+
+          {scan.results.xss && (
+            <div className={blockClass}>
+              <XSSVulnerabilities xss={scan.results.xss} />
+            </div>
+          )}
+
+          {scan.results.wordpress && (
+            <div className={blockClass}>
+              <WordPressInfo wordpress={scan.results.wordpress} />
+            </div>
+          )}
+
+          {scan.results.seo && (
+            <div className={blockClass}>
+              <SEOInfo seo={scan.results.seo} />
+            </div>
+          )}
 
           {scan.errors && scan.errors.length > 0 && (
-            <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+            <div className={blockClass}>
               <h3 className="text-red-400 font-semibold mb-2">Errors Encountered</h3>
               <ul className="list-disc list-inside text-red-300 text-sm space-y-1">
                 {scan.errors.map((error, index) => (
