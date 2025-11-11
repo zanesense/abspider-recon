@@ -1,5 +1,6 @@
 {
   "name": "vite-react-typescript-starter",
+  "homepage": "https://zanesense.github.io/abspider-recon",
   "private": true,
   "version": "0.0.0",
   "type": "module",
