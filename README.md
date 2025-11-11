@@ -124,4 +124,4 @@ Special thanks to the open-source community for empowering modern reconnaissance
 
 ---
 
-<p align=center>© 2025 <a href="https://github.com/zanesense"><b>zanesense</b></a> · Built for security professionals. 🚀
+<p align=center>© 2025 <a href="https://github.com/zanesense"><b>zanesense</b></a> · <i>Built for security professionals.</i> 🚀
