@@ -13,6 +13,7 @@ import Settings from "@/pages/Settings";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
+import LegalDisclaimer from "./components/LegalDisclaimer";   
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ function App() {
                         <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
+                      <LegalDisclaimer />
                     </div>
                     <Footer />
                   </SidebarInset>

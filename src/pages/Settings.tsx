@@ -102,12 +102,12 @@ const Settings = () => {
                   <Input
                     id="defaultThreads"
                     type="number"
-                    min="1"
-                    max="20"
+                    min="20"
+                    max="100"
                     value={settings.defaultThreads}
                     onChange={(e) => setSettings({ ...settings, defaultThreads: parseInt(e.target.value) })}
                   />
-                  <p className="text-xs text-muted-foreground">Concurrent scanning threads (1-20)</p>
+                  <p className="text-xs text-muted-foreground">Concurrent scanning threads (20-100)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timeout">Request Timeout (seconds)</Label>

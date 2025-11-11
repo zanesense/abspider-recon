@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>ABSpider — Documentation</title>
+      <meta name="description" content="Interactive documentation for ABSpider Recon Dashboard" />
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+         :root { --accent: #60a5fa; }
+         body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+         .fade-in { opacity: 0; transform: translateY(20px); animation: fadeUp 0.8s ease forwards; }
+         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+         .pulse { animation: pulse 3s infinite; }
+         @keyframes pulse { 0%,100%{opacity:.9;transform:scale(1)}50%{opacity:1;transform:scale(1.05)} }
+         summary { cursor: pointer; }
+      </style>
+   </head>
+   <body class="bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100">
+      <header class="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 shadow-sm transition-all">
+         <div class="max-w-6xl mx-auto p-6 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+               <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg pulse">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-7 h-7">
+                     <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 11.93 4.16-1.19 8-6.38 8-11.93V5l-8-3z"/>
+                     <path fill="#6ee7b7" d="M12 4.5L6 6.75v4.25c0 4.4 2.91 8.56 6 9.69 3.09-1.13 6-5.29 6-9.69V6.75L12 4.5z"/>
+                  </svg>
+               </div>
+               <div>
+                  <h1 class="text-2xl font-bold">ABSpider Recon</h1>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Fast · Modular · Secure</p>
+               </div>
+            </div>
+            <nav class="space-x-4 text-sm font-medium hidden md:block">
+               <a href="#quickstart" class="hover:text-indigo-500">Quick Start</a>
+               <a href="#modules" class="hover:text-indigo-500">Modules</a>
+               <a href="#howto" class="hover:text-indigo-500">How to Use</a>
+               <a href="#tech" class="hover:text-indigo-500">Technical</a>
+               <a href="#troubleshoot" class="hover:text-indigo-500">Troubleshooting</a>
+               <a href="#legal" class="hover:text-indigo-500">Legal</a>
+               <a href="https://github.com/zanesense/abspider-recon" target="_blank" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-500">GitHub</a>
+            </nav>
+         </div>
+      </header>
+      <!-- Hero -->
+      <section class="max-w-5xl mx-auto px-6 py-16 text-center fade-in">
+         <h2 class="text-4xl font-extrabold bg-gradient-to-r from-indigo-500 to-cyan-400 bg-clip-text text-transparent mb-3 animate-pulse">Meet ABSpider Recon</h2>
+         <p class="text-gray-600 dark:text-gray-300 text-lg mb-6">A production-ready browser-based reconnaissance dashboard offering real-time passive recon, security insights, and full PDF reports.</p>
+         <div class="flex justify-center gap-4">
+            <a href="#quickstart" class="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow-lg hover:shadow-indigo-400/50 transition-transform hover:scale-105">🚀 Get Started</a>
+            <a href="#modules" class="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:scale-105 transition-transform">🧩 Explore Modules</a>
+         </div>
+      </section>
+      <!-- Quickstart -->
+      <section id="quickstart" class="max-w-5xl mx-auto p-6 fade-in">
+         <h3 class="text-2xl font-bold mb-4">⚡ Quick Start</h3>
+         <div class="grid md:grid-cols-2 gap-6">
+            <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-indigo-300/30 transition-all">
+               <h4 class="font-semibold mb-3">Clone & Run</h4>
+               <pre class="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm overflow-x-auto"><code>git clone https://github.com/zanesense/abspider-recon.git
+cd abspider-recon
+npm install
+npm run dev</code></pre>
+               <button class="mt-3 px-4 py-2 text-sm rounded-md bg-indigo-500 text-white hover:bg-indigo-600" onclick="copyCmd()">Copy Commands</button>
+            </div>
+            <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+               <h4 class="font-semibold mb-3">Notes</h4>
+               <ul class="space-y-2 text-gray-700 dark:text-gray-300 text-sm">
+                  <li>All configuration via UI — no <b>.env</b> needed.</li>
+                  <li>Active modules (SQLi, XSS, Ports) require consent.</li>
+                  <li>Data stored locally — privacy by design.</li>
+               </ul>
+            </div>
+         </div>
+      </section>
+      <!-- Modules -->
+      <section id="modules" class="max-w-5xl mx-auto p-6 fade-in">
+         <h3 class="text-2xl font-bold mb-4">🧠 Core Modules</h3>
+         <div class="overflow-hidden rounded-xl shadow-lg">
+            <table class="min-w-full text-sm">
+               <thead class="bg-gradient-to-r from-indigo-500 to-cyan-400 text-white">
+                  <tr>
+                     <th class="p-3 text-left">Module</th>
+                     <th class="p-3 text-left">Type</th>
+                     <th class="p-3 text-left">Description</th>
+                  </tr>
+               </thead>
+               <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                  <tr>
+                     <td class="p-3">HTTP Headers</td>
+                     <td class="p-3">Passive</td>
+                     <td class="p-3">Analyzes security headers and fingerprints technologies.</td>
+                  </tr>
+                  <tr>
+                     <td class="p-3">WHOIS / RDAP</td>
+                     <td class="p-3">Passive</td>
+                     <td class="p-3">Fetches domain registration, nameservers, and org details.</td>
+                  </tr>
+                  <tr>
+                     <td class="p-3">Subdomain Enum</td>
+                     <td class="p-3">Passive</td>
+                     <td class="p-3">Discovers subdomains via CT logs and DNS over HTTPS.</td>
+                  </tr>
+                  <tr>
+                     <td class="p-3">Port Scan</td>
+                     <td class="p-3">Active (opt-in)</td>
+                     <td class="p-3">Detects open ports and services using browser checks.</td>
+                  </tr>
+                  <tr>
+                     <td class="p-3">SQLi Scan</td>
+                     <td class="p-3">Active (opt-in)</td>
+                     <td class="p-3">Tests parameters for union/error/boolean/time-based SQLi.</td>
+                  </tr>
+                  <tr>
+                     <td class="p-3">XSS Scan</td>
+                     <td class="p-3">Active (opt-in)</td>
+                     <td class="p-3">Finds reflected, stored, and DOM-based XSS points.</td>
+                  </tr>
+               </tbody>
+            </table>
+         </div>
+      </section>
+      <!-- How to Use -->
+      <section id="howto" class="max-w-5xl mx-auto p-6 fade-in">
+         <h3 class="text-2xl font-bold mb-4">🧭 How to Use</h3>
+         <ol class="list-decimal pl-6 space-y-2 text-gray-700 dark:text-gray-300 text-sm">
+            <li>Click <b>“New Scan”</b> and enter your target domain or URL.</li>
+            <li>Select modules — Headers, WHOIS, Subdomains, Ports, SQLi, XSS.</li>
+            <li>Adjust options: Threads, Proxy Rotation, Aggression level.</li>
+            <li>Click <b>“Start Reconnaissance”</b> and monitor live progress.</li>
+            <li>View results in Dashboard and export PDF reports.</li>
+         </ol>
+      </section>
+      <!-- Technical Details -->
+      <section id="tech" class="max-w-5xl mx-auto p-6 fade-in">
+         <h3 class="text-2xl font-bold mb-4">⚙️ Technical Details</h3>
+         <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+               <h4 class="font-semibold mb-2">APIs Used</h4>
+               <ul class="list-disc pl-4 space-y-1 text-gray-700 dark:text-gray-300">
+                  <li>Google DoH – Subdomain enumeration</li>
+                  <li>crt.sh – Certificate Transparency logs</li>
+                  <li>RDAP / WHOIS – Domain data</li>
+                  <li>ipapi.co – IP & Geo info</li>
+               </ul>
+            </div>
+            <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+               <h4 class="font-semibold mb-2">Performance Tips</h4>
+               <ul class="list-disc pl-4 space-y-1 text-gray-700 dark:text-gray-300">
+                  <li>Start with 5 threads (default).</li>
+                  <li>Increase up to 20 for speed; use proxy rotation for large scans.</li>
+                  <li>Disable unused modules to reduce noise.</li>
+                  <li>Data stored safely in browser localStorage only.</li>
+               </ul>
+            </div>
+         </div>
+      </section>
+      <!-- Troubleshooting -->
+      <section id="troubleshoot" class="max-w-5xl mx-auto p-6 fade-in">
+         <h3 class="text-2xl font-bold mb-4">🩺 Troubleshooting & Best Practices</h3>
+         <details class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-2">
+            <summary class="font-semibold">Scan fails immediately</summary>
+            <p class="text-sm mt-2">Check target URL format and ensure accessibility. Reduce module count or thread number. See browser console for errors.</p>
+         </details>
+         <details class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-2">
+            <summary class="font-semibold">No Subdomains Found</summary>
+            <p class="text-sm mt-2">Target may have few subdomains or block enumeration. Try enabling proxy rotation or scan again later.</p>
+         </details>
+         <details class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-2">
+            <summary class="font-semibold">Discord Webhook Not Working</summary>
+            <p class="text-sm mt-2">Verify webhook URL and permissions. Use the “Test Webhook” button before running scans.</p>
+         </details>
+         <details class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-2">
+            <summary class="font-semibold">Headers Not Loading</summary>
+            <p class="text-sm mt-2">CORS or server rules may block HEAD requests. Enable proxy mode for better results.</p>
+         </details>
+         <div class="mt-4 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-sm text-gray-700 dark:text-gray-300">
+            <h4 class="font-semibold mb-2">Best Practices</h4>
+            <ul class="list-disc pl-4 space-y-1">
+               <li>Start small with test domains.</li>
+               <li>Respect rate limits — avoid aggressive scans.</li>
+               <li>Use only with permission.</li>
+               <li>Download and archive PDF reports.</li>
+            </ul>
+         </div>
+      </section>
+      <!-- Legal -->
+      <section id="legal" class="max-w-5xl mx-auto p-6 fade-in">
+         <h3 class="text-2xl font-bold mb-4">⚠️ Legal Notice</h3>
+         <p class="bg-white dark:bg-gray-800 p-6 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-lg">ABSpider is for authorized security testing only. Scanning external systems without written permission may violate laws. Use ethically and responsibly.</p>
+      </section>
+      <!-- Footer -->
+      <footer class="mt-12 py-6 text-center text-gray-600 dark:text-gray-400 text-sm">
+         <p>© 2025 zanesense · Made with ❤️ for security researchers · <a href="https://github.com/zanesense/abspider-recon" class="underline hover:text-indigo-500">View on GitHub</a></p>
+         <p class="mt-2">Need help? Check the in-app console logs or documentation for troubleshooting tips.</p>
+      </footer>
+      <script>
+         function copyCmd(){
+           const txt = `git clone https://github.com/zanesense/abspider-recon.git\ncd abspider-recon\nnpm install\nnpm run dev`;
+           navigator.clipboard.writeText(txt).then(()=>alert('✅ Commands copied!'));
+         }
+      </script>
+   </body>
+</html>
