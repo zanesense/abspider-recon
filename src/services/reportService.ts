@@ -25,6 +25,18 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
     recommendations.push('• Validate input on both client and server side');
   }
   
+  // LFI recommendations
+  if (scan.results.lfi?.vulnerable) {
+    recommendations.push('🔴 CRITICAL: Local File Inclusion Detected');
+    recommendations.push('• Use whitelisting for allowed file paths');
+    recommendations.push('• Validate and sanitize all user input');
+    recommendations.push('• Reject path traversal patterns (../, ..\)');
+    recommendations.push('• Use built-in secure file handling functions');
+    recommendations.push('• Disable remote file inclusion');
+    recommendations.push('• Run application with minimum file permissions');
+    recommendations.push('• Deploy Web Application Firewall (WAF)');
+  }
+  
   // WordPress recommendations
   if (scan.results.wordpress?.vulnerabilities?.length > 0) {
     recommendations.push('🟠 HIGH: WordPress Security Issues');
@@ -55,43 +67,74 @@ export const generatePDFReport = (scan: Scan) => {
   const doc = new jsPDF();
   let yPosition = 20;
 
-  // Header
-  doc.setFillColor(6, 182, 212);
-  doc.rect(0, 0, 210, 45, 'F');
-  
-  doc.setFontSize(32);
-  doc.setTextColor(255, 255, 255);
-  doc.text('ABSpider', 14, 22);
-  
-  doc.setFontSize(16);
-  doc.text('Comprehensive Security Reconnaissance Report', 14, 32);
-  
-  doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 40);
-  
-  yPosition = 55;
+  // Calculate vulnerability counts upfront
+  const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
+  const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
+  const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
+  const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
+  const totalVulns = sqlVulns + xssVulns + lfiVulns + wpVulns;
 
-  // Executive Summary
-  doc.setFillColor(245, 245, 245);
-  doc.roundedRect(14, yPosition, 182, 40, 3, 3, 'F');
+  // Modern Header with gradient effect
+  doc.setFillColor(6, 182, 212);
+  doc.rect(0, 0, 210, 50, 'F');
+  
+  // Accent bar
+  doc.setFillColor(8, 145, 178);
+  doc.rect(0, 0, 210, 3, 'F');
+  
+  doc.setFontSize(36);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ABSpider Recon', 14, 24);
   
   doc.setFontSize(14);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Executive Summary', 20, yPosition + 10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Comprehensive Security Assessment Report', 14, 34);
   
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()} | Classification: CONFIDENTIAL`, 14, 44);
+  
+  yPosition = 60;
+
+  // Executive Summary with modern design
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, yPosition, 182, 50, 3, 3, 'F');
+  
+  doc.setFillColor(6, 182, 212);
+  doc.roundedRect(14, yPosition, 182, 8, 3, 3, 'F');
+  
+  doc.setFontSize(12);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.text('EXECUTIVE SUMMARY', 20, yPosition + 6);
+  
+  doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(`Target: ${scan.target}`, 20, yPosition + 18);
-  doc.text(`Scan ID: ${scan.id}`, 20, yPosition + 24);
-  doc.text(`Date: ${new Date(scan.timestamp).toLocaleString()}`, 20, yPosition + 30);
+  doc.text(`Target Domain: ${scan.target}`, 20, yPosition + 18);
+  doc.text(`Scan ID: ${scan.id}`, 20, yPosition + 25);
+  doc.text(`Timestamp: ${new Date(scan.timestamp).toLocaleString()}`, 20, yPosition + 32);
+  
+  if (scan.elapsedMs) {
+    const seconds = Math.floor(scan.elapsedMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const timeStr = minutes > 0 ? `${minutes}m ${seconds % 60}s` : `${seconds}s`;
+    doc.text(`Duration: ${timeStr}`, 20, yPosition + 39);
+  }
   
   const statusColor = scan.status === 'completed' ? [16, 185, 129] : [239, 68, 68];
   doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Status: ${scan.status.toUpperCase()}`, 120, yPosition + 18);
+  doc.setFontSize(11);
+  doc.text(`Status: ${scan.status.toUpperCase()}`, 140, yPosition + 25);
   
-  yPosition += 50;
+  // Risk level indicator
+  const riskLevel = totalVulns > 0 ? 'HIGH RISK' : 'LOW RISK';
+  const riskColor = totalVulns > 0 ? [239, 68, 68] : [16, 185, 129];
+  doc.setTextColor(riskColor[0], riskColor[1], riskColor[2]);
+  doc.text(`Risk: ${riskLevel}`, 140, yPosition + 39);
+  
+  yPosition += 60;
 
   // Security Recommendations
   const recommendations = getSecurityRecommendations(scan);
@@ -127,11 +170,6 @@ export const generatePDFReport = (scan: Scan) => {
   }
 
   // Vulnerability Summary
-  const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
-  const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
-  const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
-  const totalVulns = sqlVulns + xssVulns + wpVulns;
-
   if (totalVulns > 0) {
     doc.addPage();
     yPosition = 20;
@@ -148,6 +186,7 @@ export const generatePDFReport = (scan: Scan) => {
     const vulnData = [
       ['SQL Injection', sqlVulns.toString(), sqlVulns > 0 ? 'CRITICAL' : 'SAFE', sqlVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['Cross-Site Scripting (XSS)', xssVulns.toString(), xssVulns > 0 ? 'CRITICAL' : 'SAFE', xssVulns > 0 ? 'Immediate action required' : 'No issues found'],
+      ['Local File Inclusion (LFI)', lfiVulns.toString(), lfiVulns > 0 ? 'CRITICAL' : 'SAFE', lfiVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['WordPress Security', wpVulns.toString(), wpVulns > 0 ? 'HIGH' : 'SAFE', wpVulns > 0 ? 'Update and secure' : 'No issues found'],
     ];
     
@@ -213,17 +252,49 @@ export const generatePDFReport = (scan: Scan) => {
     const xssData = scan.results.xss.vulnerabilities.map((vuln: any) => [
       vuln.severity.toUpperCase(),
       vuln.type || 'N/A',
-      vuln.parameter || 'N/A',
+      vuln.parameter || vuln.location || 'N/A',
       vuln.payload.substring(0, 40) + '...',
       vuln.evidence?.substring(0, 60) + '...' || 'N/A',
     ]);
     
     autoTable(doc, {
       startY: yPosition,
-      head: [['Severity', 'Type', 'Parameter', 'Payload', 'Evidence']],
+      head: [['Severity', 'Type', 'Location', 'Payload', 'Evidence']],
       body: xssData,
       theme: 'grid',
       headStyles: { fillColor: [234, 88, 12], fontStyle: 'bold' },
+      styles: { fontSize: 7 },
+    });
+  }
+
+  // Detailed LFI Results
+  if (scan.results.lfi?.vulnerabilities?.length > 0) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(251, 146, 60);
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📁 Local File Inclusion Vulnerabilities', 14, yPosition);
+    yPosition += 15;
+    
+    const lfiData = scan.results.lfi.vulnerabilities.map((vuln: any) => [
+      vuln.severity.toUpperCase(),
+      vuln.type || 'N/A',
+      vuln.parameter || 'N/A',
+      vuln.payload.substring(0, 40) + '...',
+      `${(vuln.confidence * 100).toFixed(0)}%`,
+      vuln.indicator || 'N/A',
+    ]);
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Severity', 'Type', 'Parameter', 'Payload', 'Confidence', 'Indicator']],
+      body: lfiData,
+      theme: 'grid',
+      headStyles: { fillColor: [251, 146, 60], fontStyle: 'bold' },
       styles: { fontSize: 7 },
     });
   }

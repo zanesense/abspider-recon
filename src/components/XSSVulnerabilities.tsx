@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Shield, Code } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Shield, Code, Lightbulb } from 'lucide-react';
 
 interface XSSVulnerabilitiesProps {
   xss: {
@@ -58,13 +59,30 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
         </div>
 
         {xss.vulnerabilities.length > 0 ? (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-red-400 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Detected Vulnerabilities
-            </h4>
-            <div className="space-y-3">
-              {xss.vulnerabilities.map((vuln, index) => (
+          <>
+            <Alert variant="destructive" className="bg-red-950/30 border-red-800">
+              <Lightbulb className="h-4 w-4" />
+              <AlertDescription>
+                <div className="font-semibold mb-2">🛡️ Mitigation Recommendations:</div>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Encode all user input before rendering (HTML, JavaScript, URL encoding)</li>
+                  <li>Implement Content Security Policy (CSP) headers</li>
+                  <li>Use HTTPOnly and Secure flags on all cookies</li>
+                  <li>Sanitize HTML input with libraries like DOMPurify</li>
+                  <li>Validate and whitelist input on both client and server side</li>
+                  <li>Avoid using dangerous functions like eval(), innerHTML, document.write()</li>
+                  <li>Use modern frameworks with built-in XSS protection (React, Vue, Angular)</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-red-400 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Detected Vulnerabilities
+              </h4>
+              <div className="space-y-3">
+                {xss.vulnerabilities.map((vuln, index) => (
                 <div key={index} className="bg-slate-800 rounded-lg p-4 border border-red-900/30">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex gap-2">
@@ -102,9 +120,10 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
                     )}
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
             <p className="text-green-400 text-sm flex items-center gap-2">

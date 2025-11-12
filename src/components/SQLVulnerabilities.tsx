@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Shield, Code, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Shield, Code, Info, Lightbulb } from 'lucide-react';
 
 interface SQLVulnerabilitiesProps {
   sqlinjection: {
@@ -68,13 +69,30 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
         )}
 
         {sqlinjection.vulnerabilities.length > 0 ? (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-red-400 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Detected Vulnerabilities
-            </h4>
-            <div className="space-y-3">
-              {sqlinjection.vulnerabilities.map((vuln, index) => (
+          <>
+            <Alert variant="destructive" className="bg-red-950/30 border-red-800">
+              <Lightbulb className="h-4 w-4" />
+              <AlertDescription>
+                <div className="font-semibold mb-2">🛡️ Mitigation Recommendations:</div>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Use parameterized queries or prepared statements (NEVER concatenate user input)</li>
+                  <li>Implement strict input validation and sanitization</li>
+                  <li>Use ORM frameworks (Sequelize, TypeORM, Prisma) with parameterized queries</li>
+                  <li>Apply principle of least privilege to database users</li>
+                  <li>Enable Web Application Firewall (WAF) with SQL injection rules</li>
+                  <li>Escape all special characters in user input</li>
+                  <li>Regular security audits and penetration testing</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-red-400 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Detected Vulnerabilities
+              </h4>
+              <div className="space-y-3">
+                {sqlinjection.vulnerabilities.map((vuln, index) => (
                 <div key={index} className="bg-slate-800 rounded-lg p-4 border border-red-900/30">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex gap-2">
@@ -112,9 +130,10 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
                     )}
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
             <p className="text-green-400 text-sm flex items-center gap-2">

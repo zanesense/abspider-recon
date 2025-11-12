@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileWarning, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
+import { FileWarning, AlertTriangle, CheckCircle2, FileText, Lightbulb } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LFIVulnerabilitiesProps {
@@ -62,6 +62,23 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="font-semibold">
                 {lfi.vulnerabilities.length} Local File Inclusion vulnerabilit{lfi.vulnerabilities.length === 1 ? 'y' : 'ies'} detected!
+              </AlertDescription>
+            </Alert>
+
+            <Alert variant="destructive" className="bg-red-950/30 border-red-800 mt-4">
+              <Lightbulb className="h-4 w-4" />
+              <AlertDescription>
+                <div className="font-semibold mb-2">🛡️ Mitigation Recommendations:</div>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Use whitelisting for allowed file paths (never blacklisting)</li>
+                  <li>Validate and sanitize all user input - reject path traversal patterns (../, ..\)</li>
+                  <li>Use built-in secure file handling functions with restricted directories</li>
+                  <li>Implement strict input validation with regular expressions</li>
+                  <li>Disable remote file inclusion (allow_url_include = Off in PHP)</li>
+                  <li>Use absolute paths and map user input to predefined file IDs</li>
+                  <li>Run application with minimum required file system permissions</li>
+                  <li>Deploy Web Application Firewall (WAF) with LFI protection rules</li>
+                </ul>
               </AlertDescription>
             </Alert>
 
