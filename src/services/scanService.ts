@@ -614,8 +614,8 @@ const performScan = async (scan: Scan) => {
     }
   }
 
-  const controller = scanControllers.get(scan.id);
-  if (controller?.stopped) {
+  const finalController = scanControllers.get(scan.id);
+  if (finalController?.stopped) {
     scan.status = 'stopped';
   } else {
     scan.status = 'completed';

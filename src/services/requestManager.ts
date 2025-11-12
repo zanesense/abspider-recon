@@ -48,10 +48,12 @@ export class RequestManager {
         throw new Error('Request aborted by scan controller');
       }
 
+      let timeoutId: NodeJS.Timeout | null = null;
+
       try {
         await this.rateLimit(url);
 
-        const timeoutId = setTimeout(() => abortController.abort(), timeout);
+        timeoutId = setTimeout(() => abortController.abort(), timeout);
         
         const combinedSignal = this.createCombinedSignal([
           this.scanController?.signal,
@@ -66,8 +68,6 @@ export class RequestManager {
             ...fetchOptions.headers,
           },
         });
-
-        clearTimeout(timeoutId);
 
         metrics.endTime = Date.now();
         metrics.duration = metrics.endTime - metrics.startTime;
@@ -86,6 +86,10 @@ export class RequestManager {
         if (attempt < retries) {
           console.warn(`[RequestManager] Retry ${attempt + 1}/${retries} for ${url}`);
           await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
+        }
+      } finally {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
         }
       }
     }
