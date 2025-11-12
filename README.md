@@ -30,7 +30,7 @@
 
 ABSpider enables security teams to quickly gather **actionable intelligence** on web targets.
 
-*   **Intelligence Focus:** Real-time, passive data collection (WHOIS, CT Logs) paired with optional active scanning (SQLi, XSS).
+*   **Intelligence Focus:** Real-time, passive data collection (WHOIS, CT Logs) paired with optional active scanning (SQLi, XSS, LFI).
 *   **Reporting:** Generates professional, exportable **PDF reports** summarizing all findings.
 *   **Notifications:** Supports **Discord webhook notifications** for real-time scan updates.
 *   **Configuration:** Secure, centralized **Dashboard Settings**—no manual `.env` files required.
@@ -57,7 +57,7 @@ npm run dev
 yarn dev
 ```
 
-Open your browser at `http://localhost:5173`.
+> Open your browser at http://localhost:5000.
 
 > ⚙️ **Note:** All scan configurations (targets, proxies, webhooks) are managed exclusively through the **Dashboard Settings UI**.
 
@@ -75,8 +75,14 @@ ABSpider uses a modular approach, offering both stealthy passive checks and comp
 | **Port Scanning**         | Active  | Checks connectivity and identifies services on common ports (21, 22, 80, 443, 3306). |
 | **SQL Scan**              | Active  | Checks for potential **SQL Injection (SQLi)** vulnerabilities in input fields and parameters. |
 | **XSS Scan**              | Active  | Detects reflected, DOM, and stored **XSS** vulnerabilities using context-aware payloads. |
+| **LFI Scan**              | Active  | Scans for Local File Inclusions using real payloads. |
 | **PDF Report Generation** | Utility | Generates professional, exportable PDF reports summarizing all scan findings.     |
 | **Discord Webhook**       | Utility | Sends scan notifications and rich embeds to specified Discord channels in real-time. |
+
+### Additional Features:
+-  CORS Bypass using CORS Proxies
+-  Cloudflare Bypass
+-  Threadded Scanning for faster lookups
 
 ---
 
@@ -99,6 +105,21 @@ PDF reports are designed for professional security analysis and include:
 | **Discord Webhooks** | Real-time scan completion notifications and alerts.         |
 | **Local Storage**    | Secures sensitive PoC data locally within the browser.      |
 | **Export Options**   | Provides findings in **PDF / JSON** formats for triage and submission. |
+
+### Optional APIs
+> Configure API keys in the settings tab
+
+| Integration          | Purpose                                                     |
+| :------------------- | :---------------------------------------------------------- |
+| **Shodan** | Enhanced port scanning, banner grabbing, and vulnerability detection.         |
+| **VirusTotal**    | Domain reputation, malware scanning, and threat intelligence.     |
+| **SecurityTrails**   | Historical DNS data, subdomain discovery, and WHOIS history. |
+| **BuiltWith** | Technology stack detection, analytics, and framework identification. |
+| **OpenCage** | Enhanced geocoding, reverse geocoding, and detailed location data. |
+| **Hunter.io** | Email discovery, domain search, and email verification. |
+| **ClearBit** | Company data enrichment, logo API, and business intelligence. |
+
+
 
 ---
 
