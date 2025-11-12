@@ -30,9 +30,9 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
+        <CardTitle className="text-foreground flex items-center gap-2">
           {sqlinjection.vulnerable ? (
             <AlertTriangle className="h-5 w-5 text-red-400" />
           ) : (
@@ -43,25 +43,25 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Status</p>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Status</p>
             <Badge className={sqlinjection.vulnerable ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}>
               {sqlinjection.vulnerable ? 'VULNERABLE' : 'SECURE'}
             </Badge>
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Payloads Tested</p>
-            <p className="text-2xl font-bold text-cyan-400">{sqlinjection.testedPayloads}</p>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Payloads Tested</p>
+            <p className="text-2xl font-bold text-cyan-500 dark:text-cyan-400">{sqlinjection.testedPayloads}</p>
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Vulnerabilities Found</p>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Vulnerabilities Found</p>
             <p className="text-2xl font-bold text-red-400">{sqlinjection.vulnerabilities.length}</p>
           </div>
         </div>
 
         {sqlinjection.method && (
-          <div className="bg-slate-800 rounded-lg p-3">
-            <p className="text-xs text-slate-400 flex items-center gap-2">
+          <div className="bg-muted rounded-lg p-3">
+            <p className="text-xs text-muted-foreground flex items-center gap-2">
               <Info className="h-3 w-3" />
               Testing Method: {sqlinjection.method}
             </p>
@@ -70,7 +70,7 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
 
         {sqlinjection.vulnerabilities.length > 0 ? (
           <>
-            <Alert variant="destructive" className="bg-red-950/30 border-red-800">
+            <Alert variant="destructive" className="bg-red-100 dark:bg-red-950/30 border-red-300 dark:border-red-800">
               <Lightbulb className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-semibold mb-2">🛡️ Mitigation Recommendations:</div>
@@ -93,7 +93,7 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
               </h4>
               <div className="space-y-3">
                 {sqlinjection.vulnerabilities.map((vuln, index) => (
-                <div key={index} className="bg-slate-800 rounded-lg p-4 border border-red-900/30">
+                <div key={index} className="bg-muted rounded-lg p-4 border border-red-900/50 dark:border-red-900/30">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex gap-2">
                       <Badge className={getSeverityColor(vuln.severity)}>
@@ -109,21 +109,21 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
                   <div className="space-y-2">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <Code className="h-3 w-3 text-slate-400" />
-                        <span className="text-xs text-slate-400">Payload:</span>
+                        <Code className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Payload:</span>
                       </div>
-                      <p className="text-sm text-white font-mono bg-slate-950 p-2 rounded break-all">
+                      <p className="text-sm text-foreground font-mono bg-muted/50 p-2 rounded break-all">
                         {vuln.payload}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 mb-1">Indicator:</p>
-                      <p className="text-sm text-red-400">{vuln.indicator}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Indicator:</p>
+                      <p className="text-sm text-red-600 dark:text-red-400">{vuln.indicator}</p>
                     </div>
                     {vuln.evidence && (
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">Evidence:</p>
-                        <p className="text-xs text-slate-300 bg-slate-950 p-2 rounded font-mono break-all">
+                        <p className="text-xs text-muted-foreground mb-1">Evidence:</p>
+                        <p className="text-xs text-foreground bg-muted/50 p-2 rounded font-mono break-all">
                           {vuln.evidence}
                         </p>
                       </div>
@@ -135,8 +135,8 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
             </div>
           </>
         ) : (
-          <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
-            <p className="text-green-400 text-sm flex items-center gap-2">
+          <div className="bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-800 rounded-lg p-4">
+            <p className="text-green-700 dark:text-green-400 text-sm flex items-center gap-2">
               <Shield className="h-4 w-4" />
               No SQL injection vulnerabilities detected
             </p>

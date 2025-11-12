@@ -223,7 +223,7 @@ export const generatePDFReport = (scan: Scan) => {
       vuln.type || 'N/A',
       vuln.parameter || 'N/A',
       vuln.payload.substring(0, 40) + '...',
-      vuln.evidence?.substring(0, 60) + '...' || 'N/A',
+      vuln.evidence ? vuln.evidence.substring(0, 60) + '...' : 'N/A',
     ]);
     
     autoTable(doc, {
@@ -254,7 +254,7 @@ export const generatePDFReport = (scan: Scan) => {
       vuln.type || 'N/A',
       vuln.parameter || vuln.location || 'N/A',
       vuln.payload.substring(0, 40) + '...',
-      vuln.evidence?.substring(0, 60) + '...' || 'N/A',
+      vuln.evidence ? vuln.evidence.substring(0, 60) + '...' : 'N/A',
     ]);
     
     autoTable(doc, {

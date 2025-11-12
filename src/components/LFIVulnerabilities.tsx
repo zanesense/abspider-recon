@@ -25,7 +25,7 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-400">
+          <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
             <FileWarning className="h-5 w-5" />
             LFI Vulnerability Assessment
           </CardTitle>
@@ -47,7 +47,7 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-orange-400">
+        <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
           <FileWarning className="h-5 w-5" />
           LFI Vulnerability Assessment
         </CardTitle>
@@ -58,14 +58,14 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
       <CardContent className="space-y-4">
         {lfi.vulnerable && lfi.vulnerabilities.length > 0 ? (
           <>
-            <Alert variant="destructive" className="bg-red-950/30 border-red-800">
+            <Alert variant="destructive" className="bg-red-100 dark:bg-red-950/30 border-red-300 dark:border-red-800">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="font-semibold">
                 {lfi.vulnerabilities.length} Local File Inclusion vulnerabilit{lfi.vulnerabilities.length === 1 ? 'y' : 'ies'} detected!
               </AlertDescription>
             </Alert>
 
-            <Alert variant="destructive" className="bg-red-950/30 border-red-800 mt-4">
+            <Alert variant="destructive" className="bg-red-100 dark:bg-red-950/30 border-red-300 dark:border-red-800 mt-4">
               <Lightbulb className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-semibold mb-2">🛡️ Mitigation Recommendations:</div>
@@ -113,7 +113,7 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
 
                   <div className="mb-2">
                     <span className="text-xs text-muted-foreground block mb-1">Indicator:</span>
-                    <div className="text-sm text-amber-400 font-mono">
+                    <div className="text-sm text-amber-600 dark:text-amber-400 font-mono">
                       {vuln.indicator}
                     </div>
                   </div>
@@ -131,9 +131,9 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
             </div>
           </>
         ) : (
-          <Alert className="bg-green-950/30 border-green-800">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <AlertDescription className="text-green-400">
+          <Alert className="bg-green-100 dark:bg-green-900/20 border-green-300 dark:border-green-800">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
+            <AlertDescription className="text-green-700 dark:text-green-400">
               No Local File Inclusion vulnerabilities detected
             </AlertDescription>
           </Alert>
