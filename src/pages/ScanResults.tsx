@@ -20,6 +20,7 @@ import SubdomainList from '@/components/SubdomainList';
 import ReverseIPInfo from '@/components/ReverseIPInfo';
 import SQLVulnerabilities from '@/components/SQLVulnerabilities';
 import XSSVulnerabilities from '@/components/XSSVulnerabilities';
+import LFIVulnerabilities from '@/components/LFIVulnerabilities';
 import WordPressInfo from '@/components/WordPressInfo';
 import SEOInfo from '@/components/SEOInfo';
 
@@ -235,6 +236,12 @@ const ScanResults = () => {
           {scan.results.xss && (
             <div className={blockClass}>
               <XSSVulnerabilities xss={scan.results.xss} />
+            </div>
+          )}
+
+          {scan.results.lfi && (
+            <div className={blockClass}>
+              <LFIVulnerabilities lfi={scan.results.lfi} />
             </div>
           )}
 

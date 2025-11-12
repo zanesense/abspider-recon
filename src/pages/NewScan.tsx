@@ -21,7 +21,6 @@ const NewScan = () => {
     // Basic Scans
     siteInfo: true,
     headers: true,
-    banners: true,
     // Network & Domain Intelligence
     whois: true,
     geoip: true,
@@ -35,12 +34,11 @@ const NewScan = () => {
     // Vulnerability Scans
     sqlinjection: false,
     xss: false,
+    lfi: false,
     // CMS Specific
     wordpress: false,
     // SEO & Analytics
     seo: true,
-    alexa: true,
-    linkGrabber: true,
     // Settings
     useProxy: false,
     threads: 20,
@@ -149,16 +147,6 @@ const NewScan = () => {
                     />
                     <label htmlFor="headers" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">HTTP Headers</span> - Server response headers
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="banners"
-                      checked={formData.banners}
-                      onCheckedChange={(checked) => setFormData({ ...formData, banners: checked as boolean })}
-                    />
-                    <label htmlFor="banners" className="text-sm text-foreground cursor-pointer">
-                      <span className="font-medium">Banner Grabbing</span> - Service detection
                     </label>
                   </div>
                 </div>
@@ -295,6 +283,16 @@ const NewScan = () => {
                       <span className="font-medium">XSS Detection</span> - Cross-site scripting test
                     </label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="lfi"
+                      checked={formData.lfi}
+                      onCheckedChange={(checked) => setFormData({ ...formData, lfi: checked as boolean })}
+                    />
+                    <label htmlFor="lfi" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">LFI Detection</span> - Local file inclusion test
+                    </label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -347,26 +345,6 @@ const NewScan = () => {
                     />
                     <label htmlFor="seo" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">SEO Analysis</span> - Meta tags, headings, links
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="alexa"
-                      checked={formData.alexa}
-                      onCheckedChange={(checked) => setFormData({ ...formData, alexa: checked as boolean })}
-                    />
-                    <label htmlFor="alexa" className="text-sm text-foreground cursor-pointer">
-                      <span className="font-medium">Alexa & Metrics</span> - Rankings and analytics
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="linkGrabber"
-                      checked={formData.linkGrabber}
-                      onCheckedChange={(checked) => setFormData({ ...formData, linkGrabber: checked as boolean })}
-                    />
-                    <label htmlFor="linkGrabber" className="text-sm text-foreground cursor-pointer">
-                      <span className="font-medium">Link Grabber</span> - Extract all links
                     </label>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Loader2, Timer } from 'lucide-react';
 import { Scan } from '@/services/scanService';
 
 interface ScanStatusProps {
@@ -29,6 +29,21 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     ? (scan.progress.current / scan.progress.total) * 100 
     : 0;
 
+  const formatElapsedTime = (ms?: number) => {
+    if (!ms && ms !== 0) return 'N/A';
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  };
+
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
@@ -53,16 +68,25 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
             </div>
           </div>
           <div>
-            <p className="text-sm text-slate-400 mb-1">Configuration</p>
-            <div className="flex flex-wrap gap-1">
-              {scan.config.geoip && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">GeoIP</span>}
-              {scan.config.headers && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Headers</span>}
-              {scan.config.whois && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">WHOIS</span>}
-              {scan.config.subdomains && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Subdomains</span>}
-              {scan.config.ports && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Ports</span>}
-              {scan.config.sqlinjection && <span className="px-2 py-1 bg-red-900 rounded text-xs text-red-300">SQL</span>}
-              {scan.config.xss && <span className="px-2 py-1 bg-red-900 rounded text-xs text-red-300">XSS</span>}
+            <p className="text-sm text-slate-400 mb-1">Elapsed Time</p>
+            <div className="flex items-center gap-2 text-white">
+              <Timer className="h-4 w-4" />
+              <span className="text-sm font-mono">{formatElapsedTime(scan.elapsedMs)}</span>
             </div>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-slate-800">
+          <p className="text-sm text-slate-400 mb-2">Active Modules</p>
+          <div className="flex flex-wrap gap-1">
+            {scan.config.geoip && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">GeoIP</span>}
+            {scan.config.headers && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Headers</span>}
+            {scan.config.whois && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">WHOIS</span>}
+            {scan.config.subdomains && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Subdomains</span>}
+            {scan.config.ports && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Ports</span>}
+            {scan.config.sqlinjection && <span className="px-2 py-1 bg-red-900 rounded text-xs text-red-300">SQL</span>}
+            {scan.config.xss && <span className="px-2 py-1 bg-red-900 rounded text-xs text-red-300">XSS</span>}
+            {scan.config.lfi && <span className="px-2 py-1 bg-red-900 rounded text-xs text-red-300">LFI</span>}
           </div>
         </div>
 
