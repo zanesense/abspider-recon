@@ -5,6 +5,7 @@ import { scanCommonPorts } from './portService';
 import { performGeoIPLookup } from './geoipService';
 import { performSQLScan } from './sqlScanService';
 import { performXSSScan } from './xssScanService';
+import { performLFIScan } from './lfiScanService';
 import { performSiteInfoScan } from './siteInfoService';
 import { performDNSLookup } from './dnsService';
 import { performMXLookup } from './mxService';
@@ -14,6 +15,7 @@ import { performSEOAnalysis } from './seoService';
 import { calculateSubnet } from './subnetService';
 import { setProxyList } from './apiUtils';
 import { getSettings } from './settingsService';
+import { createRequestManager, RequestManager } from './requestManager';
 
 interface ScanConfig {
   target: string;
@@ -29,6 +31,7 @@ interface ScanConfig {
   reverseip: boolean;
   sqlinjection: boolean;
   xss: boolean;
+  lfi: boolean;
   wordpress: boolean;
   seo: boolean;
   useProxy: boolean;
@@ -40,7 +43,9 @@ export interface Scan {
   target: string;
   status: 'running' | 'completed' | 'failed' | 'paused' | 'stopped';
   timestamp: string;
+  startedAt?: string;
   completedAt?: string;
+  elapsedMs?: number;
   config: ScanConfig;
   results: {
     siteInfo?: any;
@@ -55,6 +60,7 @@ export interface Scan {
     reverseip?: any;
     sqlinjection?: any;
     xss?: any;
+    lfi?: any;
     wordpress?: any;
     seo?: any;
   };
@@ -67,7 +73,13 @@ export interface Scan {
 }
 
 const STORAGE_KEY = 'abspider-scans';
-const scanControllers = new Map<string, { paused: boolean; stopped: boolean }>();
+const scanControllers = new Map<string, { 
+  paused: boolean; 
+  stopped: boolean;
+  abortController?: AbortController;
+  requestManager?: RequestManager;
+  elapsedInterval?: NodeJS.Timeout;
+}>();
 
 const loadScansFromStorage = (): Scan[] => {
   try {
@@ -151,12 +163,20 @@ export const stopScan = (id: string) => {
   const controller = scanControllers.get(id);
   if (controller) {
     controller.stopped = true;
+    controller.abortController?.abort();
+    controller.requestManager?.abortAll();
+    if (controller.elapsedInterval) {
+      clearInterval(controller.elapsedInterval);
+    }
   }
   
   const scan = scansCache.find(s => s.id === id);
   if (scan && (scan.status === 'running' || scan.status === 'paused')) {
     scan.status = 'stopped';
     scan.completedAt = new Date().toISOString();
+    if (scan.startedAt) {
+      scan.elapsedMs = Date.now() - new Date(scan.startedAt).getTime();
+    }
     updateScan(scan);
   }
 };
@@ -165,12 +185,20 @@ export const stopAllScans = () => {
   console.log('[Scan Control] Stopping all scans');
   scanControllers.forEach((controller) => {
     controller.stopped = true;
+    controller.abortController?.abort();
+    controller.requestManager?.abortAll();
+    if (controller.elapsedInterval) {
+      clearInterval(controller.elapsedInterval);
+    }
   });
   
   scansCache.forEach(scan => {
     if (scan.status === 'running' || scan.status === 'paused') {
       scan.status = 'stopped';
       scan.completedAt = new Date().toISOString();
+      if (scan.startedAt) {
+        scan.elapsedMs = Date.now() - new Date(scan.startedAt).getTime();
+      }
       updateScan(scan);
     }
   });
@@ -179,11 +207,14 @@ export const stopAllScans = () => {
 export const startScan = async (config: ScanConfig): Promise<string> => {
   console.log('[Start Scan] Initiating comprehensive scan', config);
   
+  const now = new Date().toISOString();
   const newScan: Scan = {
     id: `scan-${Date.now()}`,
     target: config.target,
     status: 'running',
-    timestamp: new Date().toISOString(),
+    timestamp: now,
+    startedAt: now,
+    elapsedMs: 0,
     config,
     results: {},
     errors: [],
@@ -194,7 +225,24 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     },
   };
 
-  scanControllers.set(newScan.id, { paused: false, stopped: false });
+  const abortController = new AbortController();
+  const requestManager = createRequestManager(abortController);
+
+  const elapsedInterval = setInterval(() => {
+    const scan = scansCache.find(s => s.id === newScan.id);
+    if (scan && scan.status === 'running' && scan.startedAt) {
+      scan.elapsedMs = Date.now() - new Date(scan.startedAt).getTime();
+      updateScan(scan);
+    }
+  }, 1000);
+
+  scanControllers.set(newScan.id, { 
+    paused: false, 
+    stopped: false,
+    abortController,
+    requestManager,
+    elapsedInterval,
+  });
 
   const settings = getSettings();
   if (config.useProxy && settings.proxyList) {
@@ -209,9 +257,16 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     console.error(`[Scan Failed] Scan ${newScan.id} encountered critical error:`, error);
     newScan.status = 'completed';
     newScan.completedAt = new Date().toISOString();
+    if (newScan.startedAt) {
+      newScan.elapsedMs = Date.now() - new Date(newScan.startedAt).getTime();
+    }
     newScan.errors?.push(`Critical error: ${error.message}`);
     updateScan(newScan);
   }).finally(() => {
+    const controller = scanControllers.get(newScan.id);
+    if (controller?.elapsedInterval) {
+      clearInterval(controller.elapsedInterval);
+    }
     scanControllers.delete(newScan.id);
   });
 
@@ -256,8 +311,12 @@ const performScan = async (scan: Scan) => {
   if (config.reverseip) tasks.push('reverseip');
   if (config.sqlinjection) tasks.push('sqlinjection');
   if (config.xss) tasks.push('xss');
+  if (config.lfi) tasks.push('lfi');
   if (config.wordpress) tasks.push('wordpress');
   if (config.seo) tasks.push('seo');
+
+  const controller = scanControllers.get(scan.id);
+  const requestManager = controller?.requestManager;
 
   scan.progress = {
     current: 0,
@@ -494,6 +553,24 @@ const performScan = async (scan: Scan) => {
     }
   }
 
+  if (config.lfi) {
+    if (await checkScanControl(scan.id)) return;
+    try {
+      scan.progress.stage = 'Testing Local File Inclusion';
+      updateScan(scan);
+      const result = await performLFIScan(config.target, requestManager);
+      scan.results.lfi = result;
+      console.log('[LFI] ✓ Success');
+    } catch (error: any) {
+      console.error('[LFI] ✗ Error:', error);
+      scan.errors?.push(`LFI: ${error.message}`);
+    } finally {
+      completed++;
+      scan.progress.current = completed;
+      updateScan(scan);
+    }
+  }
+
   if (config.wordpress) {
     if (await checkScanControl(scan.id)) return;
     try {
@@ -545,6 +622,9 @@ const performScan = async (scan: Scan) => {
   }
   
   scan.completedAt = new Date().toISOString();
+  if (scan.startedAt) {
+    scan.elapsedMs = Date.now() - new Date(scan.startedAt).getTime();
+  }
   scan.progress.stage = scan.status === 'stopped' ? 'Scan stopped' : 'Scan complete';
   updateScan(scan);
   
