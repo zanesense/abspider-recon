@@ -37,6 +37,12 @@ The application runs on Vite's dev server configured for Replit:
 - All hosts allowed for iframe proxy compatibility
 
 ## Recent Changes
+- 2025-11-12: Enhanced ABSpider with unified CORS bypass and modern recon dashboard
+  - Created unified CORS bypass system (fetchWithBypass utilities) with metadata tracking
+  - Updated 6 scan services to use consistent CORS bypass pattern
+  - Enhanced dashboard with modern recon aesthetics (animated stats, live activity feed, scan modules matrix, system health)
+  - Added CORS bypass status indicators to result components (SiteInfo, HeadersAnalysis, WordPressInfo, SQLVulnerabilities)
+  - All services now track CORS bypass metadata (usedProxy, proxyUrl, attempts)
 - 2025-01-12: Initial Replit environment setup
   - Configured Vite for Replit proxy (0.0.0.0:5000, allowedHosts: true)
   - Set up development workflow

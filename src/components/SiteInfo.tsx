@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Globe, Server, Shield, FileText, Clock } from 'lucide-react';
+import CORSBypassIndicator from './CORSBypassIndicator';
+import { CORSBypassMetadata } from '@/services/corsProxy';
 
 interface SiteInfoProps {
   siteInfo: {
@@ -18,6 +20,8 @@ interface SiteInfoProps {
       keywords?: string;
       author?: string;
     };
+    corsMetadata?: CORSBypassMetadata;
+    robotsTxtMetadata?: CORSBypassMetadata;
   };
 }
 
@@ -25,10 +29,13 @@ const SiteInfo = ({ siteInfo }: SiteInfoProps) => {
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-cyan-500" />
-          Site Information
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5 text-cyan-500" />
+            Site Information
+          </CardTitle>
+          <CORSBypassIndicator metadata={siteInfo.corsMetadata} />
+        </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

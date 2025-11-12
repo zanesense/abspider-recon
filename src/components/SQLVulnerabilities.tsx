@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Shield, Code, Info, Lightbulb } from 'lucide-react';
+import CORSBypassIndicator from './CORSBypassIndicator';
+import { CORSBypassMetadata } from '@/services/corsProxy';
 
 interface SQLVulnerabilitiesProps {
   sqlinjection: {
@@ -16,6 +18,7 @@ interface SQLVulnerabilitiesProps {
     }>;
     tested: boolean;
     method?: string;
+    corsMetadata?: CORSBypassMetadata;
   };
 }
 
@@ -32,14 +35,17 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-foreground flex items-center gap-2">
-          {sqlinjection.vulnerable ? (
-            <AlertTriangle className="h-5 w-5 text-red-400" />
-          ) : (
-            <Shield className="h-5 w-5 text-green-400" />
-          )}
-          SQL Injection Scan
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-foreground flex items-center gap-2">
+            {sqlinjection.vulnerable ? (
+              <AlertTriangle className="h-5 w-5 text-red-400" />
+            ) : (
+              <Shield className="h-5 w-5 text-green-400" />
+            )}
+            SQL Injection Scan
+          </CardTitle>
+          <CORSBypassIndicator metadata={sqlinjection.corsMetadata} />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

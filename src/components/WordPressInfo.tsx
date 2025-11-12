@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Globe, AlertTriangle, Shield, FileText } from 'lucide-react';
+import CORSBypassIndicator from './CORSBypassIndicator';
+import { CORSBypassMetadata } from '@/services/corsProxy';
 
 interface WordPressInfoProps {
   wordpress: {
@@ -18,26 +20,11 @@ interface WordPressInfoProps {
     }>;
     plugins: string[];
     themes: string[];
+    corsMetadata?: CORSBypassMetadata;
   };
 }
 
 const WordPressInfo = ({ wordpress }: WordPressInfoProps) => {
-  if (!wordpress.isWordPress) {
-    return (
-      <Card className="bg-slate-900 border-slate-800">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Globe className="h-5 w-5 text-green-400" />
-            WordPress Scanner
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-slate-400">This site is not running WordPress</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'high': return 'bg-red-500/20 text-red-400 border-red-500/30';
@@ -50,11 +37,19 @@ const WordPressInfo = ({ wordpress }: WordPressInfoProps) => {
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <Globe className="h-5 w-5 text-green-400" />
-          WordPress Scanner
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-white flex items-center gap-2">
+            <Globe className="h-5 w-5 text-green-400" />
+            WordPress Scanner
+          </CardTitle>
+          <CORSBypassIndicator metadata={wordpress.corsMetadata} />
+        </div>
       </CardHeader>
+      {!wordpress.isWordPress ? (
+        <CardContent>
+          <p className="text-slate-400">This site is not running WordPress</p>
+        </CardContent>
+      ) : (
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-slate-800 rounded-lg p-4">
@@ -141,6 +136,7 @@ const WordPressInfo = ({ wordpress }: WordPressInfoProps) => {
           )}
         </div>
       </CardContent>
+      )}
     </Card>
   );
 };
