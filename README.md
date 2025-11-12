@@ -123,7 +123,7 @@ PDF reports are designed for professional security analysis and include:
 
 ## 📸 Interface
 
-<img src="https://i.ibb.co/67FN7czS/localhost-5000.png" alt="abspider" border="0">
+<img src="https://i.postimg.cc/pLnNpBJH/localhost-5000.png">
 
 ---
 
