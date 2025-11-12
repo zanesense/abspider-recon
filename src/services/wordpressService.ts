@@ -1,4 +1,5 @@
 import { normalizeUrl } from './apiUtils';
+import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
 
 export interface WordPressScanResult {
   isWordPress: boolean;
@@ -15,6 +16,7 @@ export interface WordPressScanResult {
   }>;
   plugins: string[];
   themes: string[];
+  corsMetadata?: CORSBypassMetadata;
 }
 
 const SENSITIVE_FILES = [
@@ -25,53 +27,6 @@ const SENSITIVE_FILES = [
   'wp-content/debug.log',
   'xmlrpc.php',
 ];
-
-const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-];
-
-const fetchWithProxy = async (url: string, timeout: number = 5000): Promise<Response | null> => {
-  // Try direct fetch
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      signal: controller.signal,
-      mode: 'cors',
-    });
-    
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error) {
-    console.log('[WordPress] Direct fetch failed, trying proxy...');
-  }
-  
-  // Try with proxy
-  for (const proxy of CORS_PROXIES) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
-      const response = await fetch(proxy + encodeURIComponent(url), {
-        method: 'GET',
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        return response;
-      }
-    } catch (error) {
-      continue;
-    }
-  }
-  
-  return null;
-};
 
 export const performWordPressScan = async (target: string): Promise<WordPressScanResult> => {
   console.log(`[WordPress] Starting scan for ${target}`);
@@ -87,13 +42,10 @@ export const performWordPressScan = async (target: string): Promise<WordPressSca
   try {
     const url = normalizeUrl(target);
 
-    const response = await fetchWithProxy(url, 10000);
+    const fetchResult = await fetchWithBypass(url, { timeout: 10000 });
+    result.corsMetadata = fetchResult.metadata;
     
-    if (!response) {
-      throw new Error('Unable to fetch site. CORS restrictions may be blocking the scan.');
-    }
-
-    const html = await response.text();
+    const html = await fetchResult.response.text();
 
     // Check if it's WordPress
     if (!html.includes('wp-content') && !html.includes('wordpress') && !html.includes('wp-includes')) {
@@ -120,10 +72,10 @@ export const performWordPressScan = async (target: string): Promise<WordPressSca
     for (const file of SENSITIVE_FILES) {
       try {
         const fileUrl = `${url}/${file}`;
-        const fileResponse = await fetchWithProxy(fileUrl, 3000);
+        const fileResult = await fetchWithBypass(fileUrl, { timeout: 3000 });
 
-        if (fileResponse && fileResponse.ok) {
-          const size = fileResponse.headers.get('content-length');
+        if (fileResult.response.ok) {
+          const size = fileResult.response.headers.get('content-length');
           result.sensitiveFiles.push({
             path: file,
             accessible: true,

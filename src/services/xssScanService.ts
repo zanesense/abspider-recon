@@ -1,5 +1,5 @@
 import { normalizeUrl } from './apiUtils';
-import { bypassCloudflare } from './cloudflareBypass';
+import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
 
 export interface XSSScanResult {
   vulnerable: boolean;
@@ -14,6 +14,7 @@ export interface XSSScanResult {
     confidence: number;
   }>;
   tested: boolean;
+  corsMetadata?: CORSBypassMetadata;
 }
 
 const XSS_PAYLOADS = [
@@ -205,7 +206,11 @@ export const performXSSScan = async (target: string): Promise<XSSScanResult> => 
 
           console.log(`[XSS Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 40)}...`);
 
-          const response = await bypassCloudflare(testUrl.toString());
+          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000 });
+          if (!result.corsMetadata) {
+            result.corsMetadata = testResult.metadata;
+          }
+          const response = testResult.response;
           result.testedPayloads++;
 
           const text = await response.text();

@@ -1,4 +1,5 @@
 import { normalizeUrl, extractDomain } from './apiUtils';
+import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
 
 export interface SiteInfo {
   title?: string;
@@ -15,65 +16,9 @@ export interface SiteInfo {
     keywords?: string;
     author?: string;
   };
+  corsMetadata?: CORSBypassMetadata;
+  robotsTxtMetadata?: CORSBypassMetadata;
 }
-
-const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-];
-
-let currentProxyIndex = 0;
-
-const fetchWithProxy = async (url: string, timeout: number = 15000): Promise<Response> => {
-  const errors: string[] = [];
-  
-  // Try direct fetch first
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      signal: controller.signal,
-      mode: 'cors',
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (response.ok || response.type !== 'opaque') {
-      return response;
-    }
-  } catch (error: any) {
-    errors.push(`Direct: ${error.message}`);
-    console.log('[Site Info] Direct fetch failed, trying proxies...');
-  }
-  
-  // Try with CORS proxies
-  for (let i = 0; i < CORS_PROXIES.length; i++) {
-    const proxyUrl = CORS_PROXIES[(currentProxyIndex + i) % CORS_PROXIES.length];
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
-      const response = await fetch(proxyUrl + encodeURIComponent(url), {
-        method: 'GET',
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        currentProxyIndex = (currentProxyIndex + i) % CORS_PROXIES.length;
-        console.log(`[Site Info] Success with proxy: ${proxyUrl}`);
-        return response;
-      }
-    } catch (error: any) {
-      errors.push(`Proxy ${i}: ${error.message}`);
-    }
-  }
-  
-  throw new Error(`All fetch attempts failed: ${errors.join(', ')}`);
-};
 
 export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => {
   console.log(`[Site Info] Starting comprehensive scan for ${target}`);
@@ -101,16 +46,20 @@ export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => 
       console.warn('[Site Info] DNS lookup failed:', error);
     }
 
-    // Try to fetch the page
+    // Try to fetch the page using unified CORS bypass
     const startTime = Date.now();
     let response: Response;
     let html = '';
     
     try {
-      response = await fetchWithProxy(url, 15000);
+      const fetchResult = await fetchWithBypass(url, { timeout: 15000 });
       result.responseTime = Date.now() - startTime;
+      result.corsMetadata = fetchResult.metadata;
+      
+      // Clone response before text() to preserve headers access
+      response = fetchResult.response.clone();
       result.statusCode = response.status;
-      html = await response.text();
+      html = await fetchResult.response.text();
       
       // Extract title
       const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -181,10 +130,11 @@ export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => 
       // Try to get robots.txt
       try {
         const robotsUrl = `${url}/robots.txt`;
-        const robotsResponse = await fetchWithProxy(robotsUrl, 5000);
+        const robotsResult = await fetchWithBypass(robotsUrl, { timeout: 5000 });
         
-        if (robotsResponse.ok) {
-          result.robotsTxt = await robotsResponse.text();
+        if (robotsResult.response.ok) {
+          result.robotsTxt = await robotsResult.response.text();
+          result.robotsTxtMetadata = robotsResult.metadata;
           console.log(`[Site Info] robots.txt found (${result.robotsTxt.length} bytes)`);
         }
       } catch (error) {

@@ -1,5 +1,5 @@
 import { normalizeUrl } from './apiUtils';
-import { bypassCloudflare } from './cloudflareBypass';
+import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
 import { RequestManager } from './requestManager';
 
 export interface LFIScanResult {
@@ -15,6 +15,7 @@ export interface LFIScanResult {
     confidence: number;
   }>;
   tested: boolean;
+  corsMetadata?: CORSBypassMetadata;
 }
 
 const LFI_ERROR_PATTERNS = [
@@ -145,8 +146,9 @@ export const performLFIScan = async (
     // Get baseline
     let baselineLength = 0;
     try {
-      const baselineResponse = await bypassCloudflare(url);
-      const baselineText = await baselineResponse.text();
+      const baselineResult = await fetchWithBypass(url, { timeout: 10000 });
+      result.corsMetadata = baselineResult.metadata;
+      const baselineText = await baselineResult.response.text();
       baselineLength = baselineText.length;
       console.log(`[LFI Scan] Baseline: ${baselineLength} bytes`);
     } catch (error) {
@@ -163,9 +165,13 @@ export const performLFIScan = async (
 
           console.log(`[LFI Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 40)}...`);
 
-          const response = requestManager 
-            ? await requestManager.fetch(testUrl.toString())
-            : await bypassCloudflare(testUrl.toString());
+          let response: Response;
+          if (requestManager) {
+            response = await requestManager.fetch(testUrl.toString());
+          } else {
+            const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000 });
+            response = testResult.response;
+          }
           
           result.testedPayloads++;
 

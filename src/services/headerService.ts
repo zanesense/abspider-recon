@@ -1,5 +1,5 @@
 import { normalizeUrl } from './apiUtils';
-import { corsProxy } from './corsProxy';
+import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
 
 export interface SecurityHeader {
   name: string;
@@ -38,6 +38,7 @@ export interface HeaderAnalysisResult {
     allowMethods?: string;
     issues: string[];
   };
+  corsMetadata?: CORSBypassMetadata;
 }
 
 const SECURITY_HEADERS = [
@@ -98,7 +99,8 @@ export const performFullHeaderAnalysis = async (
   try {
     const url = normalizeUrl(target);
     
-    const response = await corsProxy.fetch(url);
+    const fetchResult = await fetchWithBypass(url);
+    const response = fetchResult.response;
     
     const headers: Record<string, string> = {};
     response.headers.forEach((value, key) => {
@@ -223,6 +225,7 @@ export const performFullHeaderAnalysis = async (
       cookies,
       cacheControl: cacheAnalysis,
       cors: corsAnalysis,
+      corsMetadata: fetchResult.metadata,
     };
   } catch (error: any) {
     console.error('[Headers] Error:', error);

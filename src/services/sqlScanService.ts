@@ -1,5 +1,5 @@
 import { normalizeUrl } from './apiUtils';
-import { bypassCloudflare } from './cloudflareBypass';
+import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
 
 export interface SQLScanResult {
   vulnerable: boolean;
@@ -15,6 +15,7 @@ export interface SQLScanResult {
   }>;
   tested: boolean;
   method: string;
+  corsMetadata?: CORSBypassMetadata;
 }
 
 const SQL_ERROR_PATTERNS = [
@@ -109,7 +110,7 @@ const testTimeBased = async (url: string): Promise<{ vulnerable: boolean; durati
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     
-    await bypassCloudflare(url);
+    await fetchWithBypass(url, { timeout: 8000 });
     
     clearTimeout(timeoutId);
     const duration = Date.now() - startTime;
@@ -172,7 +173,9 @@ export const performSQLScan = async (target: string): Promise<SQLScanResult> => 
     let baselineLength = 0;
     
     try {
-      baselineResponse = await bypassCloudflare(url);
+      const baselineResult = await fetchWithBypass(url, { timeout: 10000 });
+      result.corsMetadata = baselineResult.metadata;
+      baselineResponse = baselineResult.response;
       baselineText = await baselineResponse.text();
       baselineStatus = baselineResponse.status;
       baselineLength = baselineText.length;
@@ -217,7 +220,8 @@ export const performSQLScan = async (target: string): Promise<SQLScanResult> => 
           }
 
           // Error-based and other testing
-          const response = await bypassCloudflare(testUrl.toString());
+          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000 });
+          const response = testResult.response;
           result.testedPayloads++;
 
           const text = await response.text();

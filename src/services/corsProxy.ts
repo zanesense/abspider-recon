@@ -131,3 +131,137 @@ export class CORSBypass {
 }
 
 export const corsProxy = new CORSBypass();
+
+// Metadata about CORS bypass usage
+export interface CORSBypassMetadata {
+  usedProxy: boolean;
+  proxyUrl?: string;
+  attemptsDirect: boolean;
+  attemptsViaProxy: number;
+}
+
+// Enhanced fetch result with metadata
+export interface FetchWithBypassResult {
+  response: Response;
+  metadata: CORSBypassMetadata;
+}
+
+/**
+ * Unified CORS bypass helper with metadata tracking
+ * Tries direct fetch first, then falls back to CORS proxies if needed
+ */
+export async function fetchWithBypass(
+  url: string,
+  options: FetchOptions & { signal?: AbortSignal } = {}
+): Promise<FetchWithBypassResult> {
+  const { method = 'GET', headers = {}, body, timeout = 20000, signal } = options;
+  const errors: string[] = [];
+  const metadata: CORSBypassMetadata = {
+    usedProxy: false,
+    attemptsDirect: true,
+    attemptsViaProxy: 0,
+  };
+
+  // Try direct fetch with Cloudflare bypass headers
+  try {
+    console.log(`[fetchWithBypass] Attempting direct fetch: ${url}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    // Combine signals if provided
+    if (signal) {
+      signal.addEventListener('abort', () => controller.abort());
+    }
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        ...CLOUDFLARE_BYPASS_HEADERS,
+        ...headers,
+      },
+      body,
+      signal: controller.signal,
+      mode: 'cors',
+      credentials: 'omit',
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok || (response.status >= 200 && response.status < 400)) {
+      console.log(`[fetchWithBypass] ✓ Direct fetch successful`);
+      return { response, metadata };
+    }
+
+    // Check if blocked by Cloudflare
+    if (response.status === 403 || response.status === 503) {
+      const text = await response.text();
+      if (text.includes('cloudflare') || text.includes('cf-ray')) {
+        console.log(`[fetchWithBypass] Cloudflare protection detected, trying proxies...`);
+      }
+    }
+  } catch (error: any) {
+    errors.push(`Direct: ${error.message}`);
+    console.log(`[fetchWithBypass] Direct fetch failed: ${error.message}`);
+  }
+
+  // Try with CORS proxies
+  for (let attempt = 0; attempt < CORS_PROXIES.length; attempt++) {
+    metadata.attemptsViaProxy++;
+    const proxy = CORS_PROXIES[attempt];
+
+    try {
+      console.log(`[fetchWithBypass] Trying proxy ${attempt + 1}/${CORS_PROXIES.length}: ${proxy}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      // Combine signals if provided
+      if (signal) {
+        signal.addEventListener('abort', () => controller.abort());
+      }
+
+      const proxyUrl = proxy + encodeURIComponent(url);
+      const response = await fetch(proxyUrl, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        console.log(`[fetchWithBypass] ✓ Success with proxy: ${proxy}`);
+        metadata.usedProxy = true;
+        metadata.proxyUrl = proxy;
+        return { response, metadata };
+      }
+    } catch (error: any) {
+      errors.push(`Proxy ${attempt + 1}: ${error.message}`);
+      console.log(`[fetchWithBypass] Proxy ${attempt + 1} failed: ${error.message}`);
+    }
+  }
+
+  throw new Error(`All CORS bypass attempts failed. Errors: ${errors.join(' | ')}`);
+}
+
+/**
+ * Fetch text with CORS bypass and metadata
+ */
+export async function fetchTextWithBypass(
+  url: string,
+  options?: FetchOptions & { signal?: AbortSignal }
+): Promise<{ text: string; metadata: CORSBypassMetadata }> {
+  const result = await fetchWithBypass(url, options);
+  const text = await result.response.text();
+  return { text, metadata: result.metadata };
+}
+
+/**
+ * Fetch JSON with CORS bypass and metadata
+ */
+export async function fetchJSONWithBypass<T = any>(
+  url: string,
+  options?: FetchOptions & { signal?: AbortSignal }
+): Promise<{ data: T; metadata: CORSBypassMetadata }> {
+  const result = await fetchWithBypass(url, options);
+  const data = await result.response.json();
+  return { data, metadata: result.metadata };
+}
