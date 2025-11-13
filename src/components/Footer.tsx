@@ -12,7 +12,7 @@ const Footer = () => {
             <span className="text-border">•</span>
             {/* CLEANED UP FORMATTING HERE */}
             <a
-              href="/docs/index.html"
+              href="https://zanesense.github.io/abspider-recon/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary/80 transition-colors"
