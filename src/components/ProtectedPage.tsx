@@ -15,7 +15,7 @@ const ProtectedPage: React.FC = () => {
 
     try {
       // Secure API call to your Vercel Serverless Function
-      const response = await fetch('@/api/check-password', {
+      const response = await fetch('/api/check-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
