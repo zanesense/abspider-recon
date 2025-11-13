@@ -1,30 +1,28 @@
-// api/check-password.js
-// CORRECTED to use ADMIN_PASSWORD
+// api/check-password.cjs
+// This file uses CommonJS (CJS) syntax, indicated by the .cjs extension.
 
 module.exports = async (req, res) => {
   // 1. Enforce POST method
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+    return res.status(405).json({ success: false, message: 'Method Not Allowed' });
   }
 
-  // 2. CRITICAL CHANGE: Retrieve the password using the correct environment variable name
+  // 2. Retrieve the password using the correct environment variable name
   const storedPassword = process.env.ADMIN_PASSWORD; 
 
   // --- CRITICAL CHECK: Ensure the environment variable exists ---
   if (!storedPassword) {
-    // This message will appear in your Vercel logs, helping you debug deployment issues.
+    // This returns a JSON 500 error to the client, preventing the HTML parsing crash
     console.error("CRITICAL: ADMIN_PASSWORD environment variable is NOT set in Vercel settings!");
-    
-    // Return a 500 error with a JSON payload for the client
     return res.status(500).json({ 
         success: false, 
-        message: 'Server configuration error. (Configuration key missing.)' 
+        message: 'Server configuration error. Please check Vercel logs.' 
     });
   }
   // -----------------------------------------------------------
 
   // 3. Get the password entered by the user
-  const { password } = req.body;
+  const { password } = req.body; 
 
   // 4. Input validation
   if (!password) {
@@ -33,9 +31,10 @@ module.exports = async (req, res) => {
 
   // 5. Comparison
   if (password === storedPassword) {
+    // 200 OK
     return res.status(200).json({ success: true, message: 'Authentication successful.' });
   } else {
-    // Return 401 Unauthorized for incorrect login attempts
+    // 401 Unauthorized
     return res.status(401).json({ success: false, message: 'Incorrect password.' });
   }
 };
