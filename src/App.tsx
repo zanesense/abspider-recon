@@ -13,7 +13,8 @@ import Settings from "@/pages/Settings";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
-import LegalDisclaimer from "@/components/LegalDisclaimer";   
+import LegalDisclaimer from "@/components/LegalDisclaimer";
+import RequireAuth from "@/components/RequireAuth"; // new
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,26 +32,28 @@ function App() {
         <ThemeProvider>
           <TooltipProvider>
             <BrowserRouter>
-                <Toaster />
-                <Sonner />
+              <Toaster />
+              <Sonner />
+              <RequireAuth>
                 <SidebarProvider>
                   <div className="flex min-h-screen w-full">
                     <AppSidebar />
-                  <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
-                    <div className="flex-1">
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/new-scan" element={<NewScan />} />
-                        <Route path="/scan/:id" element={<ScanResults />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                      <LegalDisclaimer />
-                    </div>
-                    <Footer />
-                  </SidebarInset>
-                </div>
-              </SidebarProvider>
+                    <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
+                      <div className="flex-1">
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/new-scan" element={<NewScan />} />
+                          <Route path="/scan/:id" element={<ScanResults />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                        <LegalDisclaimer />
+                      </div>
+                      <Footer />
+                    </SidebarInset>
+                  </div>
+                </SidebarProvider>
+              </RequireAuth>
             </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>
