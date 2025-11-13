@@ -8,7 +8,7 @@ interface Settings {
 const defaultSettings: Settings = {
   discordWebhook: '',
   proxyList: '',
-  defaultThreads: 5,
+  defaultThreads: 20,
   timeout: 30,
 };
 

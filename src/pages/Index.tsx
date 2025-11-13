@@ -310,6 +310,24 @@ const Index = () => {
                   </div>
                 </CardContent>
               </Card>
+              <Card className="mt-6 border-amber-500/50 bg-amber-500/5">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <CardTitle className="text-amber-500">Legal Notice</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="text-sm">
+              <p className="mb-2">
+                This tool is designed for authorized security testing only. You must have explicit 
+                permission to scan any target system.
+              </p>
+              <p className="text-muted-foreground">
+                Unauthorized scanning may be illegal in your jurisdiction and could result in 
+                criminal prosecution.
+              </p>
+            </CardContent>
+          </Card>
             </div>
           </div>
         </div>
