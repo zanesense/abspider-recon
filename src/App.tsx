@@ -13,7 +13,8 @@ import Settings from "@/pages/Settings";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
-import LegalDisclaimer from "./components/LegalDisclaimer";   
+import LegalDisclaimer from "@/components/LegalDisclaimer";   
+import ProtectedPage from "@/components/ProtectedPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ function App() {
         <ThemeProvider>
           <TooltipProvider>
             <BrowserRouter>
+            <ProtectedPage>
                 <Toaster />
                 <Sonner />
                 <SidebarProvider>
@@ -51,6 +53,7 @@ function App() {
                   </SidebarInset>
                 </div>
               </SidebarProvider>
+              </ProtectedPage>
             </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>
