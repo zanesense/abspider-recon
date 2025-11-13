@@ -14,6 +14,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "./components/LegalDisclaimer";   
+import PasswordProtected from "@/components/PasswordProtected";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,11 +32,12 @@ function App() {
         <ThemeProvider>
           <TooltipProvider>
             <BrowserRouter>
-              <Toaster />
-              <Sonner />
-              <SidebarProvider>
-                <div className="flex min-h-screen w-full">
-                  <AppSidebar />
+              <PasswordProtected>
+                <Toaster />
+                <Sonner />
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
                   <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
                     <div className="flex-1">
                       <Routes>
@@ -51,6 +53,7 @@ function App() {
                   </SidebarInset>
                 </div>
               </SidebarProvider>
+              </PasswordProtected>
             </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>
