@@ -14,6 +14,7 @@ const PasswordProtected = ({ children }) => {
     setError("");
 
     try {
+      // 🔹 Fetch call to verify password
       const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -24,7 +25,8 @@ const PasswordProtected = ({ children }) => {
         localStorage.setItem("auth", "true");
         setAuthenticated(true);
       } else {
-        setError("❌ Incorrect password");
+        const data = await res.json();
+        setError(data.message || "❌ Incorrect password");
       }
     } catch (err) {
       setError("⚠️ Unable to connect. Try again.");
@@ -49,7 +51,7 @@ const PasswordProtected = ({ children }) => {
             🔐 Secure Access
           </h2>
           <p className="text-gray-300 text-sm text-center mb-6">
-            Enter your access password to continue
+            Enter your password to continue
           </p>
 
           <input
@@ -84,6 +86,7 @@ const PasswordProtected = ({ children }) => {
     );
   }
 
+  // ✅ Once authenticated, render children content
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 p-6">
       <div className="flex justify-between mb-6">
