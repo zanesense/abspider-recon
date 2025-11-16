@@ -30,11 +30,11 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border bg-gradient-to-b from-slate-900 to-slate-950 shadow-xl">
       <SidebarHeader className="border-b border-border bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="flex items-center gap-3 px-4 py-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
             <Shield className="text-white" size={24} />
           </div>
           <div>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
               ABSpider
             </h1>
             <p className="text-xs text-muted-foreground">Recon Dashboard</p>

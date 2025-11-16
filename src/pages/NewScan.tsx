@@ -79,13 +79,13 @@ const NewScan = () => {
       <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
         <SidebarTrigger />
         <div className="flex-1">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
-            <Shield className="h-7 w-7 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
+            <Shield className="h-7 w-7 text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
             New Reconnaissance Scan
           </h1>
           <p className="text-sm text-slate-400 mt-1">Configure and launch a comprehensive security and intelligence scan</p>
         </div>
-        <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-primary/30">
+        <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
           <Link to="/new-scan">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Scan
@@ -304,9 +304,9 @@ const NewScan = () => {
             </Card>
 
             {/* CMS Detection */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
+            <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-purple-400">
+                <CardTitle className="flex items-center gap-2 text-blue-400">
                   <Code className="h-5 w-5" />
                   CMS Detection
                 </CardTitle>
@@ -410,7 +410,7 @@ const NewScan = () => {
               <Button
                 type="submit"
                 disabled={isScanning}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-primary/30 transition-all duration-300 hover:scale-[1.02] text-white font-semibold"
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-primary/30 transition-all duration-300 hover:scale-[1.02] text-white font-semibold"
               >
                 {isScanning ? (
                   <>

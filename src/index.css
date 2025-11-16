@@ -10,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%; /* Dark Gray */
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 270 80% 40%; /* A vibrant purple */
+    --primary: 210 90% 50%; /* A vibrant blue */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -22,16 +22,16 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 270 80% 40%; /* Match primary */
+    --ring: 210 90% 50%; /* Match primary */
     --radius: 0.75rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 270 80% 40%;
+    --sidebar-primary: 210 90% 50%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 270 80% 40%;
+    --sidebar-ring: 210 90% 50%;
   }
 
   .dark {
@@ -41,7 +41,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 270 90% 60%; /* Brighter Purple */
+    --primary: 210 90% 60%; /* Brighter Blue */
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -53,15 +53,15 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%; /* Darker border */
     --input: 217.2 32.6% 17.5%;
-    --ring: 270 90% 60%; /* Match primary */
+    --ring: 210 90% 60%; /* Match primary */
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 270 90% 60%;
+    --sidebar-primary: 210 90% 60%;
     --sidebar-primary-foreground: 222.2 47.4% 11.2%;
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 270 90% 60%;
+    --sidebar-ring: 210 90% 60%;
   }
 }
 

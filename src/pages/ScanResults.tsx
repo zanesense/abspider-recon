@@ -167,7 +167,7 @@ const ScanResults = () => {
           <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
             <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
-          <Button onClick={handleDownloadReport} disabled={scan.status === 'running' || scan.status === 'paused'} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md">
+          <Button onClick={handleDownloadReport} disabled={scan.status === 'running' || scan.status === 'paused'} className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md">
             <Download className="h-4 w-4 mr-2" /> Download Report
           </Button>
         </div>
