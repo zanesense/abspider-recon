@@ -3,6 +3,8 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { History, Shield } from 'lucide-react';
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
+import ScanOverviewCards from '@/components/ScanOverviewCards'; // New import
+import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard'; // New import
 
 const AllScans = () => {
   const { data: scans = [], refetch } = useQuery({
@@ -26,6 +28,8 @@ const AllScans = () => {
       
       <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <div className="max-w-7xl mx-auto space-y-6">
+          <ScanOverviewCards scans={scans} />
+          <VulnerabilitySummaryCard scans={scans} />
           <RecentScans scans={scans} onScanDeleted={refetch} />
         </div>
       </main>
