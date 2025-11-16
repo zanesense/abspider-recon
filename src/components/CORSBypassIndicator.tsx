@@ -40,32 +40,32 @@ const CORSBypassIndicator = ({ metadata, className = '' }: CORSBypassIndicatorPr
             )}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent className="bg-card border-border max-w-xs"> {/* Updated background and border */}
+        <TooltipContent className="bg-card border-border max-w-xs">
           <div className="space-y-2 text-xs">
             <div className="flex items-center gap-2">
-              <Globe className="h-3 w-3 text-primary" /> {/* Updated text color */}
-              <span className="font-semibold text-foreground">Connection Details</span> {/* Updated text color */}
+              <Globe className="h-3 w-3 text-primary" />
+              <span className="font-semibold text-foreground">Connection Details</span>
             </div>
-            <div className="space-y-1 text-muted-foreground"> {/* Updated text color */}
+            <div className="space-y-1 text-muted-foreground">
               <p>
-                <span className="text-foreground">Method:</span>{' '} {/* Updated text color */}
+                <span className="text-foreground">Method:</span>{' '}
                 {usedProxy ? 'CORS Proxy Bypass' : 'Direct Connection'}
               </p>
               {usedProxy && proxyUrl && (
                 <p>
-                  <span className="text-foreground">Proxy:</span>{' '} {/* Updated text color */}
+                  <span className="text-foreground">Proxy:</span>{' '}
                   <span className="font-mono text-xs">{proxyUrl.replace('https://', '')}</span>
                 </p>
               )}
               {attemptsDirect && (
                 <p>
-                  <span className="text-foreground">Direct Attempt:</span>{' '} {/* Updated text color */}
+                  <span className="text-foreground">Direct Attempt:</span>{' '}
                   {usedProxy ? 'Failed (CORS blocked)' : 'Success'}
                 </p>
               )}
               {attemptsViaProxy > 0 && (
                 <p>
-                  <span className="text-foreground">Proxy Attempts:</span> {attemptsViaProxy} {/* Updated text color */}
+                  <span className="text-foreground">Proxy Attempts:</span> {attemptsViaProxy}
                 </p>
               )}
             </div>

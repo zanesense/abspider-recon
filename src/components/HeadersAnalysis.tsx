@@ -50,11 +50,11 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
   };
 
   return (
-    <Card className="bg-card border-border"> {/* Updated background and border */}
+    <Card className="bg-card border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground"> {/* Updated text color */}
-            <Shield className="h-5 w-5 text-primary" /> {/* Updated text color */}
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Shield className="h-5 w-5 text-primary" />
             HTTP Headers Analysis
           </CardTitle>
           <CORSBypassIndicator metadata={currentHeadersAnalysis.corsMetadata} />
@@ -63,21 +63,21 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
       <CardContent className="space-y-6">
         {/* Security Score */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Status Code</p> {/* Updated text color */}
-            <p className="text-primary font-bold text-2xl">{currentHeadersAnalysis.statusCode}</p> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Status Code</p>
+            <p className="text-primary font-bold text-2xl">{currentHeadersAnalysis.statusCode}</p>
           </div>
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Security Grade</p> {/* Updated text color */}
-            <p className="text-green-500 dark:text-green-400 font-bold text-2xl">{securityHeaders.grade}</p> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Security Grade</p>
+            <p className="text-green-500 dark:text-green-400 font-bold text-2xl">{securityHeaders.grade}</p>
           </div>
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Score</p> {/* Updated text color */}
-            <p className="text-purple-500 dark:text-purple-400 font-bold text-2xl">{securityHeaders.score}</p> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Score</p>
+            <p className="text-purple-500 dark:text-purple-400 font-bold text-2xl">{securityHeaders.score}</p>
           </div>
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Technologies</p> {/* Updated text color */}
-            <p className="text-foreground text-sm"> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Technologies</p>
+            <p className="text-foreground text-sm">
               {currentHeadersAnalysis.technologies?.length > 0 ? currentHeadersAnalysis.technologies.join(', ') : 'None'}
             </p>
           </div>
@@ -85,17 +85,17 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
 
         {/* Security Headers */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-foreground flex items-center gap-2"> {/* Updated text color */}
-            <Shield className="h-4 w-4 text-primary" /> {/* Updated text color */}
+          <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
             Security Headers
           </h4>
           
           {/* Present Headers */}
           {securityHeaders.present && securityHeaders.present.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Present ({securityHeaders.present.length})</p> {/* Updated text color */}
+              <p className="text-xs text-muted-foreground">Present ({securityHeaders.present.length})</p>
               {securityHeaders.present.map((header: any, index: number) => (
-                <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-green-500"> {/* Updated background */}
+                <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-green-500">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -104,14 +104,14 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
                         ) : (
                           <AlertTriangle className="h-4 w-4 text-yellow-500" />
                         )}
-                        <span className="font-medium text-foreground">{header.name}</span> {/* Updated text color */}
+                        <span className="font-medium text-foreground">{header.name}</span>
                         <Badge className={getSeverityColor(header.severity)}>
                           {header.severity}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground font-mono">{header.value}</p> {/* Updated text color */}
+                      <p className="text-xs text-muted-foreground font-mono">{header.value}</p>
                       {header.recommendation && (
-                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1"> {/* Updated text color */}
+                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
                           ⚠️ {header.recommendation}
                         </p>
                       )}
@@ -125,19 +125,19 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
           {/* Missing Headers */}
           {securityHeaders.missing && securityHeaders.missing.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Missing ({securityHeaders.missing.length})</p> {/* Updated text color */}
+              <p className="text-xs text-muted-foreground">Missing ({securityHeaders.missing.length})</p>
               {securityHeaders.missing.map((header: any, index: number) => (
-                <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-red-500"> {/* Updated background */}
+                <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-red-500">
                   <div className="flex items-start gap-2">
                     <XCircle className="h-4 w-4 text-red-500" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-foreground">{header.name}</span> {/* Updated text color */}
+                        <span className="font-medium text-foreground">{header.name}</span>
                         <Badge className={getSeverityColor(header.severity)}>
                           {header.severity}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">{header.recommendation}</p> {/* Updated text color */}
+                      <p className="text-xs text-muted-foreground">{header.recommendation}</p>
                     </div>
                   </div>
                 </div>
@@ -149,14 +149,14 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
         {/* Cookies Analysis */}
         {currentHeadersAnalysis.cookies && currentHeadersAnalysis.cookies.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2"> {/* Updated text color */}
-              <Info className="h-4 w-4 text-blue-500 dark:text-blue-400" /> {/* Updated text color */}
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Info className="h-4 w-4 text-blue-500 dark:text-blue-400" />
               Cookies ({currentHeadersAnalysis.cookies.length})
             </h4>
             {currentHeadersAnalysis.cookies.map((cookie: any, index: number) => (
-              <div key={index} className="bg-muted rounded-lg p-3"> {/* Updated background */}
+              <div key={index} className="bg-muted rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-foreground">{cookie.name}</span> {/* Updated text color */}
+                  <span className="font-medium text-foreground">{cookie.name}</span>
                   <div className="flex gap-2">
                     {cookie.secure && <Badge className="bg-green-500/20 text-green-600 dark:text-green-500 border-green-500/30">Secure</Badge>}
                     {cookie.httpOnly && <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-500 border-blue-500/30">HttpOnly</Badge>}
@@ -164,7 +164,7 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
                   </div>
                 </div>
                 {cookie.issues && cookie.issues.length > 0 && (
-                  <div className="text-xs text-yellow-600 dark:text-yellow-500"> {/* Updated text color */}
+                  <div className="text-xs text-yellow-600 dark:text-yellow-500">
                     {cookie.issues.map((issue: string, i: number) => (
                       <div key={i}>⚠️ {issue}</div>
                     ))}
@@ -177,13 +177,13 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
 
         {/* All Headers */}
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-foreground">All Headers</h4> {/* Updated text color */}
-          <div className="bg-muted rounded-lg p-4 max-h-64 overflow-y-auto"> {/* Updated background */}
+          <h4 className="text-sm font-semibold text-foreground">All Headers</h4>
+          <div className="bg-muted rounded-lg p-4 max-h-64 overflow-y-auto">
             <div className="space-y-1 font-mono text-xs">
               {Object.entries(currentHeadersAnalysis.headers).map(([key, value]) => (
                 <div key={key} className="flex gap-2">
-                  <span className="text-primary">{key}:</span> {/* Updated text color */}
-                  <span className="text-muted-foreground break-all">{String(value)}</span> {/* Updated text color */}
+                  <span className="text-primary">{key}:</span>
+                  <span className="text-muted-foreground break-all">{String(value)}</span>
                 </div>
               ))}
             </div>

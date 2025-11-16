@@ -29,9 +29,9 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
   };
 
   return (
-    <Card className="bg-card border-border"> {/* Updated background and border */}
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-foreground flex items-center gap-2"> {/* Updated text color */}
+        <CardTitle className="text-foreground flex items-center gap-2">
           {xss.vulnerable ? (
             <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
           ) : (
@@ -42,29 +42,29 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Status</p> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Status</p>
             <Badge className={xss.vulnerable ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'}>
               {xss.vulnerable ? 'VULNERABLE' : 'SECURE'}
             </Badge>
           </div>
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Payloads Tested</p> {/* Updated text color */}
-            <p className="text-2xl font-bold text-primary">{xss.testedPayloads}</p> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Payloads Tested</p>
+            <p className="text-2xl font-bold text-primary">{xss.testedPayloads}</p>
           </div>
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Vulnerabilities Found</p> {/* Updated text color */}
-            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{xss.vulnerabilities.length}</p> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Vulnerabilities Found</p>
+            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{xss.vulnerabilities.length}</p>
           </div>
         </div>
 
         {xss.vulnerabilities.length > 0 ? (
           <>
-            <Alert variant="destructive" className="bg-destructive/10 border-destructive/50"> {/* Updated background and border */}
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
               <Lightbulb className="h-4 w-4" />
               <AlertDescription>
-                <div className="font-semibold mb-2 text-destructive dark:text-red-400">🛡️ Mitigation Recommendations:</div> {/* Updated text color */}
-                <ul className="list-disc list-inside space-y-1 text-destructive-foreground dark:text-red-300 text-sm"> {/* Updated text color */}
+                <div className="font-semibold mb-2 text-destructive dark:text-red-400">🛡️ Mitigation Recommendations:</div>
+                <ul className="list-disc list-inside space-y-1 text-destructive-foreground dark:text-red-300 text-sm">
                   <li>Encode all user input before rendering (HTML, JavaScript, URL encoding)</li>
                   <li>Implement Content Security Policy (CSP) headers</li>
                   <li>Use HTTPOnly and Secure flags on all cookies</li>
@@ -77,20 +77,20 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
             </Alert>
 
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-destructive dark:text-red-400 flex items-center gap-2"> {/* Updated text color */}
+              <h4 className="text-sm font-medium text-destructive dark:text-red-400 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Detected Vulnerabilities
               </h4>
               <div className="space-y-3">
                 {xss.vulnerabilities.map((vuln, index) => (
-                <div key={index} className="bg-muted rounded-lg p-4 border border-destructive/50"> {/* Updated background and border */}
+                <div key={index} className="bg-muted rounded-lg p-4 border border-destructive/50">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex gap-2">
                       <Badge className={getSeverityColor(vuln.severity)}>
                         {vuln.severity.toUpperCase()}
                       </Badge>
                       {vuln.type && (
-                        <Badge className="bg-muted/50 text-muted-foreground border-border"> {/* Updated background, text, and border */}
+                        <Badge className="bg-muted/50 text-muted-foreground border-border">
                           {vuln.type}
                         </Badge>
                       )}
@@ -99,21 +99,21 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
                   <div className="space-y-2">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <Code className="h-3 w-3 text-muted-foreground/70" /> {/* Updated text color */}
-                        <span className="text-xs text-muted-foreground">Payload:</span> {/* Updated text color */}
+                        <Code className="h-3 w-3 text-muted-foreground/70" />
+                        <span className="text-xs text-muted-foreground">Payload:</span>
                       </div>
-                      <p className="text-foreground font-mono bg-muted/50 p-2 rounded break-all"> {/* Updated text and background color */}
+                      <p className="text-foreground font-mono bg-muted/50 p-2 rounded break-all">
                         {vuln.payload}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Location:</p> {/* Updated text color */}
-                      <p className="text-yellow-600 dark:text-yellow-400">{vuln.location}</p> {/* Updated text color */}
+                      <p className="text-xs text-muted-foreground mb-1">Location:</p>
+                      <p className="text-yellow-600 dark:text-yellow-400">{vuln.location}</p>
                     </div>
                     {vuln.evidence && (
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Evidence:</p> {/* Updated text color */}
-                        <p className="text-foreground bg-muted/50 p-2 rounded font-mono break-all"> {/* Updated text and background color */}
+                        <p className="text-xs text-muted-foreground mb-1">Evidence:</p>
+                        <p className="text-foreground bg-muted/50 p-2 rounded font-mono break-all">
                           {vuln.evidence}
                         </p>
                       </div>
@@ -125,8 +125,8 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
             </div>
           </>
         ) : (
-          <div className="bg-green-500/10 border border-green-500/50 rounded-lg p-4"> {/* Updated background and border */}
-            <p className="text-green-600 dark:text-green-400 text-sm flex items-center gap-2"> {/* Updated text color */}
+          <div className="bg-green-500/10 border border-green-500/50 rounded-lg p-4">
+            <p className="text-green-600 dark:text-green-400 text-sm flex items-center gap-2">
               <Shield className="h-4 w-4" />
               No XSS vulnerabilities detected
             </p>

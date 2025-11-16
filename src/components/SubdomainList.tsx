@@ -12,34 +12,34 @@ const SubdomainList = ({ subdomains }: SubdomainListProps) => {
 
   if (!Array.isArray(subdomainArray) || subdomainArray.length === 0) {
     return (
-      <Card className="bg-card border-border"> {/* Updated background and border */}
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground"> {/* Updated text color */}
-            <Network className="h-5 w-5 text-primary" /> {/* Updated text color */}
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Network className="h-5 w-5 text-primary" />
             Discovered Subdomains (0)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-sm">No subdomains discovered</p> {/* Updated text color */}
+          <p className="text-muted-foreground text-sm">No subdomains discovered</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-card border-border"> {/* Updated background and border */}
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-foreground"> {/* Updated text color */}
-          <Network className="h-5 w-5 text-primary" /> {/* Updated text color */}
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <Network className="h-5 w-5 text-primary" />
           Discovered Subdomains ({subdomainArray.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
           {Object.entries(sources).map(([sourceName, count]) => (
-            <div key={sourceName} className="bg-muted p-3 rounded-lg flex items-center justify-between"> {/* Updated background */}
-              <span className="text-sm text-muted-foreground capitalize">{sourceName.replace('crtsh', 'crt.sh')}</span> {/* Updated text color */}
-              <span className="text-foreground font-medium">{count}</span> {/* Updated text color */}
+            <div key={sourceName} className="bg-muted p-3 rounded-lg flex items-center justify-between">
+              <span className="text-sm text-muted-foreground capitalize">{sourceName.replace('crtsh', 'crt.sh')}</span>
+              <span className="text-foreground font-medium">{count}</span>
             </div>
           ))}
         </div>
@@ -51,12 +51,12 @@ const SubdomainList = ({ subdomains }: SubdomainListProps) => {
               href={`https://${subdomain}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between bg-muted px-4 py-3 rounded-lg hover:bg-muted/50 transition-colors group" {/* Updated background */}
+              className="flex items-center justify-between bg-muted px-4 py-3 rounded-lg hover:bg-muted/50 transition-colors group"
             >
-              <span className="flex-1 min-w-0 text-foreground font-mono text-sm group-hover:text-primary transition-colors break-all"> {/* Updated text color */}
+              <span className="flex-1 min-w-0 text-foreground font-mono text-sm group-hover:text-primary transition-colors break-all">
                 {subdomain}
               </span>
-              <ExternalLink className="h-3 w-3 text-muted-foreground/70 group-hover:text-primary transition-colors ml-2 flex-shrink-0" /> {/* Updated text color */}
+              <ExternalLink className="h-3 w-3 text-muted-foreground/70 group-hover:text-primary transition-colors ml-2 flex-shrink-0" />
             </a>
           ))}
         </div>

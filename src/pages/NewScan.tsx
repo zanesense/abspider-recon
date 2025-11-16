@@ -164,14 +164,14 @@ const NewScan = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl"> {/* Updated background */}
+      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl">
         <SidebarTrigger />
         <div className="flex-1">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-3"> {/* Updated gradient colors for better light mode visibility */}
-            <Shield className="h-7 w-7 text-blue-600 dark:text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" /> {/* Updated text color */}
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-3">
+            <Shield className="h-7 w-7 text-blue-600 dark:text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
             New Reconnaissance Scan
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Configure and launch a comprehensive security and intelligence scan</p> {/* Updated text color */}
+          <p className="text-sm text-muted-foreground mt-1">Configure and launch a comprehensive security and intelligence scan</p>
         </div>
         <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
           <Link to="/new-scan">
@@ -181,7 +181,7 @@ const NewScan = () => {
         </Button>
       </header>
       
-      <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> {/* Updated background */}
+      <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <div className="max-w-5xl mx-auto space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Target Input */}
@@ -212,11 +212,11 @@ const NewScan = () => {
                   )}
                   {isTargetInternal && (
                     <Alert className="border-yellow-500/50 bg-yellow-500/10">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" /> {/* Updated text color */}
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
                       <AlertTitle className="text-yellow-600 dark:text-yellow-400 font-bold">
                         WARNING: Internal Target Detected
                       </AlertTitle>
-                      <AlertDescription className="text-sm mt-2 text-yellow-600 dark:text-yellow-300"> {/* Updated text color */}
+                      <AlertDescription className="text-sm mt-2 text-yellow-600 dark:text-yellow-300">
                         You are attempting to scan an internal IP address or localhost.
                         Ensure you have explicit authorization before scanning internal networks.
                         Unauthorized scanning may be illegal.
@@ -230,7 +230,7 @@ const NewScan = () => {
             {/* Basic Scans */}
             <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400"> {/* Updated text color */}
+                <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                   <Shield className="h-5 w-5" />
                   Basic Reconnaissance
                 </CardTitle>
@@ -267,7 +267,7 @@ const NewScan = () => {
             {/* Network & Domain Intelligence */}
             <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-green-500/50">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400"> {/* Updated text color */}
+                <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
                   <Network className="h-5 w-5" />
                   Network & Domain Intelligence
                 </CardTitle>
@@ -364,7 +364,7 @@ const NewScan = () => {
             {/* Vulnerability Scans */}
             <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-orange-500/50">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400"> {/* Updated text color */}
+                <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
                   <AlertTriangle className="h-5 w-5" />
                   Vulnerability Assessment
                 </CardTitle>
@@ -454,7 +454,7 @@ const NewScan = () => {
             {/* CMS Detection */}
             <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400"> {/* Updated text color */}
+                <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                   <Code className="h-5 w-5" />
                   CMS Detection
                 </CardTitle>
@@ -481,7 +481,7 @@ const NewScan = () => {
             {/* SEO & Analytics */}
             <Card className="bg-card/50 backdrop-blur-sm border border-pink-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-pink-500/50">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-pink-600 dark:text-pink-400"> {/* Updated text color */}
+                <CardTitle className="flex items-center gap-2 text-pink-600 dark:text-pink-400">
                   <TrendingUp className="h-5 w-5" />
                   SEO & Analytics
                 </CardTitle>
@@ -508,7 +508,7 @@ const NewScan = () => {
             {/* Security Testing */}
             <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400"> {/* Updated text color */}
+                <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                   <Zap className="h-5 w-5" />
                   Security Testing
                 </CardTitle>
@@ -548,9 +548,9 @@ const NewScan = () => {
             </Card>
 
             {/* Advanced Settings */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-border"> {/* Updated border */}
+            <Card className="bg-card/50 backdrop-blur-sm border border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-border">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-muted-foreground"> {/* Updated text color */}
+                <CardTitle className="flex items-center gap-2 text-muted-foreground">
                   <Settings2 className="h-5 w-5" />
                   Advanced Settings
                 </CardTitle>
@@ -561,11 +561,11 @@ const NewScan = () => {
               <CardContent>
                 {formData.useProxy && (
                   <Alert className="border-yellow-500/50 bg-yellow-500/10 mb-4">
-                    <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" /> {/* Updated text color */}
+                    <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
                     <AlertTitle className="text-yellow-600 dark:text-yellow-400 font-bold">
                       WARNING: Public CORS Proxy Usage
                     </AlertTitle>
-                    <AlertDescription className="text-sm mt-2 text-yellow-600 dark:text-yellow-300"> {/* Updated text color */}
+                    <AlertDescription className="text-sm mt-2 text-yellow-600 dark:text-yellow-300">
                       You have enabled proxy usage. This will route your scan traffic through public CORS proxies.
                       Be aware of the privacy and security implications as these proxies may log your requests.
                       For sensitive operations, consider a self-hosted proxy.
@@ -595,7 +595,7 @@ const NewScan = () => {
                       className="accent-primary"
                     />
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3 text-yellow-600 dark:text-yellow-500" /> {/* Updated text color */}
+                      <AlertTriangle className="h-3 w-3 text-yellow-600 dark:text-yellow-500" />
                       Higher thread counts can degrade browser performance and may trigger rate limiting on target servers.
                     </p>
                   </div>

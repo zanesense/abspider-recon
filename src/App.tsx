@@ -37,9 +37,9 @@ function App() {
             <BrowserRouter>
               <Toaster />
               <Sonner />
-              <LegalDisclaimer /> {/* Legal disclaimer is shown before auth */}
+              <LegalDisclaimer />
               <Routes>
-                <Route path="/" element={<Index />} /> {/* Entry point for auth check */}
+                <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 
                 {/* Protected Routes */}
@@ -56,7 +56,7 @@ function App() {
                               <Route path="/all-scans" element={<AllScans />} />
                               <Route path="/scan/:id" element={<ScanResults />} />
                               <Route path="/settings" element={<Settings />} />
-                              <Route path="*" element={<NotFound />} /> {/* NotFound is also protected */}
+                              <Route path="*" element={<NotFound />} />
                             </Routes>
                           </div>
                           <Footer />

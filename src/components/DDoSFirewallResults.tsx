@@ -11,25 +11,25 @@ interface DDoSFirewallResultsProps {
 const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
   if (!ddosFirewall.tested) {
     return (
-      <Card className="bg-card border-border"> {/* Updated background and border */}
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground"> {/* Updated text color */}
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <ShieldOff className="h-5 w-5" />
             DDoS Firewall Test
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">DDoS Firewall testing not performed or encountered an error.</p> {/* Updated text color */}
+          <p className="text-muted-foreground">DDoS Firewall testing not performed or encountered an error.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-card border-border"> {/* Updated background and border */}
+    <Card className="bg-card border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground"> {/* Updated text color */}
+          <CardTitle className="flex items-center gap-2 text-foreground">
             {ddosFirewall.firewallDetected ? (
               <ShieldCheck className="h-5 w-5 text-green-500 dark:text-green-400" />
             ) : (
@@ -42,43 +42,43 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Firewall Detected</p> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Firewall Detected</p>
             <Badge className={ddosFirewall.firewallDetected ? 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30'}>
               {ddosFirewall.firewallDetected ? 'YES' : 'NO'}
             </Badge>
           </div>
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Total Requests</p> {/* Updated text color */}
-            <p className="text-2xl font-bold text-primary">{ddosFirewall.totalRequests}</p> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Total Requests</p>
+            <p className="text-2xl font-bold text-primary">{ddosFirewall.totalRequests}</p>
           </div>
-          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
-            <p className="text-sm text-muted-foreground mb-1">Successful / Failed</p> {/* Updated text color */}
-            <p className="text-2xl font-bold text-foreground"> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Successful / Failed</p>
+            <p className="text-2xl font-bold text-foreground">
               <span className="text-green-500 dark:text-green-400">{ddosFirewall.successfulRequests}</span> / <span className="text-red-500 dark:text-red-400">{ddosFirewall.failedRequests}</span>
             </p>
           </div>
         </div>
 
         {ddosFirewall.wafDetected && (
-          <div className="bg-muted rounded-lg p-3"> {/* Updated background */}
-            <p className="text-xs text-muted-foreground flex items-center gap-2"> {/* Updated text color */}
-              <Info className="h-3 w-3 text-muted-foreground/70" /> {/* Updated text color */}
-              WAF/CDN Detected: <span className="text-foreground font-medium">{ddosFirewall.wafDetected}</span> {/* Updated text color */}
+          <div className="bg-muted rounded-lg p-3">
+            <p className="text-xs text-muted-foreground flex items-center gap-2">
+              <Info className="h-3 w-3 text-muted-foreground/70" />
+              WAF/CDN Detected: <span className="text-foreground font-medium">{ddosFirewall.wafDetected}</span>
             </p>
           </div>
         )}
 
         {ddosFirewall.indicators.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-yellow-600 dark:text-yellow-400 flex items-center gap-2 mb-3"> {/* Updated text color */}
+            <h4 className="text-sm font-medium text-yellow-600 dark:text-yellow-400 flex items-center gap-2 mb-3">
               <AlertTriangle className="h-4 w-4" />
               Detection Indicators
             </h4>
             <div className="space-y-2">
               {ddosFirewall.indicators.map((indicator, index) => (
-                <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-yellow-500/50"> {/* Updated background */}
-                  <p className="text-foreground text-sm">{indicator}</p> {/* Updated text color */}
+                <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-yellow-500/50">
+                  <p className="text-foreground text-sm">{indicator}</p>
                 </div>
               ))}
             </div>
@@ -87,15 +87,15 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
 
         {ddosFirewall.responseSummary.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-primary flex items-center gap-2 mb-3"> {/* Updated text color */}
+            <h4 className="text-sm font-medium text-primary flex items-center gap-2 mb-3">
               <Zap className="h-4 w-4" />
               Response Summary
             </h4>
             <div className="space-y-2">
               {ddosFirewall.responseSummary.map((summary, index) => (
-                <div key={index} className="bg-muted rounded-lg p-3 flex items-center justify-between"> {/* Updated background */}
-                  <span className="text-foreground font-medium">HTTP {summary.status}</span> {/* Updated text color */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground"> {/* Updated text color */}
+                <div key={index} className="bg-muted rounded-lg p-3 flex items-center justify-between">
+                  <span className="text-foreground font-medium">HTTP {summary.status}</span>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>Count: {summary.count}</span>
                     <span>Avg. Time: {summary.avgResponseTime.toFixed(2)}ms</span>
                   </div>
@@ -107,13 +107,13 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
 
         {ddosFirewall.evidence && ddosFirewall.evidence.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-3"> {/* Updated text color */}
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-3">
               <Info className="h-4 w-4" />
               Evidence Snippets
             </h4>
             <div className="space-y-2">
               {ddosFirewall.evidence.map((snippet, index) => (
-                <pre key={index} className="text-xs text-foreground bg-muted/50 p-2 rounded overflow-x-auto max-h-24"> {/* Updated background and text color */}
+                <pre key={index} className="text-xs text-foreground bg-muted/50 p-2 rounded overflow-x-auto max-h-24">
                   {snippet}
                 </pre>
               ))}
