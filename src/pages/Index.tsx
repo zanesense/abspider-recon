@@ -53,13 +53,13 @@ const Index = () => {
       <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
         <SidebarTrigger />
         <div className="flex-1">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
-            <Shield className="h-7 w-7 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
+            <Shield className="h-7 w-7 text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
             ABSpider Dashboard
           </h1>
           <p className="text-sm text-slate-400 mt-1">Overview of your reconnaissance activities</p>
         </div>
-        <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-primary/30">
+        <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
           <Link to="/new-scan">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Scan
@@ -117,15 +117,15 @@ const Index = () => {
             {/* Left Column: Quick Actions + Threat Landscape */}
             <div className="lg:col-span-2 space-y-6">
               {/* Quick Actions */}
-              <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg">
+              <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-purple-400">Quick Actions</CardTitle>
+                  <CardTitle className="text-blue-400">Quick Actions</CardTitle>
                   <CardDescription className="text-slate-400">
                     Start new scans or view documentation
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-primary/30">
+                  <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
                     <Link to="/new-scan">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Start New Scan
@@ -141,9 +141,9 @@ const Index = () => {
               </Card>
 
               {/* Threat Landscape */}
-              <Card className="bg-card/50 backdrop-blur-sm border border-indigo-500/30 shadow-lg">
+              <Card className="bg-card/50 backdrop-blur-sm border border-cyan-500/30 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-indigo-400">Threat Landscape</CardTitle>
+                  <CardTitle className="text-cyan-400">Threat Landscape</CardTitle>
                   <CardDescription className="text-slate-400">
                     Insights into common vulnerabilities
                   </CardDescription>
@@ -188,8 +188,8 @@ const Index = () => {
                             data={chartData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={40} // Adjusted from 60
-                            outerRadius={60} // Adjusted from 80
+                            innerRadius={40}
+                            outerRadius={60}
                             fill="#8884d8"
                             paddingAngle={5}
                             dataKey="value"
