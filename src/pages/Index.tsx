@@ -53,14 +53,14 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
+      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl"> {/* Updated background */}
         <SidebarTrigger />
         <div className="flex-1">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
-            <Shield className="h-7 w-7 text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-3"> {/* Updated gradient colors for better light mode visibility */}
+            <Shield className="h-7 w-7 text-blue-600 dark:text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" /> {/* Updated text color */}
             ABSpider Dashboard
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Overview of your reconnaissance activities</p>
+          <p className="text-sm text-muted-foreground mt-1">Overview of your reconnaissance activities</p> {/* Updated text color */}
         </div>
         <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
           <Link to="/new-scan">
@@ -70,7 +70,7 @@ const Index = () => {
         </Button>
       </header>
       
-      <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> {/* Updated background */}
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -86,7 +86,7 @@ const Index = () => {
             </Card>
             <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-green-400">Completed Scans</CardTitle>
+                <CardTitle className="text-sm font-medium text-green-600 dark:text-green-400">Completed Scans</CardTitle> {/* Updated text color */}
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -96,7 +96,7 @@ const Index = () => {
             </Card>
             <Card className="bg-card/50 backdrop-blur-sm border border-yellow-500/30 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-yellow-400">Running Scans</CardTitle>
+                <CardTitle className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Running Scans</CardTitle> {/* Updated text color */}
                 <Zap className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -106,7 +106,7 @@ const Index = () => {
             </Card>
             <Card className="bg-card/50 backdrop-blur-sm border border-red-500/30 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-red-400">Failed Scans</CardTitle>
+                <CardTitle className="text-sm font-medium text-red-600 dark:text-red-400">Failed Scans</CardTitle> {/* Updated text color */}
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -122,8 +122,8 @@ const Index = () => {
               {/* Quick Actions */}
               <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-blue-400">Quick Actions</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-blue-600 dark:text-blue-400">Quick Actions</CardTitle> {/* Updated text color */}
+                  <CardDescription className="text-muted-foreground"> {/* Updated text color */}
                     Start new scans or view documentation
                   </CardDescription>
                 </CardHeader>
@@ -144,25 +144,25 @@ const Index = () => {
               </Card>
 
               {/* Threat Landscape */}
-              <Card className="bg-card/50 backdrop-blur-sm border border-cyan-500/30 shadow-lg">
+              <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg"> {/* Updated border */}
                 <CardHeader>
-                  <CardTitle className="text-cyan-400">Threat Landscape</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-primary">Threat Landscape</CardTitle> {/* Updated text color */}
+                  <CardDescription className="text-muted-foreground"> {/* Updated text color */}
                     Insights into common vulnerabilities
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-foreground">SQL Injection</span>
+                      <span className="text-foreground">SQL Injection</span> {/* Updated text color */}
                       <Badge variant="destructive">High Risk</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-foreground">Cross-Site Scripting (XSS)</span>
+                      <span className="text-foreground">Cross-Site Scripting (XSS)</span> {/* Updated text color */}
                       <Badge variant="destructive">High Risk</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-foreground">Missing Security Headers</span>
+                      <span className="text-foreground">Missing Security Headers</span> {/* Updated text color */}
                       <Badge variant="secondary">Medium Risk</Badge>
                     </div>
                   </div>
@@ -177,8 +177,8 @@ const Index = () => {
             <div className="lg:col-span-1 space-y-6">
               <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-green-400">Scan Progress Overview</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-green-600 dark:text-green-400">Scan Progress Overview</CardTitle> {/* Updated text color */}
+                  <CardDescription className="text-muted-foreground"> {/* Updated text color */}
                     Visual representation of active scans
                   </CardDescription>
                 </CardHeader>
@@ -226,8 +226,8 @@ const Index = () => {
 
               <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-orange-400">API Key Status</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-orange-600 dark:text-orange-400">API Key Status</CardTitle> {/* Updated text color */}
+                  <CardDescription className="text-muted-foreground"> {/* Updated text color */}
                     Check the status of your integrated API keys
                   </CardDescription>
                 </CardHeader>
@@ -235,13 +235,13 @@ const Index = () => {
                   <div className="space-y-3">
                     {apiKeyServices.map((service) => (
                       <div key={service.key} className="flex items-center justify-between">
-                        <span className="text-foreground">{service.name}</span>
+                        <span className="text-foreground">{service.name}</span> {/* Updated text color */}
                         {hasAPIKey(service.key as any) ? (
-                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                          <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
                             Configured
                           </Badge>
                         ) : (
-                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                          <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30">
                             Not Configured
                           </Badge>
                         )}

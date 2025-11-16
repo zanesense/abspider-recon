@@ -28,8 +28,8 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar className="border-r border-border bg-gradient-to-b from-slate-900 to-slate-950 shadow-xl">
-      <SidebarHeader className="border-b border-border bg-gradient-to-br from-primary/10 to-primary/5">
+    <Sidebar className="border-r border-border bg-sidebar shadow-xl"> {/* Updated background */}
+      <SidebarHeader className="border-b border-border bg-sidebar-accent"> {/* Updated background */}
         <div className="flex items-center gap-3 px-4 py-4">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
             <Shield className="text-white" size={24} />

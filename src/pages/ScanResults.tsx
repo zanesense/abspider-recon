@@ -125,7 +125,7 @@ const ScanResults = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
+      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl"> {/* Updated background */}
         <SidebarTrigger />
         <Button
           variant="ghost"
@@ -153,7 +153,7 @@ const ScanResults = () => {
           )}
           {scan.status === 'paused' && (
             <>
-              <Button onClick={handleResumeScan} variant="outline" size="sm" className="border-green-700 text-green-400 hover:text-green-300 hover:bg-green-900/20">
+              <Button onClick={handleResumeScan} variant="outline" size="sm" className="border-green-700 text-green-600 dark:text-green-400 hover:text-green-300 hover:bg-green-900/20"> {/* Updated text color */}
                 <Play className="h-4 w-4 mr-2" /> Resume
               </Button>
               <Button onClick={handleStopScan} variant="outline" size="sm" className="border-destructive text-destructive hover:text-destructive-foreground hover:bg-destructive/20">
@@ -170,7 +170,7 @@ const ScanResults = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> {/* Updated background */}
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Top Row: Scan Status and Summary Widget */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

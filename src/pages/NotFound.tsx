@@ -3,7 +3,7 @@ import { Frown } from "lucide-react";
 
 export default function NotFound() {
     return (
-        <div className="h-full flex flex-col items-center justify-center text-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="h-full flex flex-col items-center justify-center text-center p-4 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> {/* Updated background */}
             <Frown className="h-24 w-24 text-muted-foreground mb-6 opacity-50" />
             <h1 className="text-7xl font-bold text-foreground mb-4">404</h1>
             <p className="mb-6 text-muted-foreground text-lg">

@@ -25,11 +25,11 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-sans px-4">
+    <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans px-4">
       <div className="bg-card rounded-xl shadow-xl p-8 w-full max-w-md border border-border">
         {/* Welcome Back with Alert Icon */}
         <h2 className="text-2xl font-semibold text-center mb-4 text-foreground flex items-center justify-center gap-2">
-          <AlertCircle className="w-6 h-6 text-yellow-400 animate-bounce" />
+          <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 animate-bounce" /> {/* Updated text color */}
           Welcome Back
         </h2>
 
@@ -70,7 +70,7 @@ export default function Login() {
         )}
 
         {/* Alert Card Below Form */}
-        <div className="flex items-start bg-muted/30 border-l-4 border-yellow-400 text-yellow-400 mt-6 p-4 rounded-md gap-3 border border-border">
+        <div className="flex items-start bg-muted/30 border-l-4 border-yellow-600 dark:border-yellow-400 text-yellow-600 dark:text-yellow-400 mt-6 p-4 rounded-md gap-3 border border-border"> {/* Updated border and text color */}
           <Shield className="w-6 h-6 flex-shrink-0" />
           <p className="text-sm text-muted-foreground">
             This step is crucial! Verifying your email helps prevent unauthorized access to the tool and to prevent illegal activities.

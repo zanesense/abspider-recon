@@ -23,8 +23,8 @@ const CORSBypassIndicator = ({ metadata, className = '' }: CORSBypassIndicatorPr
             variant="outline" 
             className={`${className} ${
               usedProxy 
-                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' 
-                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30' 
+                : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30'
             } cursor-help`}
           >
             {usedProxy ? (
@@ -40,32 +40,32 @@ const CORSBypassIndicator = ({ metadata, className = '' }: CORSBypassIndicatorPr
             )}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent className="bg-slate-900 border-slate-700 max-w-xs">
+        <TooltipContent className="bg-card border-border max-w-xs"> {/* Updated background and border */}
           <div className="space-y-2 text-xs">
             <div className="flex items-center gap-2">
-              <Globe className="h-3 w-3 text-cyan-400" />
-              <span className="font-semibold text-slate-200">Connection Details</span>
+              <Globe className="h-3 w-3 text-primary" /> {/* Updated text color */}
+              <span className="font-semibold text-foreground">Connection Details</span> {/* Updated text color */}
             </div>
-            <div className="space-y-1 text-slate-400">
+            <div className="space-y-1 text-muted-foreground"> {/* Updated text color */}
               <p>
-                <span className="text-slate-300">Method:</span>{' '}
+                <span className="text-foreground">Method:</span>{' '} {/* Updated text color */}
                 {usedProxy ? 'CORS Proxy Bypass' : 'Direct Connection'}
               </p>
               {usedProxy && proxyUrl && (
                 <p>
-                  <span className="text-slate-300">Proxy:</span>{' '}
+                  <span className="text-foreground">Proxy:</span>{' '} {/* Updated text color */}
                   <span className="font-mono text-xs">{proxyUrl.replace('https://', '')}</span>
                 </p>
               )}
               {attemptsDirect && (
                 <p>
-                  <span className="text-slate-300">Direct Attempt:</span>{' '}
+                  <span className="text-foreground">Direct Attempt:</span>{' '} {/* Updated text color */}
                   {usedProxy ? 'Failed (CORS blocked)' : 'Success'}
                 </p>
               )}
               {attemptsViaProxy > 0 && (
                 <p>
-                  <span className="text-slate-300">Proxy Attempts:</span> {attemptsViaProxy}
+                  <span className="text-foreground">Proxy Attempts:</span> {attemptsViaProxy} {/* Updated text color */}
                 </p>
               )}
             </div>

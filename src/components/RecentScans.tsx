@@ -16,10 +16,10 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'running': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'failed': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+      case 'completed': return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
+      case 'running': return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
+      case 'failed': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
+      default: return 'bg-muted/20 text-muted-foreground border-border';
     }
   };
 
@@ -43,10 +43,10 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="bg-card border-border"> {/* Updated background and border */}
       <CardHeader>
-        <CardTitle className="text-white">Recent Scans</CardTitle>
-        <CardDescription className="text-slate-400">
+        <CardTitle className="text-foreground">Recent Scans</CardTitle> {/* Updated text color */}
+        <CardDescription className="text-muted-foreground"> {/* Updated text color */}
           Latest reconnaissance activities
         </CardDescription>
       </CardHeader>
@@ -56,23 +56,23 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
             <div key={scan.id} className="flex items-center justify-between group">
               <Link
                 to={`/scan/${scan.id}`}
-                className="flex-1 flex items-center justify-between p-4 bg-slate-800 rounded-lg hover:bg-slate-750 transition-colors group"
+                className="flex-1 flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/50 transition-colors group" {/* Updated background */}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
-                    <h4 className="text-white font-medium group-hover:text-cyan-400 transition-colors">
+                    <h4 className="text-foreground font-medium group-hover:text-primary transition-colors"> {/* Updated text color */}
                       {scan.target}
                     </h4>
                     <Badge className={getStatusColor(scan.status)}>
                       {scan.status}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground"> {/* Updated text color */}
                     <Clock className="h-3 w-3" />
                     <span>{new Date(scan.timestamp).toLocaleString()}</span>
                   </div>
                 </div>
-                <ExternalLink className="h-4 w-4 text-slate-500 group-hover:text-cyan-400 transition-colors" />
+                <ExternalLink className="h-4 w-4 text-muted-foreground/70 group-hover:text-primary transition-colors" /> {/* Updated text color */}
               </Link>
               <button
                 onClick={(e) => {
@@ -80,7 +80,7 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
                   e.preventDefault();
                   handleDeleteScan(scan.id, scan.target);
                 }}
-                className="ml-2 p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                className="ml-2 p-2 text-muted-foreground/70 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100" {/* Updated text color */}
                 aria-label="Delete scan"
               >
                 <Trash2 className="h-4 w-4" />
@@ -89,7 +89,7 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
           ))}
           
           {scans.length === 0 && (
-            <p className="text-center text-slate-500 py-8">No scans yet</p>
+            <p className="text-center text-muted-foreground/70 py-8">No scans yet</p> {/* Updated text color */}
           )}
         </div>
       </CardContent>

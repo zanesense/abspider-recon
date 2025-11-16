@@ -21,10 +21,10 @@ const DNSInfo = ({ dns }: DNSInfoProps) => {
   const recordTypes = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="bg-card border-border"> {/* Updated background and border */}
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <Network className="h-5 w-5 text-purple-400" />
+        <CardTitle className="text-foreground flex items-center gap-2"> {/* Updated text color */}
+          <Network className="h-5 w-5 text-purple-500 dark:text-purple-400" /> {/* Updated text color */}
           DNS Records
         </CardTitle>
       </CardHeader>
@@ -35,19 +35,19 @@ const DNSInfo = ({ dns }: DNSInfoProps) => {
             if (records.length === 0) return null;
 
             return (
-              <div key={type} className="bg-slate-800 rounded-lg p-4">
+              <div key={type} className="bg-muted rounded-lg p-4"> {/* Updated background */}
                 <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                  <Badge className="bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30"> {/* Updated text color */}
                     {type}
                   </Badge>
-                  <span className="text-slate-400 text-sm">{records.length} record(s)</span>
+                  <span className="text-muted-foreground text-sm">{records.length} record(s)</span> {/* Updated text color */}
                 </div>
                 <div className="space-y-2">
                   {records.map((record, index) => (
                     <div key={index} className="flex items-start justify-between text-sm">
-                      <span className="text-white font-mono break-all">{record.value}</span>
+                      <span className="text-foreground font-mono break-all">{record.value}</span> {/* Updated text color */}
                       {record.ttl && (
-                        <span className="text-slate-500 ml-2 whitespace-nowrap">TTL: {record.ttl}</span>
+                        <span className="text-muted-foreground/70 ml-2 whitespace-nowrap">TTL: {record.ttl}</span> {/* Updated text color */}
                       )}
                     </div>
                   ))}

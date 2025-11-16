@@ -22,7 +22,7 @@ const ScanSummaryWidget = ({ scan }: ScanSummaryWidgetProps) => {
     <Card className="bg-card border-border shadow-lg">
       <CardHeader>
         <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-orange-400" />
+          <ShieldAlert className="h-5 w-5 text-orange-500 dark:text-orange-400" /> {/* Updated text color */}
           Scan Summary
         </CardTitle>
       </CardHeader>

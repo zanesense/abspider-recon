@@ -151,25 +151,25 @@ const Settings = () => {
     if (status === 'testing') return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
     if (status === 'success') return <CheckCircle className="h-4 w-4 text-green-500" />;
     if (status === 'error') return <XCircle className="h-4 w-4 text-red-500" />;
-    if (hasAPIKey(service)) return <CheckCircle className="h-4 w-4 text-gray-500" />; // Key is present but not tested
-    return <AlertCircle className="h-4 w-4 text-yellow-500" />; // Key is missing
+    if (hasAPIKey(service)) return <CheckCircle className="h-4 w-4 text-muted-foreground/70" />; // Key is present but not tested
+    return <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />; // Key is missing
   };
 
   const isTestingAPI = (service: APIKeyService) => apiKeyTestStatus[service] === 'testing';
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
+      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl"> {/* Updated background */}
         <SidebarTrigger />
         <div>
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"> {/* Updated gradient colors for better light mode visibility */}
             Settings
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Configure scanning preferences and API keys</p>
+          <p className="text-sm text-muted-foreground mt-1">Configure scanning preferences and API keys</p> {/* Updated text color */}
         </div>
       </header>
       
-      <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> {/* Updated background */}
         <div className="max-w-4xl mx-auto space-y-6">
           {/* General Settings */}
           <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
@@ -231,7 +231,7 @@ const Settings = () => {
                   className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                 />
                 {settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook) && (
-                  <p className="text-xs text-red-500 flex items-center gap-1">
+                  <p className="text-xs text-destructive flex items-center gap-1"> {/* Updated text color */}
                     <AlertCircle className="h-3 w-3" /> Invalid Discord webhook URL format.
                   </p>
                 )}
@@ -267,11 +267,11 @@ const Settings = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert className="border-yellow-500/50 bg-yellow-500/10">
-                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" /> {/* Updated text color */}
                 <AlertTitle className="text-yellow-600 dark:text-yellow-400 font-bold">
                   WARNING: Public CORS Proxy Risks
                 </AlertTitle>
-                <AlertDescription className="text-sm mt-2 text-yellow-500 dark:text-yellow-300">
+                <AlertDescription className="text-sm mt-2 text-yellow-600 dark:text-yellow-300"> {/* Updated text color */}
                   Using public CORS proxies can expose your target URLs, headers, and response content to the proxy operators.
                   For sensitive operations, consider setting up a self-hosted, trusted CORS proxy or using a direct fetch only mode.
                   The security and reliability of these third-party services are not guaranteed.
@@ -302,12 +302,12 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Alert className="border-red-500/50 bg-red-500/10">
-                <Shield className="h-4 w-4 text-red-500" />
-                <AlertTitle className="text-red-600 dark:text-red-400 font-bold">
+              <Alert className="border-destructive/50 bg-destructive/10"> {/* Updated background and border */}
+                <Shield className="h-4 w-4 text-destructive" /> {/* Updated text color */}
+                <AlertTitle className="text-destructive dark:text-red-400 font-bold">
                   CRITICAL WARNING: Client-Side API Key Storage
                 </AlertTitle>
-                <AlertDescription className="text-sm mt-2 text-red-500 dark:text-red-300">
+                <AlertDescription className="text-sm mt-2 text-destructive-foreground dark:text-red-300"> {/* Updated text color */}
                   <p><strong>Private API keys are stored directly in your browser's local storage.</strong> This is highly insecure.</p>
                   <p>Any Cross-Site Scripting (XSS) vulnerability or physical access to your browser can expose these keys.</p>
                   <p><strong>DO NOT store sensitive, paid, or production API keys here.</strong> This feature is intended for testing with non-critical keys only.</p>

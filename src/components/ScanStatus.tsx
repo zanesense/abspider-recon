@@ -11,21 +11,21 @@ interface ScanStatusProps {
 const ScanStatus = ({ scan }: ScanStatusProps) => {
   const getStatusIcon = () => {
     switch (scan.status) {
-      case 'completed': return <CheckCircle className="h-5 w-5 text-green-400" />;
-      case 'running': return <Loader2 className="h-5 w-5 text-yellow-400 animate-spin" />;
-      case 'failed': return <XCircle className="h-5 w-5 text-red-400" />;
-      case 'paused': return <Timer className="h-5 w-5 text-blue-400" />; // Icon for paused
-      default: return <Clock className="h-5 w-5 text-slate-400" />;
+      case 'completed': return <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />;
+      case 'running': return <Loader2 className="h-5 w-5 text-yellow-500 dark:text-yellow-400 animate-spin" />;
+      case 'failed': return <XCircle className="h-5 w-5 text-red-500 dark:text-red-400" />;
+      case 'paused': return <Timer className="h-5 w-5 text-blue-500 dark:text-blue-400" />; // Icon for paused
+      default: return <Clock className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
   const getStatusColor = () => {
     switch (scan.status) {
-      case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'running': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'failed': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'paused': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+      case 'completed': return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
+      case 'running': return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
+      case 'failed': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
+      case 'paused': return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
+      default: return 'bg-muted/20 text-muted-foreground border-border';
     }
   };
 
@@ -104,7 +104,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
         </CardTitle>
         <div className="flex items-center gap-2">
           {hasVulnerabilities && (
-            <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/30">
+            <Badge variant="destructive" className="bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30">
               <AlertTriangle className="h-3 w-3 mr-1" /> Vulnerabilities Detected
             </Badge>
           )}
@@ -172,8 +172,8 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
                   <Badge 
                     key={key} 
                     className={`flex items-center gap-1 px-2 py-1 text-xs font-medium 
-                                ${isVulnModule ? 'bg-red-500/20 text-red-400 border-red-500/30' : 
-                                  isSecurityModule ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
+                                ${isVulnModule ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 
+                                  isSecurityModule ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30' :
                                   'bg-primary/10 text-primary border-primary/30'}`}
                   >
                     {Icon && <Icon className="h-3 w-3" />}

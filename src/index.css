@@ -27,7 +27,7 @@
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 210 90% 50%;
-    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%; /* Changed for light mode readability */
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;

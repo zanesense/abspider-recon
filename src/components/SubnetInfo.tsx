@@ -19,54 +19,54 @@ interface SubnetInfoProps {
 
 const SubnetInfo = ({ subnet }: SubnetInfoProps) => {
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card className="bg-card border-border"> {/* Updated background and border */}
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <Network className="h-5 w-5 text-orange-400" />
+        <CardTitle className="text-foreground flex items-center gap-2"> {/* Updated text color */}
+          <Network className="h-5 w-5 text-orange-500 dark:text-orange-400" /> {/* Updated text color */}
           Subnet Calculator
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">IP Address / CIDR</p>
-            <p className="text-white font-mono text-lg">{subnet.ip}/{subnet.cidr}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">IP Address / CIDR</p> {/* Updated text color */}
+            <p className="text-foreground font-mono text-lg">{subnet.ip}/{subnet.cidr}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">IP Class</p>
-            <p className="text-white font-medium">{subnet.ipClass}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">IP Class</p> {/* Updated text color */}
+            <p className="text-foreground font-medium">{subnet.ipClass}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Network Address</p>
-            <p className="text-white font-mono">{subnet.networkAddress}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">Network Address</p> {/* Updated text color */}
+            <p className="text-foreground font-mono">{subnet.networkAddress}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Broadcast Address</p>
-            <p className="text-white font-mono">{subnet.broadcastAddress}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">Broadcast Address</p> {/* Updated text color */}
+            <p className="text-foreground font-mono">{subnet.broadcastAddress}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Subnet Mask</p>
-            <p className="text-white font-mono">{subnet.subnetMask}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">Subnet Mask</p> {/* Updated text color */}
+            <p className="text-foreground font-mono">{subnet.subnetMask}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Wildcard Mask</p>
-            <p className="text-white font-mono">{subnet.wildcardMask}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">Wildcard Mask</p> {/* Updated text color */}
+            <p className="text-foreground font-mono">{subnet.wildcardMask}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">First Usable IP</p>
-            <p className="text-white font-mono">{subnet.firstUsable}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">First Usable IP</p> {/* Updated text color */}
+            <p className="text-foreground font-mono">{subnet.firstUsable}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Last Usable IP</p>
-            <p className="text-white font-mono">{subnet.lastUsable}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">Last Usable IP</p> {/* Updated text color */}
+            <p className="text-foreground font-mono">{subnet.lastUsable}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Total Hosts</p>
-            <p className="text-cyan-400 font-bold text-xl">{subnet.totalHosts.toLocaleString()}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">Total Hosts</p> {/* Updated text color */}
+            <p className="text-primary font-bold text-xl">{subnet.totalHosts.toLocaleString()}</p> {/* Updated text color */}
           </div>
-          <div className="bg-slate-800 rounded-lg p-4">
-            <p className="text-sm text-slate-400 mb-1">Usable Hosts</p>
-            <p className="text-green-400 font-bold text-xl">{subnet.usableHosts.toLocaleString()}</p>
+          <div className="bg-muted rounded-lg p-4"> {/* Updated background */}
+            <p className="text-sm text-muted-foreground mb-1">Usable Hosts</p> {/* Updated text color */}
+            <p className="text-green-500 dark:text-green-400 font-bold text-xl">{subnet.usableHosts.toLocaleString()}</p> {/* Updated text color */}
           </div>
         </div>
       </CardContent>
