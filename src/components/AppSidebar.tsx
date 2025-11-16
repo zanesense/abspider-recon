@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -12,24 +12,77 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Shield, Home, Scan, Settings, Activity, Sun, Moon, History } from 'lucide-react'; // Import History icon
+import { Shield, Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/SupabaseClient'; // Import supabase
+import { useToast } from '@/hooks/use-toast'; // Import useToast
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
+  const [session, setSession] = useState<any>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loadingLogout, setLoadingLogout] = useState(false);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+      }
+    };
+
+    getSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+      } else {
+        setUserEmail(null);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
   
   const menuItems = [
-    { title: 'Dashboard', icon: Home, href: '/' },
+    { title: 'Dashboard', icon: Home, href: '/dashboard' }, // Updated to /dashboard
     { title: 'New Scan', icon: Scan, href: '/new-scan' },
-    { title: 'All Scans', icon: History, href: '/all-scans' }, // New menu item
+    { title: 'All Scans', icon: History, href: '/all-scans' },
     { title: 'Settings', icon: Settings, href: '/settings' },
   ];
 
+  const handleLogout = async () => {
+    setLoadingLogout(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      navigate('/login');
+    } catch (error: any) {
+      toast({
+        title: "Logout Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingLogout(false);
+    }
+  };
+
   return (
-    <Sidebar className="border-r border-border bg-sidebar shadow-xl"> {/* Updated background */}
-      <SidebarHeader className="border-b border-border bg-sidebar-accent"> {/* Updated background */}
+    <Sidebar className="border-r border-border bg-sidebar shadow-xl">
+      <SidebarHeader className="border-b border-border bg-sidebar-accent">
         <div className="flex items-center gap-3 px-4 py-4">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
             <Shield className="text-white" size={24} />
@@ -81,7 +134,41 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="border-t border-border p-4">
+      <SidebarFooter className="border-t border-border p-4 space-y-2">
+        {userEmail && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/30">
+            <User className="h-4 w-4 text-primary" />
+            <span className="truncate">{userEmail}</span>
+          </div>
+        )}
+        {session ? (
+          <Button
+            onClick={handleLogout}
+            disabled={loadingLogout}
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2 bg-muted/30 hover:bg-muted/50 border-border text-foreground"
+          >
+            {loadingLogout ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <LogOut className="h-4 w-4" />
+            )}
+            <span>Logout</span>
+          </Button>
+        ) : (
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2 bg-muted/30 hover:bg-muted/50 border-border text-foreground"
+          >
+            <Link to="/login">
+              <LogIn className="h-4 w-4" />
+              <span>Login</span>
+            </Link>
+          </Button>
+        )}
         <Button
           onClick={toggleTheme}
           variant="outline"
