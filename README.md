@@ -70,7 +70,6 @@ ABSpider employs a modular approach, offering both stealthy passive checks and c
 | **WordPress Scan**        | Utility | Identifies WordPress versions, plugins, themes, and common vulnerabilities.     |
 | **SEO Analysis**          | Passive | Analyzes meta tags, headings, links, and page performance for SEO insights.     |
 | **DDoS Firewall Test**    | Active  | Detects WAF/DDoS protection mechanisms (e.g., Cloudflare, Sucuri).              |
-| **Deep DDoS Firewall Test**| Active | More aggressive WAF/DDoS detection for robust protection identification.        |
 | **PDF Report Generation** | Utility | Generates professional, exportable PDF reports summarizing all scan findings.     |
 | **Discord Webhook**       | Utility | Sends scan notifications and rich embeds to specified Discord channels.         |
 
@@ -115,7 +114,7 @@ PDF reports are designed for professional security analysis and include:
 | **BuiltWith**        | Technology stack detection, analytics, and framework identification. |
 | **OpenCage**         | Enhanced geocoding, reverse geocoding, and detailed location data. |
 | **Hunter.io**        | Email discovery, domain search, and email verification. |
-| **ClearBit**         | Company data enrichment, logo API, and business intelligence. |
+| **Clearbit**         | Company data enrichment, logo API, and business intelligence. |
 
 -----
 
