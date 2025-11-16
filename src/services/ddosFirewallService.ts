@@ -21,25 +21,31 @@ export interface DDoSFirewallResult {
 
 const DDoS_WAF_INDICATORS = {
   HEADERS: {
-    'server': ['cloudflare', 'sucuri', 'akamai', 'incapsula', 'barracuda', 'mod_security', 'gws', 'google front end'], // Added 'gws', 'google front end'
-    'x-waf-rule': [],
-    'x-sucuri-id': [],
-    'x-cdn': ['cloudflare', 'akamai', 'sucuri', 'google'], // Added 'google'
-    'cf-ray': ['cloudflare'],
-    'cf-cache-status': ['cloudflare'],
-    'x-protected-by': ['sucuri'],
-    'x-cache': ['cloudflare', 'akamai', 'google'], // Generic CDN cache header
-    'x-served-by': ['cloudflare', 'akamai', 'google'], // Generic CDN server header
-    'via': ['cloudflare', 'akamai', 'google'], // Proxy/CDN indicator
+    'server': [
+      'cloudflare', 'sucuri', 'akamai', 'incapsula', 'barracuda', 'mod_security',
+      'gws', 'google front end', 'nginx', 'apache', 'microsoft-iis', // Common web servers, often behind WAFs
+      'cloudfront', 'fastly', 'azure', 'aws', 'google', // Cloud/CDN providers
+      'akamai ghost', 'akamai edge', // Akamai specific
+      'imperva', 'f5 big-ip', 'palo alto', // Specific WAF vendors
+    ],
+    'x-waf-rule': [], // Presence indicates WAF
+    'x-sucuri-id': [], // Presence indicates Sucuri
+    'x-cdn': ['cloudflare', 'akamai', 'sucuri', 'google', 'cloudfront', 'fastly'],
+    'cf-ray': ['cloudflare'], // Cloudflare specific
+    'cf-cache-status': ['cloudflare'], // Cloudflare specific
+    'x-protected-by': ['sucuri', 'imperva'], // Specific WAFs
+    'x-cache': ['cloudflare', 'akamai', 'google', 'cloudfront', 'fastly'], // Generic CDN cache header
+    'x-served-by': ['cloudflare', 'akamai', 'google', 'cloudfront', 'fastly'], // Generic CDN server header
+    'via': ['cloudflare', 'akamai', 'google', 'cloudfront', 'fastly'], // Proxy/CDN indicator
     'age': [], // Cache age, indicates caching layer
     'alt-svc': ['google'], // Often seen on Google services
     'x-goog-generation': ['google'], // Google Cloud Storage related, indicates Google infra
-    'x-goog-hash': ['google'],
-    'x-goog-meta-': ['google'],
-    'x-goog-stored-content-length': ['google'],
-    'x-goog-stored-content-encoding': ['google'],
+    'x-akamai-transformed': ['akamai'], // Akamai specific
+    'x-envoy-upstream-service-time': ['envoy'], // Envoy proxy, often used in cloud-native WAFs/gateways
+    'x-powered-by': ['cloudflare', 'sucuri', 'akamai', 'google'], // Sometimes reveals WAF/CDN
+    'set-cookie': ['__cf_bm', '_sucuri_waf_cookie', 'incap_ses', 'visid_incap'], // WAF-specific cookies
   },
-  STATUS_CODES: [403, 429, 503, 504],
+  STATUS_CODES: [403, 429, 503, 504, 520, 521, 522, 524], // Added Cloudflare specific 5xx errors
   BODY_PATTERNS: [
     /access denied/i,
     /rate limit exceeded/i,
@@ -48,6 +54,13 @@ const DDoS_WAF_INDICATORS = {
     /ddos protection by/i,
     /bot management/i,
     /google/i, // General Google presence in body
+    /sucuri/i, // Sucuri presence in body
+    /akamai/i, // Akamai presence in body
+    /incapsula/i, // Incapsula presence in body
+    /imperva/i, // Imperva presence in body
+    /f5 big-ip/i, // F5 BIG-IP presence in body
+    /palo alto networks/i, // Palo Alto presence in body
+    /web application firewall/i, // Generic WAF text
   ],
 };
 
@@ -114,32 +127,40 @@ export const performDDoSFirewallTest = async (
             const patterns = (DDoS_WAF_INDICATORS.HEADERS as any)[headerName];
             
             // Check if header value contains any of the patterns, or if patterns list is empty (just presence is enough)
-            if (patterns.length === 0 || patterns.some((p: string) => headerValue.toLowerCase().includes(p))) {
+            if (patterns.length === 0 || patterns.some((p: string) => headerValue.toLowerCase().includes(p.toLowerCase()))) {
               result.firewallDetected = true;
               const indicatorText = `Header '${headerName}': ${headerValue}`;
               if (!result.indicators.includes(indicatorText)) {
                 result.indicators.push(indicatorText);
                 evidenceSnippets.add(indicatorText);
               }
-              patterns.forEach((p: string) => {
-                if (p.toLowerCase() === 'gws' || p.toLowerCase() === 'google front end') {
-                  detectedWafs.add('Google Front End');
-                } else if (p.toLowerCase() === 'cloudflare') {
-                  detectedWafs.add('Cloudflare');
-                } else if (p.toLowerCase() === 'sucuri') {
-                  detectedWafs.add('Sucuri');
-                } else if (p.toLowerCase() === 'akamai') {
-                  detectedWafs.add('Akamai');
-                } else if (p.toLowerCase() === 'google') {
-                  detectedWafs.add('Google CDN/WAF');
-                } else if (p.toLowerCase() === 'incapsula') {
-                  detectedWafs.add('Incapsula');
-                } else if (p.toLowerCase() === 'barracuda') {
-                  detectedWafs.add('Barracuda WAF');
-                } else if (p.toLowerCase() === 'mod_security') {
-                  detectedWafs.add('ModSecurity WAF');
+              // More robust WAF detection based on patterns
+              for (const p of patterns) {
+                const lowerP = p.toLowerCase();
+                if (headerValue.toLowerCase().includes(lowerP)) {
+                  if (lowerP.includes('cloudflare')) detectedWafs.add('Cloudflare');
+                  else if (lowerP.includes('sucuri')) detectedWafs.add('Sucuri');
+                  else if (lowerP.includes('akamai')) detectedWafs.add('Akamai');
+                  else if (lowerP.includes('google')) detectedWafs.add('Google Front End');
+                  else if (lowerP.includes('incapsula')) detectedWafs.add('Incapsula');
+                  else if (lowerP.includes('barracuda')) detectedWafs.add('Barracuda WAF');
+                  else if (lowerP.includes('mod_security')) detectedWafs.add('ModSecurity WAF');
+                  else if (lowerP.includes('imperva')) detectedWafs.add('Imperva WAF');
+                  else if (lowerP.includes('f5 big-ip')) detectedWafs.add('F5 BIG-IP WAF');
+                  else if (lowerP.includes('palo alto')) detectedWafs.add('Palo Alto WAF');
+                  else if (lowerP.includes('cloudfront')) detectedWafs.add('AWS CloudFront');
+                  else if (lowerP.includes('fastly')) detectedWafs.add('Fastly CDN');
+                  else if (lowerP.includes('azure')) detectedWafs.add('Azure Front Door/WAF');
+                  else if (lowerP.includes('aws')) detectedWafs.add('AWS WAF/CDN');
+                  else if (lowerP.includes('envoy')) detectedWafs.add('Envoy Proxy/WAF');
                 }
-              });
+              }
+              // Special handling for set-cookie
+              if (headerName === 'set-cookie') {
+                if (headerValue.toLowerCase().includes('__cf_bm')) detectedWafs.add('Cloudflare');
+                if (headerValue.toLowerCase().includes('_sucuri_waf_cookie')) detectedWafs.add('Sucuri');
+                if (headerValue.toLowerCase().includes('incap_ses') || headerValue.toLowerCase().includes('visid_incap')) detectedWafs.add('Incapsula');
+              }
             }
           }
         }
