@@ -104,7 +104,7 @@ PDF reports are designed for professional security analysis and include:
 ### Optional APIs
 
 > Configure API keys in the settings tab for enhanced data.
-> **⚠️ CRITICAL WARNING:** Private API keys are stored directly in your browser's local storage. This is highly insecure. **DO NOT store sensitive, paid, or production API keys here.** This feature is intended for testing with non-critical keys only. For production use, a secure backend for API key management is strongly recommended.
+> **⚠️ CRITICAL WARNING:** API keys are stored in your Supabase database, but are still accessible client-side. This means any Cross-Site Scripting (XSS) vulnerability or physical access to your browser could expose these keys. **DO NOT store sensitive, paid, or production API keys here.** This feature is intended for testing with non-critical keys only. For production use, a secure backend for API key management is strongly recommended.
 
 | Integration          | Purpose                                                     |
 | :------------------- | :---------------------------------------------------------- |

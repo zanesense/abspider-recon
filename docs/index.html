@@ -390,63 +390,9 @@
         </div>
 
         <div class="mt-12 p-6 rounded-lg bg-red-900/10 border border-red-700">
-            <h4 class="text-xl font-semibold mb-2 flex items-center gap-2 text-red-400"><i data-lucide="gavel" class="w-5 h-5 text-red-500"></i> Legal Compliance</h4>
+            <h4 class="text-xl font-semibold mb-2 flex items-center gap-2"><i data-lucide="gavel" class="w-5 h-5 text-red-500"></i> Legal Compliance</h4>
             <p class="text-red-400 font-medium text-sm">This tool is for <span class="font-bold text-white">authorized security testing only</span>.</p>
             <p class="text-sm text-gray-500 mt-2">Only scan domains you own, systems you have written permission to test, or public bug bounty programs. Unauthorized scanning may be illegal.</p>
-        </div>
-    </section>
-
-    <section id="troubleshooting" class="max-w-7xl mx-auto px-6 py-16 fade-in">
-        <div class="section-header">
-            <i data-lucide="alert-triangle"></i>
-            <h3>Troubleshooting & Known Issues</h3>
-        </div>
-
-        <div class="space-y-6">
-            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
-                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="bug" class="w-4 h-4 text-orange-400"></i> Scan Fails Immediately</p>
-                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    <li>Check target URL format.</li>
-                    <li>Ensure the target is accessible.</li>
-                    <li>Try with fewer modules enabled.</li>
-                    <li>Check <span class="font-bold text-cyan-400">browser console</span> for errors.</li>
-                </ul>
-            </div>
-            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
-                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="search-x" class="w-4 h-4 text-orange-400"></i> No Subdomains Found</p>
-                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    <li>Target may have few subdomains.</li>
-                    <li>DNS queries may be rate-limited.</li>
-                    <li>Try again with <span class="font-bold text-cyan-400">proxy rotation</span>.</li>
-                    <li>Some domains block enumeration.</li>
-                </ul>
-            </div>
-            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
-                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="server-off" class="w-4 h-4 text-orange-400"></i> Headers Not Loading</p>
-                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    <li>Target may block HEAD requests.</li>
-                    <li><span class="font-bold text-cyan-400">CORS</span> may prevent access.</li>
-                    <li>Try with proxy enabled.</li>
-                    <li>Some sites require authentication.</li>
-                </ul>
-            </div>
-            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
-                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="webhook" class="w-4 h-4 text-orange-400"></i> Discord Webhook Not Working</p>
-                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    <li>Verify webhook URL is correct.</li>
-                    <li>Use "Test Webhook" button first.</li>
-                    <li>Check Discord server permissions.</li>
-                    <li>Ensure webhook hasn't been deleted.</li>
-                </ul>
-            </div>
-            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
-                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="shield-off" class="w-4 h-4 text-orange-400"></i> DDoS/WAF Detection Issues</p>
-                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    <li>Some WAFs are designed to be stealthy and may not be easily detected.</li>
-                    <li>Aggressive scanning might trigger rate limits or temporary blocks.</li>
-                    <li>Ensure your proxy configuration is correct if using one.</li>
-                </ul>
-            </div>
         </div>
     </section>
 
@@ -460,8 +406,9 @@
         <div class="p-6 rounded-lg border border-gray-700 bg-content-bg">
           <h4 class="font-semibold text-lg mb-3 text-cyan-400 flex items-center gap-2"><i data-lucide="database-zap" class="w-4 h-4"></i> Data Architecture</h4>
           <ul class="list-disc pl-5 text-gray-400 space-y-2 text-sm">
-            <li><span class="font-bold">Storage:</span> All scans stored in <span class="text-white">browser localStorage</span>.</li>
-            <li><span class="font-bold">Serverless:</span> Persists across sessions; no server-side storage.</li>
+            <li><span class="font-bold">Scan Storage:</span> All scans stored in <span class="text-white">browser localStorage</span>.</li>
+            <li><span class="font-bold">API Key Storage:</span> Optional API keys are stored in your <span class="text-white">Supabase database</span>, associated with your user account.</li>
+            <li><span class="font-bold">Serverless:</span> Persists across sessions; no server-side storage for scans.</li>
             <li><span class="font-bold">Performance:</span> Start with <span class="text-white">5 threads</span>, but increase up to 50 for faster scans.</li>
             <li><span class="font-bold">Clear browser data</span> to reset all stored scans and settings.</li>
           </ul>
@@ -509,7 +456,7 @@
             <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
                 <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-blue-400"></i> Security Considerations</p>
                 <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    <li><span class="font-bold">Client-Side API Keys:</span> Be aware that optional API keys are stored in your browser's local storage. This is insecure for sensitive keys. Use only for testing or public keys.</li>
+                    <li><span class="font-bold">Client-Side API Keys:</span> Be aware that optional API keys are stored in your Supabase database but are still accessible client-side. This is insecure for sensitive keys. Use only for testing or public keys.</li>
                     <li><span class="font-bold">Public CORS Proxies:</span> Using public proxies can expose your request details. Consider self-hosting a trusted proxy for sensitive operations.</li>
                     <li><span class="font-bold">Regular Updates:</span> Keep your browser and the application up-to-date to benefit from the latest security patches and features.</li>
                 </ul>
@@ -523,7 +470,7 @@
             <h3>Legal Notice</h3>
         </div>
         <div class="p-6 rounded-lg bg-red-900/10 border border-red-700">
-            <h4 class="text-xl font-semibold mb-2 flex items-center gap-2 text-red-400"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i> IMPORTANT: AUTHORIZED USE ONLY</h4>
+            <h4 class="text-xl font-semibold mb-2 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i> IMPORTANT: AUTHORIZED USE ONLY</h4>
             <p class="text-red-400 font-medium text-sm">This tool is designed for security professionals, penetration testers, and website owners to test their OWN systems or systems they have EXPLICIT WRITTEN PERMISSION to test.</p>
             <ul class="list-disc pl-5 text-sm text-gray-500 mt-4 space-y-1">
                 <li>You may ONLY scan websites and systems you own or have explicit written authorization to test.</li>
