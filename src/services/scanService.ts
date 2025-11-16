@@ -299,13 +299,309 @@ const performScan = async (scan: Scan, abortController: AbortController, request
   const { config } = scan;
   const tasks: string[] = [];
   
+  // Group tasks into independent and dependent stages
+  const independentTasks: Array<() => Promise<void>> = [];
+  const dependentTasks: Array<() => Promise<void>> = [];
+
+  let completed = 0;
+
+  const updateProgress = (stage: string) => {
+    completed++;
+    scan.progress = {
+      current: completed,
+      total: tasks.length,
+      stage: stage,
+    };
+    updateScan(scan);
+  };
+
+  // Define individual task functions
+  const runSiteInfo = async () => {
+    if (config.siteInfo) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Scanning site information';
+        updateScan(scan);
+        const result = await performSiteInfoScan(config.target);
+        scan.results.siteInfo = result;
+        console.log('[Site Info] ✓ Success');
+      } catch (error: any) {
+        console.error('[Site Info] ✗ Error:', error);
+        scan.errors?.push(`Site Info: ${error.message || 'Scan failed'}`);
+        scan.results.siteInfo = { cloudflare: false, technologies: [] };
+      } finally {
+        updateProgress('Site information scan complete');
+      }
+    }
+  };
+
+  const runHeaders = async () => {
+    if (config.headers) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Analyzing HTTP headers';
+        updateScan(scan);
+        const result = await performFullHeaderAnalysis(config.target, config.useProxy);
+        scan.results.headers = result; 
+        console.log('[Headers] ✓ Success');
+      } catch (error: any) {
+        console.error('[Headers] ✗ Error:', error);
+        scan.errors?.push(`Headers: ${error.message}`);
+      } finally {
+        updateProgress('HTTP headers analysis complete');
+      }
+    }
+  };
+
+  const runWhois = async () => {
+    if (config.whois) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Performing WHOIS lookup';
+        updateScan(scan);
+        const result = await performWhoisLookup(config.target);
+        scan.results.whois = result;
+        console.log('[WHOIS] ✓ Success');
+      } catch (error: any) {
+        console.error('[WHOIS] ✗ Error:', error);
+        scan.errors?.push(`WHOIS: ${error.message}`);
+      } finally {
+        updateProgress('WHOIS lookup complete');
+      }
+    }
+  };
+
+  const runGeoIP = async () => {
+    if (config.geoip) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Performing GeoIP lookup';
+        updateScan(scan);
+        const result = await performGeoIPLookup(config.target);
+        scan.results.geoip = result;
+        console.log('[GeoIP] ✓ Success');
+      } catch (error: any) {
+        console.error('[GeoIP] ✗ Error:', error);
+        scan.errors?.push(`GeoIP: ${error.message}`);
+      } finally {
+        updateProgress('GeoIP lookup complete');
+      }
+    }
+  };
+
+  const runDNS = async () => {
+    if (config.dns) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Performing DNS lookup';
+        updateScan(scan);
+        const result = await performDNSLookup(config.target);
+        scan.results.dns = result;
+        console.log('[DNS] ✓ Success');
+      } catch (error: any) {
+        console.error('[DNS] ✗ Error:', error);
+        scan.errors?.push(`DNS: ${error.message}`);
+      } finally {
+        updateProgress('DNS lookup complete');
+      }
+    }
+  };
+
+  const runMX = async () => {
+    if (config.mx) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Performing MX lookup';
+        updateScan(scan);
+        const result = await performMXLookup(config.target);
+        scan.results.mx = result;
+        console.log('[MX] ✓ Success');
+      } catch (error: any) {
+        console.error('[MX] ✗ Error:', error);
+        scan.errors?.push(`MX: ${error.message}`);
+      } finally {
+        updateProgress('MX lookup complete');
+      }
+    }
+  };
+
+  const runPorts = async () => {
+    if (config.ports) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Scanning ports';
+        updateScan(scan);
+        const result = await scanCommonPorts(config.target, config.threads);
+        scan.results.ports = result;
+        console.log('[Ports] ✓ Success');
+      } catch (error: any) {
+        console.error('[Ports] ✗ Error:', error);
+        scan.errors?.push(`Ports: ${error.message}`);
+      } finally {
+        updateProgress('Port scanning complete');
+      }
+    }
+  };
+
+  const runSubdomains = async () => {
+    if (config.subdomains) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Enumerating subdomains';
+        updateScan(scan);
+        const result = await enumerateSubdomains(config.target, config.threads, abortController);
+        scan.results.subdomains = result;
+        console.log('[Subdomains] ✓ Success');
+      } catch (error: any) {
+        console.error('[Subdomains] ✗ Error:', error);
+        scan.errors?.push(`Subdomains: ${error.message || 'Enumeration failed'}`);
+        scan.results.subdomains = { subdomains: [], sources: { dns: 0, crtsh: 0, securitytrails: 0 } };
+      } finally {
+        updateProgress('Subdomain enumeration complete');
+      }
+    }
+  };
+
+  const runReverseIP = async () => {
+    if (config.reverseip) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Performing reverse IP lookup';
+        updateScan(scan);
+        const result = await performReverseIPLookup(config.target);
+        scan.results.reverseip = result;
+        console.log('[Reverse IP] ✓ Success');
+      } catch (error: any) {
+        console.error('[Reverse IP] ✗ Error:', error);
+        scan.errors?.push(`Reverse IP: ${error.message}`);
+      } finally {
+        updateProgress('Reverse IP lookup complete');
+      }
+    }
+  };
+
+  const runSQLInjection = async () => {
+    if (config.sqlinjection) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Testing SQL injection';
+        updateScan(scan);
+        const result = await performSQLScan(config.target);
+        scan.results.sqlinjection = result;
+        console.log('[SQL Injection] ✓ Success');
+      } catch (error: any) {
+        console.error('[SQL Injection] ✗ Error:', error);
+        scan.errors?.push(`SQL Injection: ${error.message}`);
+      } finally {
+        updateProgress('SQL injection test complete');
+      }
+    }
+  };
+
+  const runXSS = async () => {
+    if (config.xss) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Testing XSS vulnerabilities';
+        updateScan(scan);
+        const result = await performXSSScan(config.target);
+        scan.results.xss = result;
+        console.log('[XSS] ✓ Success');
+      } catch (error: any) {
+        console.error('[XSS] ✗ Error:', error);
+        scan.errors?.push(`XSS: ${error.message}`);
+      } finally {
+        updateProgress('XSS vulnerabilities test complete');
+      }
+    }
+  };
+
+  const runLFI = async () => {
+    if (config.lfi) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Testing Local File Inclusion';
+        updateScan(scan);
+        const result = await performLFIScan(config.target, requestManager);
+        scan.results.lfi = result;
+        console.log('[LFI] ✓ Success');
+      } catch (error: any) {
+        console.error('[LFI] ✗ Error:', error);
+        scan.errors?.push(`LFI: ${error.message}`);
+      } finally {
+        updateProgress('Local File Inclusion test complete');
+      }
+    }
+  };
+
+  const runWordPress = async () => {
+    if (config.wordpress) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Scanning WordPress';
+        updateScan(scan);
+        const result = await performWordPressScan(config.target);
+        scan.results.wordpress = result;
+        console.log('[WordPress] ✓ Success');
+      } catch (error: any) {
+        console.error('[WordPress] ✗ Error:', error);
+        scan.errors?.push(`WordPress: ${error.message}`);
+        scan.results.wordpress = {
+          isWordPress: false,
+          vulnerabilities: [],
+          sensitiveFiles: [],
+          plugins: [],
+          themes: [],
+        };
+      } finally {
+        updateProgress('WordPress scan complete');
+      }
+    }
+  };
+
+  const runSEO = async () => {
+    if (config.seo) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Performing SEO analysis';
+        updateScan(scan);
+        const result = await performSEOAnalysis(config.target);
+        scan.results.seo = result;
+        console.log('[SEO] ✓ Success');
+      } catch (error: any) {
+        console.error('[SEO] ✗ Error:', error);
+        scan.errors?.push(`SEO: ${error.message}`);
+      } finally {
+        updateProgress('SEO analysis complete');
+      }
+    }
+  };
+
+  const runSubnet = async () => {
+    if (config.subnet && scan.results.geoip?.ip) {
+      if (await checkScanControl(scan.id)) throw new Error('Scan aborted');
+      try {
+        scan.progress!.stage = 'Calculating subnet information';
+        updateScan(scan);
+        const result = calculateSubnet(scan.results.geoip.ip, 24);
+        scan.results.subnet = result;
+        console.log('[Subnet] ✓ Success');
+      } catch (error: any) {
+        console.error('[Subnet] ✗ Error:', error);
+        scan.errors?.push(`Subnet: ${error.message}`);
+      } finally {
+        updateProgress('Subnet calculation complete');
+      }
+    }
+  };
+
+  // Populate tasks array for total count
   if (config.siteInfo) tasks.push('siteInfo');
   if (config.headers) tasks.push('headers');
   if (config.whois) tasks.push('whois');
   if (config.geoip) tasks.push('geoip');
   if (config.dns) tasks.push('dns');
   if (config.mx) tasks.push('mx');
-  if (config.subnet) tasks.push('subnet');
   if (config.ports) tasks.push('ports');
   if (config.subdomains) tasks.push('subdomains');
   if (config.reverseip) tasks.push('reverseip');
@@ -314,294 +610,54 @@ const performScan = async (scan: Scan, abortController: AbortController, request
   if (config.lfi) tasks.push('lfi');
   if (config.wordpress) tasks.push('wordpress');
   if (config.seo) tasks.push('seo');
+  // Subnet is dependent, so it's not added to the initial task count for parallel execution
+  // It will be added to the total count later if geoip is enabled.
 
-  scan.progress = {
-    current: 0,
-    total: tasks.length,
-    stage: 'Starting comprehensive scan',
-  };
+  scan.progress!.total = tasks.length + (config.subnet ? 1 : 0); // Add 1 for subnet if enabled
   updateScan(scan);
 
-  let completed = 0;
+  // Group independent tasks
+  const initialParallelTasks: Promise<void>[] = [];
+  if (config.siteInfo) initialParallelTasks.push(runSiteInfo());
+  if (config.headers) initialParallelTasks.push(runHeaders());
+  if (config.whois) initialParallelTasks.push(runWhois());
+  if (config.dns) initialParallelTasks.push(runDNS());
+  if (config.mx) initialParallelTasks.push(runMX());
+  if (config.ports) initialParallelTasks.push(runPorts());
+  if (config.subdomains) initialParallelTasks.push(runSubdomains());
+  if (config.reverseip) initialParallelTasks.push(runReverseIP());
+  if (config.sqlinjection) initialParallelTasks.push(runSQLInjection());
+  if (config.xss) initialParallelTasks.push(runXSS());
+  if (config.lfi) initialParallelTasks.push(runLFI());
+  if (config.wordpress) initialParallelTasks.push(runWordPress());
+  if (config.seo) initialParallelTasks.push(runSEO());
 
-  if (config.siteInfo) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Scanning site information';
-      updateScan(scan);
-      const result = await performSiteInfoScan(config.target);
-      scan.results.siteInfo = result;
-      console.log('[Site Info] ✓ Success');
-    } catch (error: any) {
-      console.error('[Site Info] ✗ Error:', error);
-      scan.errors?.push(`Site Info: ${error.message || 'Scan failed'}`);
-      scan.results.siteInfo = { cloudflare: false, technologies: [] };
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.headers) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Analyzing HTTP headers';
-      updateScan(scan);
-      const result = await performFullHeaderAnalysis(config.target, config.useProxy);
-      // Store the full analysis result directly
-      scan.results.headers = result; 
-      console.log('[Headers] ✓ Success');
-    } catch (error: any) {
-      console.error('[Headers] ✗ Error:', error);
-      scan.errors?.push(`Headers: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.whois) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Performing WHOIS lookup';
-      updateScan(scan);
-      const result = await performWhoisLookup(config.target);
-      scan.results.whois = result;
-      console.log('[WHOIS] ✓ Success');
-    } catch (error: any) {
-      console.error('[WHOIS] ✗ Error:', error);
-      scan.errors?.push(`WHOIS: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
+  // GeoIP is often a prerequisite for other modules (like subnet), so it's handled separately
+  // and its result is awaited before dependent tasks.
+  let geoipPromise: Promise<void> | undefined;
   if (config.geoip) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Performing GeoIP lookup';
-      updateScan(scan);
-      const result = await performGeoIPLookup(config.target);
-      scan.results.geoip = result;
-      console.log('[GeoIP] ✓ Success');
-    } catch (error: any) {
-      console.error('[GeoIP] ✗ Error:', error);
-      scan.errors?.push(`GeoIP: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
+    geoipPromise = runGeoIP();
+    initialParallelTasks.push(geoipPromise);
   }
 
-  if (config.dns) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Performing DNS lookup';
-      updateScan(scan);
-      const result = await performDNSLookup(config.target);
-      scan.results.dns = result;
-      console.log('[DNS] ✓ Success');
-    } catch (error: any) {
-      console.error('[DNS] ✗ Error:', error);
-      scan.errors?.push(`DNS: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
+  try {
+    await Promise.allSettled(initialParallelTasks);
+    
+    // After initial parallel tasks, run dependent tasks
+    if (config.subnet) {
+      // Ensure geoip is completed before running subnet
+      if (geoipPromise) {
+        await geoipPromise; // Await specifically if it was part of initialParallelTasks
+      }
+      await runSubnet();
     }
-  }
 
-  if (config.mx) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Performing MX lookup';
-      updateScan(scan);
-      const result = await performMXLookup(config.target);
-      scan.results.mx = result;
-      console.log('[MX] ✓ Success');
-    } catch (error: any) {
-      console.error('[MX] ✗ Error:', error);
-      scan.errors?.push(`MX: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.subnet && scan.results.geoip?.ip) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Calculating subnet information';
-      updateScan(scan);
-      const result = calculateSubnet(scan.results.geoip.ip, 24);
-      scan.results.subnet = result;
-      console.log('[Subnet] ✓ Success');
-    } catch (error: any) {
-      console.error('[Subnet] ✗ Error:', error);
-      scan.errors?.push(`Subnet: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.ports) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Scanning ports';
-      updateScan(scan);
-      const result = await scanCommonPorts(config.target, config.threads);
-      scan.results.ports = result;
-      console.log('[Ports] ✓ Success');
-    } catch (error: any) {
-      console.error('[Ports] ✗ Error:', error);
-      scan.errors?.push(`Ports: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.subdomains) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Enumerating subdomains';
-      updateScan(scan);
-      // Pass the main abortController to enumerateSubdomains
-      const result = await enumerateSubdomains(config.target, config.threads, abortController);
-      scan.results.subdomains = result; // Store the full SubdomainResult object
-      console.log('[Subdomains] ✓ Success');
-    } catch (error: any) {
-      console.error('[Subdomains] ✗ Error:', error);
-      scan.errors?.push(`Subdomains: ${error.message || 'Enumeration failed'}`);
-      scan.results.subdomains = { subdomains: [], sources: { dns: 0, crtsh: 0, securitytrails: 0 } }; // Ensure default structure
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.reverseip) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Performing reverse IP lookup';
-      updateScan(scan);
-      const result = await performReverseIPLookup(config.target);
-      scan.results.reverseip = result;
-      console.log('[Reverse IP] ✓ Success');
-    } catch (error: any) {
-      console.error('[Reverse IP] ✗ Error:', error);
-      scan.errors?.push(`Reverse IP: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.sqlinjection) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Testing SQL injection';
-      updateScan(scan);
-      const result = await performSQLScan(config.target);
-      scan.results.sqlinjection = result;
-      console.log('[SQL Injection] ✓ Success');
-    } catch (error: any) {
-      console.error('[SQL Injection] ✗ Error:', error);
-      scan.errors?.push(`SQL Injection: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.xss) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Testing XSS vulnerabilities';
-      updateScan(scan);
-      const result = await performXSSScan(config.target);
-      scan.results.xss = result;
-      console.log('[XSS] ✓ Success');
-    } catch (error: any) {
-      console.error('[XSS] ✗ Error:', error);
-      scan.errors?.push(`XSS: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.lfi) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Testing Local File Inclusion';
-      updateScan(scan);
-      const result = await performLFIScan(config.target, requestManager);
-      scan.results.lfi = result;
-      console.log('[LFI] ✓ Success');
-    } catch (error: any) {
-      console.error('[LFI] ✗ Error:', error);
-      scan.errors?.push(`LFI: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.wordpress) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Scanning WordPress';
-      updateScan(scan);
-      const result = await performWordPressScan(config.target);
-      scan.results.wordpress = result;
-      console.log('[WordPress] ✓ Success');
-    } catch (error: any) {
-      console.error('[WordPress] ✗ Error:', error);
-      scan.errors?.push(`WordPress: ${error.message}`);
-      scan.results.wordpress = {
-        isWordPress: false,
-        vulnerabilities: [],
-        sensitiveFiles: [],
-        plugins: [],
-        themes: [],
-      };
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
-    }
-  }
-
-  if (config.seo) {
-    if (await checkScanControl(scan.id)) return;
-    try {
-      scan.progress.stage = 'Performing SEO analysis';
-      updateScan(scan);
-      const result = await performSEOAnalysis(config.target);
-      scan.results.seo = result;
-      console.log('[SEO] ✓ Success');
-    } catch (error: any) {
-      console.error('[SEO] ✗ Error:', error);
-      scan.errors?.push(`SEO: ${error.message}`);
-    } finally {
-      completed++;
-      scan.progress.current = completed;
-      updateScan(scan);
+  } catch (error: any) {
+    if (error.message === 'Scan aborted') {
+      console.log(`[Scan ${scan.id}] Scan aborted during parallel execution.`);
+    } else {
+      console.error(`[Scan ${scan.id}] Error during parallel execution:`, error);
+      scan.errors?.push(`Parallel execution error: ${error.message}`);
     }
   }
 
@@ -616,16 +672,9 @@ const performScan = async (scan: Scan, abortController: AbortController, request
   if (scan.startedAt) {
     scan.elapsedMs = Date.now() - new Date(scan.startedAt).getTime();
   }
-  scan.progress.stage = scan.status === 'stopped' ? 'Scan stopped' : 'Scan complete';
+  scan.progress!.stage = scan.status === 'stopped' ? 'Scan stopped' : 'Scan complete';
   updateScan(scan);
   
   const successCount = tasks.length - (scan.errors?.length || 0);
   console.log(`[Scan ${scan.id}] ${scan.status}: ${successCount}/${tasks.length} modules successful`);
-};
-
-export const deleteScan = (id: string) => {
-  console.log(`[Delete Scan] Removing scan ${id}`);
-  scansCache = scansCache.filter(s => s.id !== id);
-  saveScansToStorage(scansCache);
-  scanControllers.delete(id);
 };
