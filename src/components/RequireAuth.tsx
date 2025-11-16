@@ -1,31 +1,12 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/SupabaseClient";
-import Login from "@/components/Login";
+import React from "react";
+// The original logic for checking user session and rendering Login is commented out
+// to disable the authentication feature while keeping the file.
 
 interface Props {
   children: React.ReactNode;
 }
 
 export default function RequireAuth({ children }: Props) {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => listener.subscription.unsubscribe();
-  }, []);
-
-  if (loading) return <p className="text-center mt-20 text-muted-foreground">Loading...</p>;
-  if (!user) return <Login />;
-  
+  // Login feature is disabled. Always render children.
   return <>{children}</>;
 }

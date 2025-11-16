@@ -10,12 +10,12 @@ import NotFound from "@/pages/NotFound";
 import NewScan from "@/pages/NewScan";
 import ScanResults from "@/pages/ScanResults";
 import Settings from "@/pages/Settings";
-import AllScans from "@/pages/AllScans"; // New import
+import AllScans from "@/pages/AllScans";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
-import RequireAuth from "@/components/RequireAuth"; // new
+import RequireAuth from "@/components/RequireAuth"; // Re-added
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,16 +35,16 @@ function App() {
             <BrowserRouter>
               <Toaster />
               <Sonner />
-              <RequireAuth>
+              <RequireAuth> {/* Re-added */}
                 <SidebarProvider>
-                  <div className="flex min-h-screen w-full bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> {/* Updated background */}
+                  <div className="flex min-h-screen w-full bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
                     <AppSidebar />
                     <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
                       <div className="flex-1">
                         <Routes>
                           <Route path="/" element={<Index />} />
                           <Route path="/new-scan" element={<NewScan />} />
-                          <Route path="/all-scans" element={<AllScans />} /> {/* New route */}
+                          <Route path="/all-scans" element={<AllScans />} />
                           <Route path="/scan/:id" element={<ScanResults />} />
                           <Route path="/settings" element={<Settings />} />
                           <Route path="*" element={<NotFound />} />
@@ -55,7 +55,7 @@ function App() {
                     </SidebarInset>
                   </div>
                 </SidebarProvider>
-              </RequireAuth>
+              </RequireAuth> {/* Re-added */}
             </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>
