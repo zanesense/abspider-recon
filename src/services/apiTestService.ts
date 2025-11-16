@@ -46,9 +46,9 @@ export const testVirusTotalAPI = async (apiKey: string): Promise<APIKeyTestResul
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
     // Use a public, known-safe URL for testing
-    const testUrl = 'google.com'; 
+    const testUrl = 'example.com'; // Changed from google.com to example.com
     const url = `https://www.virustotal.com/vtapi/v2/url/report?apikey=${apiKey}&resource=${testUrl}`;
-    const response = await fetchWithTimeout(url);
+    const response = await fetchWithTimeout(url, { mode: 'cors' }); // Explicitly setting mode: 'cors'
     const data = await response.json();
 
     if (response.ok && data.response_code !== undefined) {
