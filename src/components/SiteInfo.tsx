@@ -102,7 +102,7 @@ const SiteInfo = ({ siteInfo }: SiteInfoProps) => {
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-muted-foreground/70 text-sm">None detected</span> {/* Updated text color */}
+                  <span className="text-muted-foreground/70 text-sm">None detected</span>
                 )}
               </div>
             </div>
