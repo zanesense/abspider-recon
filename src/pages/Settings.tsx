@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Import Alert components
-import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield } from 'lucide-react'; // Added Shield icon
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl } from '@/services/settingsService';
 import { getAPIKeys, saveAPIKeys, hasAPIKey } from '@/services/apiKeyService';
@@ -186,8 +186,8 @@ const Settings = () => {
                   <Input
                     id="defaultThreads"
                     type="number"
-                    min="1" // Min threads can be 1
-                    max="50" // Max threads reduced from 100 to 50
+                    min="1"
+                    max="50"
                     value={settings.defaultThreads}
                     onChange={(e) => setSettings({ ...settings, defaultThreads: parseInt(e.target.value) })}
                     className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
@@ -308,10 +308,10 @@ const Settings = () => {
                   CRITICAL WARNING: Client-Side API Key Storage
                 </AlertTitle>
                 <AlertDescription className="text-sm mt-2 text-red-500 dark:text-red-300">
-                  **Private API keys are stored directly in your browser's local storage.** This is highly insecure.
-                  Any Cross-Site Scripting (XSS) vulnerability or physical access to your browser can expose these keys.
-                  **DO NOT store sensitive, paid, or production API keys here.** This feature is intended for testing with non-critical keys only.
-                  For production use, a secure backend for API key management is strongly recommended.
+                  <p><strong>Private API keys are stored directly in your browser's local storage.</strong> This is highly insecure.</p>
+                  <p>Any Cross-Site Scripting (XSS) vulnerability or physical access to your browser can expose these keys.</p>
+                  <p><strong>DO NOT store sensitive, paid, or production API keys here.</strong> This feature is intended for testing with non-critical keys only.</p>
+                  <p>For production use, a secure backend for API key management is strongly recommended.</p>
                 </AlertDescription>
               </Alert>
               <div className="grid grid-cols-1 gap-4">
