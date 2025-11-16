@@ -349,11 +349,10 @@ const Settings = () => {
               <Alert className="border-destructive/50 bg-destructive/10">
                 <Shield className="h-4 w-4 text-destructive" />
                 <AlertTitle className="text-destructive dark:text-red-400 font-bold">
-                  CRITICAL WARNING: Client-Side API Key Storage
+                  CRITICAL WARNING: Client-Side Accessible API Key Storage
                 </AlertTitle>
                 <AlertDescription className="text-sm mt-2 text-destructive-foreground dark:text-red-300">
-                  <p><strong>Private API keys are stored directly in your browser's local storage (for general settings) and Supabase (for API keys).</strong> This is highly insecure for API keys.</p>
-                  <p>Any Cross-Site Scripting (XSS) vulnerability or physical access to your browser can expose these keys.</p>
+                  <p><strong>API keys are stored in your Supabase database, but are still accessible client-side.</strong> This means any Cross-Site Scripting (XSS) vulnerability or physical access to your browser could expose these keys.</p>
                   <p><strong>DO NOT store sensitive, paid, or production API keys here.</strong> This feature is intended for testing with non-critical keys only.</p>
                   <p>For production use, a secure backend for API key management is strongly recommended.</p>
                 </AlertDescription>
