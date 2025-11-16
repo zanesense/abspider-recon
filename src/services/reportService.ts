@@ -67,6 +67,18 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
       });
     }
   }
+
+  // MX record recommendations (SPF/DMARC)
+  if (scan.config.mx && scan.results.mx) {
+    if (!scan.results.mx.spfRecord) {
+      recommendations.push('MEDIUM: Missing SPF Record');
+      recommendations.push('• Implement an SPF record to prevent email spoofing and unauthorized use of your domain for sending emails.');
+    }
+    if (!scan.results.mx.dmarcRecord) {
+      recommendations.push('MEDIUM: Missing DMARC Record');
+      recommendations.push('• Implement a DMARC record to gain visibility into email authentication failures and protect against phishing attacks.');
+    }
+  }
   
   return recommendations;
 };

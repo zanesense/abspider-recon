@@ -33,6 +33,16 @@ export const calculateSecurityGrade = (scan: Scan): number => {
   const openPorts = scan.results.ports?.filter(p => p.status === 'open').length || 0;
   grade -= Math.min(openPorts * 0.1, 1); // Small deduction per open port, capped at 1 point
 
+  // Deductions for MX record issues (SPF/DMARC)
+  if (scan.config.mx && scan.results.mx) {
+    if (!scan.results.mx.spfRecord) {
+      grade -= 0.5; // Deduction for missing SPF record
+    }
+    if (!scan.results.mx.dmarcRecord) {
+      grade -= 0.5; // Deduction for missing DMARC record
+    }
+  }
+
   // Bonus for DDoS/WAF detection (indicates some protection)
   if (scan.results.ddosFirewall?.firewallDetected) {
     grade += 0.5;
