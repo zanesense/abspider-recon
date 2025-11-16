@@ -24,6 +24,7 @@ import LFIVulnerabilities from '@/components/LFIVulnerabilities';
 import WordPressInfo from '@/components/WordPressInfo';
 import SEOInfo from '@/components/SEOInfo';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useEffect } from 'react';
 
 const ScanResults = () => {
   const { id } = useParams();
@@ -41,6 +42,36 @@ const ScanResults = () => {
     retry: 3,
     retryDelay: 1000,
   });
+
+  // Effect to stop scan on unmount or ID change
+  useEffect(() => {
+    if (!id) return;
+
+    const currentScan = getScanById(id);
+    if (currentScan && currentScan.status === 'running') {
+      console.log(`[ScanResults] Stopping running scan ${id} on component mount/ID change.`);
+      stopScan(id);
+    }
+
+    const handleBeforeUnload = () => {
+      const scanOnUnload = getScanById(id);
+      if (scanOnUnload && scanOnUnload.status === 'running') {
+        console.log(`[ScanResults] Stopping running scan ${id} on page unload.`);
+        stopScan(id);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      const scanOnUnmount = getScanById(id);
+      if (scanOnUnmount && scanOnUnmount.status === 'running') {
+        console.log(`[ScanResults] Stopping running scan ${id} on component unmount.`);
+        stopScan(id);
+      }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [id]); // Dependency array includes 'id' to re-run effect if scan ID changes
 
   const handleDownloadReport = () => {
     if (!scan) return;
@@ -156,7 +187,7 @@ const ScanResults = () => {
           <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
             <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
-          <Button onClick={handleDownloadReport} disabled={scan.status === 'running' || scan.status === 'paused'} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-md">
+          <Button onClick={handleDownloadReport} disabled={scan.status === 'running' || scan.status === 'paused'} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md">
             <Download className="h-4 w-4 mr-2" /> Download Report
           </Button>
         </div>

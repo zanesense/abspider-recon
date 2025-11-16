@@ -79,12 +79,18 @@ const NewScan = () => {
       <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
         <SidebarTrigger />
         <div className="flex-1">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
-            <Shield className="h-7 w-7 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
+            <Shield className="h-7 w-7 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
             New Reconnaissance Scan
           </h1>
           <p className="text-sm text-slate-400 mt-1">Configure and launch a comprehensive security and intelligence scan</p>
         </div>
+        <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-primary/30">
+          <Link to="/new-scan">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Scan
+          </Link>
+        </Button>
       </header>
       
       <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -404,7 +410,7 @@ const NewScan = () => {
               <Button
                 type="submit"
                 disabled={isScanning}
-                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-lg shadow-primary/30 transition-all duration-300 hover:scale-[1.02] text-white font-semibold"
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-primary/30 transition-all duration-300 hover:scale-[1.02] text-white font-semibold"
               >
                 {isScanning ? (
                   <>
