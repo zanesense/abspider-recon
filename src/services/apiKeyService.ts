@@ -1,3 +1,5 @@
+import { supabase } from '@/SupabaseClient';
+
 interface APIKeys {
   shodan?: string;
   virustotal?: string;
@@ -8,40 +10,74 @@ interface APIKeys {
   opencage?: string;
 }
 
-const API_KEYS_STORAGE = 'abspider-api-keys';
+// Define the structure for the Supabase table row
+interface UserAPIKeysRow {
+  user_id: string;
+  api_keys: APIKeys;
+}
 
-export const getAPIKeys = (): APIKeys => {
+export const getAPIKeys = async (): Promise<APIKeys> => {
   try {
-    const stored = localStorage.getItem(API_KEYS_STORAGE);
-    const keys = stored ? JSON.parse(stored) : {};
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!session?.user) {
+      console.warn('[API Keys] No active session, returning empty API keys.');
+      return {};
+    }
+
+    const { data, error } = await supabase
+      .from('user_api_keys')
+      .select('api_keys')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 means 'no rows found', which is fine
+      throw error;
+    }
+
+    const keys = data?.api_keys || {};
     if (Object.keys(keys).length > 0) {
-      console.warn('[API Keys] WARNING: API keys are stored in client-side localStorage. This is INSECURE for private keys and should only be used for testing or public keys. Consider a secure backend for production.');
+      console.warn('[API Keys] WARNING: API keys are stored in client-side accessible Supabase. This is INSECURE for private keys and should only be used for testing or public keys. Consider a secure backend for production.');
     }
     return keys;
-  } catch (error) {
-    console.error('[API Keys] Failed to load:', error);
+  } catch (error: any) {
+    console.error('[API Keys] Failed to load from Supabase:', error.message);
     return {};
   }
 };
 
-export const saveAPIKeys = (keys: APIKeys) => {
+export const saveAPIKeys = async (keys: APIKeys) => {
   try {
-    localStorage.setItem(API_KEYS_STORAGE, JSON.stringify(keys));
-    console.log('[API Keys] Saved successfully');
-    if (Object.keys(keys).length > 0) {
-      console.warn('[API Keys] WARNING: API keys are stored in client-side localStorage. This is INSECURE for private keys and should only be used for testing or public keys. Consider a secure backend for production.');
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!session?.user) {
+      throw new Error('No active user session to save API keys.');
     }
-  } catch (error) {
-    console.error('[API Keys] Failed to save:', error);
+
+    const { error } = await supabase
+      .from('user_api_keys')
+      .upsert({ user_id: session.user.id, api_keys: keys } as UserAPIKeysRow, {
+        onConflict: 'user_id',
+      });
+
+    if (error) throw error;
+
+    console.log('[API Keys] Saved successfully to Supabase');
+    if (Object.keys(keys).length > 0) {
+      console.warn('[API Keys] WARNING: API keys are stored in client-side accessible Supabase. This is INSECURE for private keys and should only be used for testing or public keys. Consider a secure backend for production.');
+    }
+  } catch (error: any) {
+    console.error('[API Keys] Failed to save to Supabase:', error.message);
+    throw new Error(`Failed to save API keys: ${error.message}`);
   }
 };
 
-export const getAPIKey = (service: keyof APIKeys): string | undefined => {
-  const keys = getAPIKeys();
+export const getAPIKey = async (service: keyof APIKeys): Promise<string | undefined> => {
+  const keys = await getAPIKeys();
   return keys[service];
 };
 
-export const hasAPIKey = (service: keyof APIKeys): boolean => {
-  const key = getAPIKey(service);
+export const hasAPIKey = async (service: keyof APIKeys): Promise<boolean> => {
+  const key = await getAPIKey(service);
   return !!key && key.trim().length > 0;
 };

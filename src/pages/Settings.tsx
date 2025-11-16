@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -20,15 +20,42 @@ import {
   testClearbitAPI,
   testOpenCageAPI,
 } from '@/services/apiTestService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; // Import react-query hooks
 
 type APIKeyService = 'shodan' | 'virustotal' | 'securitytrails' | 'builtwith' | 'hunter' | 'clearbit' | 'opencage';
 
 const Settings = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState(getSettings());
-  const [apiKeys, setApiKeys] = useState(getAPIKeys());
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [apiKeyTestStatus, setApiKeyTestStatus] = useState<Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>>({});
+
+  // Fetch API keys using react-query
+  const { data: apiKeys = {}, isLoading: isLoadingApiKeys, isError: isErrorApiKeys } = useQuery({
+    queryKey: ['apiKeys'],
+    queryFn: getAPIKeys,
+    staleTime: Infinity, // API keys don't change often
+  });
+
+  // Mutation for saving API keys
+  const saveApiKeysMutation = useMutation({
+    mutationFn: saveAPIKeys,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
+      toast({
+        title: "Settings Saved",
+        description: "Your settings have been saved successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save API keys",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSaveSettings = () => {
     try {
@@ -42,12 +69,8 @@ const Settings = () => {
         return;
       }
 
-      saveSettings(settings);
-      saveAPIKeys(apiKeys);
-      toast({
-        title: "Settings Saved",
-        description: "Your settings have been saved successfully",
-      });
+      saveSettings(settings); // Save general settings to localStorage
+      saveApiKeysMutation.mutate(apiKeys); // Save API keys to Supabase via mutation
     } catch (error: any) {
       toast({
         title: "Error",
@@ -151,11 +174,32 @@ const Settings = () => {
     if (status === 'testing') return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
     if (status === 'success') return <CheckCircle className="h-4 w-4 text-green-500" />;
     if (status === 'error') return <XCircle className="h-4 w-4 text-red-500" />;
-    if (hasAPIKey(service)) return <CheckCircle className="h-4 w-4 text-muted-foreground/70" />; // Key is present but not tested
+    if (apiKeys[service]) return <CheckCircle className="h-4 w-4 text-muted-foreground/70" />; // Key is present but not tested
     return <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />; // Key is missing
   };
 
   const isTestingAPI = (service: APIKeyService) => apiKeyTestStatus[service] === 'testing';
+
+  if (isLoadingApiKeys) {
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4 text-muted-foreground">Loading API keys...</p>
+      </div>
+    );
+  }
+
+  if (isErrorApiKeys) {
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>Failed to load API keys. Please try again later.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -308,7 +352,7 @@ const Settings = () => {
                   CRITICAL WARNING: Client-Side API Key Storage
                 </AlertTitle>
                 <AlertDescription className="text-sm mt-2 text-destructive-foreground dark:text-red-300">
-                  <p><strong>Private API keys are stored directly in your browser's local storage.</strong> This is highly insecure.</p>
+                  <p><strong>Private API keys are stored directly in your browser's local storage (for general settings) and Supabase (for API keys).</strong> This is highly insecure for API keys.</p>
                   <p>Any Cross-Site Scripting (XSS) vulnerability or physical access to your browser can expose these keys.</p>
                   <p><strong>DO NOT store sensitive, paid, or production API keys here.</strong> This feature is intended for testing with non-critical keys only.</p>
                   <p>For production use, a secure backend for API key management is strongly recommended.</p>
@@ -337,7 +381,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter Shodan API key"
                     value={apiKeys.shodan || ''}
-                    onChange={(e) => setApiKeys({ ...apiKeys, shodan: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, shodan: e.target.value })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Enhanced port scanning, banner grabbing, and vulnerability detection</p>
@@ -365,7 +409,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter VirusTotal API key"
                     value={apiKeys.virustotal || ''}
-                    onChange={(e) => setApiKeys({ ...apiKeys, virustotal: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, virustotal: e.target.value })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Domain reputation, malware scanning, and threat intelligence</p>
@@ -393,7 +437,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter SecurityTrails API key"
                     value={apiKeys.securitytrails || ''}
-                    onChange={(e) => setApiKeys({ ...apiKeys, securitytrails: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, securitytrails: e.target.value })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Historical DNS data, subdomain discovery, and WHOIS history</p>
@@ -421,7 +465,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter BuiltWith API key"
                     value={apiKeys.builtwith || ''}
-                    onChange={(e) => setApiKeys({ ...apiKeys, builtwith: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, builtwith: e.target.value })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Technology stack detection, analytics, and framework identification</p>
@@ -449,7 +493,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter OpenCage API key"
                     value={apiKeys.opencage || ''}
-                    onChange={(e) => setApiKeys({ ...apiKeys, opencage: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, opencage: e.target.value })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Enhanced geocoding, reverse geocoding, and detailed location data</p>
@@ -477,7 +521,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter Hunter.io API key"
                     value={apiKeys.hunter || ''}
-                    onChange={(e) => setApiKeys({ ...apiKeys, hunter: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, hunter: e.target.value })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Email discovery, domain search, and email verification</p>
@@ -505,7 +549,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter Clearbit API key"
                     value={apiKeys.clearbit || ''}
-                    onChange={(e) => setApiKeys({ ...apiKeys, clearbit: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, clearbit: e.target.value })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Company data enrichment, logo API, and business intelligence</p>
