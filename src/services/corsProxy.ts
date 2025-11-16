@@ -4,7 +4,8 @@ const CORS_PROXIES = [
   'https://api.codetabs.com/v1/proxy?quest=',
   'https://thingproxy.freeboard.io/fetch/',
   'https://cors.bridged.cc/',
-  'https://cors-anywhere.herokuapp.com/',
+  'https://yacdn.org/proxy/', // Added another common proxy
+  'https://proxy.cors.sh/', // Added another common proxy
 ];
 
 // Cloudflare bypass headers
