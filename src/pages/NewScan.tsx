@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap } from 'lucide-react';
+import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startScan } from '@/services/scanService';
 
@@ -40,7 +40,7 @@ const NewScan = () => {
     // SEO & Analytics
     seo: true,
     // Security Testing
-    ddosFirewall: false, // New module
+    ddosFirewall: false,
     // Settings
     useProxy: false,
     threads: 20,
@@ -75,6 +75,74 @@ const NewScan = () => {
       setIsScanning(false);
     }
   };
+
+  // Helper functions for "Select All" toggles
+  const toggleBasicScans = () => {
+    const allChecked = formData.siteInfo && formData.headers;
+    setFormData(prev => ({
+      ...prev,
+      siteInfo: !allChecked,
+      headers: !allChecked,
+    }));
+  };
+
+  const toggleNetworkIntelligence = () => {
+    const allChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
+    setFormData(prev => ({
+      ...prev,
+      whois: !allChecked,
+      geoip: !allChecked,
+      dns: !allChecked,
+      mx: !allChecked,
+      subnet: !allChecked,
+      ports: !allChecked,
+      subdomains: !allChecked,
+      reverseip: !allChecked,
+    }));
+  };
+
+  const toggleVulnerabilityAssessment = () => {
+    const allChecked = formData.sqlinjection && formData.xss && formData.lfi;
+    setFormData(prev => ({
+      ...prev,
+      sqlinjection: !allChecked,
+      xss: !allChecked,
+      lfi: !allChecked,
+    }));
+  };
+
+  const toggleCmsDetection = () => {
+    const allChecked = formData.wordpress;
+    setFormData(prev => ({
+      ...prev,
+      wordpress: !allChecked,
+    }));
+  };
+
+  const toggleSeoAnalytics = () => {
+    const allChecked = formData.seo;
+    setFormData(prev => ({
+      ...prev,
+      seo: !allChecked,
+    }));
+  };
+
+  const toggleSecurityTesting = () => {
+    const allChecked = formData.ddosFirewall;
+    setFormData(prev => ({
+      ...prev,
+      ddosFirewall: !allChecked,
+    }));
+  };
+
+  // Determine if all checkboxes in a group are checked for button text/icon
+  const allBasicChecked = formData.siteInfo && formData.headers;
+  const allNetworkChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
+  const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi;
+  const allCmsChecked = formData.wordpress;
+  const allSeoChecked = formData.seo;
+  const allSecurityChecked = formData.ddosFirewall;
+
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -126,14 +194,14 @@ const NewScan = () => {
 
             {/* Basic Scans */}
             <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-blue-400">
                   <Shield className="h-5 w-5" />
                   Basic Reconnaissance
                 </CardTitle>
-                <CardDescription>
-                  Fundamental information gathering modules
-                </CardDescription>
+                <Button type="button" variant="outline" size="sm" onClick={toggleBasicScans} className="text-foreground hover:bg-muted/50">
+                  {allBasicChecked ? <><Square className="h-4 w-4 mr-2" /> Deselect All</> : <><CheckSquare className="h-4 w-4 mr-2" /> Select All</>}
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -163,14 +231,14 @@ const NewScan = () => {
 
             {/* Network & Domain Intelligence */}
             <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-green-500/50">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-green-400">
                   <Network className="h-5 w-5" />
                   Network & Domain Intelligence
                 </CardTitle>
-                <CardDescription>
-                  DNS, domain registration, and network analysis
-                </CardDescription>
+                <Button type="button" variant="outline" size="sm" onClick={toggleNetworkIntelligence} className="text-foreground hover:bg-muted/50">
+                  {allNetworkChecked ? <><Square className="h-4 w-4 mr-2" /> Deselect All</> : <><CheckSquare className="h-4 w-4 mr-2" /> Select All</>}
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -260,14 +328,14 @@ const NewScan = () => {
 
             {/* Vulnerability Scans */}
             <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-orange-500/50">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-orange-400">
                   <AlertTriangle className="h-5 w-5" />
                   Vulnerability Assessment
                 </CardTitle>
-                <CardDescription>
-                  Security vulnerability detection (use responsibly)
-                </CardDescription>
+                <Button type="button" variant="outline" size="sm" onClick={toggleVulnerabilityAssessment} className="text-foreground hover:bg-muted/50">
+                  {allVulnChecked ? <><Square className="h-4 w-4 mr-2" /> Deselect All</> : <><CheckSquare className="h-4 w-4 mr-2" /> Select All</>}
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -307,14 +375,14 @@ const NewScan = () => {
 
             {/* CMS Detection */}
             <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-blue-400">
                   <Code className="h-5 w-5" />
                   CMS Detection
                 </CardTitle>
-                <CardDescription>
-                  Content Management System identification and analysis
-                </CardDescription>
+                <Button type="button" variant="outline" size="sm" onClick={toggleCmsDetection} className="text-foreground hover:bg-muted/50">
+                  {allCmsChecked ? <><Square className="h-4 w-4 mr-2" /> Deselect All</> : <><CheckSquare className="h-4 w-4 mr-2" /> Select All</>}
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -334,14 +402,14 @@ const NewScan = () => {
 
             {/* SEO & Analytics */}
             <Card className="bg-card/50 backdrop-blur-sm border border-pink-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-pink-500/50">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-pink-400">
                   <TrendingUp className="h-5 w-5" />
                   SEO & Analytics
                 </CardTitle>
-                <CardDescription>
-                  Search engine optimization and web metrics
-                </CardDescription>
+                <Button type="button" variant="outline" size="sm" onClick={toggleSeoAnalytics} className="text-foreground hover:bg-muted/50">
+                  {allSeoChecked ? <><Square className="h-4 w-4 mr-2" /> Deselect All</> : <><CheckSquare className="h-4 w-4 mr-2" /> Select All</>}
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -361,14 +429,14 @@ const NewScan = () => {
 
             {/* Security Testing */}
             <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-purple-400">
                   <Zap className="h-5 w-5" />
                   Security Testing
                 </CardTitle>
-                <CardDescription>
-                  Advanced security posture assessment
-                </CardDescription>
+                <Button type="button" variant="outline" size="sm" onClick={toggleSecurityTesting} className="text-foreground hover:bg-muted/50">
+                  {allSecurityChecked ? <><Square className="h-4 w-4 mr-2" /> Deselect All</> : <><CheckSquare className="h-4 w-4 mr-2" /> Select All</>}
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
