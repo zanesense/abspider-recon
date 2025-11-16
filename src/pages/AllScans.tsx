@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { History, Shield } from 'lucide-react';
+import { History, Shield, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
-import ScanOverviewCards from '@/components/ScanOverviewCards'; // New import
-import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard'; // New import
+import ScanOverviewCards from '@/components/ScanOverviewCards';
+import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard';
 
 const AllScans = () => {
   const { data: scans = [], refetch } = useQuery({
