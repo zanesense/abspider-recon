@@ -13,7 +13,7 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
     return (
       <Card className="bg-slate-900 border-slate-800">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-400">
+          <CardTitle className="flex items-center gap-2 text-white">
             <ShieldOff className="h-5 w-5" />
             DDoS Firewall Test
           </CardTitle>
@@ -29,7 +29,7 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-orange-400">
+          <CardTitle className="flex items-center gap-2 text-white">
             {ddosFirewall.firewallDetected ? (
               <ShieldCheck className="h-5 w-5 text-green-400" />
             ) : (
