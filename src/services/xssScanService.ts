@@ -175,8 +175,8 @@ const checkReflection = (response: string, payload: string): {
   };
 };
 
-export const performXSSScan = async (target: string, requestManager: RequestManager): Promise<XSSScanResult> => {
-  console.log(`[XSS Scan] Starting REAL vulnerability scan for ${target}`);
+export const performXSSScan = async (target: string, requestManager: RequestManager, payloadLimit: number = 20): Promise<XSSScanResult> => {
+  console.log(`[XSS Scan] Starting REAL vulnerability scan for ${target} with ${payloadLimit} payloads`);
   
   const result: XSSScanResult = {
     vulnerable: false,
@@ -197,8 +197,10 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
       paramKeys.push('q');
     }
 
+    const payloadsToTest = XSS_PAYLOADS.slice(0, payloadLimit);
+
     for (const paramKey of paramKeys) {
-      for (const { payload, severity, type, confidence: baseConfidence } of XSS_PAYLOADS) {
+      for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
         try {
           const testUrl = new URL(url);
           const testParams = new URLSearchParams(testUrl.search);

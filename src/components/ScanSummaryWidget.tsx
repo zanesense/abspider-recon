@@ -16,7 +16,7 @@ const ScanSummaryWidget = ({ scan }: ScanSummaryWidgetProps) => {
   const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
   const totalVulnerabilities = sqlVulns + xssVulns + lfiVulns + wpVulns;
 
-  const ddosFirewallDetected = scan.results.ddosFirewall?.firewallDetected || scan.results.deepDdosFirewall?.firewallDetected;
+  const ddosFirewallDetected = scan.results.ddosFirewall?.firewallDetected; // Only one DDoS module now
 
   return (
     <Card className="bg-card border-border shadow-lg">

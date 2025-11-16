@@ -202,7 +202,6 @@ const ScanResults = () => {
               {scan.results.wordpress && <WordPressInfo wordpress={scan.results.wordpress} />}
               {scan.results.seo && <SEOInfo seo={scan.results.seo} />}
               {scan.results.ddosFirewall && <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />}
-              {scan.results.deepDdosFirewall && <DDoSFirewallResults ddosFirewall={scan.results.deepDdosFirewall} />}
             </div>
           </div>
 

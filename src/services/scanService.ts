@@ -14,7 +14,7 @@ import { performXSSScan, XSSScanResult } from './xssScanService';
 import { performLFIScan, LFIScanResult } from './lfiScanService';
 import { performWordPressScan, WordPressScanResult } from './wordpressService';
 import { performSEOAnalysis, SEOAnalysis } from './seoService';
-import { performDDoSFirewallTest, performDeepDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService'; // Updated import
+import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService'; // Updated import
 import { getSettings, saveSettings } from './settingsService';
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
@@ -38,7 +38,10 @@ export interface ScanConfig {
   wordpress: boolean;
   seo: boolean;
   ddosFirewall: boolean;
-  deepDdosFirewall: boolean; // New config option
+  xssPayloads: number; // New: Number of XSS payloads to test
+  sqliPayloads: number; // New: Number of SQLi payloads to test
+  lfiPayloads: number; // New: Number of LFI payloads to test
+  ddosRequests: number; // New: Number of requests for DDoS Firewall Test
   useProxy: boolean;
   threads: number;
 }
@@ -60,7 +63,6 @@ export interface ScanResults {
   wordpress?: WordPressScanResult;
   seo?: SEOAnalysis;
   ddosFirewall?: DDoSFirewallResult;
-  deepDdosFirewall?: DDoSFirewallResult; // New result type
 }
 
 export interface Scan {
@@ -130,7 +132,11 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     target: config.target,
     timestamp: Date.now(),
     status: 'running',
-    progress: { current: 0, total: 0, stage: 'Initializing' },
+    progress: {
+      current: 0,
+      total: Object.keys(config).filter(key => (config as any)[key] === true && 
+        !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests'].includes(key)).length
+    , stage: 'Initializing' },
     config,
     results: {},
     errors: [],
@@ -159,7 +165,8 @@ const runScan = async (
   requestManager: RequestManager
 ) => {
   const startTime = Date.now();
-  const modulesToRun = Object.keys(config).filter(key => (config as any)[key] === true && key !== 'target' && key !== 'useProxy' && key !== 'threads');
+  const modulesToRun = Object.keys(config).filter(key => (config as any)[key] === true && 
+    !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests'].includes(key));
   const totalStages = modulesToRun.length;
   let completedStages = 0;
 
@@ -242,15 +249,15 @@ const runScan = async (
             currentScan.results.reverseip = moduleResult;
             break;
           case 'sqlinjection':
-            moduleResult = await performSQLScan(config.target, requestManager);
+            moduleResult = await performSQLScan(config.target, requestManager, config.sqliPayloads);
             currentScan.results.sqlinjection = moduleResult;
             break;
             case 'xss':
-              moduleResult = await performXSSScan(config.target, requestManager);
+              moduleResult = await performXSSScan(config.target, requestManager, config.xssPayloads);
               currentScan.results.xss = moduleResult;
               break;
             case 'lfi':
-              moduleResult = await performLFIScan(config.target, requestManager);
+              moduleResult = await performLFIScan(config.target, requestManager, config.lfiPayloads);
               currentScan.results.lfi = moduleResult;
               break;
             case 'wordpress':
@@ -262,12 +269,8 @@ const runScan = async (
               currentScan.results.seo = moduleResult;
               break;
             case 'ddosFirewall':
-              moduleResult = await performDDoSFirewallTest(config.target, 20, 100, requestManager);
+              moduleResult = await performDDoSFirewallTest(config.target, config.ddosRequests, 100, requestManager);
               currentScan.results.ddosFirewall = moduleResult;
-              break;
-            case 'deepDdosFirewall': // New module case
-              moduleResult = await performDeepDDoSFirewallTest(config.target, requestManager);
-              currentScan.results.deepDdosFirewall = moduleResult;
               break;
             default:
               console.warn(`[ScanService] Unknown module: ${moduleName}`);

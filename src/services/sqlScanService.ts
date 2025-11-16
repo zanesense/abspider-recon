@@ -139,8 +139,8 @@ const checkSQLError = (text: string): { found: boolean; pattern?: string; confid
   return { found: false, confidence: 0 };
 };
 
-export const performSQLScan = async (target: string, requestManager: RequestManager): Promise<SQLScanResult> => {
-  console.log(`[SQL Scan] Starting REAL vulnerability scan for ${target}`);
+export const performSQLScan = async (target: string, requestManager: RequestManager, payloadLimit: number = 20): Promise<SQLScanResult> => {
+  console.log(`[SQL Scan] Starting REAL vulnerability scan for ${target} with ${payloadLimit} payloads`);
   
   const result: SQLScanResult = {
     vulnerable: false,
@@ -181,8 +181,10 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
       console.warn('[SQL Scan] Could not get baseline, continuing anyway');
     }
 
+    const payloadsToTest = SQL_PAYLOADS.slice(0, payloadLimit);
+
     for (const paramKey of paramKeys) {
-      for (const { payload, severity, type, confidence: baseConfidence } of SQL_PAYLOADS) {
+      for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
         try {
           const testUrl = new URL(url);
           const testParams = new URLSearchParams(testUrl.search);

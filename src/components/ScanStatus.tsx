@@ -72,7 +72,6 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     wordpress: Code,
     seo: TrendingUp,
     ddosFirewall: Zap,
-    deepDdosFirewall: Zap,
   };
 
   const moduleLabels: Record<string, string> = {
@@ -92,7 +91,6 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     wordpress: 'WordPress',
     seo: 'SEO',
     ddosFirewall: 'DDoS Firewall',
-    deepDdosFirewall: 'Deep DDoS',
   };
 
   return (
@@ -167,7 +165,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
               if (value === true && moduleLabels[key]) {
                 const Icon = moduleIcons[key];
                 const isVulnModule = ['sqlinjection', 'xss', 'lfi'].includes(key);
-                const isSecurityModule = ['ddosFirewall', 'deepDdosFirewall'].includes(key);
+                const isSecurityModule = ['ddosFirewall'].includes(key); // Only one DDoS module now
                 return (
                   <Badge 
                     key={key} 
@@ -178,6 +176,10 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
                   >
                     {Icon && <Icon className="h-3 w-3" />}
                     {moduleLabels[key]}
+                    {key === 'sqlinjection' && ` (${scan.config.sqliPayloads} payloads)`}
+                    {key === 'xss' && ` (${scan.config.xssPayloads} payloads)`}
+                    {key === 'lfi' && ` (${scan.config.lfiPayloads} payloads)`}
+                    {key === 'ddosFirewall' && ` (${scan.config.ddosRequests} requests)`}
                   </Badge>
                 );
               }

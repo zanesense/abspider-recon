@@ -120,9 +120,10 @@ const checkLFISignature = (response: string): { found: boolean; pattern?: string
 
 export const performLFIScan = async (
   target: string,
-  requestManager?: RequestManager
+  requestManager?: RequestManager,
+  payloadLimit: number = 20
 ): Promise<LFIScanResult> => {
-  console.log(`[LFI Scan] Starting Local File Inclusion scan for ${target}`);
+  console.log(`[LFI Scan] Starting Local File Inclusion scan for ${target} with ${payloadLimit} payloads`);
   
   const result: LFIScanResult = {
     vulnerable: false,
@@ -155,8 +156,10 @@ export const performLFIScan = async (
       console.warn('[LFI Scan] Could not get baseline');
     }
 
+    const payloadsToTest = LFI_PAYLOADS.slice(0, payloadLimit);
+
     for (const paramKey of paramKeys) {
-      for (const { payload, severity, type, confidence: baseConfidence } of LFI_PAYLOADS) {
+      for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
         try {
           const testUrl = new URL(url);
           const testParams = new URLSearchParams(testUrl.search);

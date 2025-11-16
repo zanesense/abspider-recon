@@ -43,7 +43,10 @@ const scanFormSchema = z.object({
   wordpress: z.boolean(),
   seo: z.boolean(),
   ddosFirewall: z.boolean(),
-  deepDdosFirewall: z.boolean(),
+  xssPayloads: z.number().min(1).max(100).default(20), // New: XSS payloads
+  sqliPayloads: z.number().min(1).max(100).default(20), // New: SQLi payloads
+  lfiPayloads: z.number().min(1).max(100).default(20), // New: LFI payloads
+  ddosRequests: z.number().min(1).max(100).default(20), // New: DDoS requests
   useProxy: z.boolean(),
   threads: z.number().min(1).max(50), // Max threads reduced to 50
 });
@@ -75,7 +78,10 @@ const NewScan = () => {
       wordpress: false,
       seo: true,
       ddosFirewall: false,
-      deepDdosFirewall: false,
+      xssPayloads: 20, // Default
+      sqliPayloads: 20, // Default
+      lfiPayloads: 20, // Default
+      ddosRequests: 20, // Default
       useProxy: false,
       threads: 20,
     },
@@ -140,9 +146,8 @@ const NewScan = () => {
   };
 
   const toggleSecurityTesting = () => {
-    const allChecked = formData.ddosFirewall && formData.deepDdosFirewall;
+    const allChecked = formData.ddosFirewall; // Only one DDoS module now
     setValue('ddosFirewall', !allChecked);
-    setValue('deepDdosFirewall', !allChecked);
   };
 
   // Determine if all checkboxes in a group are checked for button text/icon
@@ -151,7 +156,7 @@ const NewScan = () => {
   const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi;
   const allCmsChecked = formData.wordpress;
   const allSeoChecked = formData.seo;
-  const allSecurityChecked = formData.ddosFirewall && formData.deepDdosFirewall;
+  const allSecurityChecked = formData.ddosFirewall; // Only one DDoS module now
 
   // Check for internal IP
   const targetHostname = formData.target ? extractHostname(formData.target) : '';
@@ -400,6 +405,49 @@ const NewScan = () => {
                     </label>
                   </div>
                 </div>
+                {(formData.sqlinjection || formData.xss || formData.lfi) && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sqliPayloads">SQLi Payloads ({formData.sqliPayloads})</Label>
+                      <Input
+                        id="sqliPayloads"
+                        type="range"
+                        min="1"
+                        max="100"
+                        value={formData.sqliPayloads}
+                        onChange={(e) => setValue('sqliPayloads', parseInt(e.target.value))}
+                        className="accent-primary"
+                        disabled={!formData.sqlinjection}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="xssPayloads">XSS Payloads ({formData.xssPayloads})</Label>
+                      <Input
+                        id="xssPayloads"
+                        type="range"
+                        min="1"
+                        max="100"
+                        value={formData.xssPayloads}
+                        onChange={(e) => setValue('xssPayloads', parseInt(e.target.value))}
+                        className="accent-primary"
+                        disabled={!formData.xss}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lfiPayloads">LFI Payloads ({formData.lfiPayloads})</Label>
+                      <Input
+                        id="lfiPayloads"
+                        type="range"
+                        min="1"
+                        max="100"
+                        value={formData.lfiPayloads}
+                        onChange={(e) => setValue('lfiPayloads', parseInt(e.target.value))}
+                        className="accent-primary"
+                        disabled={!formData.lfi}
+                      />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -480,17 +528,22 @@ const NewScan = () => {
                       <span className="font-medium">DDoS Firewall Test</span> - Detect WAF/DDoS protection
                     </label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="deepDdosFirewall"
-                      checked={formData.deepDdosFirewall}
-                      onCheckedChange={(checked) => setValue('deepDdosFirewall', checked as boolean)}
-                    />
-                    <label htmlFor="deepDdosFirewall" className="text-sm text-foreground cursor-pointer">
-                      <span className="font-medium">Deep DDoS Firewall Test</span> - More aggressive WAF/DDoS detection
-                    </label>
-                  </div>
                 </div>
+                {formData.ddosFirewall && (
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor="ddosRequests">DDoS Test Requests ({formData.ddosRequests})</Label>
+                    <Input
+                      id="ddosRequests"
+                      type="range"
+                      min="1"
+                      max="100"
+                      value={formData.ddosRequests}
+                      onChange={(e) => setValue('ddosRequests', parseInt(e.target.value))}
+                      className="accent-primary"
+                      disabled={!formData.ddosFirewall}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
 

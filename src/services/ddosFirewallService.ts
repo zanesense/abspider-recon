@@ -229,12 +229,3 @@ export const performDDoSFirewallTest = async (
     };
   }
 };
-
-export const performDeepDDoSFirewallTest = async (
-  target: string,
-  requestManager?: RequestManager
-): Promise<DDoSFirewallResult> => {
-  console.log(`[Deep DDoS Firewall Test] Starting for ${target}`);
-  // Reduced requests from 100 to 50, and increased interval from 50ms to 100ms
-  return performDDoSFirewallTest(target, 50, 100, requestManager);
-};
