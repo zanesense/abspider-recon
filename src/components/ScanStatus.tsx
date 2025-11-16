@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2, Timer } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning } from 'lucide-react'; // Added more icons
 import { Scan } from '@/services/scanService';
 
 interface ScanStatusProps {
@@ -14,6 +14,8 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
       case 'completed': return <CheckCircle className="h-5 w-5 text-green-400" />;
       case 'running': return <Loader2 className="h-5 w-5 text-yellow-400 animate-spin" />;
       case 'failed': return <XCircle className="h-5 w-5 text-red-400" />;
+      case 'paused': return <Timer className="h-5 w-5 text-blue-400" />; // Icon for paused
+      default: return <Clock className="h-5 w-5 text-slate-400" />;
     }
   };
 
@@ -22,6 +24,8 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
       case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'running': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'failed': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'paused': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
     }
   };
 
@@ -44,71 +48,143 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     }
   };
 
-  return (
-    <Card className="bg-slate-900 border-slate-800">
-      <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          {getStatusIcon()}
-          Scan Status
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Status</p>
-            <Badge className={getStatusColor()}>
-              {scan.status.toUpperCase()}
-            </Badge>
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Started</p>
-            <div className="flex items-center gap-2 text-white">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm">{new Date(scan.timestamp).toLocaleString()}</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Elapsed Time</p>
-            <div className="flex items-center gap-2 text-white">
-              <Timer className="h-4 w-4" />
-              <span className="text-sm font-mono">{formatElapsedTime(scan.elapsedMs)}</span>
-            </div>
-          </div>
-        </div>
+  // Determine overall vulnerability status for a quick badge
+  const hasVulnerabilities = 
+    (scan.results.sqlinjection?.vulnerable && scan.results.sqlinjection.vulnerabilities.length > 0) ||
+    (scan.results.xss?.vulnerable && scan.results.xss.vulnerabilities.length > 0) ||
+    (scan.results.lfi?.vulnerable && scan.results.lfi.vulnerabilities.length > 0) ||
+    (scan.results.wordpress?.vulnerabilities && scan.results.wordpress.vulnerabilities.length > 0);
 
-        <div className="pt-2 border-t border-slate-800">
-          <p className="text-sm text-slate-400 mb-2">Active Modules</p>
-          <div className="flex flex-wrap gap-1">
-            {scan.config.geoip && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">GeoIP</span>}
-            {scan.config.headers && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Headers</span>}
-            {scan.config.whois && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">WHOIS</span>}
-            {scan.config.subdomains && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Subdomains</span>}
-            {scan.config.ports && <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">Ports</span>}
-            {scan.config.sqlinjection && <span className="px-2 py-1 bg-red-900 rounded text-xs text-red-300">SQL</span>}
-            {scan.config.xss && <span className="px-2 py-1 bg-red-900 rounded text-xs text-red-300">XSS</span>}
-            {scan.config.lfi && <span className="px-2 py-1 bg-red-900 rounded text-xs text-red-300">LFI</span>}
+  const moduleIcons: Record<string, React.ElementType> = {
+    siteInfo: Globe,
+    headers: Shield,
+    whois: Globe,
+    geoip: MapPin,
+    dns: Network,
+    mx: Mail,
+    subnet: Network,
+    ports: Network,
+    subdomains: Network,
+    reverseip: Network,
+    sqlinjection: AlertTriangle,
+    xss: Code,
+    lfi: FileWarning,
+    wordpress: Code,
+    seo: TrendingUp,
+    ddosFirewall: Zap,
+    deepDdosFirewall: Zap,
+  };
+
+  const moduleLabels: Record<string, string> = {
+    siteInfo: 'Site Info',
+    headers: 'Headers',
+    whois: 'WHOIS',
+    geoip: 'GeoIP',
+    dns: 'DNS',
+    mx: 'MX Records',
+    subnet: 'Subnet',
+    ports: 'Ports',
+    subdomains: 'Subdomains',
+    reverseip: 'Reverse IP',
+    sqlinjection: 'SQLi',
+    xss: 'XSS',
+    lfi: 'LFI',
+    wordpress: 'WordPress',
+    seo: 'SEO',
+    ddosFirewall: 'DDoS Firewall',
+    deepDdosFirewall: 'Deep DDoS',
+  };
+
+  return (
+    <Card className="bg-card border-border shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+          {getStatusIcon()}
+          Scan Overview
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          {hasVulnerabilities && (
+            <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/30">
+              <AlertTriangle className="h-3 w-3 mr-1" /> Vulnerabilities Detected
+            </Badge>
+          )}
+          <Badge className={getStatusColor()}>
+            {scan.status.toUpperCase()}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div className="flex flex-col">
+            <p className="text-muted-foreground mb-1">Target</p>
+            <p className="font-semibold text-foreground break-all">{scan.target}</p>
           </div>
+          <div className="flex flex-col">
+            <p className="text-muted-foreground mb-1">Scan ID</p>
+            <p className="font-mono text-foreground text-xs">{scan.id}</p>
+          </div>
+          <div className="flex flex-col">
+            <p className="text-muted-foreground mb-1">Started</p>
+            <div className="flex items-center gap-1 text-foreground">
+              <Clock className="h-3 w-3" />
+              <span>{new Date(scan.timestamp).toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <p className="text-muted-foreground mb-1">Elapsed Time</p>
+            <div className="flex items-center gap-1 text-foreground">
+              <Timer className="h-3 w-3" />
+              <span className="font-mono">{formatElapsedTime(scan.elapsedMs)}</span>
+            </div>
+          </div>
+          {scan.completedAt && (
+            <div className="flex flex-col">
+              <p className="text-muted-foreground mb-1">Last Updated</p>
+              <div className="flex items-center gap-1 text-foreground">
+                <Clock className="h-3 w-3" />
+                <span>{new Date(scan.completedAt).toLocaleString()}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {scan.status === 'running' && scan.progress && (
-          <div className="space-y-2">
+          <div className="space-y-2 pt-4 border-t border-border">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-400">{scan.progress.stage}</span>
-              <span className="text-cyan-400 font-medium">
+              <span className="text-muted-foreground">{scan.progress.stage}</span>
+              <span className="text-primary font-medium">
                 {scan.progress.current} / {scan.progress.total}
               </span>
             </div>
-            <Progress value={progressPercentage} className="h-2" />
+            <Progress value={progressPercentage} className="h-2 bg-muted" indicatorColor="bg-primary" />
           </div>
         )}
 
-        {scan.completedAt && (
-          <div className="pt-2 border-t border-slate-800">
-            <p className="text-sm text-slate-400">
-              Completed at: <span className="text-white">{new Date(scan.completedAt).toLocaleString()}</span>
-            </p>
+        <div className="pt-4 border-t border-border">
+          <p className="text-muted-foreground mb-2 text-sm">Active Modules</p>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(scan.config).map(([key, value]) => {
+              if (value === true && moduleLabels[key]) {
+                const Icon = moduleIcons[key];
+                const isVulnModule = ['sqlinjection', 'xss', 'lfi'].includes(key);
+                const isSecurityModule = ['ddosFirewall', 'deepDdosFirewall'].includes(key);
+                return (
+                  <Badge 
+                    key={key} 
+                    className={`flex items-center gap-1 px-2 py-1 text-xs font-medium 
+                                ${isVulnModule ? 'bg-red-500/20 text-red-400 border-red-500/30' : 
+                                  isSecurityModule ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
+                                  'bg-primary/10 text-primary border-primary/30'}`}
+                  >
+                    {Icon && <Icon className="h-3 w-3" />}
+                    {moduleLabels[key]}
+                  </Badge>
+                );
+              }
+              return null;
+            })}
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
