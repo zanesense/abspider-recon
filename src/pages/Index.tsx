@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, History, Shield, TrendingUp, Zap, AlertTriangle } from 'lucide-react';
+import { PlusCircle, History, Shield, TrendingUp, Zap, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast'; // Import useToast
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
