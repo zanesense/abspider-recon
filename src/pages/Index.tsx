@@ -7,6 +7,7 @@ import { PlusCircle, History, Shield, TrendingUp, Zap, AlertTriangle, CheckCircl
 import { useToast } from '@/hooks/use-toast'; // Import useToast
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
+import { Badge } from '@/components/ui/badge'; // Import Badge
 
 const Index = () => {
   const { toast } = useToast();
