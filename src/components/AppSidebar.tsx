@@ -12,7 +12,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Shield, Home, Scan, Settings, Activity, Sun, Moon } from 'lucide-react';
+import { Shield, Home, Scan, Settings, Activity, Sun, Moon, History } from 'lucide-react'; // Import History icon
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 
@@ -23,6 +23,7 @@ export function AppSidebar() {
   const menuItems = [
     { title: 'Dashboard', icon: Home, href: '/' },
     { title: 'New Scan', icon: Scan, href: '/new-scan' },
+    { title: 'All Scans', icon: History, href: '/all-scans' }, // New menu item
     { title: 'Settings', icon: Settings, href: '/settings' },
   ];
 
@@ -44,26 +45,24 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar">
         <SidebarGroup>
           <SidebarGroupLabel className="text-muted-foreground">Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.href}>
-                    <Link 
-                      to={item.href} 
-                      className="flex items-center gap-3 transition-all hover:translate-x-1 
-                                 hover:text-primary data-[active=true]:text-primary 
-                                 data-[active=true]:bg-primary/10 data-[active=true]:border-l-4 
-                                 data-[active=true]:border-primary data-[active=true]:font-semibold"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarMenu>
+            {menuItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton asChild isActive={location.pathname === item.href}>
+                  <Link 
+                    to={item.href} 
+                    className="flex items-center gap-3 transition-all hover:translate-x-1 
+                               hover:text-primary data-[active=true]:text-primary 
+                               data-[active=true]:bg-primary/10 data-[active=true]:border-l-4 
+                               data-[active=true]:border-primary data-[active=true]:font-semibold"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         </SidebarGroup>
         
         <SidebarGroup>

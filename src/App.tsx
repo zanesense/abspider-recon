@@ -10,6 +10,7 @@ import NotFound from "@/pages/NotFound";
 import NewScan from "@/pages/NewScan";
 import ScanResults from "@/pages/ScanResults";
 import Settings from "@/pages/Settings";
+import AllScans from "@/pages/AllScans"; // New import
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
@@ -43,6 +44,7 @@ function App() {
                         <Routes>
                           <Route path="/" element={<Index />} />
                           <Route path="/new-scan" element={<NewScan />} />
+                          <Route path="/all-scans" element={<AllScans />} /> {/* New route */}
                           <Route path="/scan/:id" element={<ScanResults />} />
                           <Route path="/settings" element={<Settings />} />
                           <Route path="*" element={<NotFound />} />
