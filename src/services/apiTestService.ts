@@ -5,7 +5,7 @@ interface APIKeyTestResult {
   message?: string;
 }
 
-const API_TEST_TIMEOUT = 7000; // 7 seconds timeout for API tests
+const API_TEST_TIMEOUT = 15000; // Increased to 15 seconds timeout for API tests
 
 // Helper to make a fetch request with a timeout
 async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
