@@ -43,35 +43,15 @@ const ScanResults = () => {
     retryDelay: 1000,
   });
 
-  // Effect to stop scan on unmount or ID change
+  // Removed: Effect to stop scan on unmount or ID change
+  // Scans will now continue to run in the background even if the user navigates away.
   useEffect(() => {
-    if (!id) return;
-
-    const currentScan = getScanById(id);
-    if (currentScan && currentScan.status === 'running') {
-      console.log(`[ScanResults] Stopping running scan ${id} on component mount/ID change.`);
-      stopScan(id);
-    }
-
-    const handleBeforeUnload = () => {
-      const scanOnUnload = getScanById(id);
-      if (scanOnUnload && scanOnUnload.status === 'running') {
-        console.log(`[ScanResults] Stopping running scan ${id} on page unload.`);
-        stopScan(id);
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
+    // No automatic stopping or pausing on unmount/navigation
+    // The user can manually pause/stop scans using the buttons
     return () => {
-      const scanOnUnmount = getScanById(id);
-      if (scanOnUnmount && scanOnUnmount.status === 'running') {
-        console.log(`[ScanResults] Stopping running scan ${id} on component unmount.`);
-        stopScan(id);
-      }
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Cleanup for any listeners if they were added, but none are now.
     };
-  }, [id]); // Dependency array includes 'id' to re-run effect if scan ID changes
+  }, [id]);
 
   const handleDownloadReport = () => {
     if (!scan) return;
