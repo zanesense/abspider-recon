@@ -19,6 +19,7 @@ import { getSettings, saveSettings } from './settingsService';
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
 import { createRequestManager, RequestManager } from './requestManager';
+import { getAPIKeys, APIKeys } from './apiKeyService'; // Import getAPIKeys and APIKeys interface
 
 export interface ScanConfig {
   target: string;
@@ -178,6 +179,17 @@ const runScan = async (
   // Get the initial scan object from cache. This will be the mutable object for this run.
   let currentScan = getScanById(scanId)!; 
 
+  // Fetch API keys once at the beginning of the scan
+  let apiKeys: APIKeys = {};
+  try {
+    apiKeys = await getAPIKeys();
+    console.log('[ScanService] API keys loaded for scan:', Object.keys(apiKeys).filter(k => (apiKeys as any)[k]).join(', '));
+  } catch (error) {
+    console.error('[ScanService] Failed to load API keys for scan:', error);
+    currentScan.errors.push(`Failed to load API keys: ${(error as Error).message}`);
+    updateScan(currentScan);
+  }
+
   try {
     for (const moduleName of modulesToRun) {
       if (scanController.signal.aborted) {
@@ -202,7 +214,7 @@ const runScan = async (
         let moduleResult: any;
         switch (moduleName) {
           case 'siteInfo':
-            moduleResult = await performSiteInfoScan(config.target, requestManager);
+            moduleResult = await performSiteInfoScan(config.target, requestManager, apiKeys);
             currentScan.results.siteInfo = moduleResult;
             break;
           case 'headers':
@@ -210,11 +222,11 @@ const runScan = async (
             currentScan.results.headers = moduleResult;
             break;
           case 'whois':
-            moduleResult = await performWhoisLookup(config.target, requestManager);
+            moduleResult = await performWhoisLookup(config.target, requestManager, apiKeys);
             currentScan.results.whois = moduleResult;
             break;
           case 'geoip':
-            moduleResult = await performGeoIPLookup(config.target, requestManager);
+            moduleResult = await performGeoIPLookup(config.target, requestManager, apiKeys);
             currentScan.results.geoip = moduleResult;
             break;
           case 'dns':
@@ -237,11 +249,11 @@ const runScan = async (
             }
             break;
           case 'ports':
-            moduleResult = await scanCommonPorts(config.target, config.threads, requestManager);
+            moduleResult = await scanCommonPorts(config.target, config.threads, requestManager, apiKeys);
             currentScan.results.ports = moduleResult;
             break;
           case 'subdomains':
-            moduleResult = await enumerateSubdomains(config.target, config.threads, scanController, requestManager);
+            moduleResult = await enumerateSubdomains(config.target, config.threads, scanController, requestManager, apiKeys);
             currentScan.results.subdomains = moduleResult;
             break;
           case 'reverseip':

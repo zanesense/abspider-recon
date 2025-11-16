@@ -1,5 +1,5 @@
-import { getAPIKey } from './apiKeyService';
 import { corsProxy } from './corsProxy'; // Import corsProxy
+import { APIKeys } from './apiKeyService'; // Import APIKeys interface
 
 interface APIKeyTestResult {
   success: boolean;

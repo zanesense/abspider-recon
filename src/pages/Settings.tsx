@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl } from '@/services/settingsService';
-import { getAPIKeys, saveAPIKeys } from '@/services/apiKeyService'; // Removed hasAPIKey
+import { getAPIKeys, saveAPIKeys, APIKeys } from '@/services/apiKeyService'; // Import APIKeys interface
 import {
   testShodanAPI,
   testVirusTotalAPI,
@@ -22,7 +22,7 @@ import {
 } from '@/services/apiTestService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; // Import react-query hooks
 
-type APIKeyService = 'shodan' | 'virustotal' | 'securitytrails' | 'builtwith' | 'hunter' | 'clearbit' | 'opencage';
+type APIKeyService = keyof APIKeys; // Use keyof APIKeys for type safety
 
 const Settings = () => {
   const { toast } = useToast();
@@ -380,7 +380,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter Shodan API key"
                     value={apiKeys.shodan || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, shodan: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, shodan: e.target.value as string })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Enhanced port scanning, banner grabbing, and vulnerability detection</p>
@@ -408,7 +408,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter VirusTotal API key"
                     value={apiKeys.virustotal || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, virustotal: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, virustotal: e.target.value as string })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Domain reputation, malware scanning, and threat intelligence</p>
@@ -436,7 +436,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter SecurityTrails API key"
                     value={apiKeys.securitytrails || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, securitytrails: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, securitytrails: e.target.value as string })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Historical DNS data, subdomain discovery, and WHOIS history</p>
@@ -464,7 +464,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter BuiltWith API key"
                     value={apiKeys.builtwith || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, builtwith: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, builtwith: e.target.value as string })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Technology stack detection, analytics, and framework identification</p>
@@ -492,7 +492,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter OpenCage API key"
                     value={apiKeys.opencage || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, opencage: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, opencage: e.target.value as string })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Enhanced geocoding, reverse geocoding, and detailed location data</p>
@@ -520,7 +520,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter Hunter.io API key"
                     value={apiKeys.hunter || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, hunter: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, hunter: e.target.value as string })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Email discovery, domain search, and email verification</p>
@@ -548,7 +548,7 @@ const Settings = () => {
                     type="password"
                     placeholder="Enter Clearbit API key"
                     value={apiKeys.clearbit || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, clearbit: e.target.value })}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, clearbit: e.target.value as string })}
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Company data enrichment, logo API, and business intelligence</p>

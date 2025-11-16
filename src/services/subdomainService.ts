@@ -1,7 +1,7 @@
 import { extractDomain } from './apiUtils';
-import { getAPIKey } from './apiKeyService';
 import { fetchWithBypass } from './corsProxy'; // Import fetchWithBypass
 import { createRequestManager, RequestManager } from './requestManager'; // Import RequestManager
+import { APIKeys } from './apiKeyService'; // Import APIKeys interface
 
 export interface SubdomainResult {
   subdomains: string[];
@@ -153,8 +153,8 @@ export const enumerateSubdomainsCrtSh = async (domain: string, requestManager: R
   }
 };
 
-export const enumerateSubdomainsSecurityTrails = async (domain: string, requestManager: RequestManager): Promise<string[]> => {
-  const securitytrailsKey = getAPIKey('securitytrails');
+export const enumerateSubdomainsSecurityTrails = async (domain: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<string[]> => {
+  const securitytrailsKey = apiKeys.securitytrails;
   if (!securitytrailsKey) {
     console.log('[Subdomain SecurityTrails] API key not configured, skipping.');
     return [];
@@ -194,7 +194,8 @@ export const enumerateSubdomains = async (
   target: string,
   threads: number = 5,
   scanController?: AbortController, // Pass the main scan controller
-  requestManager?: RequestManager // Accept requestManager
+  requestManager?: RequestManager, // Accept requestManager
+  apiKeys?: APIKeys // Accept apiKeys
 ): Promise<SubdomainResult> => {
   try {
     const domain = extractDomain(target);
@@ -209,12 +210,13 @@ export const enumerateSubdomains = async (
     const allSubdomains = new Set<string>();
     // Ensure requestManager is available, create if not provided (though it should be from scanService)
     const currentRequestManager = requestManager || createRequestManager(scanController);
+    const currentApiKeys = apiKeys || {}; // Ensure apiKeys is an object
 
     // Run all methods in parallel
     const [dnsResults, crtResults, securitytrailsResults] = await Promise.allSettled([
       enumerateSubdomainsDNS(domain, threads, currentRequestManager),
       enumerateSubdomainsCrtSh(domain, currentRequestManager),
-      enumerateSubdomainsSecurityTrails(domain, currentRequestManager),
+      enumerateSubdomainsSecurityTrails(domain, currentRequestManager, currentApiKeys),
     ]);
 
     if (dnsResults.status === 'fulfilled') {

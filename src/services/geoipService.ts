@@ -1,6 +1,6 @@
 import { extractDomain } from './apiUtils';
-import { getAPIKey } from './apiKeyService';
 import { RequestManager } from './requestManager'; // Import RequestManager
+import { APIKeys } from './apiKeyService'; // Import APIKeys interface
 
 export interface GeoIPResult {
   ip: string;
@@ -36,7 +36,7 @@ export interface GeoIPResult {
   components?: Record<string, any>;
 }
 
-export const performGeoIPLookup = async (target: string, requestManager: RequestManager): Promise<GeoIPResult> => {
+export const performGeoIPLookup = async (target: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<GeoIPResult> => {
   console.log(`[GeoIP] Starting lookup for ${target}`);
 
   try {
@@ -115,7 +115,7 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
     }
 
     // --- Enhance with OpenCage data if API key is available ---
-    const opencageKey = getAPIKey('opencage');
+    const opencageKey = apiKeys.opencage;
     if (opencageKey && result.latitude && result.longitude) {
       try {
         const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${result.latitude}+${result.longitude}&key=${opencageKey}`;

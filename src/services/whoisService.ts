@@ -1,7 +1,7 @@
 import { extractDomain } from './apiUtils';
-import { getAPIKey } from './apiKeyService';
 import { fetchWithBypass, fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
 import { RequestManager } from './requestManager'; // Import RequestManager
+import { APIKeys } from './apiKeyService'; // Import APIKeys interface
 
 export interface WhoisResult {
   domain: string;
@@ -21,7 +21,7 @@ export interface WhoisResult {
   whoisRaw?: string;
 }
 
-export const performWhoisLookup = async (target: string, requestManager: RequestManager): Promise<WhoisResult> => {
+export const performWhoisLookup = async (target: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<WhoisResult> => {
   try {
     const domain = extractDomain(target);
     console.log(`[WHOIS] Starting lookup for ${domain}`);
@@ -32,7 +32,7 @@ export const performWhoisLookup = async (target: string, requestManager: Request
     };
 
     // --- Try SecurityTrails API first if key is available ---
-    const securitytrailsKey = getAPIKey('securitytrails');
+    const securitytrailsKey = apiKeys.securitytrails;
     if (securitytrailsKey) {
       try {
         console.log('[WHOIS] Attempting SecurityTrails API lookup...');

@@ -1,7 +1,7 @@
 import { normalizeUrl, extractDomain } from './apiUtils';
 import { fetchWithBypass, CORSBypassMetadata, fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
-import { getAPIKey } from './apiKeyService';
 import { RequestManager } from './requestManager'; // Import RequestManager
+import { APIKeys } from './apiKeyService'; // Import APIKeys interface
 
 export interface SiteInfo {
   title?: string;
@@ -22,7 +22,7 @@ export interface SiteInfo {
   robotsTxtMetadata?: CORSBypassMetadata;
 }
 
-export const performSiteInfoScan = async (target: string, requestManager: RequestManager): Promise<SiteInfo> => {
+export const performSiteInfoScan = async (target: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<SiteInfo> => {
   console.log(`[Site Info] Starting comprehensive scan for ${target}`);
   
   const result: SiteInfo = {
@@ -130,7 +130,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       }
 
       // --- Enhance with BuiltWith data if API key is available ---
-      const builtwithKey = getAPIKey('builtwith');
+      const builtwithKey = apiKeys.builtwith;
       if (builtwithKey) {
         try {
           console.log('[Site Info] Attempting BuiltWith API enrichment...');

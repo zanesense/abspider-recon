@@ -1,6 +1,6 @@
 import { extractDomain } from './apiUtils';
-import { getAPIKey } from './apiKeyService';
 import { RequestManager } from './requestManager'; // Import RequestManager
+import { APIKeys } from './apiKeyService'; // Import APIKeys interface
 
 export interface PortResult {
   port: number;
@@ -166,14 +166,15 @@ const checkPort = async (domain: string, portInfo: { port: number; service: stri
 export const scanCommonPorts = async (
   target: string,
   threads: number = 5, // Threads parameter is not directly used for browser fetch concurrency, but kept for consistency
-  requestManager: RequestManager // Accept requestManager
+  requestManager: RequestManager, // Accept requestManager
+  apiKeys: APIKeys // Accept apiKeys
 ): Promise<PortResult[]> => {
   try {
     const domain = extractDomain(target);
     console.log(`[Port Scan] Starting enhanced scan for ${domain}`);
     
     const results: PortResult[] = [];
-    const shodanKey = getAPIKey('shodan');
+    const shodanKey = apiKeys.shodan;
 
     let ipAddress: string | undefined;
     try {

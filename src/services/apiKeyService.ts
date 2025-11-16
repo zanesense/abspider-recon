@@ -72,12 +72,8 @@ export const saveAPIKeys = async (keys: APIKeys) => {
   }
 };
 
-export const getAPIKey = async (service: keyof APIKeys): Promise<string | undefined> => {
-  const keys = await getAPIKeys();
-  return keys[service];
-};
-
-export const hasAPIKey = async (service: keyof APIKeys): Promise<boolean> => {
-  const key = await getAPIKey(service);
-  return !!key && key.trim().length > 0;
-};
+// The hasAPIKey function is no longer needed as keys will be passed directly
+// export const hasAPIKey = async (service: keyof APIKeys): Promise<boolean> => {
+//   const key = await getAPIKey(service);
+//   return !!key && key.trim().length > 0;
+// };
