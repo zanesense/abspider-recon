@@ -41,6 +41,7 @@ const NewScan = () => {
     seo: true,
     // Security Testing
     ddosFirewall: false,
+    deepDdosFirewall: false, // New config option
     // Settings
     useProxy: false,
     threads: 20,
@@ -128,10 +129,11 @@ const NewScan = () => {
   };
 
   const toggleSecurityTesting = () => {
-    const allChecked = formData.ddosFirewall;
+    const allChecked = formData.ddosFirewall && formData.deepDdosFirewall;
     setFormData(prev => ({
       ...prev,
       ddosFirewall: !allChecked,
+      deepDdosFirewall: !allChecked,
     }));
   };
 
@@ -141,7 +143,7 @@ const NewScan = () => {
   const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi;
   const allCmsChecked = formData.wordpress;
   const allSeoChecked = formData.seo;
-  const allSecurityChecked = formData.ddosFirewall;
+  const allSecurityChecked = formData.ddosFirewall && formData.deepDdosFirewall;
 
 
   return (
@@ -448,6 +450,16 @@ const NewScan = () => {
                     />
                     <label htmlFor="ddosFirewall" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">DDoS Firewall Test</span> - Detect WAF/DDoS protection
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="deepDdosFirewall"
+                      checked={formData.deepDdosFirewall}
+                      onCheckedChange={(checked) => setFormData({ ...formData, deepDdosFirewall: checked as boolean })}
+                    />
+                    <label htmlFor="deepDdosFirewall" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Deep DDoS Firewall Test</span> - More aggressive WAF/DDoS detection
                     </label>
                   </div>
                 </div>

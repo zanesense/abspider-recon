@@ -23,7 +23,7 @@ import XSSVulnerabilities from '@/components/XSSVulnerabilities';
 import LFIVulnerabilities from '@/components/LFIVulnerabilities';
 import WordPressInfo from '@/components/WordPressInfo';
 import SEOInfo from '@/components/SEOInfo';
-import DDoSFirewallResults from '@/components/DDoSFirewallResults'; // New import
+import DDoSFirewallResults from '@/components/DDoSFirewallResults';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEffect } from 'react';
 
@@ -266,9 +266,15 @@ const ScanResults = () => {
             </div>
           )}
 
-          {scan.results.ddosFirewall && ( // New component rendering
+          {scan.results.ddosFirewall && (
             <div className={blockClass}>
               <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />
+            </div>
+          )}
+
+          {scan.results.deepDdosFirewall && ( // New component rendering
+            <div className={blockClass}>
+              <DDoSFirewallResults ddosFirewall={scan.results.deepDdosFirewall} />
             </div>
           )}
 

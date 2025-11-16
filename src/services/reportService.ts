@@ -49,7 +49,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
   }
 
   // DDoS Firewall recommendations
-  if (scan.results.ddosFirewall?.firewallDetected) {
+  if (scan.results.ddosFirewall?.firewallDetected || scan.results.deepDdosFirewall?.firewallDetected) {
     recommendations.push('INFO: DDoS/WAF Protection Detected');
     recommendations.push('• Verify the configuration of your DDoS protection and WAF.');
     recommendations.push('• Ensure rules are up-to-date and effective against common attack vectors.');
@@ -80,7 +80,7 @@ export const generatePDFReport = (scan: Scan) => {
   const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
   const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
   const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
-  const ddosFirewallDetected = scan.results.ddosFirewall?.firewallDetected ? 1 : 0; // Count as 1 if detected
+  const ddosFirewallDetected = (scan.results.ddosFirewall?.firewallDetected || scan.results.deepDdosFirewall?.firewallDetected) ? 1 : 0; // Count as 1 if detected
   const totalVulns = sqlVulns + xssVulns + lfiVulns + wpVulns + ddosFirewallDetected;
 
   // Modern Header with gradient effect
@@ -594,6 +594,72 @@ export const generatePDFReport = (scan: Scan) => {
         body: summaryData,
         theme: 'grid',
         headStyles: { fillColor: [128, 0, 128], fontStyle: 'bold' },
+        styles: { fontSize: 8 },
+      });
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+  }
+
+  // Deep DDoS Firewall Results (New Section)
+  if (scan.results.deepDdosFirewall?.tested) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(102, 0, 102); // Darker purple for Deep DDoS
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DEEP DDoS: Deep DDoS Firewall Test Results', 14, yPosition);
+    yPosition += 15;
+
+    const deepDdosData = [
+      ['Firewall Detected', scan.results.deepDdosFirewall.firewallDetected ? 'Yes' : 'No'],
+      ['WAF/CDN Detected', scan.results.deepDdosFirewall.wafDetected || 'N/A'],
+      ['Total Requests', scan.results.deepDdosFirewall.totalRequests.toString()],
+      ['Successful Requests', scan.results.deepDdosFirewall.successfulRequests.toString()],
+      ['Failed Requests', scan.results.deepDdosFirewall.failedRequests.toString()],
+    ];
+
+    autoTable(doc, {
+      startY: yPosition,
+      body: deepDdosData,
+      theme: 'striped',
+      styles: { fontSize: 9 },
+    });
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+    if (scan.results.deepDdosFirewall.indicators.length > 0) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Detection Indicators:', 14, yPosition);
+      yPosition += 5;
+      scan.results.deepDdosFirewall.indicators.forEach(indicator => {
+        if (yPosition > 270) { doc.addPage(); yPosition = 20; }
+        doc.text(`• ${indicator}`, 14, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 5;
+    }
+
+    if (scan.results.deepDdosFirewall.responseSummary.length > 0) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Response Summary:', 14, yPosition);
+      yPosition += 5;
+      const summaryData = scan.results.deepDdosFirewall.responseSummary.map(s => [
+        s.status.toString(),
+        s.count.toString(),
+        `${s.avgResponseTime.toFixed(2)}ms`
+      ]);
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Status Code', 'Count', 'Avg. Response Time']],
+        body: summaryData,
+        theme: 'grid',
+        headStyles: { fillColor: [102, 0, 102], fontStyle: 'bold' },
         styles: { fontSize: 8 },
       });
       yPosition = (doc as any).lastAutoTable.finalY + 10;
