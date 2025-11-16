@@ -7,64 +7,90 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Import Alert components
 import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startScan } from '@/services/scanService';
+import { useForm } from 'react-hook-form'; // Import useForm
+import { zodResolver } from '@hookform/resolvers/zod'; // Import zodResolver
+import * as z from 'zod'; // Import Zod
+import { isInternalIP, extractHostname } from '@/services/apiUtils'; // Import isInternalIP and extractHostname
+
+// Define validation schema with Zod
+const scanFormSchema = z.object({
+  target: z.string().min(1, { message: "Target URL or IP address is required." })
+    .refine(val => {
+      try {
+        new URL(val.startsWith('http') ? val : `https://${val}`);
+        return true;
+      } catch {
+        return false;
+      }
+    }, { message: "Invalid URL or IP address format." }),
+  siteInfo: z.boolean(),
+  headers: z.boolean(),
+  whois: z.boolean(),
+  geoip: z.boolean(),
+  dns: z.boolean(),
+  mx: z.boolean(),
+  subnet: z.boolean(),
+  ports: z.boolean(),
+  subdomains: z.boolean(),
+  reverseip: z.boolean(),
+  sqlinjection: z.boolean(),
+  xss: z.boolean(),
+  lfi: z.boolean(),
+  wordpress: z.boolean(),
+  seo: z.boolean(),
+  ddosFirewall: z.boolean(),
+  deepDdosFirewall: z.boolean(),
+  useProxy: z.boolean(),
+  threads: z.number().min(1).max(50), // Max threads reduced to 50
+});
+
+type ScanFormValues = z.infer<typeof scanFormSchema>;
 
 const NewScan = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
   
-  const [formData, setFormData] = useState({
-    target: '',
-    // Basic Scans
-    siteInfo: true,
-    headers: true,
-    // Network & Domain Intelligence
-    whois: true,
-    geoip: true,
-    dns: true,
-    mx: true,
-    subnet: false,
-    ports: false,
-    // Advanced Scans
-    subdomains: true,
-    reverseip: false,
-    // Vulnerability Scans
-    sqlinjection: false,
-    xss: false,
-    lfi: false,
-    // CMS Specific
-    wordpress: false,
-    // SEO & Analytics
-    seo: true,
-    // Security Testing
-    ddosFirewall: false,
-    deepDdosFirewall: false, // New config option
-    // Settings
-    useProxy: false,
-    threads: 20,
+  const form = useForm<ScanFormValues>({
+    resolver: zodResolver(scanFormSchema),
+    defaultValues: {
+      target: '',
+      siteInfo: true,
+      headers: true,
+      whois: true,
+      geoip: true,
+      dns: true,
+      mx: true,
+      subnet: false,
+      ports: false,
+      subdomains: true,
+      reverseip: false,
+      sqlinjection: false,
+      xss: false,
+      lfi: false,
+      wordpress: false,
+      seo: true,
+      ddosFirewall: false,
+      deepDdosFirewall: false,
+      useProxy: false,
+      threads: 20,
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.target.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a target URL or IP address",
-        variant: "destructive",
-      });
-      return;
-    }
+  const { watch, setValue, handleSubmit, formState: { errors } } = form;
+  const formData = watch(); // Watch all form data for dynamic updates
 
+  const onSubmit = async (data: ScanFormValues) => {
     setIsScanning(true);
     try {
-      const scanId = await startScan(formData);
+      const scanId = await startScan(data);
       toast({
         title: "Scan Started",
-        description: `Scanning ${formData.target}...`,
+        description: `Scanning ${data.target}...`,
       });
       navigate(`/scan/${scanId}`);
     } catch (error: any) {
@@ -80,61 +106,43 @@ const NewScan = () => {
   // Helper functions for "Select All" toggles
   const toggleBasicScans = () => {
     const allChecked = formData.siteInfo && formData.headers;
-    setFormData(prev => ({
-      ...prev,
-      siteInfo: !allChecked,
-      headers: !allChecked,
-    }));
+    setValue('siteInfo', !allChecked);
+    setValue('headers', !allChecked);
   };
 
   const toggleNetworkIntelligence = () => {
     const allChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
-    setFormData(prev => ({
-      ...prev,
-      whois: !allChecked,
-      geoip: !allChecked,
-      dns: !allChecked,
-      mx: !allChecked,
-      subnet: !allChecked,
-      ports: !allChecked,
-      subdomains: !allChecked,
-      reverseip: !allChecked,
-    }));
+    setValue('whois', !allChecked);
+    setValue('geoip', !allChecked);
+    setValue('dns', !allChecked);
+    setValue('mx', !allChecked);
+    setValue('subnet', !allChecked);
+    setValue('ports', !allChecked);
+    setValue('subdomains', !allChecked);
+    setValue('reverseip', !allChecked);
   };
 
   const toggleVulnerabilityAssessment = () => {
     const allChecked = formData.sqlinjection && formData.xss && formData.lfi;
-    setFormData(prev => ({
-      ...prev,
-      sqlinjection: !allChecked,
-      xss: !allChecked,
-      lfi: !allChecked,
-    }));
+    setValue('sqlinjection', !allChecked);
+    setValue('xss', !allChecked);
+    setValue('lfi', !allChecked);
   };
 
   const toggleCmsDetection = () => {
     const allChecked = formData.wordpress;
-    setFormData(prev => ({
-      ...prev,
-      wordpress: !allChecked,
-    }));
+    setValue('wordpress', !allChecked);
   };
 
   const toggleSeoAnalytics = () => {
     const allChecked = formData.seo;
-    setFormData(prev => ({
-      ...prev,
-      seo: !allChecked,
-    }));
+    setValue('seo', !allChecked);
   };
 
   const toggleSecurityTesting = () => {
     const allChecked = formData.ddosFirewall && formData.deepDdosFirewall;
-    setFormData(prev => ({
-      ...prev,
-      ddosFirewall: !allChecked,
-      deepDdosFirewall: !allChecked,
-    }));
+    setValue('ddosFirewall', !allChecked);
+    setValue('deepDdosFirewall', !allChecked);
   };
 
   // Determine if all checkboxes in a group are checked for button text/icon
@@ -145,6 +153,9 @@ const NewScan = () => {
   const allSeoChecked = formData.seo;
   const allSecurityChecked = formData.ddosFirewall && formData.deepDdosFirewall;
 
+  // Check for internal IP
+  const targetHostname = formData.target ? extractHostname(formData.target) : '';
+  const isTargetInternal = targetHostname && (isInternalIP(targetHostname) || targetHostname === 'localhost');
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -167,7 +178,7 @@ const NewScan = () => {
       
       <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <div className="max-w-5xl mx-auto space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Target Input */}
             <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-xl transition-all duration-300 hover:shadow-2xl hover:border-primary/50">
               <CardHeader>
@@ -186,10 +197,27 @@ const NewScan = () => {
                     id="target"
                     type="text"
                     placeholder="example.com or 192.168.1.1"
-                    value={formData.target}
-                    onChange={(e) => setFormData({ ...formData, target: e.target.value })}
-                    className="text-base bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                    {...form.register("target")}
+                    className={cn("text-base bg-muted/30 border-border focus:border-primary focus:ring-primary", errors.target && "border-destructive focus:border-destructive focus:ring-destructive")}
                   />
+                  {errors.target && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertTriangle className="h-4 w-4" /> {errors.target.message}
+                    </p>
+                  )}
+                  {isTargetInternal && (
+                    <Alert className="border-yellow-500/50 bg-yellow-500/10">
+                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      <AlertTitle className="text-yellow-600 dark:text-yellow-400 font-bold">
+                        WARNING: Internal Target Detected
+                      </AlertTitle>
+                      <AlertDescription className="text-sm mt-2 text-yellow-500 dark:text-yellow-300">
+                        You are attempting to scan an internal IP address or localhost.
+                        Ensure you have explicit authorization before scanning internal networks.
+                        Unauthorized scanning may be illegal.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -211,7 +239,7 @@ const NewScan = () => {
                     <Checkbox
                       id="siteInfo"
                       checked={formData.siteInfo}
-                      onCheckedChange={(checked) => setFormData({ ...formData, siteInfo: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('siteInfo', checked as boolean)}
                     />
                     <label htmlFor="siteInfo" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">Site Information</span> - Basic website details
@@ -221,7 +249,7 @@ const NewScan = () => {
                     <Checkbox
                       id="headers"
                       checked={formData.headers}
-                      onCheckedChange={(checked) => setFormData({ ...formData, headers: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('headers', checked as boolean)}
                     />
                     <label htmlFor="headers" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">HTTP Headers</span> - Server response headers
@@ -248,7 +276,7 @@ const NewScan = () => {
                     <Checkbox
                       id="whois"
                       checked={formData.whois}
-                      onCheckedChange={(checked) => setFormData({ ...formData, whois: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('whois', checked as boolean)}
                     />
                     <label htmlFor="whois" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">WHOIS Lookup</span> - Domain registration info
@@ -258,7 +286,7 @@ const NewScan = () => {
                     <Checkbox
                       id="geoip"
                       checked={formData.geoip}
-                      onCheckedChange={(checked) => setFormData({ ...formData, geoip: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('geoip', checked as boolean)}
                     />
                     <label htmlFor="geoip" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">GeoIP Location</span> - Server physical location
@@ -268,7 +296,7 @@ const NewScan = () => {
                     <Checkbox
                       id="dns"
                       checked={formData.dns}
-                      onCheckedChange={(checked) => setFormData({ ...formData, dns: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('dns', checked as boolean)}
                     />
                     <label htmlFor="dns" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">DNS Records</span> - A, AAAA, CNAME, TXT records
@@ -278,7 +306,7 @@ const NewScan = () => {
                     <Checkbox
                       id="mx"
                       checked={formData.mx}
-                      onCheckedChange={(checked) => setFormData({ ...formData, mx: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('mx', checked as boolean)}
                     />
                     <label htmlFor="mx" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">MX Records</span> - Mail server configuration
@@ -288,7 +316,7 @@ const NewScan = () => {
                     <Checkbox
                       id="subnet"
                       checked={formData.subnet}
-                      onCheckedChange={(checked) => setFormData({ ...formData, subnet: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('subnet', checked as boolean)}
                     />
                     <label htmlFor="subnet" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">Subnet Scan</span> - Network range analysis
@@ -298,7 +326,7 @@ const NewScan = () => {
                     <Checkbox
                       id="ports"
                       checked={formData.ports}
-                      onCheckedChange={(checked) => setFormData({ ...formData, ports: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('ports', checked as boolean)}
                     />
                     <label htmlFor="ports" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">Port Scanning</span> - Open ports detection
@@ -308,7 +336,7 @@ const NewScan = () => {
                     <Checkbox
                       id="subdomains"
                       checked={formData.subdomains}
-                      onCheckedChange={(checked) => setFormData({ ...formData, subdomains: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('subdomains', checked as boolean)}
                     />
                     <label htmlFor="subdomains" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">Subdomain Enumeration</span> - Find subdomains
@@ -318,7 +346,7 @@ const NewScan = () => {
                     <Checkbox
                       id="reverseip"
                       checked={formData.reverseip}
-                      onCheckedChange={(checked) => setFormData({ ...formData, reverseip: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('reverseip', checked as boolean)}
                     />
                     <label htmlFor="reverseip" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">Reverse IP Lookup</span> - Sites on same server
@@ -345,7 +373,7 @@ const NewScan = () => {
                     <Checkbox
                       id="sqlinjection"
                       checked={formData.sqlinjection}
-                      onCheckedChange={(checked) => setFormData({ ...formData, sqlinjection: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('sqlinjection', checked as boolean)}
                     />
                     <label htmlFor="sqlinjection" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">SQL Injection Test</span> - Database vulnerability
@@ -355,7 +383,7 @@ const NewScan = () => {
                     <Checkbox
                       id="xss"
                       checked={formData.xss}
-                      onCheckedChange={(checked) => setFormData({ ...formData, xss: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('xss', checked as boolean)}
                     />
                     <label htmlFor="xss" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">XSS Detection</span> - Cross-site scripting test
@@ -365,7 +393,7 @@ const NewScan = () => {
                     <Checkbox
                       id="lfi"
                       checked={formData.lfi}
-                      onCheckedChange={(checked) => setFormData({ ...formData, lfi: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('lfi', checked as boolean)}
                     />
                     <label htmlFor="lfi" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">LFI Detection</span> - Local file inclusion test
@@ -392,7 +420,7 @@ const NewScan = () => {
                     <Checkbox
                       id="wordpress"
                       checked={formData.wordpress}
-                      onCheckedChange={(checked) => setFormData({ ...formData, wordpress: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('wordpress', checked as boolean)}
                     />
                     <label htmlFor="wordpress" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">WordPress Scan</span> - Plugins, themes, versions
@@ -419,7 +447,7 @@ const NewScan = () => {
                     <Checkbox
                       id="seo"
                       checked={formData.seo}
-                      onCheckedChange={(checked) => setFormData({ ...formData, seo: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('seo', checked as boolean)}
                     />
                     <label htmlFor="seo" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">SEO Analysis</span> - Meta tags, headings, links
@@ -446,7 +474,7 @@ const NewScan = () => {
                     <Checkbox
                       id="ddosFirewall"
                       checked={formData.ddosFirewall}
-                      onCheckedChange={(checked) => setFormData({ ...formData, ddosFirewall: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('ddosFirewall', checked as boolean)}
                     />
                     <label htmlFor="ddosFirewall" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">DDoS Firewall Test</span> - Detect WAF/DDoS protection
@@ -456,7 +484,7 @@ const NewScan = () => {
                     <Checkbox
                       id="deepDdosFirewall"
                       checked={formData.deepDdosFirewall}
-                      onCheckedChange={(checked) => setFormData({ ...formData, deepDdosFirewall: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('deepDdosFirewall', checked as boolean)}
                     />
                     <label htmlFor="deepDdosFirewall" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">Deep DDoS Firewall Test</span> - More aggressive WAF/DDoS detection
@@ -478,12 +506,25 @@ const NewScan = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {formData.useProxy && (
+                  <Alert className="border-yellow-500/50 bg-yellow-500/10 mb-4">
+                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    <AlertTitle className="text-yellow-600 dark:text-yellow-400 font-bold">
+                      WARNING: Public CORS Proxy Usage
+                    </AlertTitle>
+                    <AlertDescription className="text-sm mt-2 text-yellow-500 dark:text-yellow-300">
+                      You have enabled proxy usage. This will route your scan traffic through public CORS proxies.
+                      Be aware of the privacy and security implications as these proxies may log your requests.
+                      For sensitive operations, consider a self-hosted proxy.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="useProxy"
                       checked={formData.useProxy}
-                      onCheckedChange={(checked) => setFormData({ ...formData, useProxy: checked as boolean })}
+                      onCheckedChange={(checked) => setValue('useProxy', checked as boolean)}
                     />
                     <label htmlFor="useProxy" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">Use Proxy</span> - Route through proxy server
@@ -494,12 +535,16 @@ const NewScan = () => {
                     <Input
                       id="threads"
                       type="range"
-                      min="20"
-                      max="100"
+                      min="1" // Min threads can be 1
+                      max="50" // Max threads reduced to 50
                       value={formData.threads}
-                      onChange={(e) => setFormData({ ...formData, threads: parseInt(e.target.value) })}
+                      onChange={(e) => setValue('threads', parseInt(e.target.value))}
                       className="accent-primary"
                     />
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                      Higher thread counts can degrade browser performance and may trigger rate limiting on target servers.
+                    </p>
                   </div>
                 </div>
               </CardContent>

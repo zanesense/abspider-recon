@@ -7,9 +7,6 @@ interface Props {
 }
 
 export default function RequireAuth({ children }: Props) {
-  // The authentication logic is commented out to disable the login page.
-  // You can uncomment this section and the return statement below to re-enable authentication.
-  /*
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,9 +24,8 @@ export default function RequireAuth({ children }: Props) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (loading) return <p className="text-center mt-20">Loading...</p>;
+  if (loading) return <p className="text-center mt-20 text-muted-foreground">Loading...</p>;
   if (!user) return <Login />;
-  */
-
+  
   return <>{children}</>;
 }

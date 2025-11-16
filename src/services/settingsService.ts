@@ -22,8 +22,21 @@ export const saveSettings = (settings: Settings) => {
   console.log('[Settings] Saved successfully');
 };
 
+// New validation function for Discord webhook URL
+export const isValidDiscordWebhookUrl = (url: string): boolean => {
+  if (!url) return false;
+  // Regex to match valid Discord webhook URLs
+  const discordWebhookRegex = /^https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[a-zA-Z0-9_-]+$/;
+  return discordWebhookRegex.test(url);
+};
+
 export const testDiscordWebhook = async (webhookUrl: string) => {
   console.log('[Discord Test] Sending test message to:', webhookUrl.substring(0, 50) + '...');
+
+  // Validate the URL before sending
+  if (!isValidDiscordWebhookUrl(webhookUrl)) {
+    throw new Error('Invalid Discord webhook URL format. Please ensure it is a valid Discord webhook URL.');
+  }
 
   const payload = {
     embeds: [{

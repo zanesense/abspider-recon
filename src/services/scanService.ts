@@ -165,7 +165,8 @@ const runScan = async (
 
   const settings = getSettings();
   setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
-  requestManager.setMinRequestInterval(1000 / config.threads); // Adjust interval based on threads
+  // Ensure minRequestInterval is at least 20ms to prevent excessive requests
+  requestManager.setMinRequestInterval(Math.max(20, 1000 / config.threads)); 
 
   // Get the initial scan object from cache. This will be the mutable object for this run.
   let currentScan = getScanById(scanId)!; 

@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Import Alert components
+import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield } from 'lucide-react'; // Added Shield icon
 import { useToast } from '@/hooks/use-toast';
-import { getSettings, saveSettings, testDiscordWebhook } from '@/services/settingsService';
+import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl } from '@/services/settingsService';
 import { getAPIKeys, saveAPIKeys, hasAPIKey } from '@/services/apiKeyService';
 import {
   testShodanAPI,
@@ -31,6 +32,16 @@ const Settings = () => {
 
   const handleSaveSettings = () => {
     try {
+      // Validate Discord webhook before saving
+      if (settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook)) {
+        toast({
+          title: "Validation Error",
+          description: "Invalid Discord webhook URL format. Please correct it before saving.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       saveSettings(settings);
       saveAPIKeys(apiKeys);
       toast({
@@ -51,6 +62,16 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Please enter a Discord webhook URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate the URL before testing
+    if (!isValidDiscordWebhookUrl(settings.discordWebhook)) {
+      toast({
+        title: "Validation Error",
+        description: "Invalid Discord webhook URL format. Please correct it.",
         variant: "destructive",
       });
       return;
@@ -165,13 +186,13 @@ const Settings = () => {
                   <Input
                     id="defaultThreads"
                     type="number"
-                    min="20"
-                    max="100"
+                    min="1" // Min threads can be 1
+                    max="50" // Max threads reduced from 100 to 50
                     value={settings.defaultThreads}
                     onChange={(e) => setSettings({ ...settings, defaultThreads: parseInt(e.target.value) })}
                     className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                   />
-                  <p className="text-xs text-muted-foreground">Concurrent scanning threads (20-100)</p>
+                  <p className="text-xs text-muted-foreground">Concurrent scanning threads (1-50)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timeout">Request Timeout (seconds)</Label>
@@ -209,10 +230,15 @@ const Settings = () => {
                   onChange={(e) => setSettings({ ...settings, discordWebhook: e.target.value })}
                   className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                 />
+                {settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook) && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> Invalid Discord webhook URL format.
+                  </p>
+                )}
               </div>
               <Button
                 onClick={handleTestWebhook}
-                disabled={isTestingWebhook}
+                disabled={isTestingWebhook || (settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook))}
                 variant="outline"
                 className="border-border text-foreground hover:bg-muted/50"
               >
@@ -240,6 +266,17 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <Alert className="border-yellow-500/50 bg-yellow-500/10">
+                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                <AlertTitle className="text-yellow-600 dark:text-yellow-400 font-bold">
+                  WARNING: Public CORS Proxy Risks
+                </AlertTitle>
+                <AlertDescription className="text-sm mt-2 text-yellow-500 dark:text-yellow-300">
+                  Using public CORS proxies can expose your target URLs, headers, and response content to the proxy operators.
+                  For sensitive operations, consider setting up a self-hosted, trusted CORS proxy or using a direct fetch only mode.
+                  The security and reliability of these third-party services are not guaranteed.
+                </AlertDescription>
+              </Alert>
               <div className="space-y-2">
                 <Label htmlFor="proxyList">Proxy List</Label>
                 <Textarea
@@ -265,6 +302,18 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <Alert className="border-red-500/50 bg-red-500/10">
+                <Shield className="h-4 w-4 text-red-500" />
+                <AlertTitle className="text-red-600 dark:text-red-400 font-bold">
+                  CRITICAL WARNING: Client-Side API Key Storage
+                </AlertTitle>
+                <AlertDescription className="text-sm mt-2 text-red-500 dark:text-red-300">
+                  **Private API keys are stored directly in your browser's local storage.** This is highly insecure.
+                  Any Cross-Site Scripting (XSS) vulnerability or physical access to your browser can expose these keys.
+                  **DO NOT store sensitive, paid, or production API keys here.** This feature is intended for testing with non-critical keys only.
+                  For production use, a secure backend for API key management is strongly recommended.
+                </AlertDescription>
+              </Alert>
               <div className="grid grid-cols-1 gap-4">
                 {/* Shodan */}
                 <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">

@@ -1,11 +1,15 @@
+// WARNING: Using public CORS proxies can expose your target URLs, headers, and response content to the proxy operators.
+// For sensitive operations, consider setting up a self-hosted, trusted CORS proxy or using a direct fetch only mode.
+// The security and reliability of these third-party services are not guaranteed.
+
 const CORS_PROXIES = [
   'https://api.allorigins.win/raw?url=',
   'https://corsproxy.io/?',
   'https://api.codetabs.com/v1/proxy?quest=',
   'https://thingproxy.freeboard.io/fetch/',
   'https://cors.bridged.cc/',
-  'https://yacdn.org/proxy/', // Added another common proxy
-  'https://proxy.cors.sh/', // Added another common proxy
+  'https://yacdn.org/proxy/',
+  'https://proxy.cors.sh/',
 ];
 
 // Cloudflare bypass headers
