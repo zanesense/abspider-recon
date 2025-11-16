@@ -138,20 +138,20 @@ const Settings = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-card/95 backdrop-blur-sm px-6 py-4 shadow-sm">
+      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
         <SidebarTrigger />
         <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-500 bg-clip-text text-transparent">
             Settings
           </h1>
-          <p className="text-sm text-muted-foreground">Configure scanning preferences and API keys</p>
+          <p className="text-sm text-slate-400 mt-1">Configure scanning preferences and API keys</p>
         </div>
       </header>
       
-      <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-background to-muted/20">
+      <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* General Settings */}
-          <Card className="border-primary/20 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
               <CardDescription>
@@ -169,6 +169,7 @@ const Settings = () => {
                     max="100"
                     value={settings.defaultThreads}
                     onChange={(e) => setSettings({ ...settings, defaultThreads: parseInt(e.target.value) })}
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Concurrent scanning threads (20-100)</p>
                 </div>
@@ -181,6 +182,7 @@ const Settings = () => {
                     max="120"
                     value={settings.timeout}
                     onChange={(e) => setSettings({ ...settings, timeout: parseInt(e.target.value) })}
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Maximum wait time for requests</p>
                 </div>
@@ -189,7 +191,7 @@ const Settings = () => {
           </Card>
 
           {/* Discord Webhook */}
-          <Card className="border-primary/20 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
             <CardHeader>
               <CardTitle>Discord Webhook</CardTitle>
               <CardDescription>
@@ -205,12 +207,14 @@ const Settings = () => {
                   placeholder="https://discord.com/api/webhooks/..."
                   value={settings.discordWebhook}
                   onChange={(e) => setSettings({ ...settings, discordWebhook: e.target.value })}
+                  className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                 />
               </div>
               <Button
                 onClick={handleTestWebhook}
                 disabled={isTestingWebhook}
                 variant="outline"
+                className="border-border text-foreground hover:bg-muted/50"
               >
                 {isTestingWebhook ? (
                   <>
@@ -228,7 +232,7 @@ const Settings = () => {
           </Card>
 
           {/* Proxy Settings */}
-          <Card className="border-primary/20 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
             <CardHeader>
               <CardTitle>Proxy Configuration</CardTitle>
               <CardDescription>
@@ -243,14 +247,14 @@ const Settings = () => {
                   placeholder="http://proxy1.example.com:8080&#10;http://proxy2.example.com:8080"
                   value={settings.proxyList}
                   onChange={(e) => setSettings({ ...settings, proxyList: e.target.value })}
-                  className="font-mono text-sm min-h-32"
+                  className="font-mono text-sm min-h-32 bg-muted/30 border-border focus:border-primary focus:ring-primary"
                 />
               </div>
             </CardContent>
           </Card>
 
           {/* API Keys */}
-          <Card className="border-primary/20 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Key className="h-5 w-5 text-primary" />
@@ -263,7 +267,7 @@ const Settings = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
                 {/* Shodan */}
-                <div className="space-y-2 p-4 border border-border rounded-lg">
+                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="shodan" className="text-base font-semibold">Shodan API Key</Label>
                     <div className="flex items-center gap-2">
@@ -273,6 +277,7 @@ const Settings = () => {
                         disabled={isTestingAPI('shodan')}
                         variant="outline"
                         size="sm"
+                        className="border-border text-foreground hover:bg-muted/50"
                       >
                         {isTestingAPI('shodan') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
                       </Button>
@@ -284,12 +289,13 @@ const Settings = () => {
                     placeholder="Enter Shodan API key"
                     value={apiKeys.shodan || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, shodan: e.target.value })}
+                    className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Enhanced port scanning, banner grabbing, and vulnerability detection</p>
                 </div>
 
                 {/* VirusTotal */}
-                <div className="space-y-2 p-4 border border-border rounded-lg">
+                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="virustotal" className="text-base font-semibold">VirusTotal API Key</Label>
                     <div className="flex items-center gap-2">
@@ -299,6 +305,7 @@ const Settings = () => {
                         disabled={isTestingAPI('virustotal')}
                         variant="outline"
                         size="sm"
+                        className="border-border text-foreground hover:bg-muted/50"
                       >
                         {isTestingAPI('virustotal') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
                       </Button>
@@ -310,12 +317,13 @@ const Settings = () => {
                     placeholder="Enter VirusTotal API key"
                     value={apiKeys.virustotal || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, virustotal: e.target.value })}
+                    className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Domain reputation, malware scanning, and threat intelligence</p>
                 </div>
 
                 {/* SecurityTrails */}
-                <div className="space-y-2 p-4 border border-border rounded-lg">
+                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="securitytrails" className="text-base font-semibold">SecurityTrails API Key</Label>
                     <div className="flex items-center gap-2">
@@ -325,6 +333,7 @@ const Settings = () => {
                         disabled={isTestingAPI('securitytrails')}
                         variant="outline"
                         size="sm"
+                        className="border-border text-foreground hover:bg-muted/50"
                       >
                         {isTestingAPI('securitytrails') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
                       </Button>
@@ -336,12 +345,13 @@ const Settings = () => {
                     placeholder="Enter SecurityTrails API key"
                     value={apiKeys.securitytrails || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, securitytrails: e.target.value })}
+                    className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Historical DNS data, subdomain discovery, and WHOIS history</p>
                 </div>
 
                 {/* BuiltWith */}
-                <div className="space-y-2 p-4 border border-border rounded-lg">
+                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="builtwith" className="text-base font-semibold">BuiltWith API Key</Label>
                     <div className="flex items-center gap-2">
@@ -351,6 +361,7 @@ const Settings = () => {
                         disabled={isTestingAPI('builtwith')}
                         variant="outline"
                         size="sm"
+                        className="border-border text-foreground hover:bg-muted/50"
                       >
                         {isTestingAPI('builtwith') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
                       </Button>
@@ -362,12 +373,13 @@ const Settings = () => {
                     placeholder="Enter BuiltWith API key"
                     value={apiKeys.builtwith || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, builtwith: e.target.value })}
+                    className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Technology stack detection, analytics, and framework identification</p>
                 </div>
 
                 {/* OpenCage */}
-                <div className="space-y-2 p-4 border border-border rounded-lg">
+                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="opencage" className="text-base font-semibold">OpenCage API Key</Label>
                     <div className="flex items-center gap-2">
@@ -377,6 +389,7 @@ const Settings = () => {
                         disabled={isTestingAPI('opencage')}
                         variant="outline"
                         size="sm"
+                        className="border-border text-foreground hover:bg-muted/50"
                       >
                         {isTestingAPI('opencage') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
                       </Button>
@@ -388,12 +401,13 @@ const Settings = () => {
                     placeholder="Enter OpenCage API key"
                     value={apiKeys.opencage || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, opencage: e.target.value })}
+                    className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Enhanced geocoding, reverse geocoding, and detailed location data</p>
                 </div>
 
                 {/* Hunter.io */}
-                <div className="space-y-2 p-4 border border-border rounded-lg">
+                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="hunter" className="text-base font-semibold">Hunter.io API Key</Label>
                     <div className="flex items-center gap-2">
@@ -403,6 +417,7 @@ const Settings = () => {
                         disabled={isTestingAPI('hunter')}
                         variant="outline"
                         size="sm"
+                        className="border-border text-foreground hover:bg-muted/50"
                       >
                         {isTestingAPI('hunter') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
                       </Button>
@@ -414,12 +429,13 @@ const Settings = () => {
                     placeholder="Enter Hunter.io API key"
                     value={apiKeys.hunter || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, hunter: e.target.value })}
+                    className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Email discovery, domain search, and email verification</p>
                 </div>
 
                 {/* Clearbit */}
-                <div className="space-y-2 p-4 border border-border rounded-lg">
+                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="clearbit" className="text-base font-semibold">Clearbit API Key</Label>
                     <div className="flex items-center gap-2">
@@ -429,6 +445,7 @@ const Settings = () => {
                         disabled={isTestingAPI('clearbit')}
                         variant="outline"
                         size="sm"
+                        className="border-border text-foreground hover:bg-muted/50"
                       >
                         {isTestingAPI('clearbit') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
                       </Button>
@@ -440,6 +457,7 @@ const Settings = () => {
                     placeholder="Enter Clearbit API key"
                     value={apiKeys.clearbit || ''}
                     onChange={(e) => setApiKeys({ ...apiKeys, clearbit: e.target.value })}
+                    className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Company data enrichment, logo API, and business intelligence</p>
                 </div>
