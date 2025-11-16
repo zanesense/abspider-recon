@@ -8,7 +8,7 @@ import { generatePDFReport } from '@/services/reportService';
 import { sendDiscordWebhook } from '@/services/webhookService';
 import { useToast } from '@/hooks/use-toast';
 import ScanStatus from '@/components/ScanStatus';
-import ScanSummaryWidget from '@/components/ScanSummaryWidget'; // New import
+import ScanSummaryWidget from '@/components/ScanSummaryWidget';
 import SiteInfo from '@/components/SiteInfo';
 import HeadersAnalysis from '@/components/HeadersAnalysis';
 import WhoisInfo from '@/components/WhoisInfo';
@@ -27,6 +27,7 @@ import SEOInfo from '@/components/SEOInfo';
 import DDoSFirewallResults from '@/components/DDoSFirewallResults';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEffect } from 'react';
+import { Card } from '@/components/ui/card'; // Import Card to use for error display
 
 const ScanResults = () => {
   const { id } = useParams();
@@ -122,8 +123,6 @@ const ScanResults = () => {
     );
   }
 
-  const blockClass = "bg-card border-border rounded-lg p-4 shadow-md"; // Removed backdrop-blur-sm and /50 for consistency
-
   return (
     <div className="flex flex-col h-full w-full">
       <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
@@ -175,137 +174,52 @@ const ScanResults = () => {
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Top Row: Scan Status and Summary Widget */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className={blockClass}>
-              <ScanStatus scan={scan} />
-            </div>
-            <div className={blockClass}>
-              <ScanSummaryWidget scan={scan} />
-            </div>
+            <ScanStatus scan={scan} />
+            <ScanSummaryWidget scan={scan} />
           </div>
 
           {/* Main Content: Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
-              {scan.results.siteInfo && (
-                <div className={blockClass}>
-                  <SiteInfo siteInfo={scan.results.siteInfo} />
-                </div>
-              )}
-
-              {scan.results.headers && (
-                <div className={blockClass}>
-                  <HeadersAnalysis headersAnalysis={scan.results.headers} />
-                </div>
-              )}
-
-              {scan.results.whois && (
-                <div className={blockClass}>
-                  <WhoisInfo whois={scan.results.whois} />
-                </div>
-              )}
-
-              {scan.results.dns && (
-                <div className={blockClass}>
-                  <DNSInfo dns={scan.results.dns} />
-                </div>
-              )}
-
-              {scan.results.mx && (
-                <div className={blockClass}>
-                  <MXInfo mx={scan.results.mx} />
-                </div>
-              )}
-
-              {scan.results.subnet && (
-                <div className={blockClass}>
-                  <SubnetInfo subnet={scan.results.subnet} />
-                </div>
-              )}
-
-              {scan.results.ports && (
-                <div className={blockClass}>
-                  <PortScanResults ports={scan.results.ports} />
-                </div>
-              )}
+              {scan.results.siteInfo && <SiteInfo siteInfo={scan.results.siteInfo} />}
+              {scan.results.headers && <HeadersAnalysis headersAnalysis={scan.results.headers} />}
+              {scan.results.whois && <WhoisInfo whois={scan.results.whois} />}
+              {scan.results.dns && <DNSInfo dns={scan.results.dns} />}
+              {scan.results.mx && <MXInfo mx={scan.results.mx} />}
+              {scan.results.subnet && <SubnetInfo subnet={scan.results.subnet} />}
+              {scan.results.ports && <PortScanResults ports={scan.results.ports} />}
             </div>
 
             {/* Right Column */}
             <div className="space-y-6">
-              {scan.results.geoip && (
-                <div className={blockClass}>
-                  <GeoIPInfo geoip={scan.results.geoip} />
-                </div>
-              )}
-
-              {scan.results.subdomains && (
-                <div className={blockClass}>
-                  <SubdomainList subdomains={scan.results.subdomains} />
-                </div>
-              )}
-
-              {scan.results.reverseip && (
-                <div className={blockClass}>
-                  <ReverseIPInfo reverseip={scan.results.reverseip} />
-                </div>
-              )}
-
-              {scan.results.sqlinjection && (
-                <div className={blockClass}>
-                  <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />
-                </div>
-              )}
-
-              {scan.results.xss && (
-                <div className={blockClass}>
-                  <XSSVulnerabilities xss={scan.results.xss} />
-                </div>
-              )}
-
-              {scan.results.lfi && (
-                <div className={blockClass}>
-                  <LFIVulnerabilities lfi={scan.results.lfi} />
-                </div>
-              )}
-
-              {scan.results.wordpress && (
-                <div className={blockClass}>
-                  <WordPressInfo wordpress={scan.results.wordpress} />
-                </div>
-              )}
-
-              {scan.results.seo && (
-                <div className={blockClass}>
-                  <SEOInfo seo={scan.results.seo} />
-                </div>
-              )}
-
-              {scan.results.ddosFirewall && (
-                <div className={blockClass}>
-                  <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />
-                </div>
-              )}
-
-              {scan.results.deepDdosFirewall && (
-                <div className={blockClass}>
-                  <DDoSFirewallResults ddosFirewall={scan.results.deepDdosFirewall} />
-                </div>
-              )}
+              {scan.results.geoip && <GeoIPInfo geoip={scan.results.geoip} />}
+              {scan.results.subdomains && <SubdomainList subdomains={scan.results.subdomains} />}
+              {scan.results.reverseip && <ReverseIPInfo reverseip={scan.results.reverseip} />}
+              {scan.results.sqlinjection && <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />}
+              {scan.results.xss && <XSSVulnerabilities xss={scan.results.xss} />}
+              {scan.results.lfi && <LFIVulnerabilities lfi={scan.results.lfi} />}
+              {scan.results.wordpress && <WordPressInfo wordpress={scan.results.wordpress} />}
+              {scan.results.seo && <SEOInfo seo={scan.results.seo} />}
+              {scan.results.ddosFirewall && <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />}
+              {scan.results.deepDdosFirewall && <DDoSFirewallResults ddosFirewall={scan.results.deepDdosFirewall} />}
             </div>
           </div>
 
           {scan.errors && scan.errors.length > 0 && (
-            <div className={`${blockClass} border-destructive`}>
-              <h3 className="text-destructive font-semibold mb-2 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Errors Encountered
-              </h3>
-              <ul className="list-disc list-inside text-destructive-foreground text-sm space-y-1">
-                {scan.errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
+            <Card className="bg-card border-destructive shadow-lg"> {/* Use Card for error display */}
+              <div className="p-4">
+                <h3 className="text-destructive font-semibold mb-2 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Errors Encountered
+                </h3>
+                <ul className="list-disc list-inside text-destructive-foreground text-sm space-y-1">
+                  {scan.errors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </Card>
           )}
         </div>
       </main>
