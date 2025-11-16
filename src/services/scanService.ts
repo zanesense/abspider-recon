@@ -14,6 +14,7 @@ import { performXSSScan, XSSScanResult } from './xssScanService';
 import { performLFIScan, LFIScanResult } from './lfiScanService';
 import { performWordPressScan, WordPressScanResult } from './wordpressService';
 import { performSEOAnalysis, SEOAnalysis } from './seoService';
+import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService'; // New import
 import { getSettings, saveSettings } from './settingsService';
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
@@ -36,6 +37,7 @@ export interface ScanConfig {
   lfi: boolean;
   wordpress: boolean;
   seo: boolean;
+  ddosFirewall: boolean; // New config option
   useProxy: boolean;
   threads: number;
 }
@@ -56,6 +58,7 @@ export interface ScanResults {
   lfi?: LFIScanResult;
   wordpress?: WordPressScanResult;
   seo?: SEOAnalysis;
+  ddosFirewall?: DDoSFirewallResult; // New result type
 }
 
 export interface Scan {
@@ -254,6 +257,10 @@ const runScan = async (
             case 'seo':
               moduleResult = await performSEOAnalysis(config.target);
               currentScan.results.seo = moduleResult;
+              break;
+            case 'ddosFirewall': // New module case
+              moduleResult = await performDDoSFirewallTest(config.target, 20, 100, requestManager);
+              currentScan.results.ddosFirewall = moduleResult;
               break;
             default:
               console.warn(`[ScanService] Unknown module: ${moduleName}`);

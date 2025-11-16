@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle } from 'lucide-react';
+import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startScan } from '@/services/scanService';
 
@@ -39,6 +39,8 @@ const NewScan = () => {
     wordpress: false,
     // SEO & Analytics
     seo: true,
+    // Security Testing
+    ddosFirewall: false, // New module
     // Settings
     useProxy: false,
     threads: 20,
@@ -351,6 +353,33 @@ const NewScan = () => {
                     />
                     <label htmlFor="seo" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">SEO Analysis</span> - Meta tags, headings, links
+                    </label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Security Testing */}
+            <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-400">
+                  <Zap className="h-5 w-5" />
+                  Security Testing
+                </CardTitle>
+                <CardDescription>
+                  Advanced security posture assessment
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="ddosFirewall"
+                      checked={formData.ddosFirewall}
+                      onCheckedChange={(checked) => setFormData({ ...formData, ddosFirewall: checked as boolean })}
+                    />
+                    <label htmlFor="ddosFirewall" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">DDoS Firewall Test</span> - Detect WAF/DDoS protection
                     </label>
                   </div>
                 </div>

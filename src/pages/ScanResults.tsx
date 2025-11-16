@@ -23,6 +23,7 @@ import XSSVulnerabilities from '@/components/XSSVulnerabilities';
 import LFIVulnerabilities from '@/components/LFIVulnerabilities';
 import WordPressInfo from '@/components/WordPressInfo';
 import SEOInfo from '@/components/SEOInfo';
+import DDoSFirewallResults from '@/components/DDoSFirewallResults'; // New import
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEffect } from 'react';
 
@@ -43,11 +44,7 @@ const ScanResults = () => {
     retryDelay: 1000,
   });
 
-  // Removed: Effect to stop scan on unmount or ID change
-  // Scans will now continue to run in the background even if the user navigates away.
   useEffect(() => {
-    // No automatic stopping or pausing on unmount/navigation
-    // The user can manually pause/stop scans using the buttons
     return () => {
       // Cleanup for any listeners if they were added, but none are now.
     };
@@ -266,6 +263,12 @@ const ScanResults = () => {
           {scan.results.seo && (
             <div className={blockClass}>
               <SEOInfo seo={scan.results.seo} />
+            </div>
+          )}
+
+          {scan.results.ddosFirewall && ( // New component rendering
+            <div className={blockClass}>
+              <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />
             </div>
           )}
 
