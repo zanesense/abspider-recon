@@ -10,13 +10,24 @@ import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2 } from 
 import { useToast } from '@/hooks/use-toast';
 import { getSettings, saveSettings, testDiscordWebhook } from '@/services/settingsService';
 import { getAPIKeys, saveAPIKeys, hasAPIKey } from '@/services/apiKeyService';
+import {
+  testShodanAPI,
+  testVirusTotalAPI,
+  testSecurityTrailsAPI,
+  testBuiltWithAPI,
+  testHunterAPI,
+  testClearbitAPI,
+  testOpenCageAPI,
+} from '@/services/apiTestService';
+
+type APIKeyService = 'shodan' | 'virustotal' | 'securitytrails' | 'builtwith' | 'hunter' | 'clearbit' | 'opencage';
 
 const Settings = () => {
   const { toast } = useToast();
   const [settings, setSettings] = useState(getSettings());
   const [apiKeys, setApiKeys] = useState(getAPIKeys());
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResults, setTestResults] = useState<Record<string, 'success' | 'error' | 'testing'>>({});
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const [apiKeyTestStatus, setApiKeyTestStatus] = useState<Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>>({});
 
   const handleSaveSettings = () => {
     try {
@@ -45,7 +56,7 @@ const Settings = () => {
       return;
     }
 
-    setIsTesting(true);
+    setIsTestingWebhook(true);
     
     try {
       await testDiscordWebhook(settings.discordWebhook);
@@ -60,18 +71,70 @@ const Settings = () => {
         variant: "destructive",
       });
     } finally {
-      setIsTesting(false);
+      setIsTestingWebhook(false);
     }
   };
 
-  const getStatusIcon = (service: string) => {
-    const status = testResults[service];
+  const handleTestAPIKey = async (service: APIKeyService) => {
+    const key = apiKeys[service];
+    if (!key) {
+      toast({
+        title: "Error",
+        description: `Please enter a ${service} API key first.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setApiKeyTestStatus(prev => ({ ...prev, [service]: 'testing' }));
+
+    try {
+      let result;
+      switch (service) {
+        case 'shodan': result = await testShodanAPI(key); break;
+        case 'virustotal': result = await testVirusTotalAPI(key); break;
+        case 'securitytrails': result = await testSecurityTrailsAPI(key); break;
+        case 'builtwith': result = await testBuiltWithAPI(key); break;
+        case 'hunter': result = await testHunterAPI(key); break;
+        case 'clearbit': result = await testClearbitAPI(key); break;
+        case 'opencage': result = await testOpenCageAPI(key); break;
+        default: throw new Error('Unknown API service');
+      }
+
+      if (result.success) {
+        setApiKeyTestStatus(prev => ({ ...prev, [service]: 'success' }));
+        toast({
+          title: `${service} API Test Successful`,
+          description: result.message || 'API key is valid.',
+        });
+      } else {
+        setApiKeyTestStatus(prev => ({ ...prev, [service]: 'error' }));
+        toast({
+          title: `${service} API Test Failed`,
+          description: result.message || 'API key is invalid or an error occurred.',
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      setApiKeyTestStatus(prev => ({ ...prev, [service]: 'error' }));
+      toast({
+        title: `${service} API Test Failed`,
+        description: error.message || 'An unexpected error occurred during the test.',
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusIcon = (service: APIKeyService) => {
+    const status = apiKeyTestStatus[service];
     if (status === 'testing') return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
     if (status === 'success') return <CheckCircle className="h-4 w-4 text-green-500" />;
     if (status === 'error') return <XCircle className="h-4 w-4 text-red-500" />;
-    if (hasAPIKey(service as any)) return <CheckCircle className="h-4 w-4 text-gray-500" />;
-    return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+    if (hasAPIKey(service)) return <CheckCircle className="h-4 w-4 text-gray-500" />; // Key is present but not tested
+    return <AlertCircle className="h-4 w-4 text-yellow-500" />; // Key is missing
   };
+
+  const isTestingAPI = (service: APIKeyService) => apiKeyTestStatus[service] === 'testing';
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -146,10 +209,10 @@ const Settings = () => {
               </div>
               <Button
                 onClick={handleTestWebhook}
-                disabled={isTesting}
+                disabled={isTestingWebhook}
                 variant="outline"
               >
-                {isTesting ? (
+                {isTestingWebhook ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Testing...
@@ -203,7 +266,17 @@ const Settings = () => {
                 <div className="space-y-2 p-4 border border-border rounded-lg">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="shodan" className="text-base font-semibold">Shodan API Key</Label>
-                    {getStatusIcon('shodan')}
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon('shodan')}
+                      <Button
+                        onClick={() => handleTestAPIKey('shodan')}
+                        disabled={isTestingAPI('shodan')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {isTestingAPI('shodan') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <Input
                     id="shodan"
@@ -219,7 +292,17 @@ const Settings = () => {
                 <div className="space-y-2 p-4 border border-border rounded-lg">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="virustotal" className="text-base font-semibold">VirusTotal API Key</Label>
-                    {getStatusIcon('virustotal')}
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon('virustotal')}
+                      <Button
+                        onClick={() => handleTestAPIKey('virustotal')}
+                        disabled={isTestingAPI('virustotal')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {isTestingAPI('virustotal') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <Input
                     id="virustotal"
@@ -235,7 +318,17 @@ const Settings = () => {
                 <div className="space-y-2 p-4 border border-border rounded-lg">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="securitytrails" className="text-base font-semibold">SecurityTrails API Key</Label>
-                    {getStatusIcon('securitytrails')}
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon('securitytrails')}
+                      <Button
+                        onClick={() => handleTestAPIKey('securitytrails')}
+                        disabled={isTestingAPI('securitytrails')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {isTestingAPI('securitytrails') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <Input
                     id="securitytrails"
@@ -251,7 +344,17 @@ const Settings = () => {
                 <div className="space-y-2 p-4 border border-border rounded-lg">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="builtwith" className="text-base font-semibold">BuiltWith API Key</Label>
-                    {getStatusIcon('builtwith')}
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon('builtwith')}
+                      <Button
+                        onClick={() => handleTestAPIKey('builtwith')}
+                        disabled={isTestingAPI('builtwith')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {isTestingAPI('builtwith') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <Input
                     id="builtwith"
@@ -267,7 +370,17 @@ const Settings = () => {
                 <div className="space-y-2 p-4 border border-border rounded-lg">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="opencage" className="text-base font-semibold">OpenCage API Key</Label>
-                    {getStatusIcon('opencage')}
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon('opencage')}
+                      <Button
+                        onClick={() => handleTestAPIKey('opencage')}
+                        disabled={isTestingAPI('opencage')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {isTestingAPI('opencage') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <Input
                     id="opencage"
@@ -283,7 +396,17 @@ const Settings = () => {
                 <div className="space-y-2 p-4 border border-border rounded-lg">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="hunter" className="text-base font-semibold">Hunter.io API Key</Label>
-                    {getStatusIcon('hunter')}
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon('hunter')}
+                      <Button
+                        onClick={() => handleTestAPIKey('hunter')}
+                        disabled={isTestingAPI('hunter')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {isTestingAPI('hunter') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <Input
                     id="hunter"
@@ -299,7 +422,17 @@ const Settings = () => {
                 <div className="space-y-2 p-4 border border-border rounded-lg">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="clearbit" className="text-base font-semibold">Clearbit API Key</Label>
-                    {getStatusIcon('clearbit')}
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon('clearbit')}
+                      <Button
+                        onClick={() => handleTestAPIKey('clearbit')}
+                        disabled={isTestingAPI('clearbit')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {isTestingAPI('clearbit') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <Input
                     id="clearbit"
