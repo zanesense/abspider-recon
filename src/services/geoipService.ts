@@ -74,6 +74,7 @@ export const performGeoIPLookup = async (target: string): Promise<GeoIPResult> =
         result.postal = data.postal;
         result.currency = data.currency;
         result.languages = data.languages?.split(',');
+        result.flag = data.country_flag; // Add country flag from ipapi.co
 
         console.log(`[GeoIP] ✓ Data from ipapi.co`);
       }

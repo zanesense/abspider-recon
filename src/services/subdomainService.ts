@@ -1,4 +1,5 @@
 import { extractDomain } from './apiUtils';
+import { getAPIKey } from './apiKeyService';
 
 export interface SubdomainResult {
   subdomains: string[];
@@ -110,6 +111,41 @@ export const enumerateSubdomainsCrtSh = async (domain: string): Promise<string[]
   }
 };
 
+export const enumerateSubdomainsSecurityTrails = async (domain: string): Promise<string[]> => {
+  const securitytrailsKey = getAPIKey('securitytrails');
+  if (!securitytrailsKey) {
+    console.log('[Subdomain SecurityTrails] API key not configured, skipping.');
+    return [];
+  }
+
+  console.log(`[Subdomain SecurityTrails] Querying SecurityTrails for ${domain}`);
+  try {
+    const apiUrl = `https://api.securitytrails.com/v1/domain/${domain}/subdomains`;
+    const response = await fetch(apiUrl, {
+      headers: {
+        'APIKEY': securitytrailsKey,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[Subdomain SecurityTrails] API failed with status ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    if (data.subdomains) {
+      const subdomains = data.subdomains.map((sub: string) => `${sub}.${domain}`);
+      console.log(`[Subdomain SecurityTrails] Found ${subdomains.length} subdomains from SecurityTrails`);
+      return subdomains;
+    }
+    return [];
+  } catch (error: any) {
+    console.error('[Subdomain SecurityTrails] Error:', error.message);
+    return [];
+  }
+};
+
+
 export const enumerateSubdomains = async (
   target: string,
   threads: number = 5
@@ -121,14 +157,16 @@ export const enumerateSubdomains = async (
     const sources: Record<string, number> = {
       dns: 0,
       crtsh: 0,
+      securitytrails: 0,
     };
 
     const allSubdomains = new Set<string>();
 
-    // Run both methods in parallel
-    const [dnsResults, crtResults] = await Promise.allSettled([
+    // Run all methods in parallel
+    const [dnsResults, crtResults, securitytrailsResults] = await Promise.allSettled([
       enumerateSubdomainsDNS(domain, threads),
       enumerateSubdomainsCrtSh(domain),
+      enumerateSubdomainsSecurityTrails(domain),
     ]);
 
     if (dnsResults.status === 'fulfilled') {
@@ -145,10 +183,17 @@ export const enumerateSubdomains = async (
       console.error('[Subdomain crt.sh] Failed:', crtResults.reason);
     }
 
+    if (securitytrailsResults.status === 'fulfilled') {
+      securitytrailsResults.value.forEach(sub => allSubdomains.add(sub));
+      sources.securitytrails = securitytrailsResults.value.length;
+    } else {
+      console.error('[Subdomain SecurityTrails] Failed:', securitytrailsResults.reason);
+    }
+
     const sortedSubdomains = Array.from(allSubdomains).sort();
     
     console.log(`[Subdomain Enumeration] Complete: ${sortedSubdomains.length} unique subdomains found`);
-    console.log(`[Subdomain Enumeration] Sources - DNS: ${sources.dns}, crt.sh: ${sources.crtsh}`);
+    console.log(`[Subdomain Enumeration] Sources - DNS: ${sources.dns}, crt.sh: ${sources.crtsh}, SecurityTrails: ${sources.securitytrails}`);
     
     return {
       subdomains: sortedSubdomains,
@@ -158,7 +203,7 @@ export const enumerateSubdomains = async (
     console.error('[Subdomain Enumeration] Critical error:', error);
     return {
       subdomains: [],
-      sources: { dns: 0, crtsh: 0 },
+      sources: { dns: 0, crtsh: 0, securitytrails: 0 },
     };
   }
 };

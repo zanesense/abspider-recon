@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Network, Info } from 'lucide-react';
+import { Network, Info, Bug } from 'lucide-react';
 
 interface Port {
   port: number;
   status: string;
   service: string;
   banner?: string;
+  product?: string;
+  os?: string;
+  vulnerabilities?: string[];
 }
 
 interface PortScanResultsProps {
@@ -55,6 +58,11 @@ const PortScanResults = ({ ports }: PortScanResultsProps) => {
                       {port.port}
                     </span>
                     <span className="text-slate-300">{port.service}</span>
+                    {port.product && (
+                      <Badge variant="outline" className="text-xs text-blue-400 border-blue-500/30">
+                        {port.product}
+                      </Badge>
+                    )}
                   </div>
                   <Badge className={
                     port.status === 'open'
@@ -70,6 +78,18 @@ const PortScanResults = ({ ports }: PortScanResultsProps) => {
                   <div className="mt-2 flex items-start gap-2 text-xs">
                     <Info className="h-3 w-3 text-slate-500 mt-0.5" />
                     <span className="text-slate-400 font-mono">{port.banner}</span>
+                  </div>
+                )}
+                {port.os && (
+                  <div className="mt-1 flex items-start gap-2 text-xs">
+                    <Info className="h-3 w-3 text-slate-500 mt-0.5" />
+                    <span className="text-slate-400">OS: {port.os}</span>
+                  </div>
+                )}
+                {port.vulnerabilities && port.vulnerabilities.length > 0 && (
+                  <div className="mt-1 flex items-start gap-2 text-xs">
+                    <Bug className="h-3 w-3 text-red-500 mt-0.5" />
+                    <span className="text-red-400">Vulnerabilities: {port.vulnerabilities.join(', ')}</span>
                   </div>
                 )}
               </div>

@@ -1,4 +1,5 @@
 import { extractDomain } from './apiUtils';
+import { getAPIKey } from './apiKeyService';
 
 export interface PortResult {
   port: number;
@@ -6,6 +7,10 @@ export interface PortResult {
   service: string;
   version?: string;
   banner?: string;
+  // Added from Shodan
+  product?: string;
+  os?: string;
+  vulnerabilities?: string[];
 }
 
 const COMMON_PORTS = [
@@ -92,6 +97,54 @@ export const scanCommonPorts = async (
     console.log(`[Port Scan] Starting enhanced scan for ${domain} with ${threads} threads`);
     
     const results: PortResult[] = [];
+    const shodanKey = getAPIKey('shodan');
+
+    let ipAddress: string | undefined;
+    try {
+      const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
+      const dnsResponse = await fetch(dnsUrl);
+      const dnsData = await dnsResponse.json();
+      if (dnsData.Answer && dnsData.Answer.length > 0) {
+        ipAddress = dnsData.Answer[0].data;
+        console.log(`[Port Scan] Resolved IP: ${ipAddress}`);
+      }
+    } catch (error) {
+      console.warn('[Port Scan] Could not resolve IP for Shodan lookup:', error);
+    }
+
+    // --- Try Shodan API first if key is available and IP is resolved ---
+    if (shodanKey && ipAddress) {
+      try {
+        console.log('[Port Scan] Attempting Shodan API lookup...');
+        const shodanApiUrl = `https://api.shodan.io/shodan/host/${ipAddress}?key=${shodanKey}`;
+        const shodanResponse = await fetch(shodanApiUrl);
+
+        if (shodanResponse.ok) {
+          const shodanData = await shodanResponse.json();
+          if (shodanData.ports && shodanData.data) {
+            shodanData.data.forEach((item: any) => {
+              results.push({
+                port: item.port,
+                status: 'open', // Shodan only returns open ports
+                service: item.transport || item.product || 'Unknown',
+                banner: item.data,
+                product: item.product,
+                os: shodanData.os,
+                vulnerabilities: item.vulns ? Object.keys(item.vulns) : undefined,
+              });
+            });
+            console.log(`[Port Scan] ✓ Data from Shodan API: ${results.length} open ports`);
+            return results.sort((a, b) => a.port - b.port); // Return Shodan results directly
+          }
+        } else {
+          console.warn(`[Port Scan] Shodan API failed with status ${shodanResponse.status}, falling back...`);
+        }
+      } catch (shodanError) {
+        console.warn('[Port Scan] Shodan API lookup failed:', shodanError);
+      }
+    }
+
+    // --- Fallback to browser-based port scanning if Shodan fails or no key ---
     
     const checkPort = async (portInfo: { port: number; service: string; protocol: string }): Promise<PortResult> => {
       try {

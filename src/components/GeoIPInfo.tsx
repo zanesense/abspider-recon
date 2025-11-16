@@ -33,7 +33,6 @@ const GeoIPInfo = ({ geoip }: GeoIPInfoProps) => {
     { label: 'Postal Code', value: geoip.postal || 'N/A' },
     { label: 'Currency', value: geoip.currency || 'N/A' },
     { label: 'Languages', value: geoip.languages?.length ? geoip.languages.join(', ') : 'N/A' },
-    { label: 'Flag', value: geoip.flag || 'N/A' },
   ];
 
   const mid = Math.ceil(fields.length / 2);

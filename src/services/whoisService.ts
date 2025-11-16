@@ -1,4 +1,5 @@
 import { extractDomain } from './apiUtils';
+import { getAPIKey } from './apiKeyService';
 
 export interface WhoisResult {
   domain: string;
@@ -11,8 +12,11 @@ export interface WhoisResult {
   registrant?: {
     organization?: string;
     country?: string;
+    email?: string;
   };
   dnssec?: string;
+  // Added from SecurityTrails
+  whoisRaw?: string;
 }
 
 export const performWhoisLookup = async (target: string): Promise<WhoisResult> => {
@@ -24,6 +28,48 @@ export const performWhoisLookup = async (target: string): Promise<WhoisResult> =
       domain,
       nameservers: [],
     };
+
+    // --- Try SecurityTrails API first if key is available ---
+    const securitytrailsKey = getAPIKey('securitytrails');
+    if (securitytrailsKey) {
+      try {
+        console.log('[WHOIS] Attempting SecurityTrails API lookup...');
+        const apiUrl = `https://api.securitytrails.com/v1/domain/${domain}/whois`;
+        const response = await fetch(apiUrl, {
+          headers: {
+            'APIKEY': securitytrailsKey,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          result.registrar = data.registrar;
+          result.created = data.created_date;
+          result.expires = data.expires_date;
+          result.updated = data.updated_date;
+          result.status = data.status;
+          result.nameservers = data.name_servers || [];
+          result.dnssec = data.dnssec;
+          result.whoisRaw = data.whois_text;
+
+          if (data.registrant) {
+            result.registrant = {
+              organization: data.registrant.organization,
+              country: data.registrant.country,
+              email: data.registrant.email,
+            };
+          }
+          console.log('[WHOIS] ✓ Data from SecurityTrails API');
+          return result; // If SecurityTrails provides comprehensive data, return early
+        } else {
+          console.warn(`[WHOIS] SecurityTrails API failed with status ${response.status}, falling back...`);
+        }
+      } catch (stError) {
+        console.warn('[WHOIS] SecurityTrails API lookup failed:', stError);
+      }
+    }
+
+    // --- Fallback to DNS Google and RDAP if SecurityTrails fails or no key ---
 
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=NS`;
     
