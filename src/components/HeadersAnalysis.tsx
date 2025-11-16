@@ -124,7 +124,7 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Dest
         </div>
 
         {/* Cookies Analysis */}
-        {headersAnalysis.cookies && headersAnalysis.cookies.length > 0 && ( {/* Use headersAnalysis.cookies */}
+        {headersAnalysis.cookies && headersAnalysis.cookies.length > 0 && ( /* Use headersAnalysis.cookies */
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-white flex items-center gap-2">
               <Info className="h-4 w-4 text-blue-400" />
@@ -157,7 +157,7 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Dest
           <h4 className="text-sm font-semibold text-white">All Headers</h4>
           <div className="bg-slate-800 rounded-lg p-4 max-h-64 overflow-y-auto">
             <div className="space-y-1 font-mono text-xs">
-              {Object.entries(headersAnalysis.headers).map(([key, value]) => ( {/* Use headersAnalysis.headers */}
+              {Object.entries(headersAnalysis.headers).map(([key, value]) => ( /* Use headersAnalysis.headers */
                 <div key={key} className="flex gap-2">
                   <span className="text-cyan-400">{key}:</span>
                   <span className="text-slate-400 break-all">{String(value)}</span>
