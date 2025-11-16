@@ -58,7 +58,7 @@ ABSpider employs a modular approach, offering both stealthy passive checks and c
 | **HTTP Headers Analysis** | Passive | Real-time security header scoring (HSTS, CSP, XFO) and technology fingerprinting. |
 | **WHOIS / RDAP Lookup**   | Passive | Retrieves domain registration, registrar, nameservers, and date information.    |
 | **GeoIP Location**        | Passive | Pinpoints the physical location of the target server's IP address.              |
-| **DNS Records**           | Passive | Enumerates A, AAAA, MX, NS, TXT, CNAME, and SOA records.                        |
+| **DNS Records**           | Passive | Enumerates A, AAAA, CNAME, TXT, MX, NS, and SOA records.                        |
 | **MX Records**            | Passive | Analyzes mail server configurations, including SPF and DMARC.                   |
 | **Subnet Scan**           | Utility | Calculates network range details for a given IP and CIDR.                       |
 | **Port Scanning**         | Active  | Checks connectivity and identifies services on common ports, with Shodan integration. |
