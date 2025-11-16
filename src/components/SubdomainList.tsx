@@ -53,10 +53,10 @@ const SubdomainList = ({ subdomains }: SubdomainListProps) => {
               rel="noopener noreferrer"
               className="flex items-center justify-between bg-slate-800 px-4 py-3 rounded-lg hover:bg-slate-750 transition-colors group"
             >
-              <span className="text-white font-mono text-sm group-hover:text-cyan-400 transition-colors">
+              <span className="flex-1 min-w-0 text-white font-mono text-sm group-hover:text-cyan-400 transition-colors break-all">
                 {subdomain}
               </span>
-              <ExternalLink className="h-3 w-3 text-slate-500 group-hover:text-cyan-400 transition-colors" />
+              <ExternalLink className="h-3 w-3 text-slate-500 group-hover:text-cyan-400 transition-colors ml-2 flex-shrink-0" />
             </a>
           ))}
         </div>
