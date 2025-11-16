@@ -1,15 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Network, ExternalLink } from 'lucide-react';
+import { Network, ExternalLink, Database, Globe, FileText } from 'lucide-react';
+import { SubdomainResult } from '@/services/subdomainService'; // Import SubdomainResult
 
 interface SubdomainListProps {
-  subdomains: string[] | { subdomains: string[] };
+  subdomains: SubdomainResult; // Now expects the full object
 }
 
 const SubdomainList = ({ subdomains }: SubdomainListProps) => {
-  // Handle both array and object formats
-  const subdomainArray = Array.isArray(subdomains) 
-    ? subdomains 
-    : (subdomains?.subdomains || []);
+  const subdomainArray = subdomains.subdomains || []; // Access the array from the object
+  const sources = subdomains.sources || {}; // Access the sources from the object
 
   if (!Array.isArray(subdomainArray) || subdomainArray.length === 0) {
     return (
@@ -36,6 +35,15 @@ const SubdomainList = ({ subdomains }: SubdomainListProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          {Object.entries(sources).map(([sourceName, count]) => (
+            <div key={sourceName} className="bg-muted p-3 rounded-lg flex items-center justify-between">
+              <span className="text-sm text-muted-foreground capitalize">{sourceName.replace('crtsh', 'crt.sh')}</span>
+              <span className="text-foreground font-medium">{count}</span>
+            </div>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {subdomainArray.map((subdomain, index) => (
             <a

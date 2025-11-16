@@ -1,6 +1,6 @@
 import { performFullHeaderAnalysis } from './headerService';
 import { performWhoisLookup } from './whoisService';
-import { enumerateSubdomains } from './subdomainService';
+import { enumerateSubdomains, SubdomainResult } from './subdomainService'; // Import SubdomainResult
 import { scanCommonPorts } from './portService';
 import { performGeoIPLookup } from './geoipService';
 import { performSQLScan } from './sqlScanService';
@@ -56,7 +56,7 @@ export interface Scan {
     mx?: any;
     subnet?: any;
     ports?: any[];
-    subdomains?: string[];
+    subdomains?: SubdomainResult; // Changed to SubdomainResult
     reverseip?: any;
     sqlinjection?: any;
     xss?: any;
@@ -220,7 +220,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     errors: [],
     progress: {
       current: 0,
-      total: 0,
+      total: tasks.length,
       stage: 'Initializing',
     },
   };
@@ -486,12 +486,12 @@ const performScan = async (scan: Scan) => {
       scan.progress.stage = 'Enumerating subdomains';
       updateScan(scan);
       const result = await enumerateSubdomains(config.target, config.threads);
-      scan.results.subdomains = Array.isArray(result) ? result : (result?.subdomains || []);
+      scan.results.subdomains = result; // Store the full SubdomainResult object
       console.log('[Subdomains] ✓ Success');
     } catch (error: any) {
       console.error('[Subdomains] ✗ Error:', error);
       scan.errors?.push(`Subdomains: ${error.message || 'Enumeration failed'}`);
-      scan.results.subdomains = [];
+      scan.results.subdomains = { subdomains: [], sources: { dns: 0, crtsh: 0, securitytrails: 0 } }; // Ensure default structure
     } finally {
       completed++;
       scan.progress.current = completed;
