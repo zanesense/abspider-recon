@@ -1,4 +1,5 @@
 import { getAPIKey } from './apiKeyService';
+import { corsProxy } from './corsProxy'; // Import corsProxy
 
 interface APIKeyTestResult {
   success: boolean;
@@ -46,9 +47,11 @@ export const testVirusTotalAPI = async (apiKey: string): Promise<APIKeyTestResul
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
     // Use a public, known-safe URL for testing
-    const testUrl = 'example.com'; // Changed from google.com to example.com
+    const testUrl = 'example.com';
     const url = `https://www.virustotal.com/vtapi/v2/url/report?apikey=${apiKey}&resource=${testUrl}`;
-    const response = await fetchWithTimeout(url, { mode: 'cors' }); // Explicitly setting mode: 'cors'
+    
+    // Use corsProxy.fetch instead of direct fetchWithTimeout for better CORS handling
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
     const data = await response.json();
 
     if (response.ok && data.response_code !== undefined) {
