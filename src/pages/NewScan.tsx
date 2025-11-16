@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2 } from 'lucide-react';
+import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startScan } from '@/services/scanService';
 
