@@ -1,5 +1,6 @@
 import { extractDomain } from './apiUtils';
 import { getAPIKey } from './apiKeyService';
+import { fetchWithBypass, fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
 
 export interface WhoisResult {
   domain: string;
@@ -35,14 +36,13 @@ export const performWhoisLookup = async (target: string): Promise<WhoisResult> =
       try {
         console.log('[WHOIS] Attempting SecurityTrails API lookup...');
         const apiUrl = `https://api.securitytrails.com/v1/domain/${domain}/whois`;
-        const response = await fetch(apiUrl, {
-          headers: {
-            'APIKEY': securitytrailsKey,
-          },
+        // Use fetchJSONWithBypass for SecurityTrails API
+        const { data, metadata } = await fetchJSONWithBypass(apiUrl, {
+          headers: { 'APIKEY': securitytrailsKey },
+          timeout: 15000
         });
 
-        if (response.ok) {
-          const data = await response.json();
+        if (data.registrar) { // Check for a key indicator of success
           result.registrar = data.registrar;
           result.created = data.created_date;
           result.expires = data.expires_date;
@@ -61,11 +61,13 @@ export const performWhoisLookup = async (target: string): Promise<WhoisResult> =
           }
           console.log('[WHOIS] ✓ Data from SecurityTrails API');
           return result; // If SecurityTrails provides comprehensive data, return early
+        } else if (data.message) {
+          console.warn(`[WHOIS] SecurityTrails API returned error: ${data.message}, falling back...`);
         } else {
-          console.warn(`[WHOIS] SecurityTrails API failed with status ${response.status}, falling back...`);
+          console.warn(`[WHOIS] SecurityTrails API returned unexpected data, falling back...`);
         }
-      } catch (stError) {
-        console.warn('[WHOIS] SecurityTrails API lookup failed:', stError);
+      } catch (stError: any) {
+        console.warn('[WHOIS] SecurityTrails API lookup failed:', stError.message);
       }
     }
 
@@ -108,42 +110,37 @@ export const performWhoisLookup = async (target: string): Promise<WhoisResult> =
     }, 15000);
     
     try {
-      const rdapResponse = await fetch(rdapUrl, { signal: rdapController.signal });
+      // Use fetchJSONWithBypass for RDAP
+      const { data: rdapData, metadata: rdapCorsMetadata } = await fetchJSONWithBypass(rdapUrl, { signal: rdapController.signal });
       clearTimeout(rdapTimeoutId);
       
-      if (rdapResponse.ok) {
-        const rdapData = await rdapResponse.json();
-        
-        if (rdapData.entities && rdapData.entities.length > 0) {
-          const entity = rdapData.entities[0];
-          if (entity.vcardArray && entity.vcardArray[1]) {
-            for (const field of entity.vcardArray[1]) {
-              if (field[0] === 'fn') {
-                result.registrar = field[3];
-              }
+      if (rdapData.entities && rdapData.entities.length > 0) {
+        const entity = rdapData.entities[0];
+        if (entity.vcardArray && entity.vcardArray[1]) {
+          for (const field of entity.vcardArray[1]) {
+            if (field[0] === 'fn') {
+              result.registrar = field[3];
             }
           }
         }
+      }
 
-        if (rdapData.events) {
-          for (const event of rdapData.events) {
-            if (event.eventAction === 'registration') {
-              result.created = new Date(event.eventDate).toISOString().split('T')[0];
-            }
-            if (event.eventAction === 'expiration') {
-              result.expires = new Date(event.eventDate).toISOString().split('T')[0];
-            }
-            if (event.eventAction === 'last changed') {
-              result.updated = new Date(event.eventDate).toISOString().split('T')[0];
-            }
+      if (rdapData.events) {
+        for (const event of rdapData.events) {
+          if (event.eventAction === 'registration') {
+            result.created = new Date(event.eventDate).toISOString().split('T')[0];
+          }
+          if (event.eventAction === 'expiration') {
+            result.expires = new Date(event.eventDate).toISOString().split('T')[0];
+          }
+          if (event.eventAction === 'last changed') {
+            result.updated = new Date(event.eventDate).toISOString().split('T')[0];
           }
         }
+      }
 
-        if (rdapData.status && rdapData.status.length > 0) {
-          result.status = rdapData.status[0];
-        }
-      } else {
-        console.warn(`[WHOIS] RDAP lookup returned status ${rdapResponse.status}`);
+      if (rdapData.status && rdapData.status.length > 0) {
+        result.status = rdapData.status[0];
       }
     } catch (rdapError: any) {
       clearTimeout(rdapTimeoutId);

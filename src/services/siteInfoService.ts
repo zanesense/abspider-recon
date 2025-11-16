@@ -1,5 +1,5 @@
 import { normalizeUrl, extractDomain } from './apiUtils';
-import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
+import { fetchWithBypass, CORSBypassMetadata, fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
 import { getAPIKey } from './apiKeyService';
 
 export interface SiteInfo {
@@ -134,24 +134,22 @@ export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => 
         try {
           console.log('[Site Info] Attempting BuiltWith API enrichment...');
           const builtwithApiUrl = `https://api.builtwith.com/v1/api.json?key=${builtwithKey}&lookup=${domain}`;
-          const builtwithResponse = await fetch(builtwithApiUrl);
+          // Use fetchJSONWithBypass for BuiltWith API
+          const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000 });
 
-          if (builtwithResponse.ok) {
-            const builtwithData = await builtwithResponse.json();
-            if (builtwithData.Results && builtwithData.Results.length > 0) {
-              const technologies = builtwithData.Results[0].Result.Paths[0].Technologies;
-              technologies.forEach((tech: any) => {
-                if (tech.Name && !result.technologies.includes(tech.Name)) {
-                  result.technologies.push(tech.Name);
-                }
-              });
-              console.log(`[Site Info] ✓ Enhanced with BuiltWith data`);
-            }
-          } else {
-            console.warn(`[Site Info] BuiltWith API failed with status ${builtwithResponse.status}`);
+          if (builtwithData.Results && builtwithData.Results.length > 0) {
+            const technologies = builtwithData.Results[0].Result.Paths[0].Technologies;
+            technologies.forEach((tech: any) => {
+              if (tech.Name && !result.technologies.includes(tech.Name)) {
+                result.technologies.push(tech.Name);
+              }
+            });
+            console.log(`[Site Info] ✓ Enhanced with BuiltWith data`);
+          } else if (builtwithData.Errors && builtwithData.Errors.length > 0) {
+            console.warn(`[Site Info] BuiltWith API returned error: ${builtwithData.Errors[0].Message}`);
           }
-        } catch (builtwithError) {
-          console.warn('[Site Info] BuiltWith API enrichment failed:', builtwithError);
+        } catch (builtwithError: any) {
+          console.warn('[Site Info] BuiltWith API enrichment failed:', builtwithError.message);
         }
       }
 

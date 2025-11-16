@@ -1,9 +1,12 @@
+import { fetchWithBypass, CORSBypassMetadata, FetchWithBypassResult } from './corsProxy'; // Import fetchWithBypass and its types
+
 interface RequestMetrics {
   startTime: number;
   endTime?: number;
   duration?: number;
   status?: number;
   error?: string;
+  corsMetadata?: CORSBypassMetadata; // Add CORS metadata to metrics
 }
 
 interface RequestManagerOptions extends RequestInit {
@@ -60,21 +63,25 @@ export class RequestManager {
           abortController.signal,
         ].filter(Boolean) as AbortSignal[]);
 
-        const response = await fetch(url, {
-          ...fetchOptions,
-          signal: combinedSignal,
+        // Use fetchWithBypass instead of native fetch
+        const fetchResult: FetchWithBypassResult = await fetchWithBypass(url, {
+          method: fetchOptions.method,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             ...fetchOptions.headers,
           },
+          body: fetchOptions.body as string, // Cast body to string as fetchWithBypass expects it
+          timeout,
+          signal: combinedSignal,
         });
 
         metrics.endTime = Date.now();
         metrics.duration = metrics.endTime - metrics.startTime;
-        metrics.status = response.status;
+        metrics.status = fetchResult.response.status;
+        metrics.corsMetadata = fetchResult.metadata; // Store CORS bypass metadata
 
         this.activeRequests.delete(requestId);
-        return response;
+        return fetchResult.response;
       } catch (error: any) {
         lastError = error;
 
