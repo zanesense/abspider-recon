@@ -145,7 +145,10 @@
           <a href="#overview" class="text-gray-400 hover:text-cyan-400 transition">Overview</a>
           <a href="#modules" class="text-gray-400 hover:text-cyan-400 transition">Modules</a>
           <a href="#howto" class="text-gray-400 hover:text-cyan-400 transition">Usage</a>
+          <a href="#tech" class="text-gray-400 hover:text-cyan-400 transition">Technical Details</a>
           <a href="#troubleshooting" class="text-gray-400 hover:text-cyan-400 transition">Troubleshooting</a>
+          <a href="#best-practices" class="text-gray-400 hover:text-cyan-400 transition">Best Practices</a>
+          <a href="#legal" class="text-gray-400 hover:text-cyan-400 transition">Legal Notice</a>
           <a href="#contact" class="text-gray-400 hover:text-cyan-400 transition">Contact</a>
           <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener" class="ml-3 inline-flex items-center text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition">
             <i data-lucide="github" class="w-3 h-3 mr-1"></i> GitHub
@@ -216,11 +219,7 @@
                     <span class="chip chip-passive">PASSIVE</span>
                 </div>
                 <div class="module-item">
-                    <strong><i data-lucide="package" class="w-4 h-4"></i> Banner Grabbing</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="server" class="w-4 h-4"></i> HTTP Headers</strong>
+                    <strong><i data-lucide="server" class="w-4 h-4"></i> HTTP Headers Analysis</strong>
                     <span class="chip chip-passive">PASSIVE</span>
                 </div>
             </div>
@@ -303,13 +302,20 @@
                     <strong><i data-lucide="bar-chart-2" class="w-4 h-4"></i> SEO Analysis</strong>
                     <span class="chip chip-passive">PASSIVE</span>
                 </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <h4 class="module-card-header text-purple-400"><i data-lucide="zap" class="w-5 h-5"></i> Security Testing</h4>
+            <p class="text-sm text-gray-400">DDoS/WAF protection detection.</p>
+            <div class="module-card-body">
                 <div class="module-item">
-                    <strong><i data-lucide="award" class="w-4 h-4"></i> Alexa & Metrics</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
+                    <strong><i data-lucide="shield-check" class="w-4 h-4"></i> DDoS Firewall Test</strong>
+                    <span class="chip chip-active">ACTIVE</span>
                 </div>
                 <div class="module-item">
-                    <strong><i data-lucide="link" class="w-4 h-4"></i> Link Grabber</strong>
-                    <span class="chip chip-utility">UTILITY</span>
+                    <strong><i data-lucide="shield-alert" class="w-4 h-4"></i> Deep DDoS Firewall Test</strong>
+                    <span class="chip chip-active">ACTIVE</span>
                 </div>
             </div>
         </div>
@@ -339,7 +345,7 @@
                         <div class="step-icon">2</div>
                         <div>
                             <p class="font-medium text-white">Concurrency and Proxy Setup</p>
-                            <p class="text-gray-400 text-sm">Set <span class="font-bold">Threads</span> (1-100) for concurrency. Enable <span class="font-bold">Use Proxy Rotation</span> if you have configured proxy servers in the Settings panel.</p>
+                            <p class="text-gray-400 text-sm">Set <span class="font-bold">Threads</span> (1-50) for concurrency. Enable <span class="font-bold">Use Proxy Rotation</span> if you have configured proxy servers in the Settings panel.</p>
                         </div>
                     </li>
                     <li class="flex items-start">
@@ -347,6 +353,13 @@
                         <div>
                             <p class="font-medium text-white">Start and Monitor</p>
                             <p class="text-gray-400 text-sm">Click <span class="font-bold">"Start Reconnaissance"</span>. Scans appear on the <span class="font-bold">Dashboard</span> immediately and update in real-time.</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <div class="step-icon">4</div>
+                        <div>
+                            <p class="font-medium text-white">Viewing Results</p>
+                            <p class="text-gray-400 text-sm">Scans appear on the <span class="font-bold">Dashboard</span> immediately. Click any scan to view detailed results. You'll see <span class="font-bold">real-time updates</span> while the scan is running and a progress indicator showing the current stage. Results are organized by module.</p>
                         </div>
                     </li>
                 </ol>
@@ -359,21 +372,21 @@
                         <div class="step-icon bg-gray-600">A</div>
                         <div>
                             <p class="font-medium text-white">Report Generation</p>
-                            <p class="text-gray-400 text-sm">Open the completed scan, click <span class="font-bold">"Download Report"</span>, and the PDF automatically downloads with all findings.</p>
+                            <p class="text-gray-400 text-sm">Open the completed scan, click <span class="font-bold">"Download Report"</span>, and the PDF automatically downloads with all findings. Includes headers, WHOIS, subdomains, ports, and vulnerability assessments.</p>
                         </div>
                     </li>
                     <li class="flex items-start">
                         <div class="step-icon bg-gray-600">B</div>
                         <div>
                             <p class="font-medium text-white">Discord Notifications</p>
-                            <p class="text-gray-400 text-sm">Go to <span class="font-bold">Settings</span>, enter the Discord webhook URL, and use the "Test Webhook" button to verify.</p>
+                            <p class="text-gray-400 text-sm">Go to <span class="font-bold">Settings</span>, enter your Discord webhook URL, and click <span class="font-bold">"Test Webhook"</span> to verify. Once configured, use the <span class="font-bold">"Send to Discord"</span> button on scan results to get real-time notifications when scans complete.</p>
                         </div>
                     </li>
                     <li class="flex items-start">
                         <div class="step-icon bg-gray-600">C</div>
                         <div>
                             <p class="font-medium text-white">Proxy Setup</p>
-                            <p class="text-gray-400 text-sm">In <span class="font-bold">Settings</span>, enter your proxy list (one per line) and click <span class="font-bold">"Save Settings"</span>.</p>
+                            <p class="text-gray-400 text-sm">In <span class="font-bold">Settings</span>, enter your proxy list (one per line, e.g., <code>http://proxy1.example.com:8080</code>) and click <span class="font-bold">"Save Settings"</span>. Enable <span class="font-bold">"Use Proxy Rotation"</span> when starting scans to help avoid rate limiting.</p>
                         </div>
                     </li>
                 </ul>
@@ -425,9 +438,17 @@
                 <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="webhook" class="w-4 h-4 text-orange-400"></i> Discord Webhook Not Working</p>
                 <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
                     <li>Verify webhook URL is correct.</li>
-                    <li>Use <span class="font-bold text-cyan-400">"Test Webhook"</span> button first.</li>
+                    <li>Use "Test Webhook" button first.</li>
                     <li>Check Discord server permissions.</li>
                     <li>Ensure webhook hasn't been deleted.</li>
+                </ul>
+            </div>
+            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
+                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="shield-off" class="w-4 h-4 text-orange-400"></i> DDoS/WAF Detection Issues</p>
+                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
+                    <li>Some WAFs are designed to be stealthy and may not be easily detected.</li>
+                    <li>Aggressive scanning might trigger rate limits or temporary blocks.</li>
+                    <li>Ensure your proxy configuration is correct if using one.</li>
                 </ul>
             </div>
         </div>
@@ -445,20 +466,88 @@
           <ul class="list-disc pl-5 text-gray-400 space-y-2 text-sm">
             <li><span class="font-bold">Storage:</span> All scans stored in <span class="text-white">browser localStorage</span>.</li>
             <li><span class="font-bold">Serverless:</span> Persists across sessions; no server-side storage.</li>
-            <li><span class="font-bold">Performance:</span> Start with <span class="text-white">5 threads</span>, but increase up to 20 for faster scans.</li>
+            <li><span class="font-bold">Performance:</span> Start with <span class="text-white">5 threads</span>, but increase up to 50 for faster scans.</li>
+            <li><span class="font-bold">Clear browser data</span> to reset all stored scans and settings.</li>
           </ul>
         </div>
         <div class="p-6 rounded-lg border border-gray-700 bg-content-bg">
           <h4 class="font-semibold text-lg mb-3 text-cyan-400 flex items-center gap-2"><i data-lucide="plug" class="w-4 h-4"></i> Integrated APIs</h4>
           <p class="text-sm text-gray-500 mb-3">ABSpider leverages multiple public APIs for data enrichment:</p>
           <ul class="list-disc pl-5 text-gray-400 space-y-2 text-sm">
-            <li><span class="font-bold">Google DNS over HTTPS:</span> Used for subdomain enumeration.</li>
-            <li><span class="font-bold">crt.sh:</span> Certificate Transparency logs.</li>
-            <li><span class="font-bold">RDAP:</span> Domain registration data.</li>
-            <li><span class="font-bold">ipapi.co:</span> IP and domain information.</li>
+            <li><span class="font-bold">Google DNS over HTTPS:</span> Used for subdomain enumeration and DNS lookups.</li>
+            <li><span class="font-bold">crt.sh:</span> Certificate Transparency logs for subdomain discovery.</li>
+            <li><span class="font-bold">RDAP:</span> Domain registration data (WHOIS fallback).</li>
+            <li><span class="font-bold">ipapi.co / ip-api.com:</span> IP and domain geolocation information.</li>
+            <li><span class="font-bold">Optional APIs:</span> Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit (configured in settings for enhanced data).</li>
+          </ul>
+        </div>
+        <div class="p-6 rounded-lg border border-gray-700 bg-content-bg md:col-span-2">
+          <h4 class="font-semibold text-lg mb-3 text-cyan-400 flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i> Browser Limitations & Performance</h4>
+          <ul class="list-disc pl-5 text-gray-400 space-y-2 text-sm">
+            <li><span class="font-bold">CORS restrictions</span> may limit some scans, which is mitigated by the built-in CORS bypass.</li>
+            <li><span class="font-bold">Port scanning</span> uses browser-based connectivity checks (not raw sockets), which may not be as accurate as server-side tools.</li>
+            <li><span class="font-bold">Some targets</span> may block automated requests or implement advanced bot detection.</li>
+            <li><span class="font-bold">Rate limiting</span> may occur on aggressive scans; use proxy rotation and adjust thread count.</li>
+            <li><span class="font-bold">Performance Tips:</span> Start with 5 threads (default). Increase threads for faster scans (up to 50). Use proxy rotation for large scans. Disable unused modules to speed up scans.</li>
           </ul>
         </div>
       </div>
+    </section>
+
+    <section id="best-practices" class="max-w-7xl mx-auto px-6 py-16 fade-in">
+        <div class="section-header">
+            <i data-lucide="award"></i>
+            <h3>Best Practices</h3>
+        </div>
+        <div class="space-y-6">
+            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
+                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i> Responsible Usage</p>
+                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
+                    <li><span class="font-bold">Start small</span> - Test with well-known domains first.</li>
+                    <li><span class="font-bold">Respect rate limits</span> - Don't scan too aggressively.</li>
+                    <li><span class="font-bold">Use responsibly</span> - Only scan domains you own or have explicit written permission for.</li>
+                    <li><span class="font-bold">Save important scans</span> - Download PDF reports for critical findings.</li>
+                    <li><span class="font-bold">Configure Discord</span> - Get notified when long scans complete.</li>
+                </ul>
+            </div>
+            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
+                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-blue-400"></i> Security Considerations</p>
+                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
+                    <li><span class="font-bold">Client-Side API Keys:</span> Be aware that optional API keys are stored in your browser's local storage. This is insecure for sensitive keys. Use only for testing or public keys.</li>
+                    <li><span class="font-bold">Public CORS Proxies:</span> Using public proxies can expose your request details. Consider self-hosting a trusted proxy for sensitive operations.</li>
+                    <li><span class="font-bold">Regular Updates:</span> Keep your browser and the application up-to-date to benefit from the latest security patches and features.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="legal" class="max-w-7xl mx-auto px-6 py-16 fade-in bg-gray-900 border-t border-b border-gray-800">
+        <div class="section-header">
+            <i data-lucide="gavel"></i>
+            <h3>Legal Notice</h3>
+        </div>
+        <div class="p-6 rounded-lg bg-red-900/10 border border-red-700">
+            <h4 class="text-xl font-semibold mb-2 flex items-center gap-2 text-red-400"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i> IMPORTANT: AUTHORIZED USE ONLY</h4>
+            <p class="text-red-400 font-medium text-sm">This tool is designed for security professionals, penetration testers, and website owners to test their OWN systems or systems they have EXPLICIT WRITTEN PERMISSION to test.</p>
+            <ul class="list-disc pl-5 text-sm text-gray-500 mt-4 space-y-1">
+                <li>You may ONLY scan websites and systems you own or have explicit written authorization to test.</li>
+                <li>Unauthorized scanning may be illegal in your jurisdiction.</li>
+                <li>You are solely responsible for ensuring you have proper authorization.</li>
+                <li>Keep documentation of authorization for all scans performed.</li>
+                <li>Comply with all applicable laws including Computer Fraud and Abuse Act (CFAA), GDPR, and local regulations.</li>
+                <li>Unauthorized access to computer systems is a criminal offense in most jurisdictions. Penalties may include fines, imprisonment, and civil liability.</li>
+                <li>This tool does not grant permission to scan any system.</li>
+            </ul>
+            <p class="text-red-400 font-medium text-sm mt-4">This tool is provided "AS IS" without warranty of any kind. The developers are not responsible for any misuse or damage caused by this tool. You assume all risks associated with using this tool. The developers are not liable for any legal consequences of your actions. Results may contain false positives or false negatives.</p>
+            <p class="text-red-400 font-medium text-sm mt-4"><strong>By using this tool, you acknowledge that:</strong></p>
+            <ul class="list-disc pl-5 text-sm text-gray-500 mt-2 space-y-1">
+                <li>You have read and understood this disclaimer.</li>
+                <li>You will only scan systems you are authorized to test.</li>
+                <li>You accept full responsibility for your actions.</li>
+                <li>You will comply with all applicable laws and regulations.</li>
+                <li>The developers are not liable for any consequences of your use.</li>
+            </ul>
+        </div>
     </section>
     
     <section id="contact" class="max-w-7xl mx-auto px-6 py-16 fade-in">
