@@ -278,14 +278,14 @@ const runScan = async (
       updateScan(currentScan);
       console.log(`[ScanService] Scan ${scanId} completed successfully.`);
 
-      // Send Discord webhook notification if configured
-      try {
-        await sendDiscordWebhook(currentScan);
-      } catch (webhookError) {
-        console.error('[ScanService] Failed to send Discord webhook:', webhookError);
-        currentScan.errors.push(`Discord Webhook: ${ (webhookError as Error).message}`);
-        updateScan(currentScan);
-      }
+      // Removed: Automatic Discord webhook notification
+      // try {
+      //   await sendDiscordWebhook(currentScan);
+      // } catch (webhookError) {
+      //   console.error('[ScanService] Failed to send Discord webhook:', webhookError);
+      //   currentScan.errors.push(`Discord Webhook: ${ (webhookError as Error).message}`);
+      //   updateScan(currentScan);
+      // }
 
     } catch (error: any) {
       console.error(`[ScanService] Scan ${scanId} failed:`, error);
