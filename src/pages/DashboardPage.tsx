@@ -8,10 +8,11 @@ import { useToast } from '@/hooks/use-toast';
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
 import { Badge } from '@/components/ui/badge';
-import { getAPIKeys } from '@/services/apiKeyService'; // Removed hasAPIKey as we'll check directly from fetched keys
+import { getAPIKeys } from '@/services/apiKeyService';
 import { useMemo, useState, useEffect } from 'react';
 import { ResponsiveContainer, RadialBarChart, RadialBar, Legend, Tooltip } from 'recharts';
-import { supabase } from '@/SupabaseClient'; // Import supabase
+import { supabase } from '@/SupabaseClient';
+import DatabaseStatusCard from '@/components/DatabaseStatusCard';
 
 const DashboardPage = () => {
   const { toast } = useToast();
@@ -37,8 +38,7 @@ const DashboardPage = () => {
     refetchInterval: 3000,
   });
 
-  // Fetch API keys using react-query for real-time updates
-  const { data: apiKeys = {}, isLoading: isLoadingApiKeys } = useQuery({
+  const { data: apiKeys = {}, isLoading: isLoadingApiKeys, isError: isErrorApiKeys } = useQuery({
     queryKey: ['apiKeys'],
     queryFn: getAPIKeys,
   });
@@ -90,7 +90,7 @@ const DashboardPage = () => {
     }
   };
 
-  const [loading, setLoading] = useState(false); // Local loading state for logout
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -180,6 +180,52 @@ const DashboardPage = () => {
             </Card>
           </div>
 
+          {/* System Status Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-foreground">System Status</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DatabaseStatusCard isLoading={isLoadingApiKeys} isError={isErrorApiKeys} />
+              <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-orange-600 dark:text-orange-400">API Key Status</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Check the status of your integrated API keys
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingApiKeys ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {apiKeyServices.map((service) => (
+                        <div key={service.key} className="flex items-center justify-between">
+                          <span className="text-foreground">{service.name}</span>
+                          {apiKeys[service.key as keyof typeof apiKeys] ? (
+                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                              Configured
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30">
+                              Not Configured
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <Button asChild variant="outline" className="w-full mt-4 border-border text-foreground hover:bg-muted/50">
+                    <Link to="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Manage API Keys
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column: Quick Actions + Threat Landscape */}
             <div className="lg:col-span-2 space-y-6">
@@ -237,7 +283,7 @@ const DashboardPage = () => {
               <RecentScans scans={scans.slice(0, 10)} onScanDeleted={refetch} />
             </div>
 
-            {/* Right Column: Scan Progress Chart + API Key Status */}
+            {/* Right Column: Scan Progress Chart */}
             <div className="lg:col-span-1 space-y-6">
               <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg">
                 <CardHeader>
@@ -285,45 +331,6 @@ const DashboardPage = () => {
                       <p className="absolute text-sm">No scan data to display</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-orange-600 dark:text-orange-400">API Key Status</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Check the status of your integrated API keys
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingApiKeys ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {apiKeyServices.map((service) => (
-                        <div key={service.key} className="flex items-center justify-between">
-                          <span className="text-foreground">{service.name}</span>
-                          {apiKeys[service.key as keyof typeof apiKeys] ? (
-                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
-                              Configured
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30">
-                              Not Configured
-                            </Badge>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <Button asChild variant="outline" className="w-full mt-4 border-border text-foreground hover:bg-muted/50">
-                    <Link to="/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Manage API Keys
-                    </Link>
-                  </Button>
                 </CardContent>
               </Card>
             </div>
