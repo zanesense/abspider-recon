@@ -37,7 +37,6 @@ function App() {
             <BrowserRouter>
               <Toaster />
               <Sonner />
-              <LegalDisclaimer />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
@@ -45,6 +44,7 @@ function App() {
                 {/* Protected Routes */}
                 <Route path="*" element={
                   <RequireAuth>
+                    <LegalDisclaimer /> {/* Moved here */}
                     <SidebarProvider>
                       <div className="flex min-h-screen w-full bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
                         <AppSidebar />
