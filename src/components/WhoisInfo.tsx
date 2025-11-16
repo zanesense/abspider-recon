@@ -86,7 +86,7 @@ const WhoisInfo = ({ whois }: WhoisInfoProps) => {
               <div className="space-y-1">
                 {whois.nameservers.length > 0 ? (
                   whois.nameservers.map((ns, index) => (
-                    <p key={index} className="text-foreground text-sm font-mono">{ns}</p> {/* Updated text color */}
+                    <p key={index} className="text-foreground text-sm font-mono">{ns}</p> 
                   ))
                 ) : (
                   <p className="text-muted-foreground/70 text-sm">N/A</p> {/* Updated text color */}
