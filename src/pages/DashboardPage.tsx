@@ -18,15 +18,17 @@ const DashboardPage = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [session, setSession] = useState<any>(null); // Add this state
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+    const fetchUserAndSession = async () => { // Renamed to fetch both
+      const { data: { user, session } } = await supabase.auth.getSession(); // Get session here
+      setSession(session); // Set session state
       if (user) {
         setUserEmail(user.email);
       }
     };
-    fetchUser();
+    fetchUserAndSession(); // Call the new function
   }, []);
 
   const { data: scans = [], refetch } = useQuery({
@@ -104,19 +106,21 @@ const DashboardPage = () => {
               {userEmail}
             </Badge>
           )}
-          <Button
-            onClick={handleLogout}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="border-border text-foreground hover:bg-muted/50"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <LogOut className="h-4 w-4" />
-            )}
-          </Button>
+          {session && ( // Add this condition for consistency
+            <Button
+              onClick={handleLogout}
+              disabled={loading}
+              variant="outline"
+              size="sm"
+              className="border-border text-foreground hover:bg-muted/50"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
             <Link to="/new-scan">
               <PlusCircle className="mr-2 h-4 w-4" />
