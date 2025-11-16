@@ -14,20 +14,30 @@ export interface DDoSFirewallResult {
   totalRequests: number;
   successfulRequests: number;
   failedRequests: number;
-  wafDetected?: string; // e.g., Cloudflare, Akamai, Sucuri
+  wafDetected?: string; // e.g., Cloudflare, Akamai, Sucuri, Google Front End
   evidence?: string[]; // Snippets of headers/body indicating WAF
   corsMetadata?: CORSBypassMetadata;
 }
 
 const DDoS_WAF_INDICATORS = {
   HEADERS: {
-    'server': ['cloudflare', 'sucuri', 'akamai', 'incapsula', 'barracuda', 'mod_security'],
+    'server': ['cloudflare', 'sucuri', 'akamai', 'incapsula', 'barracuda', 'mod_security', 'gws', 'google front end'], // Added 'gws', 'google front end'
     'x-waf-rule': [],
     'x-sucuri-id': [],
-    'x-cdn': ['cloudflare', 'akamai', 'sucuri'],
+    'x-cdn': ['cloudflare', 'akamai', 'sucuri', 'google'], // Added 'google'
     'cf-ray': ['cloudflare'],
     'cf-cache-status': ['cloudflare'],
     'x-protected-by': ['sucuri'],
+    'x-cache': ['cloudflare', 'akamai', 'google'], // Generic CDN cache header
+    'x-served-by': ['cloudflare', 'akamai', 'google'], // Generic CDN server header
+    'via': ['cloudflare', 'akamai', 'google'], // Proxy/CDN indicator
+    'age': [], // Cache age, indicates caching layer
+    'alt-svc': ['google'], // Often seen on Google services
+    'x-goog-generation': ['google'], // Google Cloud Storage related, indicates Google infra
+    'x-goog-hash': ['google'],
+    'x-goog-meta-': ['google'],
+    'x-goog-stored-content-length': ['google'],
+    'x-goog-stored-content-encoding': ['google'],
   },
   STATUS_CODES: [403, 429, 503, 504],
   BODY_PATTERNS: [
@@ -37,6 +47,7 @@ const DDoS_WAF_INDICATORS = {
     /checking your browser/i, // Cloudflare
     /ddos protection by/i,
     /bot management/i,
+    /google/i, // General Google presence in body
   ],
 };
 
@@ -101,11 +112,34 @@ export const performDDoSFirewallTest = async (
           const headerValue = response.headers.get(headerName);
           if (headerValue) {
             const patterns = (DDoS_WAF_INDICATORS.HEADERS as any)[headerName];
+            
+            // Check if header value contains any of the patterns, or if patterns list is empty (just presence is enough)
             if (patterns.length === 0 || patterns.some((p: string) => headerValue.toLowerCase().includes(p))) {
               result.firewallDetected = true;
-              result.indicators.push(`Header '${headerName}': ${headerValue}`);
-              evidenceSnippets.add(`Header '${headerName}': ${headerValue}`);
-              patterns.forEach((p: string) => detectedWafs.add(p));
+              const indicatorText = `Header '${headerName}': ${headerValue}`;
+              if (!result.indicators.includes(indicatorText)) {
+                result.indicators.push(indicatorText);
+                evidenceSnippets.add(indicatorText);
+              }
+              patterns.forEach((p: string) => {
+                if (p.toLowerCase() === 'gws' || p.toLowerCase() === 'google front end') {
+                  detectedWafs.add('Google Front End');
+                } else if (p.toLowerCase() === 'cloudflare') {
+                  detectedWafs.add('Cloudflare');
+                } else if (p.toLowerCase() === 'sucuri') {
+                  detectedWafs.add('Sucuri');
+                } else if (p.toLowerCase() === 'akamai') {
+                  detectedWafs.add('Akamai');
+                } else if (p.toLowerCase() === 'google') {
+                  detectedWafs.add('Google CDN/WAF');
+                } else if (p.toLowerCase() === 'incapsula') {
+                  detectedWafs.add('Incapsula');
+                } else if (p.toLowerCase() === 'barracuda') {
+                  detectedWafs.add('Barracuda WAF');
+                } else if (p.toLowerCase() === 'mod_security') {
+                  detectedWafs.add('ModSecurity WAF');
+                }
+              });
             }
           }
         }
@@ -114,8 +148,14 @@ export const performDDoSFirewallTest = async (
         for (const pattern of DDoS_WAF_INDICATORS.BODY_PATTERNS) {
           if (pattern.test(text)) {
             result.firewallDetected = true;
-            result.indicators.push(`Body pattern matched: '${pattern.source}'`);
-            evidenceSnippets.add(`Body snippet: ${text.match(pattern)?.[0].substring(0, 100)}...`);
+            const indicatorText = `Body pattern matched: '${pattern.source}'`;
+            if (!result.indicators.includes(indicatorText)) {
+              result.indicators.push(indicatorText);
+              evidenceSnippets.add(`Body snippet: ${text.match(pattern)?.[0].substring(0, 100)}...`);
+            }
+            if (pattern.source.includes('google')) {
+              detectedWafs.add('Google Front End');
+            }
           }
         }
 
@@ -139,12 +179,17 @@ export const performDDoSFirewallTest = async (
       });
       if (DDoS_WAF_INDICATORS.STATUS_CODES.includes(parseInt(status))) {
         result.firewallDetected = true;
-        result.indicators.push(`HTTP Status Code ${status} detected`);
+        const indicatorText = `HTTP Status Code ${status} detected`;
+        if (!result.indicators.includes(indicatorText)) {
+          result.indicators.push(indicatorText);
+        }
       }
     }
 
     if (detectedWafs.size > 0) {
       result.wafDetected = Array.from(detectedWafs).join(', ');
+    } else if (result.firewallDetected && !result.wafDetected) {
+      result.wafDetected = 'Generic WAF/CDN'; // Fallback if specific WAF not identified but firewall detected
     }
     result.evidence = Array.from(evidenceSnippets);
 
