@@ -41,10 +41,10 @@ const LegalDisclaimer = () => {
           <DialogTitle className="flex items-center gap-2 text-2xl text-foreground">
             <Scale className="h-6 w-6 text-red-500" />
             Legal Disclaimer & Terms of Use
-          </CardTitle>
+          </DialogTitle>
           <DialogDescription className="text-base text-muted-foreground">
             Please read and accept these terms before using ABSpider
-          </CardDescription>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
