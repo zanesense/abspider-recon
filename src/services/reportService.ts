@@ -7,7 +7,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
   
   // SQL Injection recommendations
   if (scan.results.sqlinjection?.vulnerable) {
-    recommendations.push('🔴 CRITICAL: SQL Injection Detected');
+    recommendations.push('CRITICAL: SQL Injection Detected');
     recommendations.push('• Use parameterized queries/prepared statements');
     recommendations.push('• Implement input validation and sanitization');
     recommendations.push('• Use ORM frameworks (Sequelize, TypeORM, etc.)');
@@ -17,7 +17,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
   
   // XSS recommendations
   if (scan.results.xss?.vulnerable) {
-    recommendations.push('🔴 CRITICAL: XSS Vulnerability Detected');
+    recommendations.push('CRITICAL: XSS Vulnerability Detected');
     recommendations.push('• Encode all user input before rendering');
     recommendations.push('• Implement Content Security Policy (CSP)');
     recommendations.push('• Use HTTPOnly and Secure flags on cookies');
@@ -27,7 +27,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
   
   // LFI recommendations
   if (scan.results.lfi?.vulnerable) {
-    recommendations.push('🔴 CRITICAL: Local File Inclusion Detected');
+    recommendations.push('CRITICAL: Local File Inclusion Detected');
     recommendations.push('• Use whitelisting for allowed file paths');
     recommendations.push('• Validate and sanitize all user input');
     recommendations.push('• Reject path traversal patterns (../, ..\)');
@@ -39,7 +39,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
   
   // WordPress recommendations
   if (scan.results.wordpress?.vulnerabilities?.length > 0) {
-    recommendations.push('🟠 HIGH: WordPress Security Issues');
+    recommendations.push('HIGH: WordPress Security Issues');
     recommendations.push('• Update WordPress to latest version immediately');
     recommendations.push('• Remove or secure sensitive files (wp-config backups)');
     recommendations.push('• Disable XML-RPC if not needed');
@@ -47,13 +47,21 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
     recommendations.push('• Enable two-factor authentication');
     recommendations.push('• Regular security audits and updates');
   }
+
+  // DDoS Firewall recommendations
+  if (scan.results.ddosFirewall?.firewallDetected) {
+    recommendations.push('INFO: DDoS/WAF Protection Detected');
+    recommendations.push('• Verify the configuration of your DDoS protection and WAF.');
+    recommendations.push('• Ensure rules are up-to-date and effective against common attack vectors.');
+    recommendations.push('• Regularly review logs for suspicious activity.');
+  }
   
   // Security headers recommendations
   const headers = scan.results.headers?._analysis;
   if (headers?.securityHeaders) {
     const missing = headers.securityHeaders.missing || [];
     if (missing.length > 0) {
-      recommendations.push('🟡 MEDIUM: Missing Security Headers');
+      recommendations.push('MEDIUM: Missing Security Headers');
       missing.forEach((header: any) => {
         recommendations.push(`• ${header.name}: ${header.recommendation}`);
       });
@@ -72,7 +80,8 @@ export const generatePDFReport = (scan: Scan) => {
   const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
   const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
   const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
-  const totalVulns = sqlVulns + xssVulns + lfiVulns + wpVulns;
+  const ddosFirewallDetected = scan.results.ddosFirewall?.firewallDetected ? 1 : 0; // Count as 1 if detected
+  const totalVulns = sqlVulns + xssVulns + lfiVulns + wpVulns + ddosFirewallDetected;
 
   // Modern Header with gradient effect
   doc.setFillColor(6, 182, 212);
@@ -147,7 +156,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('⚠️ SECURITY RECOMMENDATIONS', 14, yPosition);
+    doc.text('WARNING: SECURITY RECOMMENDATIONS', 14, yPosition);
     
     yPosition += 15;
     doc.setTextColor(0, 0, 0);
@@ -179,7 +188,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('🔒 VULNERABILITY SUMMARY', 14, yPosition);
+    doc.text('SECURITY: VULNERABILITY SUMMARY', 14, yPosition);
     
     yPosition += 15;
     
@@ -188,6 +197,7 @@ export const generatePDFReport = (scan: Scan) => {
       ['Cross-Site Scripting (XSS)', xssVulns.toString(), xssVulns > 0 ? 'CRITICAL' : 'SAFE', xssVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['Local File Inclusion (LFI)', lfiVulns.toString(), lfiVulns > 0 ? 'CRITICAL' : 'SAFE', lfiVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['WordPress Security', wpVulns.toString(), wpVulns > 0 ? 'HIGH' : 'SAFE', wpVulns > 0 ? 'Update and secure' : 'No issues found'],
+      ['DDoS/WAF Detection', ddosFirewallDetected.toString(), ddosFirewallDetected > 0 ? 'INFO' : 'N/A', ddosFirewallDetected > 0 ? 'Protection detected' : 'No protection detected'],
     ];
     
     autoTable(doc, {
@@ -215,7 +225,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('💉 SQL Injection Vulnerabilities', 14, yPosition);
+    doc.text('SQL: SQL Injection Vulnerabilities', 14, yPosition);
     yPosition += 15;
     
     const sqlData = scan.results.sqlinjection.vulnerabilities.map((vuln: any) => [
@@ -246,7 +256,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('🔓 XSS Vulnerabilities', 14, yPosition);
+    doc.text('XSS: XSS Vulnerabilities', 14, yPosition);
     yPosition += 15;
     
     const xssData = scan.results.xss.vulnerabilities.map((vuln: any) => [
@@ -277,7 +287,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('📁 Local File Inclusion Vulnerabilities', 14, yPosition);
+    doc.text('LFI: Local File Inclusion Vulnerabilities', 14, yPosition);
     yPosition += 15;
     
     const lfiData = scan.results.lfi.vulnerabilities.map((vuln: any) => [
@@ -309,7 +319,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('🌐 Site Information', 14, yPosition);
+    doc.text('SITE INFO: Site Information', 14, yPosition);
     yPosition += 15;
     
     const siteData = [
@@ -348,7 +358,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text(`🛡️ Security Headers Analysis - Grade: ${grade}`, 14, yPosition);
+    doc.text(`HEADERS: Security Headers Analysis - Grade: ${grade}`, 14, yPosition);
     yPosition += 15;
     
     if (headers.securityHeaders.present?.length > 0) {
@@ -403,7 +413,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('🌍 GeoIP Information', 14, yPosition);
+    doc.text('GEOIP: GeoIP Information', 14, yPosition);
     yPosition += 15;
     
     const geoipData = [
@@ -436,7 +446,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('🔍 DNS Records', 14, yPosition);
+    doc.text('DNS: DNS Records', 14, yPosition);
     yPosition += 15;
     
     const recordTypes = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
@@ -465,7 +475,7 @@ export const generatePDFReport = (scan: Scan) => {
   }
 
   // Subdomains
-  if (scan.results.subdomains && scan.results.subdomains.length > 0) {
+  if (scan.results.subdomains && scan.results.subdomains.subdomains.length > 0) {
     doc.addPage();
     yPosition = 20;
     
@@ -474,10 +484,10 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text(`🌐 Discovered Subdomains (${scan.results.subdomains.length})`, 14, yPosition);
+    doc.text(`SUBDOMAINS: Discovered Subdomains (${scan.results.subdomains.subdomains.length})`, 14, yPosition);
     yPosition += 15;
     
-    const subdomainData = scan.results.subdomains.map((subdomain, index) => [
+    const subdomainData = scan.results.subdomains.subdomains.map((subdomain, index) => [
       (index + 1).toString(),
       subdomain
     ]);
@@ -502,7 +512,7 @@ export const generatePDFReport = (scan: Scan) => {
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('📊 SEO Analysis', 14, yPosition);
+    doc.text('SEO: SEO Analysis', 14, yPosition);
     yPosition += 15;
     
     const seoData = [
@@ -522,6 +532,72 @@ export const generatePDFReport = (scan: Scan) => {
       theme: 'striped',
       styles: { fontSize: 9 },
     });
+  }
+
+  // DDoS Firewall Results
+  if (scan.results.ddosFirewall?.tested) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(128, 0, 128); // Purple color for DDoS
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DDoS: DDoS Firewall Test Results', 14, yPosition);
+    yPosition += 15;
+
+    const ddosData = [
+      ['Firewall Detected', scan.results.ddosFirewall.firewallDetected ? 'Yes' : 'No'],
+      ['WAF/CDN Detected', scan.results.ddosFirewall.wafDetected || 'N/A'],
+      ['Total Requests', scan.results.ddosFirewall.totalRequests.toString()],
+      ['Successful Requests', scan.results.ddosFirewall.successfulRequests.toString()],
+      ['Failed Requests', scan.results.ddosFirewall.failedRequests.toString()],
+    ];
+
+    autoTable(doc, {
+      startY: yPosition,
+      body: ddosData,
+      theme: 'striped',
+      styles: { fontSize: 9 },
+    });
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+    if (scan.results.ddosFirewall.indicators.length > 0) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Detection Indicators:', 14, yPosition);
+      yPosition += 5;
+      scan.results.ddosFirewall.indicators.forEach(indicator => {
+        if (yPosition > 270) { doc.addPage(); yPosition = 20; }
+        doc.text(`• ${indicator}`, 14, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 5;
+    }
+
+    if (scan.results.ddosFirewall.responseSummary.length > 0) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Response Summary:', 14, yPosition);
+      yPosition += 5;
+      const summaryData = scan.results.ddosFirewall.responseSummary.map(s => [
+        s.status.toString(),
+        s.count.toString(),
+        `${s.avgResponseTime.toFixed(2)}ms`
+      ]);
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Status Code', 'Count', 'Avg. Response Time']],
+        body: summaryData,
+        theme: 'grid',
+        headStyles: { fillColor: [128, 0, 128], fontStyle: 'bold' },
+        styles: { fontSize: 8 },
+      });
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
   }
 
   // Footer on every page
