@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl } from '@/services/settingsService';
-import { getAPIKeys, saveAPIKeys, hasAPIKey } from '@/services/apiKeyService';
+import { getAPIKeys, saveAPIKeys } from '@/services/apiKeyService'; // Removed hasAPIKey
 import {
   testShodanAPI,
   testVirusTotalAPI,
@@ -35,14 +35,14 @@ const Settings = () => {
   const { data: apiKeys = {}, isLoading: isLoadingApiKeys, isError: isErrorApiKeys } = useQuery({
     queryKey: ['apiKeys'],
     queryFn: getAPIKeys,
-    staleTime: Infinity, // API keys don't change often
+    // Removed staleTime: Infinity to allow real-time updates
   });
 
   // Mutation for saving API keys
   const saveApiKeysMutation = useMutation({
     mutationFn: saveAPIKeys,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
+      queryClient.invalidateQueries({ queryKey: ['apiKeys'] }); // Invalidate to refetch updated keys
       toast({
         title: "Settings Saved",
         description: "Your settings have been saved successfully",

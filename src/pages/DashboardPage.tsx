@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
 import { Badge } from '@/components/ui/badge';
-import { getAPIKeys, hasAPIKey } from '@/services/apiKeyService';
+import { getAPIKeys } from '@/services/apiKeyService'; // Removed hasAPIKey as we'll check directly from fetched keys
 import { useMemo, useState, useEffect } from 'react';
 import { ResponsiveContainer, RadialBarChart, RadialBar, Legend, Tooltip } from 'recharts';
 import { supabase } from '@/SupabaseClient'; // Import supabase
@@ -18,17 +18,17 @@ const DashboardPage = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [session, setSession] = useState<any>(null); // Add this state
+  const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
-    const fetchUserAndSession = async () => { // Renamed to fetch both
-      const { data: { user, session } } = await supabase.auth.getSession(); // Get session here
-      setSession(session); // Set session state
+    const fetchUserAndSession = async () => {
+      const { data: { user, session } } = await supabase.auth.getSession();
+      setSession(session);
       if (user) {
         setUserEmail(user.email);
       }
     };
-    fetchUserAndSession(); // Call the new function
+    fetchUserAndSession();
   }, []);
 
   const { data: scans = [], refetch } = useQuery({
@@ -37,7 +37,11 @@ const DashboardPage = () => {
     refetchInterval: 3000,
   });
 
-  const apiKeys = useMemo(() => getAPIKeys(), []);
+  // Fetch API keys using react-query for real-time updates
+  const { data: apiKeys = {}, isLoading: isLoadingApiKeys } = useQuery({
+    queryKey: ['apiKeys'],
+    queryFn: getAPIKeys,
+  });
 
   const apiKeyServices = [
     { name: 'Shodan', key: 'shodan' },
@@ -106,7 +110,7 @@ const DashboardPage = () => {
               {userEmail}
             </Badge>
           )}
-          {session && ( // Add this condition for consistency
+          {session && (
             <Button
               onClick={handleLogout}
               disabled={loading}
@@ -292,22 +296,28 @@ const DashboardPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {apiKeyServices.map((service) => (
-                      <div key={service.key} className="flex items-center justify-between">
-                        <span className="text-foreground">{service.name}</span>
-                        {hasAPIKey(service.key as any) ? (
-                          <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
-                            Configured
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30">
-                            Not Configured
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  {isLoadingApiKeys ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {apiKeyServices.map((service) => (
+                        <div key={service.key} className="flex items-center justify-between">
+                          <span className="text-foreground">{service.name}</span>
+                          {apiKeys[service.key as keyof typeof apiKeys] ? (
+                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                              Configured
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30">
+                              Not Configured
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <Button asChild variant="outline" className="w-full mt-4 border-border text-foreground hover:bg-muted/50">
                     <Link to="/settings">
                       <Settings className="mr-2 h-4 w-4" />
