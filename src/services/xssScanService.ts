@@ -1,5 +1,6 @@
 import { normalizeUrl } from './apiUtils';
 import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface XSSScanResult {
   vulnerable: boolean;
@@ -174,7 +175,7 @@ const checkReflection = (response: string, payload: string): {
   };
 };
 
-export const performXSSScan = async (target: string): Promise<XSSScanResult> => {
+export const performXSSScan = async (target: string, requestManager: RequestManager): Promise<XSSScanResult> => {
   console.log(`[XSS Scan] Starting REAL vulnerability scan for ${target}`);
   
   const result: XSSScanResult = {
@@ -206,7 +207,7 @@ export const performXSSScan = async (target: string): Promise<XSSScanResult> => 
 
           console.log(`[XSS Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 40)}...`);
 
-          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000 });
+          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal }); // Pass signal
           if (!result.corsMetadata) {
             result.corsMetadata = testResult.metadata;
           }

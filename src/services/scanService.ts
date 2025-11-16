@@ -194,27 +194,27 @@ const runScan = async (
         let moduleResult: any;
         switch (moduleName) {
           case 'siteInfo':
-            moduleResult = await performSiteInfoScan(config.target);
+            moduleResult = await performSiteInfoScan(config.target, requestManager);
             currentScan.results.siteInfo = moduleResult;
             break;
           case 'headers':
-            moduleResult = await performFullHeaderAnalysis(config.target, config.useProxy);
+            moduleResult = await performFullHeaderAnalysis(config.target, requestManager);
             currentScan.results.headers = moduleResult;
             break;
           case 'whois':
-            moduleResult = await performWhoisLookup(config.target);
+            moduleResult = await performWhoisLookup(config.target, requestManager);
             currentScan.results.whois = moduleResult;
             break;
           case 'geoip':
-            moduleResult = await performGeoIPLookup(config.target);
+            moduleResult = await performGeoIPLookup(config.target, requestManager);
             currentScan.results.geoip = moduleResult;
             break;
           case 'dns':
-            moduleResult = await performDNSLookup(config.target);
+            moduleResult = await performDNSLookup(config.target, requestManager);
             currentScan.results.dns = moduleResult;
             break;
           case 'mx':
-            moduleResult = await performMXLookup(config.target);
+            moduleResult = await performMXLookup(config.target, requestManager);
             currentScan.results.mx = moduleResult;
             break;
           case 'subnet':
@@ -229,23 +229,23 @@ const runScan = async (
             }
             break;
           case 'ports':
-            moduleResult = await scanCommonPorts(config.target, config.threads);
+            moduleResult = await scanCommonPorts(config.target, config.threads, requestManager);
             currentScan.results.ports = moduleResult;
             break;
           case 'subdomains':
-            moduleResult = await enumerateSubdomains(config.target, config.threads, scanController);
+            moduleResult = await enumerateSubdomains(config.target, config.threads, scanController, requestManager);
             currentScan.results.subdomains = moduleResult;
             break;
           case 'reverseip':
-            moduleResult = await performReverseIPLookup(config.target);
+            moduleResult = await performReverseIPLookup(config.target, requestManager);
             currentScan.results.reverseip = moduleResult;
             break;
           case 'sqlinjection':
-            moduleResult = await performSQLScan(config.target);
+            moduleResult = await performSQLScan(config.target, requestManager);
             currentScan.results.sqlinjection = moduleResult;
             break;
             case 'xss':
-              moduleResult = await performXSSScan(config.target);
+              moduleResult = await performXSSScan(config.target, requestManager);
               currentScan.results.xss = moduleResult;
               break;
             case 'lfi':
@@ -253,11 +253,11 @@ const runScan = async (
               currentScan.results.lfi = moduleResult;
               break;
             case 'wordpress':
-              moduleResult = await performWordPressScan(config.target);
+              moduleResult = await performWordPressScan(config.target, requestManager);
               currentScan.results.wordpress = moduleResult;
               break;
             case 'seo':
-              moduleResult = await performSEOAnalysis(config.target);
+              moduleResult = await performSEOAnalysis(config.target, requestManager);
               currentScan.results.seo = moduleResult;
               break;
             case 'ddosFirewall':

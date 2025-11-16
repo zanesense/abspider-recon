@@ -1,4 +1,5 @@
 import { extractDomain } from './apiUtils';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface DNSRecord {
   type: string;
@@ -19,10 +20,10 @@ export interface DNSLookupResult {
   };
 }
 
-const queryDNS = async (domain: string, type: string): Promise<DNSRecord[]> => {
+const queryDNS = async (domain: string, type: string, requestManager: RequestManager): Promise<DNSRecord[]> => {
   try {
     const url = `https://dns.google/resolve?name=${domain}&type=${type}`;
-    const response = await fetch(url);
+    const response = await requestManager.fetch(url, { timeout: 10000 }); // Use requestManager
     const data = await response.json();
     
     if (data.Answer) {
@@ -40,7 +41,7 @@ const queryDNS = async (domain: string, type: string): Promise<DNSRecord[]> => {
   }
 };
 
-export const performDNSLookup = async (target: string): Promise<DNSLookupResult> => {
+export const performDNSLookup = async (target: string, requestManager: RequestManager): Promise<DNSLookupResult> => {
   const domain = extractDomain(target);
   console.log(`[DNS Lookup] Starting for ${domain}`);
 
@@ -60,7 +61,7 @@ export const performDNSLookup = async (target: string): Promise<DNSLookupResult>
   const recordTypes = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
   
   const promises = recordTypes.map(async (type) => {
-    const records = await queryDNS(domain, type);
+    const records = await queryDNS(domain, type, requestManager); // Pass requestManager
     result.records[type as keyof typeof result.records] = records;
     console.log(`[DNS Lookup] ${type}: ${records.length} records found`);
   });

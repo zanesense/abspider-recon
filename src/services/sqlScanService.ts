@@ -1,5 +1,6 @@
 import { normalizeUrl } from './apiUtils';
 import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface SQLScanResult {
   vulnerable: boolean;
@@ -103,16 +104,12 @@ const SQL_PAYLOADS: SQLPayload[] = [
 ];
 
 
-const testTimeBased = async (url: string): Promise<{ vulnerable: boolean; duration: number }> => {
+const testTimeBased = async (url: string, requestManager: RequestManager): Promise<{ vulnerable: boolean; duration: number }> => {
   const startTime = Date.now();
   
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    await requestManager.fetch(url, { timeout: 8000 }); // Use requestManager
     
-    await fetchWithBypass(url, { timeout: 8000 });
-    
-    clearTimeout(timeoutId);
     const duration = Date.now() - startTime;
     
     // If response took 4.5+ seconds, likely vulnerable
@@ -142,7 +139,7 @@ const checkSQLError = (text: string): { found: boolean; pattern?: string; confid
   return { found: false, confidence: 0 };
 };
 
-export const performSQLScan = async (target: string): Promise<SQLScanResult> => {
+export const performSQLScan = async (target: string, requestManager: RequestManager): Promise<SQLScanResult> => {
   console.log(`[SQL Scan] Starting REAL vulnerability scan for ${target}`);
   
   const result: SQLScanResult = {
@@ -173,7 +170,7 @@ export const performSQLScan = async (target: string): Promise<SQLScanResult> => 
     let baselineLength = 0;
     
     try {
-      const baselineResult = await fetchWithBypass(url, { timeout: 10000 });
+      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.scanController?.signal }); // Pass signal
       result.corsMetadata = baselineResult.metadata;
       baselineResponse = baselineResult.response;
       baselineText = await baselineResponse.text();
@@ -198,7 +195,7 @@ export const performSQLScan = async (target: string): Promise<SQLScanResult> => 
 
           // Time-based testing
           if (type === 'Time-based Blind') {
-            const { vulnerable, duration } = await testTimeBased(testUrl.toString());
+            const { vulnerable, duration } = await testTimeBased(testUrl.toString(), requestManager); // Pass requestManager
             
             if (vulnerable) {
               console.log(`[SQL Scan] ⚠️ CRITICAL: Time-based SQL injection confirmed (${duration}ms delay)`);
@@ -220,7 +217,7 @@ export const performSQLScan = async (target: string): Promise<SQLScanResult> => 
           }
 
           // Error-based and other testing
-          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000 });
+          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal }); // Pass signal
           const response = testResult.response;
           result.testedPayloads++;
 

@@ -1,4 +1,6 @@
 import { normalizeUrl, extractDomain } from './apiUtils';
+import { RequestManager } from './requestManager'; // Import RequestManager
+import { fetchWithBypass } from './corsProxy'; // Use fetchWithBypass
 
 export interface SEOAnalysis {
   httpCode: number;
@@ -24,59 +26,7 @@ export interface SEOAnalysis {
   loadTime: number;
 }
 
-const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-];
-
-const fetchWithProxy = async (url: string, timeout: number = 15000): Promise<Response> => {
-  const errors: string[] = [];
-  
-  // Try direct fetch
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      signal: controller.signal,
-      mode: 'cors',
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (response.ok || response.type !== 'opaque') {
-      return response;
-    }
-  } catch (error: any) {
-    errors.push(`Direct: ${error.message}`);
-  }
-  
-  // Try with proxies
-  for (const proxy of CORS_PROXIES) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
-      const response = await fetch(proxy + encodeURIComponent(url), {
-        method: 'GET',
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        return response;
-      }
-    } catch (error: any) {
-      errors.push(`Proxy: ${error.message}`);
-    }
-  }
-  
-  throw new Error(`Unable to fetch page: ${errors.join(', ')}`);
-};
-
-export const performSEOAnalysis = async (target: string): Promise<SEOAnalysis> => {
+export const performSEOAnalysis = async (target: string, requestManager: RequestManager): Promise<SEOAnalysis> => {
   console.log(`[SEO Analysis] Starting for ${target}`);
 
   try {
@@ -84,7 +34,8 @@ export const performSEOAnalysis = async (target: string): Promise<SEOAnalysis> =
     const domain = extractDomain(target);
 
     const startTime = Date.now();
-    const response = await fetchWithProxy(url, 15000);
+    // Use fetchWithBypass which is integrated with RequestManager's signal
+    const { response } = await fetchWithBypass(url, { timeout: 15000, signal: requestManager.scanController?.signal });
     const loadTime = Date.now() - startTime;
 
     const html = await response.text();

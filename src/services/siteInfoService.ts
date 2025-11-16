@@ -1,6 +1,7 @@
 import { normalizeUrl, extractDomain } from './apiUtils';
 import { fetchWithBypass, CORSBypassMetadata, fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
 import { getAPIKey } from './apiKeyService';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface SiteInfo {
   title?: string;
@@ -21,7 +22,7 @@ export interface SiteInfo {
   robotsTxtMetadata?: CORSBypassMetadata;
 }
 
-export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => {
+export const performSiteInfoScan = async (target: string, requestManager: RequestManager): Promise<SiteInfo> => {
   console.log(`[Site Info] Starting comprehensive scan for ${target}`);
   
   const result: SiteInfo = {
@@ -36,7 +37,7 @@ export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => 
     // Get IP address first (always works)
     try {
       const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
-      const dnsResponse = await fetch(dnsUrl);
+      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 }); // Use requestManager
       const dnsData = await dnsResponse.json();
       
       if (dnsData.Answer && dnsData.Answer.length > 0) {
@@ -53,7 +54,7 @@ export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => 
     let html = '';
     
     try {
-      const fetchResult = await fetchWithBypass(url, { timeout: 15000 });
+      const fetchResult = await fetchWithBypass(url, { timeout: 15000, signal: requestManager.scanController?.signal }); // Pass signal
       result.responseTime = Date.now() - startTime;
       result.corsMetadata = fetchResult.metadata;
       
@@ -134,8 +135,8 @@ export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => 
         try {
           console.log('[Site Info] Attempting BuiltWith API enrichment...');
           const builtwithApiUrl = `https://api.builtwith.com/v1/api.json?key=${builtwithKey}&lookup=${domain}`;
-          // Use fetchJSONWithBypass for BuiltWith API
-          const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000 });
+          // Use fetchJSONWithBypass for BuiltWith API, passing requestManager's signal
+          const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000, signal: requestManager.scanController?.signal });
 
           if (builtwithData.Results && builtwithData.Results.length > 0) {
             const technologies = builtwithData.Results[0].Result.Paths[0].Technologies;
@@ -156,7 +157,7 @@ export const performSiteInfoScan = async (target: string): Promise<SiteInfo> => 
       // Try to get robots.txt
       try {
         const robotsUrl = `${url}/robots.txt`;
-        const robotsResult = await fetchWithBypass(robotsUrl, { timeout: 5000 });
+        const robotsResult = await fetchWithBypass(robotsUrl, { timeout: 5000, signal: requestManager.scanController?.signal }); // Pass signal
         
         if (robotsResult.response.ok) {
           result.robotsTxt = await robotsResult.response.text();

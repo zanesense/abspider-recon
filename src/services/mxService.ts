@@ -1,4 +1,5 @@
 import { extractDomain } from './apiUtils';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface MXRecord {
   priority: number;
@@ -13,7 +14,7 @@ export interface MXLookupResult {
   dmarcRecord?: string;
 }
 
-export const performMXLookup = async (target: string): Promise<MXLookupResult> => {
+export const performMXLookup = async (target: string, requestManager: RequestManager): Promise<MXLookupResult> => {
   const domain = extractDomain(target);
   console.log(`[MX Lookup] Starting for ${domain}`);
 
@@ -23,7 +24,7 @@ export const performMXLookup = async (target: string): Promise<MXLookupResult> =
   };
 
   const mxUrl = `https://dns.google/resolve?name=${domain}&type=MX`;
-  const mxResponse = await fetch(mxUrl);
+  const mxResponse = await requestManager.fetch(mxUrl, { timeout: 10000 }); // Use requestManager
   const mxData = await mxResponse.json();
 
   if (mxData.Answer) {
@@ -33,7 +34,7 @@ export const performMXLookup = async (target: string): Promise<MXLookupResult> =
       const exchange = parts[1].replace(/\.$/, '');
 
       const ipUrl = `https://dns.google/resolve?name=${exchange}&type=A`;
-      const ipResponse = await fetch(ipUrl);
+      const ipResponse = await requestManager.fetch(ipUrl, { timeout: 10000 }); // Use requestManager
       const ipData = await ipResponse.json();
       
       let ip: string | undefined;
@@ -47,7 +48,7 @@ export const performMXLookup = async (target: string): Promise<MXLookupResult> =
   }
 
   const txtUrl = `https://dns.google/resolve?name=${domain}&type=TXT`;
-  const txtResponse = await fetch(txtUrl);
+  const txtResponse = await requestManager.fetch(txtUrl, { timeout: 10000 }); // Use requestManager
   const txtData = await txtResponse.json();
 
   if (txtData.Answer) {
@@ -61,7 +62,7 @@ export const performMXLookup = async (target: string): Promise<MXLookupResult> =
   }
 
   const dmarcUrl = `https://dns.google/resolve?name=_dmarc.${domain}&type=TXT`;
-  const dmarcResponse = await fetch(dmarcUrl);
+  const dmarcResponse = await requestManager.fetch(dmarcUrl, { timeout: 10000 }); // Use requestManager
   const dmarcData = await dmarcResponse.json();
 
   if (dmarcData.Answer && dmarcData.Answer.length > 0) {

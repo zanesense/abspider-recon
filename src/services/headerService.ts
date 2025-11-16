@@ -1,5 +1,6 @@
 import { normalizeUrl } from './apiUtils';
 import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface SecurityHeader {
   name: string;
@@ -117,14 +118,14 @@ const SECURITY_HEADERS = [
 
 export const performFullHeaderAnalysis = async (
   target: string,
-  useProxy: boolean = false
+  requestManager: RequestManager
 ): Promise<HeaderAnalysisResult> => {
   console.log(`[Headers] Starting comprehensive analysis for ${target}`);
   
   try {
     const url = normalizeUrl(target);
     
-    const fetchResult = await fetchWithBypass(url);
+    const fetchResult = await fetchWithBypass(url, { signal: requestManager.scanController?.signal }); // Pass signal
     const response = fetchResult.response;
     
     const headers: Record<string, string> = {};

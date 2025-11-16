@@ -1,6 +1,7 @@
 import { extractDomain } from './apiUtils';
 import { getAPIKey } from './apiKeyService';
 import { fetchWithBypass, fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface WhoisResult {
   domain: string;
@@ -20,7 +21,7 @@ export interface WhoisResult {
   whoisRaw?: string;
 }
 
-export const performWhoisLookup = async (target: string): Promise<WhoisResult> => {
+export const performWhoisLookup = async (target: string, requestManager: RequestManager): Promise<WhoisResult> => {
   try {
     const domain = extractDomain(target);
     console.log(`[WHOIS] Starting lookup for ${domain}`);
@@ -36,10 +37,11 @@ export const performWhoisLookup = async (target: string): Promise<WhoisResult> =
       try {
         console.log('[WHOIS] Attempting SecurityTrails API lookup...');
         const apiUrl = `https://api.securitytrails.com/v1/domain/${domain}/whois`;
-        // Use fetchJSONWithBypass for SecurityTrails API
+        // Use fetchJSONWithBypass for SecurityTrails API, passing requestManager's signal
         const { data, metadata } = await fetchJSONWithBypass(apiUrl, {
           headers: { 'APIKEY': securitytrailsKey },
-          timeout: 15000
+          timeout: 15000,
+          signal: requestManager.scanController?.signal,
         });
 
         if (data.registrar) { // Check for a key indicator of success
@@ -75,16 +77,8 @@ export const performWhoisLookup = async (target: string): Promise<WhoisResult> =
 
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=NS`;
     
-    const dnsController = new AbortController();
-    const dnsTimeoutId = setTimeout(() => {
-      console.log('[WHOIS] DNS request timeout, aborting...');
-      dnsController.abort();
-    }, 10000);
-    
     try {
-      const dnsResponse = await fetch(dnsUrl, { signal: dnsController.signal });
-      clearTimeout(dnsTimeoutId);
-      
+      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 }); // Use requestManager
       const dnsData = await dnsResponse.json();
       
       if (dnsData.Answer) {
@@ -97,22 +91,14 @@ export const performWhoisLookup = async (target: string): Promise<WhoisResult> =
 
       console.log(`[WHOIS] Found ${result.nameservers.length} nameservers`);
     } catch (dnsError: any) {
-      clearTimeout(dnsTimeoutId);
       console.warn('[WHOIS] DNS lookup failed:', dnsError.message);
     }
 
     const rdapUrl = `https://rdap.org/domain/${domain}`;
     
-    const rdapController = new AbortController();
-    const rdapTimeoutId = setTimeout(() => {
-      console.log('[WHOIS] RDAP request timeout, aborting...');
-      rdapController.abort();
-    }, 15000);
-    
     try {
-      // Use fetchJSONWithBypass for RDAP
-      const { data: rdapData, metadata: rdapCorsMetadata } = await fetchJSONWithBypass(rdapUrl, { signal: rdapController.signal });
-      clearTimeout(rdapTimeoutId);
+      // Use fetchJSONWithBypass for RDAP, passing requestManager's signal
+      const { data: rdapData, metadata: rdapCorsMetadata } = await fetchJSONWithBypass(rdapUrl, { timeout: 15000, signal: requestManager.scanController?.signal });
       
       if (rdapData.entities && rdapData.entities.length > 0) {
         const entity = rdapData.entities[0];
@@ -143,7 +129,6 @@ export const performWhoisLookup = async (target: string): Promise<WhoisResult> =
         result.status = rdapData.status[0];
       }
     } catch (rdapError: any) {
-      clearTimeout(rdapTimeoutId);
       console.warn('[WHOIS] RDAP lookup failed:', rdapError.message);
     }
 

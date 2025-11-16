@@ -1,5 +1,6 @@
 import { extractDomain } from './apiUtils';
 import { getAPIKey } from './apiKeyService';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface PortResult {
   port: number;
@@ -54,7 +55,7 @@ const COMMON_PORTS = [
 
 const WEB_PORTS = [80, 443, 8000, 8080, 8443, 8888, 3000, 5000, 9000, 2082, 2083];
 
-const detectService = async (domain: string, port: number, response?: Response): Promise<{ service: string; banner?: string }> => {
+const detectService = async (domain: string, port: number, requestManager: RequestManager, response?: Response): Promise<{ service: string; banner?: string }> => {
   if (WEB_PORTS.includes(port)) {
     let currentResponse = response;
     if (!currentResponse) {
@@ -62,7 +63,7 @@ const detectService = async (domain: string, port: number, response?: Response):
       const testUrl = `${protocol}://${domain}:${port}`;
       try {
         // Try a direct HEAD request to get headers if not already provided
-        currentResponse = await fetch(testUrl, { method: 'HEAD', mode: 'cors' });
+        currentResponse = await requestManager.fetch(testUrl, { method: 'HEAD', mode: 'cors', timeout: 3000 }); // Use requestManager
       } catch (e) {
         // Fallback if HEAD fails (e.g., CORS blocked)
       }
@@ -95,27 +96,22 @@ const detectService = async (domain: string, port: number, response?: Response):
   return { service: COMMON_PORTS.find(p => p.port === port)?.service || 'Unknown' };
 };
 
-const checkPort = async (domain: string, portInfo: { port: number; service: string; protocol: string }): Promise<PortResult> => {
+const checkPort = async (domain: string, portInfo: { port: number; service: string; protocol: string }, requestManager: RequestManager): Promise<PortResult> => {
   const { port, service } = portInfo;
   const isWebPort = WEB_PORTS.includes(port);
 
   const protocolPrefix = [443, 8443, 2083].includes(port) ? 'https' : 'http';
   const testUrl = `${protocolPrefix}://${domain}:${port}`;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000); // Increased timeout for better detection
-
   try {
     // Attempt a fetch request to all ports. Use 'no-cors' to allow requests to non-HTTP ports.
     // A successful fetch (even with an opaque response) indicates reachability.
-    const response = await fetch(testUrl, {
+    const response = await requestManager.fetch(testUrl, { // Use requestManager
       method: 'HEAD', // Use HEAD for efficiency, but it's primarily a connection attempt
-      signal: controller.signal,
       mode: 'no-cors', // Crucial for attempting non-HTTP ports
       credentials: 'omit',
+      timeout: 4000, // Increased timeout for better detection
     });
-
-    clearTimeout(timeoutId);
 
     let detectedService = service;
     let banner: string | undefined;
@@ -123,7 +119,7 @@ const checkPort = async (domain: string, portInfo: { port: number; service: stri
 
     // For known web ports, try to get more detailed service info
     if (isWebPort) {
-      const serviceInfo = await detectService(domain, port); // This will attempt a 'cors' fetch internally if needed
+      const serviceInfo = await detectService(domain, port, requestManager); // Pass requestManager
       detectedService = serviceInfo.service;
       banner = serviceInfo.banner;
     } else {
@@ -140,7 +136,6 @@ const checkPort = async (domain: string, portInfo: { port: number; service: stri
       banner,
     };
   } catch (error: any) {
-    clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
       // Timeout or user aborted. If timeout, it's likely filtered/closed.
       console.log(`[Port Scan] Port ${port} timed out or aborted.`);
@@ -170,7 +165,8 @@ const checkPort = async (domain: string, portInfo: { port: number; service: stri
 
 export const scanCommonPorts = async (
   target: string,
-  threads: number = 5 // Threads parameter is not directly used for browser fetch concurrency, but kept for consistency
+  threads: number = 5, // Threads parameter is not directly used for browser fetch concurrency, but kept for consistency
+  requestManager: RequestManager // Accept requestManager
 ): Promise<PortResult[]> => {
   try {
     const domain = extractDomain(target);
@@ -182,7 +178,7 @@ export const scanCommonPorts = async (
     let ipAddress: string | undefined;
     try {
       const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
-      const dnsResponse = await fetch(dnsUrl);
+      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 }); // Use requestManager
       const dnsData = await dnsResponse.json();
       if (dnsData.Answer && dnsData.Answer.length > 0) {
         ipAddress = dnsData.Answer[0].data;
@@ -197,7 +193,7 @@ export const scanCommonPorts = async (
       try {
         console.log('[Port Scan] Attempting Shodan API lookup...');
         const shodanApiUrl = `https://api.shodan.io/shodan/host/${ipAddress}?key=${shodanKey}`;
-        const shodanResponse = await fetch(shodanApiUrl);
+        const shodanResponse = await requestManager.fetch(shodanApiUrl, { timeout: 15000 }); // Use requestManager
 
         if (shodanResponse.ok) {
           const shodanData = await shodanResponse.json();
@@ -226,7 +222,7 @@ export const scanCommonPorts = async (
 
     // --- Fallback to browser-based port scanning if Shodan fails or no key ---
     
-    const portPromises: Promise<PortResult>[] = COMMON_PORTS.map(portInfo => checkPort(domain, portInfo));
+    const portPromises: Promise<PortResult>[] = COMMON_PORTS.map(portInfo => checkPort(domain, portInfo, requestManager)); // Pass requestManager
     const allPortResults = await Promise.allSettled(portPromises);
 
     for (const result of allPortResults) {

@@ -1,5 +1,6 @@
 import { extractDomain } from './apiUtils';
 import { getAPIKey } from './apiKeyService';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface GeoIPResult {
   ip: string;
@@ -35,14 +36,14 @@ export interface GeoIPResult {
   components?: Record<string, any>;
 }
 
-export const performGeoIPLookup = async (target: string): Promise<GeoIPResult> => {
+export const performGeoIPLookup = async (target: string, requestManager: RequestManager): Promise<GeoIPResult> => {
   console.log(`[GeoIP] Starting lookup for ${target}`);
 
   try {
     const domain = extractDomain(target);
 
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
-    const dnsResponse = await fetch(dnsUrl);
+    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 }); // Use requestManager
     const dnsData = await dnsResponse.json();
 
     if (!dnsData.Answer || dnsData.Answer.length === 0) {
@@ -57,7 +58,7 @@ export const performGeoIPLookup = async (target: string): Promise<GeoIPResult> =
     // --- Try ipapi.co ---
     try {
       const ipapiUrl = `https://ipapi.co/${ip}/json/`;
-      const ipapiResponse = await fetch(ipapiUrl);
+      const ipapiResponse = await requestManager.fetch(ipapiUrl, { timeout: 10000 }); // Use requestManager
 
       if (ipapiResponse.ok) {
         const data = await ipapiResponse.json();
@@ -86,7 +87,7 @@ export const performGeoIPLookup = async (target: string): Promise<GeoIPResult> =
     if (!result.country) {
       try {
         const ipApiUrl = `http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,city,lat,lon,timezone,isp,org,as,zip,currency`;
-        const ipApiResponse = await fetch(ipApiUrl);
+        const ipApiResponse = await requestManager.fetch(ipApiUrl, { timeout: 10000 }); // Use requestManager
 
         if (ipApiResponse.ok) {
           const data = await ipApiResponse.json();
@@ -118,7 +119,7 @@ export const performGeoIPLookup = async (target: string): Promise<GeoIPResult> =
     if (opencageKey && result.latitude && result.longitude) {
       try {
         const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${result.latitude}+${result.longitude}&key=${opencageKey}`;
-        const opencageResponse = await fetch(opencageUrl);
+        const opencageResponse = await requestManager.fetch(opencageUrl, { timeout: 10000 }); // Use requestManager
 
         if (opencageResponse.ok) {
           const data = await opencageResponse.json();

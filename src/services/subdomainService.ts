@@ -104,14 +104,14 @@ export const enumerateSubdomainsDNS = async (
   return Array.from(found);
 };
 
-export const enumerateSubdomainsCrtSh = async (domain: string): Promise<string[]> => {
+export const enumerateSubdomainsCrtSh = async (domain: string, requestManager: RequestManager): Promise<string[]> => {
   console.log(`[Subdomain crt.sh] Querying certificate transparency logs for ${domain}`);
   
   try {
     const crtShUrl = `https://crt.sh/?q=%.${domain}&output=json`;
     
-    // Use fetchWithBypass for crt.sh to handle CORS
-    const { response } = await fetchWithBypass(crtShUrl, { timeout: 20000 });
+    // Use fetchWithBypass for crt.sh to handle CORS, passing requestManager's signal
+    const { response } = await fetchWithBypass(crtShUrl, { timeout: 20000, signal: requestManager.scanController?.signal });
     
     if (!response.ok) {
       console.warn(`[Subdomain crt.sh] Failed with status ${response.status}`);
@@ -153,7 +153,7 @@ export const enumerateSubdomainsCrtSh = async (domain: string): Promise<string[]
   }
 };
 
-export const enumerateSubdomainsSecurityTrails = async (domain: string): Promise<string[]> => {
+export const enumerateSubdomainsSecurityTrails = async (domain: string, requestManager: RequestManager): Promise<string[]> => {
   const securitytrailsKey = getAPIKey('securitytrails');
   if (!securitytrailsKey) {
     console.log('[Subdomain SecurityTrails] API key not configured, skipping.');
@@ -164,10 +164,11 @@ export const enumerateSubdomainsSecurityTrails = async (domain: string): Promise
   try {
     const apiUrl = `https://api.securitytrails.com/v1/domain/${domain}/subdomains`;
     
-    // Use fetchWithBypass for SecurityTrails to handle CORS
+    // Use fetchWithBypass for SecurityTrails to handle CORS, passing requestManager's signal
     const { response } = await fetchWithBypass(apiUrl, {
       headers: { 'APIKEY': securitytrailsKey },
-      timeout: 15000
+      timeout: 15000,
+      signal: requestManager.scanController?.signal,
     });
 
     if (!response.ok) {
@@ -192,7 +193,8 @@ export const enumerateSubdomainsSecurityTrails = async (domain: string): Promise
 export const enumerateSubdomains = async (
   target: string,
   threads: number = 5,
-  scanController?: AbortController // Pass the main scan controller
+  scanController?: AbortController, // Pass the main scan controller
+  requestManager?: RequestManager // Accept requestManager
 ): Promise<SubdomainResult> => {
   try {
     const domain = extractDomain(target);
@@ -205,13 +207,14 @@ export const enumerateSubdomains = async (
     };
 
     const allSubdomains = new Set<string>();
-    const requestManager = createRequestManager(scanController); // Create a request manager for this scan
+    // Ensure requestManager is available, create if not provided (though it should be from scanService)
+    const currentRequestManager = requestManager || createRequestManager(scanController);
 
     // Run all methods in parallel
     const [dnsResults, crtResults, securitytrailsResults] = await Promise.allSettled([
-      enumerateSubdomainsDNS(domain, threads, requestManager),
-      enumerateSubdomainsCrtSh(domain),
-      enumerateSubdomainsSecurityTrails(domain),
+      enumerateSubdomainsDNS(domain, threads, currentRequestManager),
+      enumerateSubdomainsCrtSh(domain, currentRequestManager),
+      enumerateSubdomainsSecurityTrails(domain, currentRequestManager),
     ]);
 
     if (dnsResults.status === 'fulfilled') {

@@ -1,5 +1,6 @@
 import { normalizeUrl } from './apiUtils';
 import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
+import { RequestManager } from './requestManager'; // Import RequestManager
 
 export interface WordPressScanResult {
   isWordPress: boolean;
@@ -28,7 +29,7 @@ const SENSITIVE_FILES = [
   'xmlrpc.php',
 ];
 
-export const performWordPressScan = async (target: string): Promise<WordPressScanResult> => {
+export const performWordPressScan = async (target: string, requestManager: RequestManager): Promise<WordPressScanResult> => {
   console.log(`[WordPress] Starting scan for ${target}`);
 
   const result: WordPressScanResult = {
@@ -42,7 +43,7 @@ export const performWordPressScan = async (target: string): Promise<WordPressSca
   try {
     const url = normalizeUrl(target);
 
-    const fetchResult = await fetchWithBypass(url, { timeout: 10000 });
+    const fetchResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.scanController?.signal }); // Pass signal
     result.corsMetadata = fetchResult.metadata;
     
     const html = await fetchResult.response.text();
@@ -72,7 +73,7 @@ export const performWordPressScan = async (target: string): Promise<WordPressSca
     for (const file of SENSITIVE_FILES) {
       try {
         const fileUrl = `${url}/${file}`;
-        const fileResult = await fetchWithBypass(fileUrl, { timeout: 3000 });
+        const fileResult = await fetchWithBypass(fileUrl, { timeout: 3000, signal: requestManager.scanController?.signal }); // Pass signal
 
         if (fileResult.response.ok) {
           const size = fileResult.response.headers.get('content-length');

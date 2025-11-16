@@ -100,7 +100,7 @@ export const performDDoSFirewallTest = async (
         let metadata: CORSBypassMetadata | undefined;
 
         if (requestManager) {
-          response = await requestManager.fetch(url, { timeout: 5000 });
+          response = await requestManager.fetch(url, { timeout: 5000 }); // Use requestManager
         } else {
           const fetchResult = await fetchWithBypass(url, { timeout: 5000 });
           response = fetchResult.response;
