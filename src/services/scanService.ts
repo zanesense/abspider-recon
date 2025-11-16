@@ -89,9 +89,13 @@ function loadScansFromStorage(): Scan[] {
   }
 }
 
-function saveScansToStorage(scans: Scan[]) {
+// Modified updateScan to accept a full Scan object
+function updateScan(scanToUpdate: Scan) {
   try {
-    localStorage.setItem(SCAN_STORAGE_KEY, JSON.stringify(scans));
+    scansCache = scansCache.map(scan =>
+      scan.id === scanToUpdate.id ? scanToUpdate : scan
+    );
+    saveScansToStorage(scansCache);
   } catch (error) {
     console.error('Failed to save scans to storage:', error);
   }
@@ -107,7 +111,7 @@ export const getScanById = (id: string): Scan | undefined => {
 
 export const startScan = async (config: ScanConfig): Promise<string> => {
   const id = uuidv4();
-  const newScan: Scan = {
+  let newScan: Scan = { // Use let to allow reassigning the entire object
     id,
     target: config.target,
     timestamp: Date.now(),
@@ -125,13 +129,6 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
   const requestManager = createRequestManager(scanController);
   activeScans.set(id, { controller: scanController, promise: Promise.resolve(), requestManager });
 
-  const updateScan = (updates: Partial<Scan>) => {
-    scansCache = scansCache.map(scan =>
-      scan.id === id ? { ...scan, ...updates } : scan
-    );
-    saveScansToStorage(scansCache);
-  };
-
   const runScan = async () => {
     const startTime = Date.now();
     const modulesToRun = Object.keys(config).filter(key => (config as any)[key] === true && key !== 'target' && key !== 'useProxy' && key !== 'threads');
@@ -142,6 +139,9 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
     requestManager.setMinRequestInterval(1000 / config.threads); // Adjust interval based on threads
 
+    // Get the initial scan object from cache. This will be the mutable object for this run.
+    let currentScan = getScanById(id)!; 
+
     try {
       for (const moduleName of modulesToRun) {
         if (scanController.signal.aborted) {
@@ -149,13 +149,16 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
         }
 
         completedStages++;
-        updateScan({
+        // Update progress and persist the currentScan object
+        currentScan = {
+          ...currentScan,
           progress: {
             current: completedStages,
             total: totalStages,
             stage: `Running ${moduleName} scan`,
           },
-        });
+        };
+        updateScan(currentScan); // Persist the updated currentScan
 
         console.log(`[ScanService] Running module: ${moduleName}`);
 
@@ -164,105 +167,113 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
           switch (moduleName) {
             case 'siteInfo':
               moduleResult = await performSiteInfoScan(config.target);
-              updateScan({ results: { ...newScan.results, siteInfo: moduleResult } });
+              currentScan.results.siteInfo = moduleResult;
               break;
             case 'headers':
               moduleResult = await performFullHeaderAnalysis(config.target, config.useProxy);
-              updateScan({ results: { ...newScan.results, headers: moduleResult } });
+              currentScan.results.headers = moduleResult;
               break;
             case 'whois':
               moduleResult = await performWhoisLookup(config.target);
-              updateScan({ results: { ...newScan.results, whois: moduleResult } });
+              currentScan.results.whois = moduleResult;
               break;
             case 'geoip':
               moduleResult = await performGeoIPLookup(config.target);
-              updateScan({ results: { ...newScan.results, geoip: moduleResult } });
+              currentScan.results.geoip = moduleResult;
               break;
             case 'dns':
               moduleResult = await performDNSLookup(config.target);
-              updateScan({ results: { ...newScan.results, dns: moduleResult } });
+              currentScan.results.dns = moduleResult;
               break;
             case 'mx':
               moduleResult = await performMXLookup(config.target);
-              updateScan({ results: { ...newScan.results, mx: moduleResult } });
+              currentScan.results.mx = moduleResult;
               break;
             case 'subnet':
-              // Subnet scan requires an IP, which might come from GeoIP or DNS
-              if (newScan.results.geoip?.ip) {
-                moduleResult = calculateSubnet(newScan.results.geoip.ip, 24); // Default to /24
-                updateScan({ results: { ...newScan.results, subnet: moduleResult } });
+              const ipForSubnet = currentScan.results.siteInfo?.ip || 
+                                  currentScan.results.geoip?.ip || 
+                                  currentScan.results.dns?.records.A[0]?.value;
+              if (ipForSubnet) {
+                moduleResult = calculateSubnet(ipForSubnet, 24); // Default to /24
+                currentScan.results.subnet = moduleResult;
               } else {
-                newScan.errors.push('Subnet scan skipped: IP address not available from GeoIP/DNS.');
+                currentScan.errors.push('Subnet scan skipped: IP address not available from SiteInfo, GeoIP, or DNS.');
               }
               break;
             case 'ports':
               moduleResult = await scanCommonPorts(config.target, config.threads);
-              updateScan({ results: { ...newScan.results, ports: moduleResult } });
+              currentScan.results.ports = moduleResult;
               break;
             case 'subdomains':
               moduleResult = await enumerateSubdomains(config.target, config.threads, scanController);
-              updateScan({ results: { ...newScan.results, subdomains: moduleResult } });
+              currentScan.results.subdomains = moduleResult;
               break;
             case 'reverseip':
               moduleResult = await performReverseIPLookup(config.target);
-              updateScan({ results: { ...newScan.results, reverseip: moduleResult } });
+              currentScan.results.reverseip = moduleResult;
               break;
             case 'sqlinjection':
               moduleResult = await performSQLScan(config.target);
-              updateScan({ results: { ...newScan.results, sqlinjection: moduleResult } });
+              currentScan.results.sqlinjection = moduleResult;
               break;
             case 'xss':
               moduleResult = await performXSSScan(config.target);
-              updateScan({ results: { ...newScan.results, xss: moduleResult } });
+              currentScan.results.xss = moduleResult;
               break;
             case 'lfi':
               moduleResult = await performLFIScan(config.target, requestManager);
-              updateScan({ results: { ...newScan.results, lfi: moduleResult } });
+              currentScan.results.lfi = moduleResult;
               break;
             case 'wordpress':
               moduleResult = await performWordPressScan(config.target);
-              updateScan({ results: { ...newScan.results, wordpress: moduleResult } });
+              currentScan.results.wordpress = moduleResult;
               break;
             case 'seo':
               moduleResult = await performSEOAnalysis(config.target);
-              updateScan({ results: { ...newScan.results, seo: moduleResult } });
+              currentScan.results.seo = moduleResult;
               break;
             default:
               console.warn(`[ScanService] Unknown module: ${moduleName}`);
           }
+          // After successfully running a module, persist the updated currentScan object
+          updateScan(currentScan);
+
         } catch (moduleError: any) {
           console.error(`[ScanService] Error in ${moduleName} module:`, moduleError);
-          updateScan({ errors: [...newScan.errors, `${moduleName}: ${moduleError.message}`] });
+          currentScan.errors.push(`${moduleName}: ${moduleError.message}`);
+          updateScan(currentScan); // Persist errors
         }
       }
 
-      updateScan({
+      currentScan = {
+        ...currentScan,
         status: 'completed',
         progress: { current: totalStages, total: totalStages, stage: 'Scan Completed' },
         elapsedMs: Date.now() - startTime,
         completedAt: Date.now(),
-      });
+      };
+      updateScan(currentScan);
       console.log(`[ScanService] Scan ${id} completed successfully.`);
 
       // Send Discord webhook notification if configured
       try {
-        const currentScan = getScanById(id);
-        if (currentScan) {
-          await sendDiscordWebhook(currentScan);
-        }
+        await sendDiscordWebhook(currentScan);
       } catch (webhookError) {
         console.error('[ScanService] Failed to send Discord webhook:', webhookError);
-        updateScan({ errors: [...newScan.errors, `Discord Webhook: ${ (webhookError as Error).message}`] });
+        currentScan.errors.push(`Discord Webhook: ${ (webhookError as Error).message}`);
+        updateScan(currentScan);
       }
 
     } catch (error: any) {
       console.error(`[ScanService] Scan ${id} failed:`, error);
-      updateScan({
+      currentScan = {
+        ...currentScan,
         status: 'failed',
-        errors: [...newScan.errors, error.message],
+        errors: [...currentScan.errors, error.message],
         elapsedMs: Date.now() - startTime,
         completedAt: Date.now(),
-      });
+      };
+      updateScan(currentScan);
     } finally {
       activeScans.delete(id);
     }
