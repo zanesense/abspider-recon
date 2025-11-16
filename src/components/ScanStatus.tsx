@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning } from 'lucide-react'; // Added more icons
+import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star } from 'lucide-react'; // Added Star icon
 import { Scan } from '@/services/scanService';
 
 interface ScanStatusProps {
@@ -14,7 +14,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
       case 'completed': return <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />;
       case 'running': return <Loader2 className="h-5 w-5 text-yellow-500 dark:text-yellow-400 animate-spin" />;
       case 'failed': return <XCircle className="h-5 w-5 text-red-500 dark:text-red-400" />;
-      case 'paused': return <Timer className="h-5 w-5 text-blue-500 dark:text-blue-400" />; // Icon for paused
+      case 'paused': return <Timer className="h-5 w-5 text-blue-500 dark:text-blue-400" />;
       default: return <Clock className="h-5 w-5 text-muted-foreground" />;
     }
   };
@@ -27,6 +27,13 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
       case 'paused': return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
       default: return 'bg-muted/20 text-muted-foreground border-border';
     }
+  };
+
+  const getGradeColor = (grade: number) => {
+    if (grade >= 8) return 'text-green-500 dark:text-green-400';
+    if (grade >= 6) return 'text-yellow-500 dark:text-yellow-400';
+    if (grade >= 4) return 'text-orange-500 dark:text-orange-400';
+    return 'text-red-500 dark:text-red-400';
   };
 
   const progressPercentage = scan.progress 
@@ -48,7 +55,6 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     }
   };
 
-  // Determine overall vulnerability status for a quick badge
   const hasVulnerabilities = 
     (scan.results.sqlinjection?.vulnerable && scan.results.sqlinjection.vulnerabilities.length > 0) ||
     (scan.results.xss?.vulnerable && scan.results.xss.vulnerabilities.length > 0) ||
@@ -104,6 +110,11 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
           {hasVulnerabilities && (
             <Badge variant="destructive" className="bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30">
               <AlertTriangle className="h-3 w-3 mr-1" /> Vulnerabilities Detected
+            </Badge>
+          )}
+          {scan.securityGrade !== undefined && scan.status === 'completed' && (
+            <Badge className={`flex items-center gap-1 ${getGradeColor(scan.securityGrade)} bg-opacity-10 border-opacity-30`}>
+              <Star className="h-3 w-3 mr-1" /> Security Grade: {scan.securityGrade.toFixed(1)}/10
             </Badge>
           )}
           <Badge className={getStatusColor()}>
@@ -165,7 +176,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
               if (value === true && moduleLabels[key]) {
                 const Icon = moduleIcons[key];
                 const isVulnModule = ['sqlinjection', 'xss', 'lfi'].includes(key);
-                const isSecurityModule = ['ddosFirewall'].includes(key); // Only one DDoS module now
+                const isSecurityModule = ['ddosFirewall'].includes(key);
                 return (
                   <Badge 
                     key={key} 

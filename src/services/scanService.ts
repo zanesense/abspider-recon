@@ -14,12 +14,13 @@ import { performXSSScan, XSSScanResult } from './xssScanService';
 import { performLFIScan, LFIScanResult } from './lfiScanService';
 import { performWordPressScan, WordPressScanResult } from './wordpressService';
 import { performSEOAnalysis, SEOAnalysis } from './seoService';
-import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService'; // Updated import
+import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService';
 import { getSettings, saveSettings } from './settingsService';
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
 import { createRequestManager, RequestManager } from './requestManager';
-import { getAPIKeys, APIKeys } from './apiKeyService'; // Import getAPIKeys and APIKeys interface
+import { getAPIKeys, APIKeys } from './apiKeyService';
+import { calculateSecurityGrade } from './securityGradingService'; // Import the new service
 
 export interface ScanConfig {
   target: string;
@@ -39,10 +40,10 @@ export interface ScanConfig {
   wordpress: boolean;
   seo: boolean;
   ddosFirewall: boolean;
-  xssPayloads: number; // New: Number of XSS payloads to test
-  sqliPayloads: number; // New: Number of SQLi payloads to test
-  lfiPayloads: number; // New: Number of LFI payloads to test
-  ddosRequests: number; // New: Number of requests for DDoS Firewall Test
+  xssPayloads: number;
+  sqliPayloads: number;
+  lfiPayloads: number;
+  ddosRequests: number;
   useProxy: boolean;
   threads: number;
 }
@@ -81,6 +82,7 @@ export interface Scan {
   errors: string[];
   elapsedMs?: number;
   completedAt?: number;
+  securityGrade?: number; // New field for security grade
 }
 
 const SCAN_STORAGE_KEY = 'abspider-scan-history';
@@ -106,7 +108,6 @@ function saveScansToStorage(scans: Scan[]) {
   }
 }
 
-// Modified updateScan to accept a full Scan object
 function updateScan(scanToUpdate: Scan) {
   try {
     scansCache = scansCache.map(scan =>
@@ -128,7 +129,7 @@ export const getScanById = (id: string): Scan | undefined => {
 
 export const startScan = async (config: ScanConfig): Promise<string> => {
   const id = uuidv4();
-  let newScan: Scan = { // Use let to allow reassigning the entire object
+  let newScan: Scan = {
     id,
     target: config.target,
     timestamp: Date.now(),
@@ -173,13 +174,10 @@ const runScan = async (
 
   const settings = getSettings();
   setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
-  // Ensure minRequestInterval is at least 20ms to prevent excessive requests
   requestManager.setMinRequestInterval(Math.max(20, 1000 / config.threads)); 
 
-  // Get the initial scan object from cache. This will be the mutable object for this run.
   let currentScan = getScanById(scanId)!; 
 
-  // Fetch API keys once at the beginning of the scan
   let apiKeys: APIKeys = {};
   try {
     apiKeys = await getAPIKeys();
@@ -197,7 +195,6 @@ const runScan = async (
       }
 
       completedStages++;
-      // Update progress and persist the currentScan object
       currentScan = {
         ...currentScan,
         progress: {
@@ -206,7 +203,7 @@ const runScan = async (
           stage: `Running ${moduleName} scan`,
         },
       };
-      updateScan(currentScan); // Persist the updated currentScan
+      updateScan(currentScan);
 
       console.log(`[ScanService] Running module: ${moduleName}`);
 
@@ -242,7 +239,7 @@ const runScan = async (
                                   currentScan.results.geoip?.ip || 
                                   currentScan.results.dns?.records.A[0]?.value;
             if (ipForSubnet) {
-              moduleResult = calculateSubnet(ipForSubnet, 24); // Default to /24
+              moduleResult = calculateSubnet(ipForSubnet, 24);
               currentScan.results.subnet = moduleResult;
             } else {
               currentScan.errors.push('Subnet scan skipped: IP address not available from SiteInfo, GeoIP, or DNS.');
@@ -287,15 +284,17 @@ const runScan = async (
             default:
               console.warn(`[ScanService] Unknown module: ${moduleName}`);
           }
-          // After successfully running a module, persist the updated currentScan object
           updateScan(currentScan);
 
         } catch (moduleError: any) {
           console.error(`[ScanService] Error in ${moduleName} module:`, moduleError);
           currentScan.errors.push(`${moduleName}: ${moduleError.message}`);
-          updateScan(currentScan); // Persist errors
+          updateScan(currentScan);
         }
       }
+
+      // Calculate security grade after all modules have run
+      currentScan.securityGrade = calculateSecurityGrade(currentScan);
 
       currentScan = {
         ...currentScan,
@@ -305,16 +304,7 @@ const runScan = async (
         completedAt: Date.now(),
       };
       updateScan(currentScan);
-      console.log(`[ScanService] Scan ${scanId} completed successfully.`);
-
-      // Removed: Automatic Discord webhook notification
-      // try {
-      //   await sendDiscordWebhook(currentScan);
-      // } catch (webhookError) {
-      //   console.error('[ScanService] Failed to send Discord webhook:', webhookError);
-      //   currentScan.errors.push(`Discord Webhook: ${ (webhookError as Error).message}`);
-      //   updateScan(currentScan);
-      // }
+      console.log(`[ScanService] Scan ${scanId} completed successfully. Security Grade: ${currentScan.securityGrade}`);
 
     } catch (error: any) {
       console.error(`[ScanService] Scan ${scanId} failed:`, error);
@@ -334,8 +324,7 @@ const runScan = async (
 export const pauseScan = (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
-    scanEntry.controller.abort(); // Abort current fetch operations
-    // Mark scan as paused in cache
+    scanEntry.controller.abort();
     scansCache = scansCache.map(scan =>
       scan.id === id ? { ...scan, status: 'paused', progress: { ...scan.progress!, stage: 'Paused' } } : scan
     );
@@ -351,7 +340,6 @@ export const resumeScan = async (id: string) => {
     return;
   }
 
-  // Create a new controller and restart the scan logic
   const newController = new AbortController();
   const requestManager = createRequestManager(newController);
   activeScans.set(id, { controller: newController, promise: Promise.resolve(), requestManager });
@@ -362,17 +350,14 @@ export const resumeScan = async (id: string) => {
   saveScansToStorage(scansCache);
 
   console.log(`[ScanService] Resuming scan ${id}.`);
-  // Re-run the scan from scratch or implement more complex state-based resumption
-  // For simplicity, we'll re-run the entire scan. A more advanced implementation
-  // would save and restore the exact state of the scan.
   await startScan(scan.config);
 };
 
 export const stopScan = (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
-    scanEntry.controller.abort(); // Abort all ongoing requests
-    scanEntry.requestManager.abortAll(); // Abort requests managed by the request manager
+    scanEntry.controller.abort();
+    scanEntry.requestManager.abortAll();
     activeScans.delete(id);
     scansCache = scansCache.map(scan =>
       scan.id === id ? { ...scan, status: 'failed', errors: [...scan.errors, 'Scan stopped by user'], elapsedMs: Date.now() - scan.timestamp, completedAt: Date.now() } : scan
