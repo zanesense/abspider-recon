@@ -1,5 +1,3 @@
-import { isIP } from 'node:net'; // Import isIP from node:net
-
 interface ProxyConfig {
   url: string;
   enabled: boolean;
@@ -85,16 +83,29 @@ export const safeJsonParse = (text: string, fallback: any = null) => {
   }
 };
 
+// Browser-compatible IP validation function
+const isIPv4 = (ip: string): boolean => {
+  const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  return ipv4Regex.test(ip);
+};
+
+const isIPv6 = (ip: string): boolean => {
+  const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|::((:[0-9a-fA-F]{1,4}){1,7}|)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+  return ipv6Regex.test(ip);
+};
+
 // New function to check if an IP address is internal
 export const isInternalIP = (ip: string): boolean => {
-  if (!isIP(ip)) return false; // Not a valid IP address
+  // Check if it's a valid IP address first
+  const isIpValid = isIPv4(ip) || isIPv6(ip);
+  if (!isIpValid) return false;
 
   // IPv4 private ranges
   // 10.0.0.0/8
   // 172.16.0.0/12
   // 192.168.0.0/16
   // 127.0.0.0/8 (localhost)
-  if (isIP(ip) === 4) {
+  if (isIPv4(ip)) {
     const parts = ip.split('.').map(Number);
     if (parts[0] === 10) return true;
     if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
@@ -105,7 +116,7 @@ export const isInternalIP = (ip: string): boolean => {
   // IPv6 private ranges (ULA - Unique Local Addresses)
   // fc00::/7
   // ::1/128 (localhost)
-  if (isIP(ip) === 6) {
+  if (isIPv6(ip)) {
     if (ip.startsWith('fc00:') || ip.startsWith('fd')) return true; // fc00::/7
     if (ip === '::1') return true; // IPv6 localhost
   }
