@@ -10,7 +10,7 @@ import { getScanHistory } from '@/services/scanService';
 import { Badge } from '@/components/ui/badge'; // Import Badge
 import { getAPIKeys, hasAPIKey } from '@/services/apiKeyService';
 import { useMemo } from 'react';
-import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, RadialBarChart, RadialBar, Legend, Tooltip } from 'recharts'; // Updated imports for RadialBarChart
 
 const Index = () => {
   const { toast } = useToast();
@@ -40,11 +40,14 @@ const Index = () => {
     const failed = scans.filter(s => s.status === 'failed').length;
     const paused = scans.filter(s => s.status === 'paused').length;
 
+    // Calculate total for percentage in RadialBar
+    const total = completed + running + failed + paused;
+
     return [
-      { name: 'Completed', value: completed, color: '#10B981' }, // Green
-      { name: 'Running', value: running, color: '#F59E0B' },     // Yellow
-      { name: 'Failed', value: failed, color: '#EF4444' },       // Red
-      { name: 'Paused', value: paused, color: '#6B7280' },       // Gray
+      { name: 'Completed', value: completed, fill: '#10B981', percentage: total > 0 ? (completed / total) * 100 : 0 }, // Green
+      { name: 'Running', value: running, fill: '#F59E0B', percentage: total > 0 ? (running / total) * 100 : 0 },     // Yellow
+      { name: 'Failed', value: failed, fill: '#EF4444', percentage: total > 0 ? (failed / total) * 100 : 0 },       // Red
+      { name: 'Paused', value: paused, fill: '#6B7280', percentage: total > 0 ? (paused / total) * 100 : 0 },       // Gray
     ].filter(item => item.value > 0);
   }, [scans]);
 
@@ -183,23 +186,33 @@ const Index = () => {
                   {chartData.length > 0 ? (
                     <div className="h-48">
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={40}
-                            outerRadius={60}
-                            fill="#8884d8"
-                            paddingAngle={5}
+                        <RadialBarChart
+                          innerRadius="10%"
+                          outerRadius="100%"
+                          data={chartData}
+                          startAngle={90}
+                          endAngle={-270}
+                        >
+                          <RadialBar
+                            minAngle={15}
+                            label={{ position: 'insideStart', fill: '#fff', fontSize: 10 }}
+                            background
+                            clockWise
                             dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
+                          />
+                          <Legend
+                            iconSize={10}
+                            layout="vertical"
+                            verticalAlign="middle"
+                            align="right"
+                            wrapperStyle={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}
+                          />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0.375rem', fontSize: '12px' }}
+                            itemStyle={{ color: 'hsl(var(--foreground))' }}
+                            formatter={(value: number, name: string, props: any) => [`${value} scans (${props.payload.percentage.toFixed(1)}%)`, name]}
+                          />
+                        </RadialBarChart>
                       </ResponsiveContainer>
                     </div>
                   ) : (
