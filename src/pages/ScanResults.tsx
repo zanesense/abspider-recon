@@ -193,7 +193,7 @@ const ScanResults = () => {
 
           {scan.results.headers && (
             <div className={blockClass}>
-              <HeadersAnalysis headers={scan.results.headers} />
+              <HeadersAnalysis headersAnalysis={scan.results.headers} />
             </div>
           )}
 

@@ -2,33 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
 import CORSBypassIndicator from './CORSBypassIndicator';
+import { HeaderAnalysisResult } from '@/services/headerService'; // Import the correct interface
 
 interface HeadersAnalysisProps {
-  headers: Record<string, any>;
+  headersAnalysis: HeaderAnalysisResult; // Change prop name and type
 }
 
-const HeadersAnalysis = ({ headers }: HeadersAnalysisProps) => {
-  const analysis = headers._analysis;
-  const actualHeaders = { ...headers };
-  delete actualHeaders._analysis;
-
-  if (!analysis) {
-    return (
-      <Card className="bg-slate-900 border-slate-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <Shield className="h-5 w-5 text-cyan-400" />
-            HTTP Headers Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-slate-400">No header analysis available</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const securityHeaders = analysis.securityHeaders || {
+const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Destructure new prop name
+  const securityHeaders = headersAnalysis.securityHeaders || {
     present: [],
     missing: [],
     score: 0,
@@ -53,7 +34,7 @@ const HeadersAnalysis = ({ headers }: HeadersAnalysisProps) => {
             <Shield className="h-5 w-5 text-cyan-400" />
             HTTP Headers Analysis
           </CardTitle>
-          <CORSBypassIndicator metadata={analysis.corsMetadata} />
+          <CORSBypassIndicator metadata={headersAnalysis.corsMetadata} /> {/* Use headersAnalysis.corsMetadata */}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -61,7 +42,7 @@ const HeadersAnalysis = ({ headers }: HeadersAnalysisProps) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-slate-800 rounded-lg p-4">
             <p className="text-sm text-slate-400 mb-1">Status Code</p>
-            <p className="text-2xl font-bold text-cyan-400">{analysis.statusCode}</p>
+            <p className="text-2xl font-bold text-cyan-400">{headersAnalysis.statusCode}</p> {/* Use headersAnalysis.statusCode */}
           </div>
           <div className="bg-slate-800 rounded-lg p-4">
             <p className="text-sm text-slate-400 mb-1">Security Grade</p>
@@ -74,7 +55,7 @@ const HeadersAnalysis = ({ headers }: HeadersAnalysisProps) => {
           <div className="bg-slate-800 rounded-lg p-4">
             <p className="text-sm text-slate-400 mb-1">Technologies</p>
             <p className="text-sm text-white">
-              {analysis.technologies?.length > 0 ? analysis.technologies.join(', ') : 'None'}
+              {headersAnalysis.technologies?.length > 0 ? headersAnalysis.technologies.join(', ') : 'None'} {/* Use headersAnalysis.technologies */}
             </p>
           </div>
         </div>
@@ -143,13 +124,13 @@ const HeadersAnalysis = ({ headers }: HeadersAnalysisProps) => {
         </div>
 
         {/* Cookies Analysis */}
-        {analysis.cookies && analysis.cookies.length > 0 && (
+        {headersAnalysis.cookies && headersAnalysis.cookies.length > 0 && ( {/* Use headersAnalysis.cookies */}
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-white flex items-center gap-2">
               <Info className="h-4 w-4 text-blue-400" />
-              Cookies ({analysis.cookies.length})
+              Cookies ({headersAnalysis.cookies.length})
             </h4>
-            {analysis.cookies.map((cookie: any, index: number) => (
+            {headersAnalysis.cookies.map((cookie: any, index: number) => (
               <div key={index} className="bg-slate-800 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-white">{cookie.name}</span>
@@ -176,7 +157,7 @@ const HeadersAnalysis = ({ headers }: HeadersAnalysisProps) => {
           <h4 className="text-sm font-semibold text-white">All Headers</h4>
           <div className="bg-slate-800 rounded-lg p-4 max-h-64 overflow-y-auto">
             <div className="space-y-1 font-mono text-xs">
-              {Object.entries(actualHeaders).map(([key, value]) => (
+              {Object.entries(headersAnalysis.headers).map(([key, value]) => ( {/* Use headersAnalysis.headers */}
                 <div key={key} className="flex gap-2">
                   <span className="text-cyan-400">{key}:</span>
                   <span className="text-slate-400 break-all">{String(value)}</span>
