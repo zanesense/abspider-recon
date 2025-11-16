@@ -90,10 +90,10 @@ const ScanResults = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-950">
+      <div className="flex items-center justify-center h-full bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading scan results...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading scan results...</p>
         </div>
       </div>
     );
@@ -101,10 +101,10 @@ const ScanResults = () => {
 
   if (!scan) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-950">
+      <div className="flex items-center justify-center h-full bg-background">
         <div className="text-center">
-          <p className="text-slate-400 mb-4">Scan not found</p>
-          <Button onClick={() => navigate('/')} variant="outline" className="border-slate-700 text-slate-300">
+          <p className="text-muted-foreground mb-4">Scan not found</p>
+          <Button onClick={() => navigate('/')} variant="outline" className="border-border text-foreground hover:bg-muted/50">
             Back to Dashboard
           </Button>
         </div>
@@ -112,32 +112,32 @@ const ScanResults = () => {
     );
   }
 
-  const blockClass = "bg-slate-900/20 border border-slate-800 rounded-lg p-4";
+  const blockClass = "bg-card/50 backdrop-blur-sm border border-border rounded-lg p-4 shadow-md";
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-slate-800 bg-slate-900 px-6 py-4">
-        <SidebarTrigger className="text-slate-300" />
+      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
+        <SidebarTrigger />
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate('/')}
-          className="text-slate-300 hover:text-white hover:bg-slate-800"
+          className="text-muted-foreground hover:text-primary hover:bg-muted/50"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-white">{scan.target}</h1>
-          <p className="text-sm text-slate-400">Scan ID: {scan.id}</p>
+          <h1 className="text-2xl font-semibold text-foreground">{scan.target}</h1>
+          <p className="text-sm text-muted-foreground">Scan ID: {scan.id}</p>
         </div>
         <div className="flex gap-2">
           {scan.status === 'running' && (
             <>
-              <Button onClick={handlePauseScan} variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800">
+              <Button onClick={handlePauseScan} variant="outline" size="sm" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
                 <Pause className="h-4 w-4 mr-2" /> Pause
               </Button>
-              <Button onClick={handleStopScan} variant="outline" size="sm" className="border-red-700 text-red-400 hover:text-red-300 hover:bg-red-900/20">
+              <Button onClick={handleStopScan} variant="outline" size="sm" className="border-destructive text-destructive hover:text-destructive-foreground hover:bg-destructive/20">
                 <StopCircle className="h-4 w-4 mr-2" /> Stop
               </Button>
             </>
@@ -147,21 +147,21 @@ const ScanResults = () => {
               <Button onClick={handleResumeScan} variant="outline" size="sm" className="border-green-700 text-green-400 hover:text-green-300 hover:bg-green-900/20">
                 <Play className="h-4 w-4 mr-2" /> Resume
               </Button>
-              <Button onClick={handleStopScan} variant="outline" size="sm" className="border-red-700 text-red-400 hover:text-red-300 hover:bg-red-900/20">
+              <Button onClick={handleStopScan} variant="outline" size="sm" className="border-destructive text-destructive hover:text-destructive-foreground hover:bg-destructive/20">
                 <StopCircle className="h-4 w-4 mr-2" /> Stop
               </Button>
             </>
           )}
-          <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800">
+          <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
             <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
-          <Button onClick={handleDownloadReport} disabled={scan.status === 'running' || scan.status === 'paused'} className="bg-cyan-600 hover:bg-cyan-700 text-white">
+          <Button onClick={handleDownloadReport} disabled={scan.status === 'running' || scan.status === 'paused'} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-md">
             <Download className="h-4 w-4 mr-2" /> Download Report
           </Button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-6 bg-slate-950">
+      <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className={blockClass}>
             <ScanStatus scan={scan} />
@@ -258,9 +258,12 @@ const ScanResults = () => {
           )}
 
           {scan.errors && scan.errors.length > 0 && (
-            <div className={blockClass}>
-              <h3 className="text-red-400 font-semibold mb-2">Errors Encountered</h3>
-              <ul className="list-disc list-inside text-red-300 text-sm space-y-1">
+            <div className={`${blockClass} border-destructive`}>
+              <h3 className="text-destructive font-semibold mb-2 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Errors Encountered
+              </h3>
+              <ul className="list-disc list-inside text-destructive-foreground text-sm space-y-1">
                 {scan.errors.map((error, index) => (
                   <li key={index}>{error}</li>
                 ))}

@@ -76,22 +76,22 @@ const NewScan = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-sm px-6 py-4 shadow-lg">
+      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-md px-6 py-4 shadow-2xl">
         <SidebarTrigger />
         <div className="flex-1">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent flex items-center gap-3">
-            <Shield className="h-7 w-7 text-cyan-500" />
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
+            <Shield className="h-7 w-7 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
             New Reconnaissance Scan
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Configure and launch a comprehensive security and intelligence scan</p>
+          <p className="text-sm text-slate-400 mt-1">Configure and launch a comprehensive security and intelligence scan</p>
         </div>
       </header>
       
-      <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-background to-muted/20">
-        <div className="max-w-5xl mx-auto">
+      <main className="flex-1 overflow-auto p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="max-w-5xl mx-auto space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Target Input */}
-            <Card className="border-primary/20 shadow-xl transition-all duration-300 hover:shadow-2xl hover:border-primary/40">
+            <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-xl transition-all duration-300 hover:shadow-2xl hover:border-primary/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary">
                   <Globe className="h-5 w-5" />
@@ -110,14 +110,14 @@ const NewScan = () => {
                     placeholder="example.com or 192.168.1.1"
                     value={formData.target}
                     onChange={(e) => setFormData({ ...formData, target: e.target.value })}
-                    className="text-base"
+                    className="text-base bg-muted/30 border-border focus:border-primary focus:ring-primary"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Basic Scans */}
-            <Card className="shadow-lg transition-all duration-300 hover:shadow-2xl">
+            <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-blue-400">
                   <Shield className="h-5 w-5" />
@@ -154,7 +154,7 @@ const NewScan = () => {
             </Card>
 
             {/* Network & Domain Intelligence */}
-            <Card className="shadow-lg transition-all duration-300 hover:shadow-2xl">
+            <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-green-500/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-400">
                   <Network className="h-5 w-5" />
@@ -251,7 +251,7 @@ const NewScan = () => {
             </Card>
 
             {/* Vulnerability Scans */}
-            <Card className="shadow-lg border-orange-500/20 transition-all duration-300 hover:shadow-2xl hover:border-orange-500/40">
+            <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-orange-500/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-orange-400">
                   <AlertTriangle className="h-5 w-5" />
@@ -298,7 +298,7 @@ const NewScan = () => {
             </Card>
 
             {/* CMS Detection */}
-            <Card className="shadow-lg transition-all duration-300 hover:shadow-2xl">
+            <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-purple-400">
                   <Code className="h-5 w-5" />
@@ -325,7 +325,7 @@ const NewScan = () => {
             </Card>
 
             {/* SEO & Analytics */}
-            <Card className="shadow-lg transition-all duration-300 hover:shadow-2xl">
+            <Card className="bg-card/50 backdrop-blur-sm border border-pink-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-pink-500/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-pink-400">
                   <TrendingUp className="h-5 w-5" />
@@ -352,7 +352,7 @@ const NewScan = () => {
             </Card>
 
             {/* Advanced Settings */}
-            <Card className="shadow-lg transition-all duration-300 hover:shadow-2xl">
+            <Card className="bg-card/50 backdrop-blur-sm border border-gray-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-gray-500/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-gray-400">
                   <Settings2 className="h-5 w-5" />
@@ -383,6 +383,7 @@ const NewScan = () => {
                       max="100"
                       value={formData.threads}
                       onChange={(e) => setFormData({ ...formData, threads: parseInt(e.target.value) })}
+                      className="accent-primary"
                     />
                   </div>
                 </div>
@@ -396,13 +397,14 @@ const NewScan = () => {
                 variant="outline"
                 onClick={() => navigate('/')}
                 disabled={isScanning}
+                className="border-border text-foreground hover:bg-muted/50"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isScanning}
-                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-lg"
+                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-lg shadow-primary/30 transition-all duration-300 hover:scale-[1.02] text-white font-semibold"
               >
                 {isScanning ? (
                   <>
