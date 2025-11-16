@@ -37,7 +37,7 @@ const MXInfo = ({ mx }: MXInfoProps) => {
                   </Badge>
                 </div>
                 {record.ip && (
-                  <p className="text-sm text-muted-foreground">IP: <span className="text-foreground font-mono">{record.ip}</span></p> {/* Updated text color */}
+                  <p className="text-sm text-muted-foreground">IP: <span className="text-foreground font-mono">{record.ip}</span></p> 
                 )}
               </div>
             ))}
