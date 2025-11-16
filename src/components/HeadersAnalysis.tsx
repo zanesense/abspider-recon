@@ -5,16 +5,39 @@ import CORSBypassIndicator from './CORSBypassIndicator';
 import { HeaderAnalysisResult } from '@/services/headerService'; // Import the correct interface
 
 interface HeadersAnalysisProps {
-  headersAnalysis: HeaderAnalysisResult; // Change prop name and type
+  headersAnalysis?: HeaderAnalysisResult; // Make the prop optional
 }
 
-const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Destructure new prop name
-  const securityHeaders = headersAnalysis.securityHeaders || {
-    present: [],
-    missing: [],
-    score: 0,
-    grade: 'N/A',
+const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
+  // Provide a default empty object if headersAnalysis is undefined
+  const currentHeadersAnalysis: HeaderAnalysisResult = headersAnalysis || {
+    headers: {},
+    statusCode: 0,
+    securityHeaders: {
+      present: [],
+      missing: [],
+      score: 0,
+      grade: 'N/A',
+    },
+    technologies: [],
+    cookies: [],
+    cors: {
+      enabled: false,
+      issues: [],
+    },
+    cacheControl: {
+      present: false,
+      directives: [],
+      issues: [],
+    },
+    corsMetadata: {
+      usedProxy: false,
+      attemptsDirect: false,
+      attemptsViaProxy: 0,
+    }
   };
+
+  const securityHeaders = currentHeadersAnalysis.securityHeaders;
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -34,7 +57,7 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Dest
             <Shield className="h-5 w-5 text-cyan-400" />
             HTTP Headers Analysis
           </CardTitle>
-          <CORSBypassIndicator metadata={headersAnalysis.corsMetadata} /> {/* Use headersAnalysis.corsMetadata */}
+          <CORSBypassIndicator metadata={currentHeadersAnalysis.corsMetadata} />
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -42,7 +65,7 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Dest
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-slate-800 rounded-lg p-4">
             <p className="text-sm text-slate-400 mb-1">Status Code</p>
-            <p className="text-2xl font-bold text-cyan-400">{headersAnalysis.statusCode}</p> {/* Use headersAnalysis.statusCode */}
+            <p className="text-2xl font-bold text-cyan-400">{currentHeadersAnalysis.statusCode}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4">
             <p className="text-sm text-slate-400 mb-1">Security Grade</p>
@@ -55,7 +78,7 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Dest
           <div className="bg-slate-800 rounded-lg p-4">
             <p className="text-sm text-slate-400 mb-1">Technologies</p>
             <p className="text-sm text-white">
-              {headersAnalysis.technologies?.length > 0 ? headersAnalysis.technologies.join(', ') : 'None'} {/* Use headersAnalysis.technologies */}
+              {currentHeadersAnalysis.technologies?.length > 0 ? currentHeadersAnalysis.technologies.join(', ') : 'None'}
             </p>
           </div>
         </div>
@@ -124,13 +147,13 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Dest
         </div>
 
         {/* Cookies Analysis */}
-        {headersAnalysis.cookies && headersAnalysis.cookies.length > 0 && ( /* Use headersAnalysis.cookies */
+        {currentHeadersAnalysis.cookies && currentHeadersAnalysis.cookies.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-white flex items-center gap-2">
               <Info className="h-4 w-4 text-blue-400" />
-              Cookies ({headersAnalysis.cookies.length})
+              Cookies ({currentHeadersAnalysis.cookies.length})
             </h4>
-            {headersAnalysis.cookies.map((cookie: any, index: number) => (
+            {currentHeadersAnalysis.cookies.map((cookie: any, index: number) => (
               <div key={index} className="bg-slate-800 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-white">{cookie.name}</span>
@@ -157,7 +180,7 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => { // Dest
           <h4 className="text-sm font-semibold text-white">All Headers</h4>
           <div className="bg-slate-800 rounded-lg p-4 max-h-64 overflow-y-auto">
             <div className="space-y-1 font-mono text-xs">
-              {Object.entries(headersAnalysis.headers).map(([key, value]) => ( /* Use headersAnalysis.headers */
+              {Object.entries(currentHeadersAnalysis.headers).map(([key, value]) => (
                 <div key={key} className="flex gap-2">
                   <span className="text-cyan-400">{key}:</span>
                   <span className="text-slate-400 break-all">{String(value)}</span>
