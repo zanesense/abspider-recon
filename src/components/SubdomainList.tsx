@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Network, ExternalLink, Database, Globe, FileText } from 'lucide-react';
+import { Network, ExternalLink } from 'lucide-react';
 import { SubdomainResult } from '@/services/subdomainService'; // Import SubdomainResult
 
 interface SubdomainListProps {
@@ -12,34 +12,34 @@ const SubdomainList = ({ subdomains }: SubdomainListProps) => {
 
   if (!Array.isArray(subdomainArray) || subdomainArray.length === 0) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="bg-slate-900 border-slate-800">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Network className="h-5 w-5 text-cyan-500" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Network className="h-5 w-5 text-cyan-400" />
             Discovered Subdomains (0)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-sm">No subdomains discovered</p>
+          <p className="text-slate-400 text-sm">No subdomains discovered</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Network className="h-5 w-5 text-cyan-500" />
+        <CardTitle className="flex items-center gap-2 text-white">
+          <Network className="h-5 w-5 text-cyan-400" />
           Discovered Subdomains ({subdomainArray.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
           {Object.entries(sources).map(([sourceName, count]) => (
-            <div key={sourceName} className="bg-muted p-3 rounded-lg flex items-center justify-between">
-              <span className="text-sm text-muted-foreground capitalize">{sourceName.replace('crtsh', 'crt.sh')}</span>
-              <span className="text-foreground font-medium">{count}</span>
+            <div key={sourceName} className="bg-slate-800 p-3 rounded-lg flex items-center justify-between">
+              <span className="text-sm text-slate-400 capitalize">{sourceName.replace('crtsh', 'crt.sh')}</span>
+              <span className="text-white font-medium">{count}</span>
             </div>
           ))}
         </div>
@@ -51,12 +51,12 @@ const SubdomainList = ({ subdomains }: SubdomainListProps) => {
               href={`https://${subdomain}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between bg-muted px-4 py-3 rounded-lg hover:bg-muted/80 transition-colors group"
+              className="flex items-center justify-between bg-slate-800 px-4 py-3 rounded-lg hover:bg-slate-750 transition-colors group"
             >
-              <span className="text-foreground font-mono text-sm group-hover:text-primary transition-colors">
+              <span className="text-white font-mono text-sm group-hover:text-cyan-400 transition-colors">
                 {subdomain}
               </span>
-              <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+              <ExternalLink className="h-3 w-3 text-slate-500 group-hover:text-cyan-400 transition-colors" />
             </a>
           ))}
         </div>

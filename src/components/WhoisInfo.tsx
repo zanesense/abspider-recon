@@ -57,14 +57,14 @@ const WhoisInfo = ({ whois }: WhoisInfoProps) => {
           <div className="space-y-4">
             <div>
               <p className="text-sm text-slate-400 mb-1 flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
+                <Calendar className="h-3 w-3 text-slate-500" />
                 Created
               </p>
               <p className="text-white">{whois.created || 'N/A'}</p>
             </div>
             <div>
               <p className="text-sm text-slate-400 mb-1 flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
+                <Calendar className="h-3 w-3 text-slate-500" />
                 Expires
               </p>
               <p className="text-white">{whois.expires || 'N/A'}</p>
@@ -72,7 +72,7 @@ const WhoisInfo = ({ whois }: WhoisInfoProps) => {
             {whois.updated && (
               <div>
                 <p className="text-sm text-slate-400 mb-1 flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
+                  <Calendar className="h-3 w-3 text-slate-500" />
                   Last Updated
                 </p>
                 <p className="text-white">{whois.updated}</p>
@@ -80,7 +80,7 @@ const WhoisInfo = ({ whois }: WhoisInfoProps) => {
             )}
             <div>
               <p className="text-sm text-slate-400 mb-1 flex items-center gap-1">
-                <Server className="h-3 w-3" />
+                <Server className="h-3 w-3 text-slate-500" />
                 Nameservers
               </p>
               <div className="space-y-1">

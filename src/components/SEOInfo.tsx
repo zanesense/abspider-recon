@@ -55,7 +55,7 @@ const SEOInfo = ({ seo }: SEOInfoProps) => {
           </div>
           <div className="bg-slate-800 rounded-lg p-4">
             <p className="text-sm text-slate-400 mb-1 flex items-center gap-1">
-              <Image className="h-3 w-3" />
+              <Image className="h-3 w-3 text-slate-500" />
               Images
             </p>
             <p className="text-white font-bold text-xl">{seo.imageCount}</p>
@@ -102,7 +102,7 @@ const SEOInfo = ({ seo }: SEOInfoProps) => {
 
         <div>
           <p className="text-sm text-slate-400 mb-3 flex items-center gap-1">
-            <LinkIcon className="h-3 w-3" />
+            <LinkIcon className="h-3 w-3 text-slate-500" />
             Link Analysis
           </p>
           <div className="grid grid-cols-3 gap-4">

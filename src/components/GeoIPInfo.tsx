@@ -30,10 +30,10 @@ const GeoIPInfo = ({ geoip }: GeoIPInfoProps) => {
   const rightFields = fields.slice(mid);
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-purple-500" />
+        <CardTitle className="flex items-center gap-2 text-white">
+          <MapPin className="h-5 w-5 text-purple-400" />
           GeoIP Information
         </CardTitle>
       </CardHeader>
@@ -41,10 +41,10 @@ const GeoIPInfo = ({ geoip }: GeoIPInfoProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
             {leftFields.map((f, index) => (
-              <div key={index} className="bg-muted rounded-lg p-3">
-                <p className="text-sm text-muted-foreground mb-1">{f.label}</p>
-                <p className="text-foreground font-mono flex items-center gap-2">
-                  {f.icon && <f.icon className="h-4 w-4 text-muted-foreground" />}
+              <div key={index} className="bg-slate-800 rounded-lg p-3">
+                <p className="text-sm text-slate-400 mb-1">{f.label}</p>
+                <p className="text-white font-mono flex items-center gap-2">
+                  {f.icon && <f.icon className="h-4 w-4 text-slate-500" />}
                   {f.flag && <span className="text-2xl">{f.flag}</span>}
                   {f.value}
                 </p>
@@ -53,10 +53,10 @@ const GeoIPInfo = ({ geoip }: GeoIPInfoProps) => {
           </div>
           <div className="space-y-3">
             {rightFields.map((f, index) => (
-              <div key={index} className="bg-muted rounded-lg p-3">
-                <p className="text-sm text-muted-foreground mb-1">{f.label}</p>
-                <p className="text-foreground font-mono flex items-center gap-2">
-                  {f.icon && <f.icon className="h-4 w-4 text-muted-foreground" />}
+              <div key={index} className="bg-slate-800 rounded-lg p-3">
+                <p className="text-sm text-slate-400 mb-1">{f.label}</p>
+                <p className="text-white font-mono flex items-center gap-2">
+                  {f.icon && <f.icon className="h-4 w-4 text-slate-500" />}
                   {f.flag && <span className="text-2xl">{f.flag}</span>}
                   {f.value}
                 </p>
