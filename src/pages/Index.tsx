@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/SupabaseClient';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react'; // Correctly imported Loader2
 
 export default function Index() {
   const navigate = useNavigate();
