@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Send, Pause, Play, StopCircle } from 'lucide-react';
+import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getScanById, pauseScan, resumeScan, stopScan } from '@/services/scanService';
 import { generatePDFReport } from '@/services/reportService';
@@ -23,6 +23,7 @@ import XSSVulnerabilities from '@/components/XSSVulnerabilities';
 import LFIVulnerabilities from '@/components/LFIVulnerabilities';
 import WordPressInfo from '@/components/WordPressInfo';
 import SEOInfo from '@/components/SEOInfo';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ScanResults = () => {
   const { id } = useParams();
