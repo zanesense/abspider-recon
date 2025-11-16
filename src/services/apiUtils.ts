@@ -48,11 +48,30 @@ export const makeRequest = async (
 export const normalizeUrl = (target: string): string => {
   let url = target.trim();
   
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://' + url;
+  // 1. Try to parse as is (if it already has a protocol)
+  try {
+    new URL(url);
+    return url;
+  } catch (e) {
+    // 2. If not, try prepending https://
+    try {
+      const prefixedUrl = `https://${url}`;
+      new URL(prefixedUrl);
+      return prefixedUrl;
+    } catch (e2) {
+      // 3. If still not a valid URL, check if it's a raw IP or localhost
+      if (isIPv4(url) || isIPv6(url)) {
+        return `https://${url}`; // Force https for raw IPs
+      }
+      if (url === 'localhost' || url.startsWith('localhost:')) {
+        return `http://${url}`; // localhost often uses http
+      }
+      
+      // If all attempts fail, it's genuinely an invalid URL string.
+      // Throwing here is acceptable because extractHostname will catch it.
+      throw new Error(`Cannot normalize invalid URL string: ${target}`);
+    }
   }
-  
-  return url;
 };
 
 export const extractDomain = (target: string): string => {
@@ -68,9 +87,22 @@ export const extractDomain = (target: string): string => {
 };
 
 export const extractHostname = (target: string): string => {
-  const url = normalizeUrl(target);
-  const urlObj = new URL(url);
-  return urlObj.hostname;
+  if (!target) return ''; // Handle empty target gracefully
+  try {
+    // Attempt to normalize and then extract hostname
+    const url = normalizeUrl(target); // This might throw if target is truly unparseable
+    const urlObj = new URL(url);
+    return urlObj.hostname;
+  } catch (e) {
+    // If normalizeUrl or new URL fails, try to treat target as a raw hostname/IP
+    console.warn(`[apiUtils] Failed to extract hostname from "${target}":`, e);
+    // A simple heuristic: if it doesn't contain spaces and has at least one dot,
+    // or is a valid IP, treat it as a hostname.
+    if (!target.includes(' ') && (target.includes('.') || isIPv4(target) || isIPv6(target))) {
+      return target; // Return the raw target as hostname
+    }
+    return ''; // For anything else, return empty string
+  }
 };
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -90,7 +122,7 @@ const isIPv4 = (ip: string): boolean => {
 };
 
 const isIPv6 = (ip: string): boolean => {
-  const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|::((:[0-9a-fA-F]{1,4}){1,7}|)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+  const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|::((:[0-9a-fA-F]{1,7})|)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
   return ipv6Regex.test(ip);
 };
 
