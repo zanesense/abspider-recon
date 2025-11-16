@@ -12,7 +12,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Shield, Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User } from 'lucide-react';
+import { Shield, Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User, Loader2 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/SupabaseClient'; // Import supabase
