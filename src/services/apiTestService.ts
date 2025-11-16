@@ -6,31 +6,13 @@ interface APIKeyTestResult {
   message?: string;
 }
 
-const API_TEST_TIMEOUT = 15000; // Increased to 15 seconds timeout for API tests
-
-// Helper to make a fetch request with a timeout
-async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_TEST_TIMEOUT);
-
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error('Request timed out');
-    }
-    throw error;
-  }
-}
+const API_TEST_TIMEOUT = 15000; // 15 seconds timeout for API tests
 
 export const testShodanAPI = async (apiKey: string): Promise<APIKeyTestResult> => {
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
     const url = `https://api.shodan.io/api-info?key=${apiKey}`;
-    const response = await fetchWithTimeout(url);
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
     const data = await response.json();
 
     if (response.ok && data.query_credits !== undefined) {
@@ -46,16 +28,13 @@ export const testShodanAPI = async (apiKey: string): Promise<APIKeyTestResult> =
 export const testVirusTotalAPI = async (apiKey: string): Promise<APIKeyTestResult> => {
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
-    // Use a public, known-safe URL for testing
-    const testUrl = 'example.com';
+    const testUrl = 'example.com'; 
     const url = `https://www.virustotal.com/vtapi/v2/url/report?apikey=${apiKey}&resource=${testUrl}`;
-    
-    // Use corsProxy.fetch instead of direct fetchWithTimeout for better CORS handling
     const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
     const data = await response.json();
 
     if (response.ok && data.response_code !== undefined) {
-      if (data.response_code === 1 || data.response_code === 0) { // 1: found, 0: not found (both indicate valid key)
+      if (data.response_code === 1 || data.response_code === 0) {
         return { success: true, message: 'VirusTotal API is valid.' };
       } else {
         return { success: false, message: data.verbose_msg || 'Invalid VirusTotal API Key.' };
@@ -72,8 +51,9 @@ export const testSecurityTrailsAPI = async (apiKey: string): Promise<APIKeyTestR
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
     const url = `https://api.securitytrails.com/v1/ping`;
-    const response = await fetchWithTimeout(url, {
-      headers: { 'APIKEY': apiKey }
+    const response = await corsProxy.fetch(url, {
+      headers: { 'APIKEY': apiKey },
+      timeout: API_TEST_TIMEOUT
     });
     const data = await response.json();
 
@@ -90,10 +70,9 @@ export const testSecurityTrailsAPI = async (apiKey: string): Promise<APIKeyTestR
 export const testBuiltWithAPI = async (apiKey: string): Promise<APIKeyTestResult> => {
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
-    // Use a public, known-safe domain for testing
     const testDomain = 'example.com';
     const url = `https://api.builtwith.com/v1/api.json?key=${apiKey}&lookup=${testDomain}`;
-    const response = await fetchWithTimeout(url);
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
     const data = await response.json();
 
     if (response.ok && data.Results) {
@@ -109,11 +88,10 @@ export const testBuiltWithAPI = async (apiKey: string): Promise<APIKeyTestResult
 export const testOpenCageAPI = async (apiKey: string): Promise<APIKeyTestResult> => {
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
-    // Use known coordinates for testing
     const testLat = 40.7128;
     const testLon = -74.0060;
     const url = `https://api.opencagedata.com/geocode/v1/json?q=${testLat}+${testLon}&key=${apiKey}`;
-    const response = await fetchWithTimeout(url);
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
     const data = await response.json();
 
     if (response.ok && data.results) {
@@ -129,10 +107,9 @@ export const testOpenCageAPI = async (apiKey: string): Promise<APIKeyTestResult>
 export const testHunterAPI = async (apiKey: string): Promise<APIKeyTestResult> => {
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
-    // Use a dummy email for testing
     const testEmail = 'test@example.com';
     const url = `https://api.hunter.io/v2/email-verifier?email=${testEmail}&api_key=${apiKey}`;
-    const response = await fetchWithTimeout(url);
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
     const data = await response.json();
 
     if (response.ok && data.data) {
@@ -148,14 +125,13 @@ export const testHunterAPI = async (apiKey: string): Promise<APIKeyTestResult> =
 export const testClearbitAPI = async (apiKey: string): Promise<APIKeyTestResult> => {
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
-    // Use a dummy domain for testing
     const testDomain = 'google.com';
     const url = `https://company.clearbit.com/v1/companies/find?domain=${testDomain}`;
-    const response = await fetchWithTimeout(url, {
-      headers: { 'Authorization': `Bearer ${apiKey}` }
+    const response = await corsProxy.fetch(url, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+      timeout: API_TEST_TIMEOUT
     });
 
-    // Clearbit returns 401 for invalid key, 404 for not found, 200 for valid
     if (response.status === 200 || response.status === 404) {
       return { success: true, message: 'Clearbit API is valid.' };
     } else if (response.status === 401) {
