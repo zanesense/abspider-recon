@@ -220,7 +220,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     errors: [],
     progress: {
       current: 0,
-      total: tasks.length,
+      total: 0, // Will be updated after tasks are determined
       stage: 'Initializing',
     },
   };
@@ -253,7 +253,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
 
   updateScan(newScan);
 
-  performScan(newScan).catch((error) => {
+  performScan(newScan, abortController, requestManager).catch((error) => {
     console.error(`[Scan Failed] Scan ${newScan.id} encountered critical error:`, error);
     newScan.status = 'completed';
     newScan.completedAt = new Date().toISOString();
@@ -295,7 +295,7 @@ const checkScanControl = async (scanId: string): Promise<boolean> => {
   return false;
 };
 
-const performScan = async (scan: Scan) => {
+const performScan = async (scan: Scan, abortController: AbortController, requestManager: RequestManager) => {
   const { config } = scan;
   const tasks: string[] = [];
   
@@ -314,9 +314,6 @@ const performScan = async (scan: Scan) => {
   if (config.lfi) tasks.push('lfi');
   if (config.wordpress) tasks.push('wordpress');
   if (config.seo) tasks.push('seo');
-
-  const controller = scanControllers.get(scan.id);
-  const requestManager = controller?.requestManager;
 
   scan.progress = {
     current: 0,
@@ -352,15 +349,8 @@ const performScan = async (scan: Scan) => {
       scan.progress.stage = 'Analyzing HTTP headers';
       updateScan(scan);
       const result = await performFullHeaderAnalysis(config.target, config.useProxy);
-      scan.results.headers = result.headers;
-      scan.results.headers._analysis = {
-        statusCode: result.statusCode,
-        securityHeaders: result.securityHeaders,
-        technologies: result.technologies,
-        cookies: result.cookies,
-        cacheControl: result.cacheControl,
-        cors: result.cors,
-      };
+      // Store the full analysis result directly
+      scan.results.headers = result; 
       console.log('[Headers] ✓ Success');
     } catch (error: any) {
       console.error('[Headers] ✗ Error:', error);
@@ -485,7 +475,8 @@ const performScan = async (scan: Scan) => {
     try {
       scan.progress.stage = 'Enumerating subdomains';
       updateScan(scan);
-      const result = await enumerateSubdomains(config.target, config.threads);
+      // Pass the main abortController to enumerateSubdomains
+      const result = await enumerateSubdomains(config.target, config.threads, abortController);
       scan.results.subdomains = result; // Store the full SubdomainResult object
       console.log('[Subdomains] ✓ Success');
     } catch (error: any) {

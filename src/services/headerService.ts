@@ -22,9 +22,13 @@ export interface HeaderAnalysisResult {
   technologies: string[];
   cookies: Array<{
     name: string;
+    value: string;
     secure: boolean;
     httpOnly: boolean;
-    sameSite?: string;
+    sameSite?: 'Strict' | 'Lax' | 'None';
+    domain?: string;
+    path?: string;
+    expires?: string;
     issues: string[];
   }>;
   cacheControl?: {
@@ -36,6 +40,8 @@ export interface HeaderAnalysisResult {
     enabled: boolean;
     allowOrigin?: string;
     allowMethods?: string;
+    allowHeaders?: string;
+    exposeHeaders?: string;
     issues: string[];
   };
   corsMetadata?: CORSBypassMetadata;
@@ -45,48 +51,67 @@ const SECURITY_HEADERS = [
   {
     name: 'Strict-Transport-Security',
     severity: 'critical' as const,
-    recommendation: 'Enable HSTS with max-age of at least 31536000 seconds (1 year)',
+    recommendation: 'Enable HSTS with max-age of at least 31536000 seconds (1 year) and includeSubDomains',
     check: (value?: string) => {
       if (!value) return false;
-      const maxAge = value.match(/max-age=(\d+)/);
-      return maxAge && parseInt(maxAge[1]) >= 31536000;
+      const maxAgeMatch = value.match(/max-age=(\d+)/i);
+      const includeSubDomains = /includesubdomains/i.test(value);
+      return maxAgeMatch && parseInt(maxAgeMatch[1]) >= 31536000 && includeSubDomains;
     }
   },
   {
     name: 'Content-Security-Policy',
     severity: 'critical' as const,
-    recommendation: 'Implement a strict CSP to prevent XSS attacks',
-    check: (value?: string) => !!value && value.length > 20
+    recommendation: 'Implement a strict CSP to prevent XSS attacks and data injection. Start with a reporting-only policy.',
+    check: (value?: string) => !!value && value.length > 20 && !/unsafe-inline|unsafe-eval/i.test(value)
   },
   {
     name: 'X-Frame-Options',
     severity: 'high' as const,
-    recommendation: 'Set to DENY or SAMEORIGIN to prevent clickjacking',
+    recommendation: 'Set to DENY or SAMEORIGIN to prevent clickjacking attacks.',
     check: (value?: string) => value === 'DENY' || value === 'SAMEORIGIN'
   },
   {
     name: 'X-Content-Type-Options',
     severity: 'high' as const,
-    recommendation: 'Set to nosniff to prevent MIME type sniffing',
+    recommendation: 'Set to nosniff to prevent MIME type sniffing attacks.',
     check: (value?: string) => value === 'nosniff'
   },
   {
     name: 'Referrer-Policy',
     severity: 'medium' as const,
-    recommendation: 'Set to no-referrer or strict-origin-when-cross-origin',
-    check: (value?: string) => value === 'no-referrer' || value === 'strict-origin-when-cross-origin'
+    recommendation: 'Set to no-referrer, same-origin, or strict-origin-when-cross-origin to control referrer information leakage.',
+    check: (value?: string) => ['no-referrer', 'same-origin', 'strict-origin-when-cross-origin'].includes(value || '')
   },
   {
     name: 'Permissions-Policy',
     severity: 'medium' as const,
-    recommendation: 'Restrict browser features to prevent abuse',
-    check: (value?: string) => !!value
+    recommendation: 'Restrict browser features (e.g., camera, microphone) to prevent abuse by third-party content.',
+    check: (value?: string) => !!value && value.length > 0
   },
   {
     name: 'X-XSS-Protection',
     severity: 'low' as const,
-    recommendation: 'Set to 1; mode=block (legacy browsers)',
+    recommendation: 'Set to 1; mode=block for legacy browser XSS protection (modern browsers use CSP).',
     check: (value?: string) => value === '1; mode=block'
+  },
+  {
+    name: 'Cross-Origin-Embedder-Policy',
+    severity: 'high' as const,
+    recommendation: 'Set to require-corp to enable cross-origin isolation and powerful features like SharedArrayBuffer.',
+    check: (value?: string) => value === 'require-corp'
+  },
+  {
+    name: 'Cross-Origin-Opener-Policy',
+    severity: 'high' as const,
+    recommendation: 'Set to same-origin or same-origin-allow-popups to protect against cross-origin attacks.',
+    check: (value?: string) => ['same-origin', 'same-origin-allow-popups'].includes(value || '')
+  },
+  {
+    name: 'Cross-Origin-Resource-Policy',
+    severity: 'medium' as const,
+    recommendation: 'Set to same-origin or same-site to prevent other websites from loading your resources.',
+    check: (value?: string) => ['same-origin', 'same-site'].includes(value || '')
   },
 ];
 
@@ -116,9 +141,10 @@ export const performFullHeaderAnalysis = async (
     
     for (const header of SECURITY_HEADERS) {
       const value = headers[header.name.toLowerCase()];
-      const isSecure = header.check(value);
+      const isPresent = !!value;
+      const isSecure = isPresent ? header.check(value) : false;
       
-      if (value) {
+      if (isPresent) {
         present.push({
           name: header.name,
           value,
@@ -158,56 +184,95 @@ export const performFullHeaderAnalysis = async (
     
     const poweredBy = headers['x-powered-by'];
     if (poweredBy) technologies.push(poweredBy);
+
+    const contentType = headers['content-type'];
+    if (contentType?.includes('php')) technologies.push('PHP');
+    if (contentType?.includes('asp.net')) technologies.push('ASP.NET');
+    if (headers['x-generator']?.includes('WordPress')) technologies.push('WordPress');
+    if (headers['x-drupal-cache']) technologies.push('Drupal');
+    if (headers['x-shopify-stage']) technologies.push('Shopify');
     
     // Analyze cookies
-    const cookies: Array<any> = [];
-    const setCookie = headers['set-cookie'];
-    if (setCookie) {
-      const cookieStrings = Array.isArray(setCookie) ? setCookie : [setCookie];
+    const cookies: HeaderAnalysisResult['cookies'] = [];
+    const setCookieHeader = response.headers.get('set-cookie');
+    if (setCookieHeader) {
+      const cookieStrings = setCookieHeader.split(/,(?=\s*[a-zA-Z0-9_]+=)/g); // Split by comma, but not if it's part of a date
       
       for (const cookieStr of cookieStrings) {
-        const parts = cookieStr.split(';');
+        const parts = cookieStr.split(';').map(s => s.trim());
         const [nameValue] = parts;
-        const [name] = nameValue.split('=');
+        const [name, value] = nameValue.split('=');
         
-        const secure = cookieStr.toLowerCase().includes('secure');
-        const httpOnly = cookieStr.toLowerCase().includes('httponly');
-        const sameSiteMatch = cookieStr.match(/samesite=(\w+)/i);
-        const sameSite = sameSiteMatch ? sameSiteMatch[1] : undefined;
+        const secure = parts.some(p => p.toLowerCase() === 'secure');
+        const httpOnly = parts.some(p => p.toLowerCase() === 'httponly');
+        const sameSiteMatch = parts.find(p => p.toLowerCase().startsWith('samesite='));
+        const sameSite = sameSiteMatch ? (sameSiteMatch.split('=')[1] as 'Strict' | 'Lax' | 'None') : undefined;
+        const domainMatch = parts.find(p => p.toLowerCase().startsWith('domain='));
+        const domain = domainMatch ? domainMatch.split('=')[1] : undefined;
+        const pathMatch = parts.find(p => p.toLowerCase().startsWith('path='));
+        const path = pathMatch ? pathMatch.split('=')[1] : undefined;
+        const expiresMatch = parts.find(p => p.toLowerCase().startsWith('expires='));
+        const expires = expiresMatch ? expiresMatch.split('=')[1] : undefined;
         
         const issues: string[] = [];
-        if (!secure) issues.push('Missing Secure flag');
-        if (!httpOnly) issues.push('Missing HttpOnly flag');
-        if (!sameSite) issues.push('Missing SameSite attribute');
+        if (!secure) issues.push('Missing Secure flag (cookie transmitted over HTTP)');
+        if (!httpOnly) issues.push('Missing HttpOnly flag (cookie accessible via JavaScript)');
+        if (!sameSite) issues.push('Missing SameSite attribute (vulnerable to CSRF)');
+        else if (sameSite.toLowerCase() === 'none' && !secure) issues.push('SameSite=None requires Secure flag');
         
-        cookies.push({ name, secure, httpOnly, sameSite, issues });
+        cookies.push({ name, value, secure, httpOnly, sameSite, domain, path, expires, issues });
       }
     }
     
     // Analyze cache control
-    const cacheControl = headers['cache-control'];
-    const cacheAnalysis = cacheControl ? {
+    const cacheControlHeader = headers['cache-control'];
+    const cacheAnalysis = cacheControlHeader ? {
       present: true,
-      directives: cacheControl.split(',').map(d => d.trim()),
+      directives: cacheControlHeader.split(',').map(d => d.trim()),
       issues: [] as string[],
     } : {
       present: false,
       directives: [],
-      issues: ['Cache-Control header missing'],
+      issues: ['Cache-Control header missing (may lead to unintended caching)'],
     };
+
+    if (cacheAnalysis.present) {
+      const directives = cacheAnalysis.directives.map(d => d.toLowerCase());
+      if (directives.includes('no-store')) {
+        // Good for sensitive data
+      } else if (directives.includes('no-cache')) {
+        // Requires revalidation
+      } else if (directives.includes('private') && !directives.includes('no-cache') && !directives.includes('no-store')) {
+        cacheAnalysis.issues.push('Private cache control without no-cache/no-store may still cache sensitive data in browser cache.');
+      }
+      if (!directives.includes('max-age') && !directives.includes('s-maxage')) {
+        cacheAnalysis.issues.push('Missing max-age or s-maxage directive (cache duration not explicitly set).');
+      }
+    }
     
     // Analyze CORS
     const corsOrigin = headers['access-control-allow-origin'];
     const corsMethods = headers['access-control-allow-methods'];
+    const corsHeaders = headers['access-control-allow-headers'];
+    const corsExposeHeaders = headers['access-control-expose-headers'];
+
     const corsAnalysis = {
       enabled: !!corsOrigin,
       allowOrigin: corsOrigin,
       allowMethods: corsMethods,
+      allowHeaders: corsHeaders,
+      exposeHeaders: corsExposeHeaders,
       issues: [] as string[],
     };
     
     if (corsOrigin === '*') {
-      corsAnalysis.issues.push('CORS allows all origins - potential security risk');
+      corsAnalysis.issues.push('CORS allows all origins (`*`) - potential security risk for sensitive resources.');
+    }
+    if (corsMethods?.includes('*')) {
+      corsAnalysis.issues.push('CORS allows all methods (`*`) - potential security risk.');
+    }
+    if (corsHeaders?.includes('*')) {
+      corsAnalysis.issues.push('CORS allows all headers (`*`) - potential security risk.');
     }
     
     console.log(`[Headers] Analysis complete - Grade: ${grade}, Score: ${score}/${maxScore}`);
