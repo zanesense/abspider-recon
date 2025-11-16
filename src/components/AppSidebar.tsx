@@ -27,7 +27,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar className="border-r border-border">
+    <Sidebar className="border-r border-border bg-gradient-to-b from-slate-900 to-slate-950 shadow-xl">
       <SidebarHeader className="border-b border-border bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="flex items-center gap-3 px-4 py-4">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg">
@@ -49,7 +49,13 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.href}>
-                    <Link to={item.href} className="flex items-center gap-3 transition-all hover:translate-x-1">
+                    <Link 
+                      to={item.href} 
+                      className="flex items-center gap-3 transition-all hover:translate-x-1 
+                                 hover:text-primary data-[active=true]:text-primary 
+                                 data-[active=true]:bg-primary/10 data-[active=true]:border-l-4 
+                                 data-[active=true]:border-primary data-[active=true]:font-semibold"
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
@@ -81,7 +87,7 @@ export function AppSidebar() {
           onClick={toggleTheme}
           variant="outline"
           size="sm"
-          className="w-full justify-start gap-2"
+          className="w-full justify-start gap-2 bg-muted/30 hover:bg-muted/50 border-border text-foreground"
         >
           {theme === 'light' ? (
             <>

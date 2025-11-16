@@ -10,12 +10,11 @@ const Footer = () => {
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <span className="font-medium">© {currentYear} ABSpider</span>
             <span className="text-border">•</span>
-            {/* CLEANED UP FORMATTING HERE */}
             <a
               href="https://zanesense.github.io/abspider-recon/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary/80 transition-colors"
+              className="text-muted-foreground hover:text-primary transition-colors"
             >
               Documentation
             </a>

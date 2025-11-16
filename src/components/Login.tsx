@@ -25,25 +25,25 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 font-sans px-4">
-      <div className="bg-gray-800 rounded-xl shadow-xl p-8 w-full max-w-md border border-gray-700">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-sans px-4">
+      <div className="bg-card rounded-xl shadow-xl p-8 w-full max-w-md border border-border">
         {/* Welcome Back with Alert Icon */}
-        <h2 className="text-2xl font-semibold text-center mb-4 text-gray-100 flex items-center justify-center gap-2">
+        <h2 className="text-2xl font-semibold text-center mb-4 text-foreground flex items-center justify-center gap-2">
           <AlertCircle className="w-6 h-6 text-yellow-400 animate-bounce" />
           Welcome Back
         </h2>
 
-        <p className="text-gray-400 text-center mb-6">Login with your email</p>
+        <p className="text-muted-foreground text-center mb-6">Login with your email</p>
 
         {/* Email Input with Icon */}
-        <div className="flex items-center mb-4 bg-gray-700 rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-500 transition">
-          <Mail className="w-5 h-5 text-gray-400 mr-2" />
+        <div className="flex items-center mb-4 bg-muted/30 rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-primary transition border border-border">
+          <Mail className="w-5 h-5 text-muted-foreground mr-2" />
           <input
             type="email"
             placeholder="Your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-gray-700 text-gray-100 placeholder-gray-400 w-full outline-none"
+            className="bg-transparent text-foreground placeholder-muted-foreground w-full outline-none"
           />
         </div>
 
@@ -51,7 +51,7 @@ export default function Login() {
         <button
           onClick={handleMagicLinkLogin}
           disabled={loading}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200 rounded-md py-2 mt-4 flex items-center justify-center font-medium"
+          className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 transition-colors duration-200 rounded-md py-2 mt-4 flex items-center justify-center font-medium text-white shadow-lg shadow-primary/30"
         >
           {loading ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
           {loading ? "Sending..." : "Send Link"}
@@ -70,9 +70,9 @@ export default function Login() {
         )}
 
         {/* Alert Card Below Form */}
-        <div className="flex items-start bg-gray-700 border-l-4 border-yellow-400 text-yellow-400 mt-6 p-4 rounded-md gap-3">
+        <div className="flex items-start bg-muted/30 border-l-4 border-yellow-400 text-yellow-400 mt-6 p-4 rounded-md gap-3 border border-border">
           <Shield className="w-6 h-6 flex-shrink-0" />
-          <p className="text-sm">
+          <p className="text-sm text-muted-foreground">
             This step is crucial! Verifying your email helps prevent unauthorized access to the tool and to prevent illegal activities.
           </p>
         </div>

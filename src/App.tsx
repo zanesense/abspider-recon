@@ -36,7 +36,7 @@ function App() {
               <Sonner />
               <RequireAuth>
                 <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
+                  <div className="flex min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"> {/* Added background gradient here */}
                     <AppSidebar />
                     <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
                       <div className="flex-1">

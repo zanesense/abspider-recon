@@ -36,13 +36,13 @@ const LegalDisclaimer = () => {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card border-border" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
+          <DialogTitle className="flex items-center gap-2 text-2xl text-foreground">
             <Scale className="h-6 w-6 text-red-500" />
             Legal Disclaimer & Terms of Use
           </DialogTitle>
-          <DialogDescription className="text-base">
+          <DialogDescription className="text-base text-muted-foreground">
             Please read and accept these terms before using ABSpider
           </DialogDescription>
         </DialogHeader>
@@ -53,7 +53,7 @@ const LegalDisclaimer = () => {
             <AlertTitle className="text-red-600 dark:text-red-400 font-bold">
               IMPORTANT: AUTHORIZED USE ONLY
             </AlertTitle>
-            <AlertDescription className="text-sm mt-2">
+            <AlertDescription className="text-sm mt-2 text-red-500 dark:text-red-300">
               This tool is designed for security professionals, penetration testers, and website owners
               to test their OWN systems or systems they have EXPLICIT WRITTEN PERMISSION to test.
             </AlertDescription>
@@ -61,7 +61,7 @@ const LegalDisclaimer = () => {
 
           <div className="space-y-3 text-sm">
             <div className="bg-muted/50 rounded-lg p-4 border border-border">
-              <h3 className="font-bold text-base mb-2 flex items-center gap-2">
+              <h3 className="font-bold text-base mb-2 flex items-center gap-2 text-foreground">
                 <Shield className="h-4 w-4 text-primary" />
                 Authorized Use
               </h3>
@@ -74,7 +74,7 @@ const LegalDisclaimer = () => {
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 border border-border">
-              <h3 className="font-bold text-base mb-2">Legal Compliance</h3>
+              <h3 className="font-bold text-base mb-2 text-foreground">Legal Compliance</h3>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                 <li>Comply with all applicable laws including Computer Fraud and Abuse Act (CFAA), GDPR, and local regulations</li>
                 <li>Unauthorized access to computer systems is a criminal offense in most jurisdictions</li>
@@ -84,7 +84,7 @@ const LegalDisclaimer = () => {
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 border border-border">
-              <h3 className="font-bold text-base mb-2">Disclaimer of Liability</h3>
+              <h3 className="font-bold text-base mb-2 text-foreground">Disclaimer of Liability</h3>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                 <li>This tool is provided "AS IS" without warranty of any kind</li>
                 <li>The developers are not responsible for any misuse or damage caused by this tool</li>
@@ -95,7 +95,7 @@ const LegalDisclaimer = () => {
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 border border-border">
-              <h3 className="font-bold text-base mb-2">Ethical Use</h3>
+              <h3 className="font-bold text-base mb-2 text-foreground">Ethical Use</h3>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                 <li>Use this tool responsibly and ethically</li>
                 <li>Report vulnerabilities to website owners through responsible disclosure</li>
@@ -108,7 +108,7 @@ const LegalDisclaimer = () => {
 
           <Alert className="border-yellow-500/50 bg-yellow-500/10">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <AlertDescription className="text-sm">
+            <AlertDescription className="text-sm text-yellow-500 dark:text-yellow-300">
               <strong>By using this tool, you acknowledge that:</strong>
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>You have read and understood this disclaimer</li>
@@ -130,7 +130,7 @@ const LegalDisclaimer = () => {
             />
             <label
               htmlFor="agree"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-foreground"
             >
               I have read, understood, and agree to these terms
             </label>
@@ -139,14 +139,14 @@ const LegalDisclaimer = () => {
             <Button
               variant="outline"
               onClick={handleDecline}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none border-border text-foreground hover:bg-muted/50"
             >
               Decline
             </Button>
             <Button
               onClick={handleAgree}
               disabled={!agreed}
-              className="flex-1 sm:flex-none bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+              className="flex-1 sm:flex-none bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-lg shadow-primary/30"
             >
               Accept & Continue
             </Button>
