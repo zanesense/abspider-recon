@@ -64,10 +64,10 @@ const NewScan = () => {
         description: `Scanning ${formData.target}...`,
       });
       navigate(`/scan/${scanId}`);
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to start scan",
+        title: "Failed to Start Scan",
+        description: error.message || "An unexpected error occurred while trying to start the scan.",
         variant: "destructive",
       });
       setIsScanning(false);

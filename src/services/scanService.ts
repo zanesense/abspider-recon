@@ -89,6 +89,15 @@ function loadScansFromStorage(): Scan[] {
   }
 }
 
+function saveScansToStorage(scans: Scan[]) {
+  try {
+    localStorage.setItem(SCAN_STORAGE_KEY, JSON.stringify(scans));
+  } catch (error) {
+    console.error('Failed to save scans to localStorage:', error);
+    throw new Error('Failed to save scan data. Local storage might be full or inaccessible.');
+  }
+}
+
 // Modified updateScan to accept a full Scan object
 function updateScan(scanToUpdate: Scan) {
   try {
@@ -122,100 +131,114 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     errors: [],
   };
 
-  scansCache = [newScan, ...scansCache];
-  saveScansToStorage(scansCache);
+  try {
+    scansCache = [newScan, ...scansCache];
+    saveScansToStorage(scansCache);
+  } catch (error: any) {
+    throw new Error(`Failed to initialize scan: ${error.message}`);
+  }
 
   const scanController = new AbortController();
   const requestManager = createRequestManager(scanController);
-  activeScans.set(id, { controller: scanController, promise: Promise.resolve(), requestManager });
+  
+  const scanPromise = runScan(id, config, scanController, requestManager);
+  activeScans.set(id, { controller: scanController, promise: scanPromise, requestManager });
 
-  const runScan = async () => {
-    const startTime = Date.now();
-    const modulesToRun = Object.keys(config).filter(key => (config as any)[key] === true && key !== 'target' && key !== 'useProxy' && key !== 'threads');
-    const totalStages = modulesToRun.length;
-    let completedStages = 0;
+  return id;
+};
 
-    const settings = getSettings();
-    setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
-    requestManager.setMinRequestInterval(1000 / config.threads); // Adjust interval based on threads
+const runScan = async (
+  scanId: string,
+  config: ScanConfig,
+  scanController: AbortController,
+  requestManager: RequestManager
+) => {
+  const startTime = Date.now();
+  const modulesToRun = Object.keys(config).filter(key => (config as any)[key] === true && key !== 'target' && key !== 'useProxy' && key !== 'threads');
+  const totalStages = modulesToRun.length;
+  let completedStages = 0;
 
-    // Get the initial scan object from cache. This will be the mutable object for this run.
-    let currentScan = getScanById(id)!; 
+  const settings = getSettings();
+  setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
+  requestManager.setMinRequestInterval(1000 / config.threads); // Adjust interval based on threads
 
-    try {
-      for (const moduleName of modulesToRun) {
-        if (scanController.signal.aborted) {
-          throw new Error('Scan aborted by user');
-        }
+  // Get the initial scan object from cache. This will be the mutable object for this run.
+  let currentScan = getScanById(scanId)!; 
 
-        completedStages++;
-        // Update progress and persist the currentScan object
-        currentScan = {
-          ...currentScan,
-          progress: {
-            current: completedStages,
-            total: totalStages,
-            stage: `Running ${moduleName} scan`,
-          },
-        };
-        updateScan(currentScan); // Persist the updated currentScan
+  try {
+    for (const moduleName of modulesToRun) {
+      if (scanController.signal.aborted) {
+        throw new Error('Scan aborted by user');
+      }
 
-        console.log(`[ScanService] Running module: ${moduleName}`);
+      completedStages++;
+      // Update progress and persist the currentScan object
+      currentScan = {
+        ...currentScan,
+        progress: {
+          current: completedStages,
+          total: totalStages,
+          stage: `Running ${moduleName} scan`,
+        },
+      };
+      updateScan(currentScan); // Persist the updated currentScan
 
-        try {
-          let moduleResult: any;
-          switch (moduleName) {
-            case 'siteInfo':
-              moduleResult = await performSiteInfoScan(config.target);
-              currentScan.results.siteInfo = moduleResult;
-              break;
-            case 'headers':
-              moduleResult = await performFullHeaderAnalysis(config.target, config.useProxy);
-              currentScan.results.headers = moduleResult;
-              break;
-            case 'whois':
-              moduleResult = await performWhoisLookup(config.target);
-              currentScan.results.whois = moduleResult;
-              break;
-            case 'geoip':
-              moduleResult = await performGeoIPLookup(config.target);
-              currentScan.results.geoip = moduleResult;
-              break;
-            case 'dns':
-              moduleResult = await performDNSLookup(config.target);
-              currentScan.results.dns = moduleResult;
-              break;
-            case 'mx':
-              moduleResult = await performMXLookup(config.target);
-              currentScan.results.mx = moduleResult;
-              break;
-            case 'subnet':
-              const ipForSubnet = currentScan.results.siteInfo?.ip || 
+      console.log(`[ScanService] Running module: ${moduleName}`);
+
+      try {
+        let moduleResult: any;
+        switch (moduleName) {
+          case 'siteInfo':
+            moduleResult = await performSiteInfoScan(config.target);
+            currentScan.results.siteInfo = moduleResult;
+            break;
+          case 'headers':
+            moduleResult = await performFullHeaderAnalysis(config.target, config.useProxy);
+            currentScan.results.headers = moduleResult;
+            break;
+          case 'whois':
+            moduleResult = await performWhoisLookup(config.target);
+            currentScan.results.whois = moduleResult;
+            break;
+          case 'geoip':
+            moduleResult = await performGeoIPLookup(config.target);
+            currentScan.results.geoip = moduleResult;
+            break;
+          case 'dns':
+            moduleResult = await performDNSLookup(config.target);
+            currentScan.results.dns = moduleResult;
+            break;
+          case 'mx':
+            moduleResult = await performMXLookup(config.target);
+            currentScan.results.mx = moduleResult;
+            break;
+          case 'subnet':
+            const ipForSubnet = currentScan.results.siteInfo?.ip || 
                                   currentScan.results.geoip?.ip || 
                                   currentScan.results.dns?.records.A[0]?.value;
-              if (ipForSubnet) {
-                moduleResult = calculateSubnet(ipForSubnet, 24); // Default to /24
-                currentScan.results.subnet = moduleResult;
-              } else {
-                currentScan.errors.push('Subnet scan skipped: IP address not available from SiteInfo, GeoIP, or DNS.');
-              }
-              break;
-            case 'ports':
-              moduleResult = await scanCommonPorts(config.target, config.threads);
-              currentScan.results.ports = moduleResult;
-              break;
-            case 'subdomains':
-              moduleResult = await enumerateSubdomains(config.target, config.threads, scanController);
-              currentScan.results.subdomains = moduleResult;
-              break;
-            case 'reverseip':
-              moduleResult = await performReverseIPLookup(config.target);
-              currentScan.results.reverseip = moduleResult;
-              break;
-            case 'sqlinjection':
-              moduleResult = await performSQLScan(config.target);
-              currentScan.results.sqlinjection = moduleResult;
-              break;
+            if (ipForSubnet) {
+              moduleResult = calculateSubnet(ipForSubnet, 24); // Default to /24
+              currentScan.results.subnet = moduleResult;
+            } else {
+              currentScan.errors.push('Subnet scan skipped: IP address not available from SiteInfo, GeoIP, or DNS.');
+            }
+            break;
+          case 'ports':
+            moduleResult = await scanCommonPorts(config.target, config.threads);
+            currentScan.results.ports = moduleResult;
+            break;
+          case 'subdomains':
+            moduleResult = await enumerateSubdomains(config.target, config.threads, scanController);
+            currentScan.results.subdomains = moduleResult;
+            break;
+          case 'reverseip':
+            moduleResult = await performReverseIPLookup(config.target);
+            currentScan.results.reverseip = moduleResult;
+            break;
+          case 'sqlinjection':
+            moduleResult = await performSQLScan(config.target);
+            currentScan.results.sqlinjection = moduleResult;
+            break;
             case 'xss':
               moduleResult = await performXSSScan(config.target);
               currentScan.results.xss = moduleResult;
@@ -253,7 +276,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
         completedAt: Date.now(),
       };
       updateScan(currentScan);
-      console.log(`[ScanService] Scan ${id} completed successfully.`);
+      console.log(`[ScanService] Scan ${scanId} completed successfully.`);
 
       // Send Discord webhook notification if configured
       try {
@@ -265,7 +288,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
       }
 
     } catch (error: any) {
-      console.error(`[ScanService] Scan ${id} failed:`, error);
+      console.error(`[ScanService] Scan ${scanId} failed:`, error);
       currentScan = {
         ...currentScan,
         status: 'failed',
@@ -275,15 +298,9 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
       };
       updateScan(currentScan);
     } finally {
-      activeScans.delete(id);
+      activeScans.delete(scanId);
     }
   };
-
-  const scanPromise = runScan();
-  activeScans.set(id, { controller: scanController, promise: scanPromise, requestManager });
-
-  return id;
-};
 
 export const pauseScan = (id: string) => {
   const scanEntry = activeScans.get(id);
