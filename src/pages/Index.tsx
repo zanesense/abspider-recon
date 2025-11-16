@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { supabase } from "../SupabaseClient";
 import { Link } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
