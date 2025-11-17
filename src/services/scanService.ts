@@ -22,6 +22,7 @@ import { createRequestManager, RequestManager } from './requestManager';
 import { getAPIKeys, APIKeys } from './apiKeyService';
 import { calculateSecurityGrade } from './securityGradingService';
 import { startScheduledScanChecker } from './scheduledScanService'; // Import the checker
+import { supabase } from '@/SupabaseClient'; // Import supabase
 
 export interface ScanConfig {
   target: string;
@@ -69,7 +70,8 @@ export interface ScanResults {
 }
 
 export interface Scan {
-  id: string;
+  id: string; // Corresponds to scan_id in DB
+  user_id: string; // New field for Supabase RLS
   target: string;
   timestamp: number;
   status: 'running' | 'completed' | 'failed' | 'paused';
@@ -81,57 +83,138 @@ export interface Scan {
   config: ScanConfig;
   results: ScanResults;
   errors: string[];
-  elapsedMs?: number;
-  completedAt?: number;
-  securityGrade?: number;
+  elapsedMs?: number; // Mapped to elapsed_ms in DB
+  completedAt?: number; // Mapped to completed_at in DB
+  securityGrade?: number; // Mapped to security_grade in DB
 }
 
-const SCAN_STORAGE_KEY = 'abspider-scan-history';
-let scansCache: Scan[] = loadScansFromStorage();
+// Map Scan interface to DB column names for Supabase interaction
+interface ScanDbRow {
+  scan_id: string;
+  user_id: string;
+  target: string;
+  timestamp: number;
+  status: string;
+  progress?: any;
+  config: any;
+  results: any;
+  errors: string[];
+  elapsed_ms?: number;
+  completed_at?: number;
+  security_grade?: number;
+}
+
+// Helper to convert Scan object to DB row format
+const toScanDbRow = (scan: Scan): ScanDbRow => ({
+  scan_id: scan.id,
+  user_id: scan.user_id,
+  target: scan.target,
+  timestamp: scan.timestamp,
+  status: scan.status,
+  progress: scan.progress,
+  config: scan.config,
+  results: scan.results,
+  errors: scan.errors,
+  elapsed_ms: scan.elapsedMs,
+  completed_at: scan.completedAt,
+  security_grade: scan.securityGrade,
+});
+
+// Helper to convert DB row format to Scan object
+const fromScanDbRow = (row: ScanDbRow): Scan => ({
+  id: row.scan_id,
+  user_id: row.user_id,
+  target: row.target,
+  timestamp: row.timestamp,
+  status: row.status as 'running' | 'completed' | 'failed' | 'paused',
+  progress: row.progress,
+  config: row.config,
+  results: row.results,
+  errors: row.errors,
+  elapsedMs: row.elapsed_ms,
+  completedAt: row.completed_at,
+  securityGrade: row.security_grade,
+});
+
+
 const activeScans = new Map<string, { controller: AbortController; promise: Promise<void>; requestManager: RequestManager }>();
 
-function loadScansFromStorage(): Scan[] {
-  try {
-    const stored = localStorage.getItem(SCAN_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Failed to load scans from storage:', error);
-    return [];
+// Function to upsert a scan to Supabase
+const upsertScanToDatabase = async (scan: Scan) => {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!session?.user) {
+    throw new Error('No active user session to save scan.');
   }
-}
 
-function saveScansToStorage(scans: Scan[]) {
-  try {
-    localStorage.setItem(SCAN_STORAGE_KEY, JSON.stringify(scans));
-  } catch (error) {
-    console.error('Failed to save scans to localStorage:', error);
-    throw new Error('Failed to save scan data. Local storage might be full or inaccessible.');
+  const scanDbRow = toScanDbRow(scan);
+
+  const { error } = await supabase
+    .from('user_scans')
+    .upsert(scanDbRow, { onConflict: 'scan_id' });
+
+  if (error) {
+    console.error('[ScanService] Failed to upsert scan to Supabase:', error);
+    throw new Error(`Failed to save scan: ${error.message}`);
   }
-}
-
-function updateScan(scanToUpdate: Scan) {
-  try {
-    scansCache = scansCache.map(scan =>
-      scan.id === scanToUpdate.id ? scanToUpdate : scan
-    );
-    saveScansToStorage(scansCache);
-  } catch (error) {
-    console.error('Failed to save scans to storage:', error);
-  }
-}
-
-export const getScanHistory = (): Scan[] => {
-  return scansCache;
 };
 
-export const getScanById = (id: string): Scan | undefined => {
-  return scansCache.find(scan => scan.id === id);
+export const getScanHistory = async (): Promise<Scan[]> => {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!session?.user) {
+    console.warn('[ScanService] No active session, returning empty scan history.');
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('user_scans')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .order('timestamp', { ascending: false });
+
+  if (error) {
+    console.error('[ScanService] Failed to fetch scan history from Supabase:', error);
+    throw new Error(`Failed to load scan history: ${error.message}`);
+  }
+
+  return data.map(fromScanDbRow);
+};
+
+export const getScanById = async (id: string): Promise<Scan | undefined> => {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!session?.user) {
+    console.warn('[ScanService] No active session, cannot retrieve scan by ID.');
+    return undefined;
+  }
+
+  const { data, error } = await supabase
+    .from('user_scans')
+    .select('*')
+    .eq('scan_id', id)
+    .eq('user_id', session.user.id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 means 'no rows found', which is fine
+    console.error('[ScanService] Failed to fetch scan by ID from Supabase:', error);
+    throw new Error(`Failed to load scan: ${error.message}`);
+  }
+
+  return data ? fromScanDbRow(data) : undefined;
 };
 
 export const startScan = async (config: ScanConfig): Promise<string> => {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!session?.user) {
+    throw new Error('User not authenticated. Cannot start scan.');
+  }
+
   const id = uuidv4();
   let newScan: Scan = {
     id,
+    user_id: session.user.id, // Assign user_id
     target: config.target,
     timestamp: Date.now(),
     status: 'running',
@@ -146,8 +229,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
   };
 
   try {
-    scansCache = [newScan, ...scansCache];
-    saveScansToStorage(scansCache);
+    await upsertScanToDatabase(newScan);
   } catch (error: any) {
     throw new Error(`Failed to initialize scan: ${error.message}`);
   }
@@ -177,7 +259,7 @@ const runScan = async (
   setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
   requestManager.setMinRequestInterval(Math.max(20, 1000 / config.threads)); 
 
-  let currentScan = getScanById(scanId)!; 
+  let currentScan = (await getScanById(scanId))!; // Fetch current scan state from DB
 
   let apiKeys: APIKeys = {};
   try {
@@ -186,7 +268,7 @@ const runScan = async (
   } catch (error) {
     console.error('[ScanService] Failed to load API keys for scan:', error);
     currentScan.errors.push(`Failed to load API keys: ${(error as Error).message}`);
-    updateScan(currentScan);
+    await upsertScanToDatabase(currentScan); // Save error to DB
   }
 
   try {
@@ -204,7 +286,7 @@ const runScan = async (
           stage: `Running ${moduleName} scan`,
         },
       };
-      updateScan(currentScan);
+      await upsertScanToDatabase(currentScan); // Save progress to DB
 
       console.log(`[ScanService] Running module: ${moduleName}`);
 
@@ -285,12 +367,12 @@ const runScan = async (
             default:
               console.warn(`[ScanService] Unknown module: ${moduleName}`);
           }
-          updateScan(currentScan);
+          await upsertScanToDatabase(currentScan); // Save module results to DB
 
         } catch (moduleError: any) {
           console.error(`[ScanService] Error in ${moduleName} module:`, moduleError);
           currentScan.errors.push(`${moduleName}: ${moduleError.message}`);
-          updateScan(currentScan);
+          await upsertScanToDatabase(currentScan); // Save error to DB
         }
       }
 
@@ -304,7 +386,7 @@ const runScan = async (
         elapsedMs: Date.now() - startTime,
         completedAt: Date.now(),
       };
-      updateScan(currentScan);
+      await upsertScanToDatabase(currentScan); // Save final state to DB
       console.log(`[ScanService] Scan ${scanId} completed successfully. Security Grade: ${currentScan.securityGrade}`);
 
     } catch (error: any) {
@@ -316,26 +398,25 @@ const runScan = async (
         elapsedMs: Date.now() - startTime,
         completedAt: Date.now(),
       };
-      updateScan(currentScan);
+      await upsertScanToDatabase(currentScan); // Save failed state to DB
     } finally {
       activeScans.delete(scanId);
     }
   };
 
-export const pauseScan = (id: string) => {
+export const pauseScan = async (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
     scanEntry.controller.abort();
-    scansCache = scansCache.map(scan =>
-      scan.id === id ? { ...scan, status: 'paused', progress: { ...scan.progress!, stage: 'Paused' } } : scan
-    );
-    saveScansToStorage(scansCache);
+    const currentScan = (await getScanById(id))!;
+    const updatedScan = { ...currentScan, status: 'paused', progress: { ...currentScan.progress!, stage: 'Paused' } };
+    await upsertScanToDatabase(updatedScan);
     console.log(`[ScanService] Scan ${id} paused.`);
   }
 };
 
 export const resumeScan = async (id: string) => {
-  const scan = getScanById(id);
+  const scan = await getScanById(id);
   if (!scan || scan.status !== 'paused') {
     console.warn(`[ScanService] Cannot resume scan ${id}: not found or not paused.`);
     return;
@@ -345,37 +426,50 @@ export const resumeScan = async (id: string) => {
   const requestManager = createRequestManager(newController);
   activeScans.set(id, { controller: newController, promise: Promise.resolve(), requestManager });
 
-  scansCache = scansCache.map(s =>
-    s.id === id ? { ...s, status: 'running', progress: { ...s.progress!, stage: 'Resuming' } } : s
-  );
-  saveScansToStorage(scansCache);
+  const updatedScan = { ...scan, status: 'running', progress: { ...scan.progress!, stage: 'Resuming' } };
+  await upsertScanToDatabase(updatedScan);
 
   console.log(`[ScanService] Resuming scan ${id}.`);
-  await startScan(scan.config);
+  // Re-run the scan from its last known state
+  await runScan(scan.id, scan.config, newController, requestManager);
 };
 
-export const stopScan = (id: string) => {
+export const stopScan = async (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
     scanEntry.controller.abort();
     scanEntry.requestManager.abortAll();
     activeScans.delete(id);
-    scansCache = scansCache.map(scan =>
-      scan.id === id ? { ...scan, status: 'failed', errors: [...scan.errors, 'Scan stopped by user'], elapsedMs: Date.now() - scan.timestamp, completedAt: Date.now() } : scan
-    );
-    saveScansToStorage(scansCache);
+    const currentScan = (await getScanById(id))!;
+    const updatedScan = { 
+      ...currentScan, 
+      status: 'failed', 
+      errors: [...currentScan.errors, 'Scan stopped by user'], 
+      elapsedMs: Date.now() - currentScan.timestamp, 
+      completedAt: Date.now() 
+    };
+    await upsertScanToDatabase(updatedScan);
     console.log(`[ScanService] Scan ${id} stopped.`);
   }
 };
 
 export const deleteScan = async (id: string): Promise<void> => {
   console.log(`[Delete Scan] Deleting scan ${id}`);
-  const index = scansCache.findIndex(s => s.id === id);
-  if (index !== -1) {
-    scansCache.splice(index, 1);
-    saveScansToStorage(scansCache);
-  } else {
-    throw new Error('Scan not found');
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!session?.user) {
+    throw new Error('User not authenticated. Cannot delete scan.');
+  }
+
+  const { error } = await supabase
+    .from('user_scans')
+    .delete()
+    .eq('scan_id', id)
+    .eq('user_id', session.user.id);
+
+  if (error) {
+    console.error('[ScanService] Failed to delete scan from Supabase:', error);
+    throw new Error(`Failed to delete scan: ${error.message}`);
   }
 };
 
