@@ -1,9 +1,9 @@
 import { Scan } from './scanService';
-import { getSettings } from './settingsService';
+import { getSettings } from './settingsService'; // Import getSettings from Supabase-backed service
 
 export const sendDiscordWebhook = async (scan: Scan) => {
   try {
-    const settings = getSettings();
+    const settings = await getSettings(); // Fetch settings from Supabase
     
     if (!settings.discordWebhook) {
       throw new Error('Discord webhook URL not configured in Settings');
@@ -71,7 +71,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
     if (scan.results.subdomains) {
       embed.fields.push({
         name: '🌐 Subdomains',
-        value: `${scan.results.subdomains.length} discovered`,
+        value: `${scan.results.subdomains.subdomains.length} discovered`, // Corrected to access subdomains array
         inline: true,
       });
     }

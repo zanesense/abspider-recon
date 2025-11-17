@@ -15,7 +15,7 @@ import { performLFIScan, LFIScanResult } from './lfiScanService';
 import { performWordPressScan, WordPressScanResult } from './wordpressService';
 import { performSEOAnalysis, SEOAnalysis } from './seoService';
 import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService';
-import { getSettings, saveSettings } from './settingsService';
+import { getSettings } from './settingsService'; // Import getSettings from Supabase-backed service
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
 import { createRequestManager, RequestManager } from './requestManager';
@@ -173,7 +173,7 @@ const runScan = async (
   const totalStages = modulesToRun.length;
   let completedStages = 0;
 
-  const settings = getSettings();
+  const settings = await getSettings(); // Fetch settings from Supabase
   setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
   requestManager.setMinRequestInterval(Math.max(20, 1000 / config.threads)); 
 

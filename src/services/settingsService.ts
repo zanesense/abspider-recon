@@ -1,4 +1,6 @@
-interface Settings {
+import { supabase } from '@/SupabaseClient';
+
+export interface Settings {
   discordWebhook: string;
   proxyList: string;
   defaultThreads: number;
@@ -12,14 +14,59 @@ const defaultSettings: Settings = {
   timeout: 30,
 };
 
-export const getSettings = (): Settings => {
-  const stored = localStorage.getItem('abspider-settings');
-  return stored ? JSON.parse(stored) : defaultSettings;
+// Define the structure for the Supabase table row
+interface UserSettingsRow {
+  user_id: string;
+  settings: Settings;
+}
+
+export const getSettings = async (): Promise<Settings> => {
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!session?.user) {
+      console.warn('[Settings] No active session, returning default settings.');
+      return defaultSettings;
+    }
+
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('settings')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 means 'no rows found', which is fine
+      throw error;
+    }
+
+    return data?.settings || defaultSettings;
+  } catch (error: any) {
+    console.error('[Settings] Failed to load from Supabase:', error.message);
+    return defaultSettings;
+  }
 };
 
-export const saveSettings = (settings: Settings) => {
-  localStorage.setItem('abspider-settings', JSON.stringify(settings));
-  console.log('[Settings] Saved successfully');
+export const saveSettings = async (settings: Settings) => {
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!session?.user) {
+      throw new Error('No active user session to save settings.');
+    }
+
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({ user_id: session.user.id, settings: settings } as UserSettingsRow, {
+        onConflict: 'user_id',
+      });
+
+    if (error) throw error;
+
+    console.log('[Settings] Saved successfully to Supabase');
+  } catch (error: any) {
+    console.error('[Settings] Failed to save to Supabase:', error.message);
+    throw new Error(`Failed to save settings: ${error.message}`);
+  }
 };
 
 // New validation function for Discord webhook URL

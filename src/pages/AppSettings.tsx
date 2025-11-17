@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl } from '@/services/settingsService';
+import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl, Settings } from '@/services/settingsService'; // Import Settings interface
 import { getAPIKeys, saveAPIKeys, APIKeys } from '@/services/apiKeyService';
 import {
   testShodanAPI,
@@ -27,12 +27,36 @@ type APIKeyService = keyof APIKeys;
 const AppSettings = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [settings, setSettings] = useState(getSettings());
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [apiKeyTestStatus, setApiKeyTestStatus] = useState<Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>>({});
 
+  // Fetch general settings using react-query
+  const { data: settings = { discordWebhook: '', proxyList: '', defaultThreads: 20, timeout: 30 }, isLoading: isLoadingSettings, isError: isErrorSettings } = useQuery<Settings>({
+    queryKey: ['appSettings'],
+    queryFn: getSettings,
+  });
+
+  // Mutation for saving general settings
+  const saveSettingsMutation = useMutation({
+    mutationFn: saveSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appSettings'] });
+      toast({
+        title: "Settings Saved",
+        description: "Your general settings have been saved successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save general settings.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Fetch API keys using react-query
-  const { data: apiKeys = {}, isLoading: isLoadingApiKeys, isError: isErrorApiKeys } = useQuery({
+  const { data: apiKeys = {}, isLoading: isLoadingApiKeys, isError: isErrorApiKeys } = useQuery<APIKeys>({
     queryKey: ['apiKeys'],
     queryFn: getAPIKeys,
   });
@@ -43,20 +67,20 @@ const AppSettings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
       toast({
-        title: "Settings Saved",
-        description: "Your API keys have been saved successfully",
+        title: "API Keys Saved",
+        description: "Your API keys have been saved successfully.",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to save API keys",
+        description: error.message || "Failed to save API keys.",
         variant: "destructive",
       });
     },
   });
 
-  const handleSaveSettings = () => {
+  const handleSaveAllSettings = async () => {
     try {
       // Validate Discord webhook before saving
       if (settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook)) {
@@ -68,12 +92,20 @@ const AppSettings = () => {
         return;
       }
 
-      saveSettings(settings); // Save general settings to localStorage
-      saveApiKeysMutation.mutate(apiKeys); // Save API keys to Supabase via mutation
+      // Trigger both mutations
+      await Promise.all([
+        saveSettingsMutation.mutateAsync(settings),
+        saveApiKeysMutation.mutateAsync(apiKeys),
+      ]);
+
+      toast({
+        title: "All Settings Saved",
+        description: "All your application settings have been saved successfully.",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to save settings",
+        description: error.message || "Failed to save all settings.",
         variant: "destructive",
       });
     }
@@ -179,7 +211,11 @@ const AppSettings = () => {
 
   const isTestingAPI = (service: APIKeyService) => apiKeyTestStatus[service] === 'testing';
 
-  if (isLoadingApiKeys) {
+  const totalApiKeys = 7; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit
+  const configuredApiKeys = Object.values(apiKeys).filter(key => typeof key === 'string' && key.trim().length > 0).length;
+
+
+  if (isLoadingSettings || isLoadingApiKeys) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -188,13 +224,13 @@ const AppSettings = () => {
     );
   }
 
-  if (isErrorApiKeys) {
+  if (isErrorSettings || isErrorApiKeys) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Failed to load API keys. Please try again later.</AlertDescription>
+          <AlertDescription>Failed to load settings. Please try again later.</AlertDescription>
         </Alert>
       </div>
     );
@@ -232,7 +268,7 @@ const AppSettings = () => {
                     min="1"
                     max="50"
                     value={settings.defaultThreads}
-                    onChange={(e) => setSettings({ ...settings, defaultThreads: parseInt(e.target.value) })}
+                    onChange={(e) => queryClient.setQueryData(['appSettings'], { ...settings, defaultThreads: parseInt(e.target.value) })}
                     className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Concurrent scanning threads (1-50)</p>
@@ -245,7 +281,7 @@ const AppSettings = () => {
                     min="5"
                     max="120"
                     value={settings.timeout}
-                    onChange={(e) => setSettings({ ...settings, timeout: parseInt(e.target.value) })}
+                    onChange={(e) => queryClient.setQueryData(['appSettings'], { ...settings, timeout: parseInt(e.target.value) })}
                     className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Maximum wait time for requests</p>
@@ -270,7 +306,7 @@ const AppSettings = () => {
                   type="url"
                   placeholder="https://discord.com/api/webhooks/..."
                   value={settings.discordWebhook}
-                  onChange={(e) => setSettings({ ...settings, discordWebhook: e.target.value })}
+                  onChange={(e) => queryClient.setQueryData(['appSettings'], { ...settings, discordWebhook: e.target.value })}
                   className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                 />
                 {settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook) && (
@@ -326,7 +362,7 @@ const AppSettings = () => {
                   id="proxyList"
                   placeholder="http://proxy1.example.com:8080&#10;http://proxy2.example.com:8080"
                   value={settings.proxyList}
-                  onChange={(e) => setSettings({ ...settings, proxyList: e.target.value })}
+                  onChange={(e) => queryClient.setQueryData(['appSettings'], { ...settings, proxyList: e.target.value })}
                   className="font-mono text-sm min-h-32 bg-muted/30 border-border focus:border-primary focus:ring-primary"
                 />
               </div>
@@ -564,7 +600,7 @@ const AppSettings = () => {
           </Card>
 
           <Button
-            onClick={handleSaveSettings}
+            onClick={handleSaveAllSettings}
             size="lg"
             className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-lg"
           >
