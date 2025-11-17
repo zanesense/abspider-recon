@@ -5,7 +5,6 @@ interface APIKeys {
   virustotal?: string;
   securitytrails?: string;
   builtwith?: string;
-  hunter?: string;
   clearbit?: string;
   opencage?: string;
 }

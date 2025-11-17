@@ -26,7 +26,6 @@ import WordPressInfo from '@/components/WordPressInfo';
 import SEOInfo from '@/components/SEOInfo';
 import DDoSFirewallResults from '@/components/DDoSFirewallResults';
 import VirusTotalResults from '@/components/VirusTotalResults'; // New import
-import EmailEnumerationResults from '@/components/EmailEnumerationResults'; // New import
 import SslTlsResults from '@/components/SslTlsResults'; // New import
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEffect } from 'react';
@@ -192,7 +191,7 @@ const ScanResults = () => {
               {scan.results.mx && <MXInfo mx={scan.results.mx} />}
               {scan.results.subnet && <SubnetInfo subnet={scan.results.subnet} />}
               {scan.results.ports && <PortScanResults ports={scan.results.ports} />}
-              {scan.results.virustotal && <VirusTotalResults virustotal={scan.results.virustotal} />} {/* New component */}
+              {scan.results.virustotal && <VirusTotalResults virustotal={scan.results.virustotal} />}
             </div>
 
             {/* Right Column */}
@@ -206,8 +205,7 @@ const ScanResults = () => {
               {scan.results.wordpress && <WordPressInfo wordpress={scan.results.wordpress} />}
               {scan.results.seo && <SEOInfo seo={scan.results.seo} />}
               {scan.results.ddosFirewall && <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />}
-              {scan.results.emailEnum && <EmailEnumerationResults emailEnum={scan.results.emailEnum} />} {/* New component */}
-              {scan.results.sslTls && <SslTlsResults sslTls={scan.results.sslTls} />} {/* New component */}
+              {scan.results.sslTls && <SslTlsResults sslTls={scan.results.sslTls} />}
             </div>
           </div>
 

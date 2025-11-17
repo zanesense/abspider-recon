@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock } from 'lucide-react'; // Added Link, Lock icons
+import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock } from 'lucide-react'; // Removed Mail from import as it's no longer used for emailEnum
 import { Scan } from '@/services/scanService';
 
 interface ScanStatusProps {
@@ -80,9 +80,8 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     wordpress: Code,
     seo: TrendingUp,
     ddosFirewall: Zap,
-    virustotal: Link, // New icon
-    emailEnum: Mail, // New icon
-    sslTls: Lock, // New icon
+    virustotal: Link,
+    sslTls: Lock,
   };
 
   const moduleLabels: Record<string, string> = {
@@ -102,9 +101,8 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     wordpress: 'WordPress',
     seo: 'SEO',
     ddosFirewall: 'DDoS Firewall',
-    virustotal: 'VirusTotal', // New label
-    emailEnum: 'Email Enum', // New label
-    sslTls: 'SSL/TLS', // New label
+    virustotal: 'VirusTotal',
+    sslTls: 'SSL/TLS',
   };
 
   return (
@@ -183,7 +181,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
             {Object.entries(scan.config).map(([key, value]) => {
               if (value === true && moduleLabels[key]) {
                 const Icon = moduleIcons[key];
-                const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls'].includes(key); // Updated
+                const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls'].includes(key);
                 const isSecurityModule = ['ddosFirewall'].includes(key);
                 return (
                   <Badge 

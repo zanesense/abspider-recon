@@ -691,58 +691,6 @@ export const generatePDFReport = (scan: Scan) => {
     }
   }
 
-  // Email Enumeration Results
-  if (scan.results.emailEnum?.tested) {
-    doc.addPage();
-    yPosition = 20;
-    
-    doc.setFillColor(59, 130, 246); // Blue for Email Enum
-    doc.rect(0, yPosition - 5, 210, 10, 'F');
-    doc.setFontSize(14);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.text('EMAIL: Email Enumeration Results', 14, yPosition);
-    yPosition += 15;
-
-    const emailData = [
-      ['Domain', scan.results.emailEnum.domain],
-      ['Organization', scan.results.emailEnum.organization || 'N/A'],
-      ['Disposable Provider', scan.results.emailEnum.disposable ? 'Yes' : 'No'],
-      ['Webmail Provider', scan.results.emailEnum.webmail ? 'Yes' : 'No'],
-    ];
-
-    autoTable(doc, {
-      startY: yPosition,
-      body: emailData,
-      theme: 'striped',
-      styles: { fontSize: 9 },
-    });
-    yPosition = (doc as any).lastAutoTable.finalY + 10;
-
-    if (scan.results.emailEnum.emails && scan.results.emailEnum.emails.length > 0) {
-      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Discovered Emails:', 14, yPosition);
-      yPosition += 5;
-      const emailsTableData = scan.results.emailEnum.emails.map(e => [
-        e.value,
-        e.type,
-        e.confidence ? `${e.confidence}%` : 'N/A',
-        e.sources?.length ? `${e.sources.length} sources` : 'N/A'
-      ]);
-      autoTable(doc, {
-        startY: yPosition,
-        head: [['Email', 'Type', 'Confidence', 'Sources']],
-        body: emailsTableData,
-        theme: 'grid',
-        headStyles: { fillColor: [59, 130, 246], fontStyle: 'bold' },
-        styles: { fontSize: 8 },
-      });
-      yPosition = (doc as any).lastAutoTable.finalY + 10;
-    }
-  }
-
   // SSL/TLS Analysis Results
   if (scan.results.sslTls?.tested) {
     doc.addPage();

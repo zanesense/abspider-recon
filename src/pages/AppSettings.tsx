@@ -15,7 +15,6 @@ import {
   testVirusTotalAPI,
   testSecurityTrailsAPI,
   testBuiltWithAPI,
-  testHunterAPI,
   testClearbitAPI,
   testOpenCageAPI,
 } from '@/services/apiTestService';
@@ -170,7 +169,6 @@ const AppSettings = () => {
         case 'virustotal': result = await testVirusTotalAPI(key); break;
         case 'securitytrails': result = await testSecurityTrailsAPI(key); break;
         case 'builtwith': result = await testBuiltWithAPI(key); break;
-        case 'hunter': result = await testHunterAPI(key); break;
         case 'clearbit': result = await testClearbitAPI(key); break;
         case 'opencage': result = await testOpenCageAPI(key); break;
         default: throw new Error('Unknown API service');
@@ -211,7 +209,7 @@ const AppSettings = () => {
 
   const isTestingAPI = (service: APIKeyService) => apiKeyTestStatus[service] === 'testing';
 
-  const totalApiKeys = 7; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit
+  const totalApiKeys = 6; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Clearbit
   const configuredApiKeys = Object.values(apiKeys).filter(key => typeof key === 'string' && key.trim().length > 0).length;
 
 
@@ -509,34 +507,6 @@ const AppSettings = () => {
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Enhanced geocoding, reverse geocoding, and detailed location data</p>
-                </div>
-
-                {/* Hunter.io */}
-                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="hunter" className="text-base font-semibold">Hunter.io API Key</Label>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon('hunter')}
-                      <Button
-                        onClick={() => handleTestAPIKey('hunter')}
-                        disabled={isTestingAPI('hunter')}
-                        variant="outline"
-                        size="sm"
-                        className="border-border text-foreground hover:bg-muted/50"
-                      >
-                        {isTestingAPI('hunter') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  <Input
-                    id="hunter"
-                    type="password"
-                    placeholder="Enter Hunter.io API key"
-                    value={apiKeys.hunter || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, hunter: e.target.value as string })}
-                    className="bg-background border-border focus:border-primary focus:ring-primary"
-                  />
-                  <p className="text-xs text-muted-foreground">Email discovery, domain search, and email verification</p>
                 </div>
 
                 {/* Clearbit */}
