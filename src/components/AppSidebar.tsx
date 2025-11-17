@@ -12,7 +12,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Shield, Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User, Loader2 } from 'lucide-react';
+import { Shield, Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User, Loader2, CircleUser } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/SupabaseClient'; // Import supabase
@@ -53,10 +53,10 @@ export function AppSidebar() {
   }, []);
   
   const menuItems = [
-    { title: 'Dashboard', icon: Home, href: '/dashboard' }, // Updated to /dashboard
+    { title: 'Dashboard', icon: Home, href: '/dashboard' },
     { title: 'New Scan', icon: Scan, href: '/new-scan' },
     { title: 'All Scans', icon: History, href: '/all-scans' },
-    { title: 'Settings', icon: Settings, href: '/settings' },
+    { title: 'App Settings', icon: Settings, href: '/settings' }, // Updated text
   ];
 
   const handleLogout = async () => {
@@ -135,13 +135,28 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter className="border-t border-border p-4 space-y-2">
-        {userEmail && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/30">
-            <User className="h-4 w-4 text-primary" />
-            <span className="truncate">{userEmail}</span>
-          </div>
-        )}
         {session ? (
+          <Link 
+            to="/account-settings" 
+            className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+          >
+            <CircleUser className="h-5 w-5 text-primary" /> {/* Default PFP */}
+            <span className="truncate font-medium">{userEmail || 'Guest User'}</span>
+          </Link>
+        ) : (
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2 bg-muted/30 hover:bg-muted/50 border-border text-foreground"
+          >
+            <Link to="/login">
+              <LogIn className="h-4 w-4" />
+              <span>Login</span>
+            </Link>
+          </Button>
+        )}
+        {session && (
           <Button
             onClick={handleLogout}
             disabled={loadingLogout}
@@ -155,18 +170,6 @@ export function AppSidebar() {
               <LogOut className="h-4 w-4" />
             )}
             <span>Logout</span>
-          </Button>
-        ) : (
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="w-full justify-start gap-2 bg-muted/30 hover:bg-muted/50 border-border text-foreground"
-          >
-            <Link to="/login">
-              <LogIn className="h-4 w-4" />
-              <span>Login</span>
-            </Link>
           </Button>
         )}
         <Button

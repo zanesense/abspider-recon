@@ -5,21 +5,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import Index from "@/pages/Index"; // New Index for redirection
-import Login from "@/components/Login"; // Login component
+import Index from "@/pages/Index";
+import Login from "@/components/Login";
 import NotFound from "@/pages/NotFound";
 import NewScan from "@/pages/NewScan";
 import ScanResults from "@/pages/ScanResults";
-import Settings from "@/pages/Settings";
+import AppSettings from "@/pages/AppSettings"; // Renamed import
+import AccountSettings from "@/pages/AccountSettings"; // New import
 import AllScans from "@/pages/AllScans";
-import DashboardPage from "@/pages/DashboardPage"; // Renamed Dashboard
+import DashboardPage from "@/pages/DashboardPage";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
 import RequireAuth from "@/components/RequireAuth";
-import TwoFactorAuthEnroll from "@/components/TwoFactorAuthEnroll"; // New import
-import TwoFactorAuthVerify from "@/components/TwoFactorAuthVerify"; // New import
+import TwoFactorAuthEnroll from "@/components/TwoFactorAuthEnroll";
+import TwoFactorAuthVerify from "@/components/TwoFactorAuthVerify";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,7 +43,6 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
-                {/* The /verify-2fa route can remain outside RequireAuth as it's part of the login flow */}
                 <Route path="/verify-2fa" element={<TwoFactorAuthVerify />} /> 
                 
                 {/* Protected Routes */}
@@ -59,8 +59,8 @@ function App() {
                               <Route path="/new-scan" element={<NewScan />} />
                               <Route path="/all-scans" element={<AllScans />} />
                               <Route path="/scan/:id" element={<ScanResults />} />
-                              <Route path="/settings" element={<Settings />} />
-                              {/* Move /enroll-2fa inside RequireAuth */}
+                              <Route path="/settings" element={<AppSettings />} /> {/* Updated route */}
+                              <Route path="/account-settings" element={<AccountSettings />} /> {/* New route */}
                               <Route path="/enroll-2fa" element={<TwoFactorAuthEnroll />} /> 
                               <Route path="*" element={<NotFound />} />
                             </Routes>
