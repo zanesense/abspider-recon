@@ -3,7 +3,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, XCircle, AlertCircle, Loader2, Shield, Trash2, ArrowLeft, UserCircle } from 'lucide-react';
+import { AlertCircle, Loader2, Shield, ArrowLeft, UserCircle, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/SupabaseClient';
 import { useNavigate } from 'react-router-dom';
@@ -92,13 +92,27 @@ const AccountSettings = () => {
             </CardContent>
           </Card>
 
-          <Alert className="bg-blue-500/10 border-blue-500/50">
-            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-500" />
-            <AlertTitle className="text-blue-600 dark:text-blue-400">2FA Disabled</AlertTitle>
-            <AlertDescription className="text-sm text-blue-600 dark:text-blue-300">
-              Two-Factor Authentication is currently disabled.
-            </AlertDescription>
-          </Alert>
+          {/* 2FA Coming Soon */}
+          <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <Shield className="h-5 w-5" />
+                Two-Factor Authentication (2FA)
+              </CardTitle>
+              <CardDescription>
+                Add an extra layer of security to your account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Alert className="bg-blue-500/10 border-blue-500/50">
+                <Zap className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                <AlertTitle className="text-blue-600 dark:text-blue-400">Coming Soon!</AlertTitle>
+                <AlertDescription className="text-sm text-blue-600 dark:text-blue-300">
+                  Two-Factor Authentication will be available in a future update to enhance your account security.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
