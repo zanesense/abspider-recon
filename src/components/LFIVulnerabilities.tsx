@@ -23,7 +23,7 @@ interface LFIVulnerabilitiesProps {
 const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
   if (!lfi || !lfi.tested) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-orange-500 dark:text-orange-400">
             <FileWarning className="h-5 w-5" />
@@ -45,7 +45,7 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-orange-500 dark:text-orange-400">
           <FileWarning className="h-5 w-5" />

@@ -12,7 +12,7 @@ const SubdomainList = ({ subdomains }: SubdomainListProps) => {
 
   if (!Array.isArray(subdomainArray) || subdomainArray.length === 0) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
             <Network className="h-5 w-5 text-primary" />
@@ -27,7 +27,7 @@ const SubdomainList = ({ subdomains }: SubdomainListProps) => {
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-foreground">
           <Network className="h-5 w-5 text-primary" />

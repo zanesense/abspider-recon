@@ -33,7 +33,7 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-foreground flex items-center gap-2">

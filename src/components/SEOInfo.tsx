@@ -30,7 +30,7 @@ interface SEOInfoProps {
 
 const SEOInfo = ({ seo }: SEOInfoProps) => {
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <CardTitle className="text-foreground flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-pink-500 dark:text-pink-400" />

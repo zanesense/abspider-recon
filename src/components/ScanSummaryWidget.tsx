@@ -19,7 +19,7 @@ const ScanSummaryWidget = ({ scan }: ScanSummaryWidgetProps) => {
   const ddosFirewallDetected = scan.results.ddosFirewall?.firewallDetected; // Only one DDoS module now
 
   return (
-    <Card className="bg-card border-border shadow-lg">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
           <ShieldAlert className="h-5 w-5 text-orange-500 dark:text-orange-400" />

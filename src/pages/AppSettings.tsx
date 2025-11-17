@@ -251,7 +251,7 @@ const AppSettings = () => {
       <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* General Settings */}
-          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
               <CardDescription>
@@ -291,7 +291,7 @@ const AppSettings = () => {
           </Card>
 
           {/* Discord Webhook */}
-          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
             <CardHeader>
               <CardTitle>Discord Webhook</CardTitle>
               <CardDescription>
@@ -337,7 +337,7 @@ const AppSettings = () => {
           </Card>
 
           {/* Proxy Settings */}
-          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
             <CardHeader>
               <CardTitle>Proxy Configuration</CardTitle>
               <CardDescription>
@@ -370,7 +370,7 @@ const AppSettings = () => {
           </Card>
 
           {/* API Keys */}
-          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Key className="h-5 w-5 text-primary" />

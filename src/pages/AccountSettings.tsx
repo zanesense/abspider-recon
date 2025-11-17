@@ -102,7 +102,7 @@ const AccountSettings = () => {
       <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* User Profile Info */}
-          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserCircle className="h-5 w-5 text-primary" />
@@ -124,7 +124,7 @@ const AccountSettings = () => {
           </Card>
 
           {/* 2FA Settings */}
-          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />

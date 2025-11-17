@@ -213,11 +213,22 @@ const NewScan = () => {
   };
 
   const allBasicChecked = formData.siteInfo && formData.headers;
+  const anyBasicChecked = formData.siteInfo || formData.headers;
+
   const allNetworkChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
+  const anyNetworkChecked = formData.whois || formData.geoip || formData.dns || formData.mx || formData.subnet || formData.ports || formData.subdomains || formData.reverseip;
+
   const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi;
+  const anyVulnChecked = formData.sqlinjection || formData.xss || formData.lfi;
+
   const allCmsChecked = formData.wordpress;
+  const anyCmsChecked = formData.wordpress;
+
   const allSeoChecked = formData.seo;
+  const anySeoChecked = formData.seo;
+
   const allSecurityChecked = formData.ddosFirewall;
+  const anySecurityChecked = formData.ddosFirewall;
 
   const targetHostname = formData.target ? extractHostname(formData.target) : '';
   const isTargetInternal = targetHostname && (isInternalIP(targetHostname) || targetHostname === 'localhost');
@@ -288,7 +299,10 @@ const NewScan = () => {
             </Card>
 
             {/* Schedule Scan Feature */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
+            <Card className={cn(
+              "bg-card/50 backdrop-blur-sm shadow-lg transition-all duration-300 hover:shadow-xl",
+              formData.scheduleScan ? "border-purple-500/70 hover:border-purple-500/90" : "border-purple-500/30 hover:border-purple-500/50"
+            )}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                   <CalendarDays className="h-5 w-5" />
@@ -387,7 +401,10 @@ const NewScan = () => {
             </Card>
 
             {/* Basic Scans */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
+            <Card className={cn(
+              "bg-card/50 backdrop-blur-sm shadow-lg transition-all duration-300 hover:shadow-xl",
+              anyBasicChecked ? "border-blue-500/70 hover:border-blue-500/90" : "border-blue-500/30 hover:border-blue-500/50"
+            )}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                   <Shield className="h-5 w-5" />
@@ -424,7 +441,10 @@ const NewScan = () => {
             </Card>
 
             {/* Network & Domain Intelligence */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-green-500/50">
+            <Card className={cn(
+              "bg-card/50 backdrop-blur-sm shadow-lg transition-all duration-300 hover:shadow-xl",
+              anyNetworkChecked ? "border-green-500/70 hover:border-green-500/90" : "border-green-500/30 hover:border-green-500/50"
+            )}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
                   <Network className="h-5 w-5" />
@@ -521,7 +541,10 @@ const NewScan = () => {
             </Card>
 
             {/* Vulnerability Scans */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-orange-500/50">
+            <Card className={cn(
+              "bg-card/50 backdrop-blur-sm shadow-lg transition-all duration-300 hover:shadow-xl",
+              anyVulnChecked ? "border-orange-500/70 hover:border-orange-500/90" : "border-orange-500/30 hover:border-orange-500/50"
+            )}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
                   <AlertTriangle className="h-5 w-5" />
@@ -611,7 +634,10 @@ const NewScan = () => {
             </Card>
 
             {/* CMS Detection */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-blue-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/50">
+            <Card className={cn(
+              "bg-card/50 backdrop-blur-sm shadow-lg transition-all duration-300 hover:shadow-xl",
+              anyCmsChecked ? "border-blue-500/70 hover:border-blue-500/90" : "border-blue-500/30 hover:border-blue-500/50"
+            )}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                   <Code className="h-5 w-5" />
@@ -638,7 +664,10 @@ const NewScan = () => {
             </Card>
 
             {/* SEO & Analytics */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-pink-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-pink-500/50">
+            <Card className={cn(
+              "bg-card/50 backdrop-blur-sm shadow-lg transition-all duration-300 hover:shadow-xl",
+              anySeoChecked ? "border-pink-500/70 hover:border-pink-500/90" : "border-pink-500/30 hover:border-pink-500/50"
+            )}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-pink-600 dark:text-pink-400">
                   <TrendingUp className="h-5 w-5" />
@@ -665,7 +694,10 @@ const NewScan = () => {
             </Card>
 
             {/* Security Testing */}
-            <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
+            <Card className={cn(
+              "bg-card/50 backdrop-blur-sm shadow-lg transition-all duration-300 hover:shadow-xl",
+              anySecurityChecked ? "border-purple-500/70 hover:border-purple-500/90" : "border-purple-500/30 hover:border-purple-500/50"
+            )}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                   <Zap className="h-5 w-5" />
@@ -722,7 +754,7 @@ const NewScan = () => {
                   <Alert className="border-yellow-500/50 bg-yellow-500/10 mb-4">
                     <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
                     <AlertTitle className="text-yellow-600 dark:text-yellow-400 font-bold">
-                      WARNING: Public CORS Proxy Usage
+                      WARNING: Public CORS Proxy Risks
                     </AlertTitle>
                     <AlertDescription className="text-sm mt-2 text-yellow-600 dark:text-yellow-300">
                       You have enabled proxy usage. This will route your scan traffic through public CORS proxies.

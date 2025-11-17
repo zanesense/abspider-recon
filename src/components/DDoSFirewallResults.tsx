@@ -11,7 +11,7 @@ interface DDoSFirewallResultsProps {
 const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
   if (!ddosFirewall.tested) {
     return (
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
             <ShieldOff className="h-5 w-5" />
@@ -26,7 +26,7 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-foreground">

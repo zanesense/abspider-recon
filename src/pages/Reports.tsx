@@ -28,7 +28,7 @@ const Reports = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 gap-4">
             {completedScans.map((scan) => (
-              <Card key={scan.id} className="bg-card border-border">
+              <Card key={scan.id} className="bg-card border-border transition-all duration-300 hover:shadow-xl hover:border-primary/50">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
@@ -65,7 +65,7 @@ const Reports = () => {
             ))}
             
             {completedScans.length === 0 && (
-              <Card className="bg-card border-border">
+              <Card className="bg-card border-border transition-all duration-300 hover:shadow-xl hover:border-primary/50">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
                   <p className="text-muted-foreground">No reports available yet</p>

@@ -164,7 +164,7 @@ const DashboardPage = () => {
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Scan Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+            <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-primary">Total Scans</CardTitle>
                 <History className="h-4 w-4 text-muted-foreground" />
@@ -174,7 +174,7 @@ const DashboardPage = () => {
                 <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
-            <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg">
+            <Card className="bg-card/50 backdrop-blur-sm border border-green-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-green-500/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-green-600 dark:text-green-400">Completed Scans</CardTitle>
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -184,7 +184,7 @@ const DashboardPage = () => {
                 <p className="text-xs text-muted-foreground">Successfully finished</p>
               </CardContent>
             </Card>
-            <Card className="bg-card/50 backdrop-blur-sm border border-yellow-500/30 shadow-lg">
+            <Card className="bg-card/50 backdrop-blur-sm border border-yellow-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-yellow-500/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Running Scans</CardTitle>
                 <Zap className="h-4 w-4 text-muted-foreground" />
@@ -194,7 +194,7 @@ const DashboardPage = () => {
                 <p className="text-xs text-muted-foreground">Currently active</p>
               </CardContent>
             </Card>
-            <Card className="bg-card/50 backdrop-blur-sm border border-red-500/30 shadow-lg">
+            <Card className="bg-card/50 backdrop-blur-sm border border-red-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-red-500/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-red-600 dark:text-red-400">Failed Scans</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
@@ -222,7 +222,7 @@ const DashboardPage = () => {
           {/* Scheduled Scans */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-foreground">Scheduled Scans</h2>
-            <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg">
+            <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                   <CalendarDays className="h-5 w-5" />

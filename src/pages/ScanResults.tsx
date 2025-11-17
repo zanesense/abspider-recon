@@ -206,7 +206,7 @@ const ScanResults = () => {
           </div>
 
           {scan.errors && scan.errors.length > 0 && (
-            <Card className="bg-card border-destructive shadow-lg">
+            <Card className="bg-card border-destructive shadow-lg transition-all duration-300 hover:shadow-xl hover:border-destructive/50">
               <div className="p-4">
                 <h3 className="text-destructive font-semibold mb-2 flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5" />

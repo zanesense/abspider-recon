@@ -29,7 +29,7 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <CardTitle className="text-foreground flex items-center gap-2">
           {xss.vulnerable ? (

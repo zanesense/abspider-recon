@@ -19,7 +19,7 @@ interface SubnetInfoProps {
 
 const SubnetInfo = ({ subnet }: SubnetInfoProps) => {
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <CardTitle className="text-foreground flex items-center gap-2">
           <Network className="h-5 w-5 text-orange-500 dark:text-orange-400" />

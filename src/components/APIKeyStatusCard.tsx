@@ -19,7 +19,7 @@ const APIKeyStatusCard = ({ configuredKeys, totalKeys, isLoading }: APIKeyStatus
     : 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
 
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg">
+    <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-orange-500/50">
       <CardHeader>
         <CardTitle className="text-orange-600 dark:text-orange-400 flex items-center gap-2">
           <Key className="h-5 w-5" />

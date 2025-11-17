@@ -28,7 +28,7 @@ const DatabaseStatusCard = ({ isLoading, isError }: DatabaseStatusCardProps) => 
   }
 
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+    <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <CardTitle className="text-primary flex items-center gap-2">
           <Database className="h-5 w-5" />

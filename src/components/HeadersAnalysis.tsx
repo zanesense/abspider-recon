@@ -50,7 +50,7 @@ const HeadersAnalysis = ({ headersAnalysis }: HeadersAnalysisProps) => {
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-foreground">
