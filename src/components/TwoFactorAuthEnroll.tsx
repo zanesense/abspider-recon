@@ -74,21 +74,38 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
       console.log('Supabase MFA Enroll Data:', enrollData);
       console.log('Enrollment ID:', enrollData?.id);
       console.log('TOTP Secret:', enrollData?.totp?.secret);
-      console.log('TOTP QR Code:', enrollData?.totp?.qrCode);
+      console.log('TOTP QR Code (from Supabase):', enrollData?.totp?.qrCode);
 
-      if (enrollData?.totp?.secret && enrollData?.totp?.qrCode && enrollData?.id) {
+      if (enrollData?.totp?.secret && enrollData?.id) {
         setSecret(enrollData.totp.secret);
-        setQrCodeUrl(enrollData.totp.qrCode);
         setFactorId(enrollData.id);
-        toast({
-          title: "2FA Enrollment Started",
-          description: "Scan the QR code with your authenticator app.",
-        });
+
+        let finalQrCodeUrl = enrollData.totp.qrCode;
+
+        // If Supabase didn't provide a QR code URL, construct one manually
+        if (!finalQrCodeUrl) {
+          const { data: { user } } = await supabase.auth.getUser();
+          const userEmail = user?.email || 'unknown_user';
+          const issuer = encodeURIComponent('ABSpider Recon');
+          const accountName = encodeURIComponent(userEmail);
+          const totpSecret = enrollData.totp.secret;
+          finalQrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${totpSecret}&issuer=${issuer}`;
+          console.log('Manually constructed TOTP QR Code URL:', finalQrCodeUrl);
+        }
+        
+        if (finalQrCodeUrl) {
+          setQrCodeUrl(finalQrCodeUrl);
+          toast({
+            title: "2FA Enrollment Started",
+            description: "Scan the QR code with your authenticator app.",
+          });
+        } else {
+          throw new Error("Enrollment data incomplete from Supabase. Missing: QR Code URL (and could not be constructed).");
+        }
       } else {
         const missingParts = [];
         if (!enrollData?.id) missingParts.push('ID');
         if (!enrollData?.totp?.secret) missingParts.push('Secret');
-        if (!enrollData?.totp?.qrCode) missingParts.push('QR Code');
         throw new Error(`Enrollment data incomplete from Supabase. Missing: ${missingParts.join(', ')}.`);
       }
     } catch (error: any) {
