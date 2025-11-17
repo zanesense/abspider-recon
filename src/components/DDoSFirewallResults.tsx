@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } => '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, ShieldOff, AlertTriangle, Zap, Info } from 'lucide-react';
 import CORSBypassIndicator from './CORSBypassIndicator';
 import { DDoSFirewallResult } from '@/services/ddosFirewallService';
