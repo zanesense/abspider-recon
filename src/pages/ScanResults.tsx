@@ -27,10 +27,10 @@ import SEOInfo from '@/components/SEOInfo';
 import DDoSFirewallResults from '@/components/DDoSFirewallResults';
 import VirusTotalResults from '@/components/VirusTotalResults';
 import SslTlsResults from '@/components/SslTlsResults';
-import TechStackInfo from '@/components/TechStackInfo'; // New import
-import BrokenLinkResults from '@/components/BrokenLinkResults'; // New import
-import CorsMisconfigResults from '@/components/CorsMisconfigResults'; // New import
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import TechStackInfo from '@/components/TechStackInfo';
+import BrokenLinkResults from '@/components/BrokenLinkResults';
+import CorsMisconfigResults from '@/components/CorsMisconfigResults';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Ensure AlertTitle is imported
 import { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 
@@ -189,7 +189,7 @@ const ScanResults = () => {
             <div className="space-y-6">
               {scan.results.siteInfo && <SiteInfo siteInfo={scan.results.siteInfo} />}
               {scan.results.headers && <HeadersAnalysis headersAnalysis={scan.results.headers} />}
-              {scan.results.techStack && <TechStackInfo techStack={scan.results.techStack} />} {/* New component */}
+              {scan.results.techStack && <TechStackInfo techStack={scan.results.techStack} />}
               {scan.results.whois && <WhoisInfo whois={scan.results.whois} />}
               {scan.results.dns && <DNSInfo dns={scan.results.dns} />}
               {scan.results.mx && <MXInfo mx={scan.results.mx} />}
@@ -206,29 +206,29 @@ const ScanResults = () => {
               {scan.results.sqlinjection && <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />}
               {scan.results.xss && <XSSVulnerabilities xss={scan.results.xss} />}
               {scan.results.lfi && <LFIVulnerabilities lfi={scan.results.lfi} />}
-              {scan.results.corsMisconfig && <CorsMisconfigResults corsMisconfig={scan.results.corsMisconfig} />} {/* New component */}
+              {scan.results.corsMisconfig && <CorsMisconfigResults corsMisconfig={scan.results.corsMisconfig} />}
               {scan.results.wordpress && <WordPressInfo wordpress={scan.results.wordpress} />}
               {scan.results.seo && <SEOInfo seo={scan.results.seo} />}
-              {scan.results.brokenLinks && <BrokenLinkResults brokenLinks={scan.results.brokenLinks} />} {/* New component */}
+              {scan.results.brokenLinks && <BrokenLinkResults brokenLinks={scan.results.brokenLinks} />}
               {scan.results.ddosFirewall && <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />}
               {scan.results.sslTls && <SslTlsResults sslTls={scan.results.sslTls} />}
             </div>
           </div>
 
           {scan.errors && scan.errors.length > 0 && (
-            <Card className="bg-card border-destructive shadow-lg transition-all duration-300 hover:shadow-xl hover:border-destructive/50">
-              <div className="p-4">
-                <h3 className="text-destructive font-semibold mb-2 flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  Errors Encountered
-                </h3>
-                <ul className="list-disc list-inside text-destructive-foreground text-sm space-y-1">
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/50 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-destructive/70">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertTitle className="text-destructive dark:text-red-400 font-bold">
+                Errors Encountered During Scan
+              </AlertTitle>
+              <AlertDescription className="text-sm mt-2 text-destructive-foreground dark:text-red-300">
+                <ul className="list-disc list-inside space-y-1">
                   {scan.errors.map((error, index) => (
                     <li key={index}>{error}</li>
                   ))}
                 </ul>
-              </div>
-            </Card>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </main>
