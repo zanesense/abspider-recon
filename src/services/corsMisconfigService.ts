@@ -1,6 +1,6 @@
 import { normalizeUrl, extractDomain } from './apiUtils';
 import { fetchWithBypass } from './corsProxy';
-import { RequestManager } => './requestManager';
+import { RequestManager } from './requestManager'; // Corrected from '=>' to 'from'
 
 export interface CorsMisconfigVulnerability {
   type: 'wildcard_origin' | 'dynamic_origin_reflection' | 'null_origin_allowed' | 'trusted_domain_bypass';
