@@ -3,7 +3,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2, Shield, ArrowLeft, UserCircle, Zap, Save, KeyRound } from 'lucide-react';
+import { AlertCircle, Loader2, Shield, ArrowLeft, UserCircle, Zap, Save, KeyRound, CheckCircle, XCircle } from 'lucide-react'; // Added CheckCircle, XCircle
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/SupabaseClient';
 import { useNavigate } from 'react-router-dom';
@@ -18,11 +18,12 @@ const AccountSettings = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [currentPassword, setCurrentPassword] = useState(''); // State for current password
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loadingProfileUpdate, setLoadingProfileUpdate] = useState(false);
   const [loadingPasswordChange, setLoadingPasswordChange] = useState(false);
+  const [passwordsMatch, setPasswordsMatch] = useState(false); // New state for real-time password match
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -48,6 +49,11 @@ const AccountSettings = () => {
     };
     fetchUser();
   }, []);
+
+  // Effect to update password match status in real-time
+  useEffect(() => {
+    setPasswordsMatch(newPassword === confirmPassword && newPassword.length > 0);
+  }, [newPassword, confirmPassword]);
 
   const handleProfileUpdate = async () => {
     setLoadingProfileUpdate(true);
@@ -111,24 +117,19 @@ const AccountSettings = () => {
 
     setLoadingPasswordChange(true);
     try {
-      // 1. Get current user's email
       if (!userEmail) {
         throw new Error("User email not found. Please log in again.");
       }
 
-      // 2. Authenticate current password by attempting to sign in
-      // This re-authenticates the user, confirming the current password is correct.
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: userEmail,
         password: currentPassword,
       });
 
       if (signInError) {
-        // If sign-in fails, the current password is incorrect
         throw new Error("Current password is incorrect. Please try again.");
       }
 
-      // 3. If current password is correct, proceed to update the password
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -141,7 +142,6 @@ const AccountSettings = () => {
         title: "Password Changed",
         description: "Your password has been updated successfully.",
       });
-      // Clear fields after successful change
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -286,18 +286,29 @@ const AccountSettings = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary pr-10" // Added pr-10 for icon
+                  />
+                  {confirmPassword.length > 0 && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      {passwordsMatch ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
               <Button
                 onClick={handleChangePassword}
-                disabled={loadingPasswordChange || !currentPassword || !newPassword || !confirmPassword}
+                disabled={loadingPasswordChange || !currentPassword || !newPassword || !confirmPassword || !passwordsMatch}
                 className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg shadow-orange-500/30"
               >
                 {loadingPasswordChange ? (
