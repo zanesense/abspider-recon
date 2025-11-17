@@ -134,6 +134,9 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
 
     setLoading(true);
     setEnrollmentError(null);
+    
+    console.log(`[2FA Verify] Attempting to verify factorId: ${factorId}, code: ${otpCode}`); // Debug log
+
     try {
       const { data, error } = await supabase.auth.mfa.challengeAndVerify({
         factorId: factorId,

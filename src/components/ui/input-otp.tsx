@@ -30,17 +30,21 @@ const InputOTPGroup = React.forwardRef<
 ))
 InputOTPGroup.displayName = "InputOTPGroup"
 
-// Define props for InputOTPSlot directly
+// Define props for InputOTPSlot directly, including those passed by input-otp's render prop
 interface InputOTPSlotProps extends React.HTMLAttributes<HTMLDivElement> {
   char: string;
   isActive: boolean;
-  // Add any other props that `input-otp`'s Slot component might pass if needed
+  isFocused: boolean;
+  isPlaceholder: boolean;
+  placeholderChar: string;
+  hasFakeCaret: boolean;
+  index: number;
 }
 
 const InputOTPSlot = React.forwardRef<
   HTMLDivElement, // Corrected ref type
   InputOTPSlotProps // Corrected props type
->(({ char, isActive, className, ...props }, ref) => {
+>(({ char, isActive, className, isFocused, isPlaceholder, placeholderChar, hasFakeCaret, index, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -49,7 +53,7 @@ const InputOTPSlot = React.forwardRef<
         isActive && "z-10 ring-1 ring-ring",
         className
       )}
-      {...props}
+      {...props} // Now 'props' should only contain standard HTMLDivElement attributes
     >
       {char}
       {isActive && (
