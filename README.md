@@ -146,7 +146,7 @@ yarn dev
 
 ## 📸 Interface
 
-<img src="https://i.postimg.cc/Ss4nWCRY/localhost-5000.png">
+<img src="">
 
 -----
 
