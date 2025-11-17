@@ -80,7 +80,7 @@ export const performSslTlsAnalysis = async (target: string, requestManager: Requ
 
   } catch (error: any) {
     console.error('[SSL/TLS] Error during analysis:', error);
-    result.errors.push(`General error: ${error.message}`);
+    result.errors.push(`Failed to perform SSL/TLS analysis: ${error.message}`);
     return result;
   }
 };
