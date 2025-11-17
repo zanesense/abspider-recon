@@ -57,11 +57,17 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
     const ptrResponse = await requestManager.fetch(ptrUrl, { timeout: 10000 });
     const ptrData = await ptrResponse.json();
 
+    // Check for abort signal before making potentially many CMS detection requests
+    if (requestManager.scanController?.signal.aborted) {
+      console.warn('[Reverse IP] Scan aborted by user or controller before CMS detection. Returning partial results.');
+      return result;
+    }
+
     if (ptrData.Answer) {
       for (const record of ptrData.Answer) {
         // Check for abort signal before making potentially many CMS detection requests
         if (requestManager.scanController?.signal.aborted) {
-          console.warn('[Reverse IP] Scan aborted by user or controller during CMS detection.');
+          console.warn('[Reverse IP] Scan aborted by user or controller during CMS detection. Returning partial results.');
           // Break the loop and return partial results
           break; 
         }
@@ -83,7 +89,8 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
     
     return result;
   } catch (error: any) {
-    if (error.name === 'AbortError' || error.message === 'Request aborted') {
+    // Updated condition to catch the specific error message from RequestManager
+    if (error.name === 'AbortError' || (typeof error.message === 'string' && error.message.includes('aborted by scan controller'))) {
       console.warn('[Reverse IP] Scan aborted by user or controller. Returning partial results.');
       // Return the partial result collected so far
       return result; 
