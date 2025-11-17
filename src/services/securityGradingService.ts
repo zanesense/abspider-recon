@@ -43,6 +43,19 @@ export const calculateSecurityGrade = (scan: Scan): number => {
     }
   }
 
+  // Deductions/Bonuses for new modules
+  if (scan.results.virustotal?.reputation !== undefined && scan.results.virustotal.reputation < 0) {
+    grade -= 1.5; // Deduction for negative VirusTotal reputation
+  }
+  if (scan.results.virustotal?.detectedUrls && scan.results.virustotal.detectedUrls.some(u => u.positives > 0)) {
+    grade -= 1; // Deduction for malicious URLs detected
+  }
+  if (scan.results.sslTls?.isExpired) {
+    grade -= 3; // Significant deduction for expired SSL certificate
+  } else if (scan.results.sslTls?.daysUntilExpiry !== undefined && scan.results.sslTls.daysUntilExpiry <= 30) {
+    grade -= 1; // Deduction for SSL certificate expiring soon
+  }
+
   // Bonus for DDoS/WAF detection (indicates some protection)
   if (scan.results.ddosFirewall?.firewallDetected) {
     grade += 0.5;

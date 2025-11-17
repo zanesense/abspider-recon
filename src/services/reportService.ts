@@ -79,6 +79,28 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
       recommendations.push('• Implement a DMARC record to gain visibility into email authentication failures and protect against phishing attacks.');
     }
   }
+
+  // VirusTotal recommendations
+  if (scan.results.virustotal?.reputation !== undefined && scan.results.virustotal.reputation < 0) {
+    recommendations.push('HIGH: Negative VirusTotal Reputation');
+    recommendations.push('• Investigate the cause of the negative reputation (e.g., malware, phishing).');
+    recommendations.push('• Clean up any detected malicious content or associations.');
+    recommendations.push('• Submit a false positive report to VirusTotal if applicable.');
+  }
+  if (scan.results.virustotal?.detectedUrls && scan.results.virustotal.detectedUrls.some(u => u.positives > 0)) {
+    recommendations.push('HIGH: Malicious URLs Detected by VirusTotal');
+    recommendations.push('• Review and remove any detected malicious URLs from your website.');
+    recommendations.push('• Ensure all external links are legitimate and safe.');
+  }
+
+  // SSL/TLS recommendations
+  if (scan.results.sslTls?.isExpired) {
+    recommendations.push('CRITICAL: SSL Certificate Expired');
+    recommendations.push('• Renew your SSL/TLS certificate immediately to restore secure communication and trust.');
+  } else if (scan.results.sslTls?.daysUntilExpiry !== undefined && scan.results.sslTls.daysUntilExpiry <= 30) {
+    recommendations.push('HIGH: SSL Certificate Expiring Soon');
+    recommendations.push('• Renew your SSL/TLS certificate within the next 30 days to avoid service disruption.');
+  }
   
   return recommendations;
 };
@@ -93,7 +115,9 @@ export const generatePDFReport = (scan: Scan) => {
   const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
   const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
   const ddosFirewallDetected = (scan.results.ddosFirewall?.firewallDetected) ? 1 : 0; // Count as 1 if detected
-  const totalVulns = sqlVulns + xssVulns + lfiVulns + wpVulns + ddosFirewallDetected;
+  const virustotalMalicious = (scan.results.virustotal?.maliciousVotes || 0) > 0 ? 1 : 0; // Count as 1 if malicious
+  const sslTlsExpired = (scan.results.sslTls?.isExpired) ? 1 : 0; // Count as 1 if expired
+  const totalVulns = sqlVulns + xssVulns + lfiVulns + wpVulns + ddosFirewallDetected + virustotalMalicious + sslTlsExpired;
 
   // Modern Header with gradient effect
   doc.setFillColor(6, 182, 212);
@@ -210,6 +234,8 @@ export const generatePDFReport = (scan: Scan) => {
       ['Local File Inclusion (LFI)', lfiVulns.toString(), lfiVulns > 0 ? 'CRITICAL' : 'SAFE', lfiVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['WordPress Security', wpVulns.toString(), wpVulns > 0 ? 'HIGH' : 'SAFE', wpVulns > 0 ? 'Update and secure' : 'No issues found'],
       ['DDoS/WAF Detection', ddosFirewallDetected.toString(), ddosFirewallDetected > 0 ? 'INFO' : 'N/A', ddosFirewallDetected > 0 ? 'Protection detected' : 'No protection detected'],
+      ['VirusTotal Malicious', virustotalMalicious.toString(), virustotalMalicious > 0 ? 'HIGH' : 'SAFE', virustotalMalicious > 0 ? 'Investigate reputation' : 'No malicious activity'],
+      ['SSL Certificate Expired', sslTlsExpired.toString(), sslTlsExpired > 0 ? 'CRITICAL' : 'VALID', sslTlsExpired > 0 ? 'Renew certificate immediately' : 'Certificate is valid'],
     ];
     
     autoTable(doc, {
@@ -609,6 +635,171 @@ export const generatePDFReport = (scan: Scan) => {
         styles: { fontSize: 8 },
       });
       yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+  }
+
+  // VirusTotal Results
+  if (scan.results.virustotal?.tested) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(220, 38, 38); // Red for VirusTotal
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('VIRUSTOTAL: VirusTotal Scan Results', 14, yPosition);
+    yPosition += 15;
+
+    const vtData = [
+      ['Domain', scan.results.virustotal.domain],
+      ['Reputation', scan.results.virustotal.reputation?.toString() || 'N/A'],
+      ['Malicious Votes', scan.results.virustotal.maliciousVotes?.toString() || '0'],
+      ['Harmless Votes', scan.results.virustotal.harmlessVotes?.toString() || '0'],
+      ['Last Analysis', scan.results.virustotal.lastAnalysisDate ? new Date(scan.results.virustotal.lastAnalysisDate).toLocaleString() : 'N/A'],
+      ['Registrar', scan.results.virustotal.registrar || 'N/A'],
+      ['Categories', scan.results.virustotal.categories?.join(', ') || 'N/A'],
+    ];
+
+    autoTable(doc, {
+      startY: yPosition,
+      body: vtData,
+      theme: 'striped',
+      styles: { fontSize: 9 },
+    });
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+    if (scan.results.virustotal.detectedUrls && scan.results.virustotal.detectedUrls.length > 0) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Detected URLs:', 14, yPosition);
+      yPosition += 5;
+      const urlsData = scan.results.virustotal.detectedUrls.map(u => [
+        u.url.substring(0, 70) + (u.url.length > 70 ? '...' : ''),
+        `${u.positives}/${u.total} Malicious`
+      ]);
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['URL', 'Detections']],
+        body: urlsData,
+        theme: 'grid',
+        headStyles: { fillColor: [220, 38, 38], fontStyle: 'bold' },
+        styles: { fontSize: 8 },
+      });
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+  }
+
+  // Email Enumeration Results
+  if (scan.results.emailEnum?.tested) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(59, 130, 246); // Blue for Email Enum
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('EMAIL: Email Enumeration Results', 14, yPosition);
+    yPosition += 15;
+
+    const emailData = [
+      ['Domain', scan.results.emailEnum.domain],
+      ['Organization', scan.results.emailEnum.organization || 'N/A'],
+      ['Disposable Provider', scan.results.emailEnum.disposable ? 'Yes' : 'No'],
+      ['Webmail Provider', scan.results.emailEnum.webmail ? 'Yes' : 'No'],
+    ];
+
+    autoTable(doc, {
+      startY: yPosition,
+      body: emailData,
+      theme: 'striped',
+      styles: { fontSize: 9 },
+    });
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+    if (scan.results.emailEnum.emails && scan.results.emailEnum.emails.length > 0) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Discovered Emails:', 14, yPosition);
+      yPosition += 5;
+      const emailsTableData = scan.results.emailEnum.emails.map(e => [
+        e.value,
+        e.type,
+        e.confidence ? `${e.confidence}%` : 'N/A',
+        e.sources?.length ? `${e.sources.length} sources` : 'N/A'
+      ]);
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Email', 'Type', 'Confidence', 'Sources']],
+        body: emailsTableData,
+        theme: 'grid',
+        headStyles: { fillColor: [59, 130, 246], fontStyle: 'bold' },
+        styles: { fontSize: 8 },
+      });
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+  }
+
+  // SSL/TLS Analysis Results
+  if (scan.results.sslTls?.tested) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(139, 92, 246); // Purple for SSL/TLS
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SSL/TLS: SSL/TLS Analysis Results', 14, yPosition);
+    yPosition += 15;
+
+    const sslData = [
+      ['Domain', scan.results.sslTls.domain],
+      ['Issuer', scan.results.sslTls.certificateIssuer || 'N/A'],
+      ['Subject', scan.results.sslTls.certificateSubject || 'N/A'],
+      ['Valid From', scan.results.sslTls.validFrom || 'N/A'],
+      ['Valid To', scan.results.sslTls.validTo || 'N/A'],
+      ['Status', scan.results.sslTls.isExpired ? 'Expired' : (scan.results.sslTls.daysUntilExpiry !== undefined && scan.results.sslTls.daysUntilExpiry <= 30 ? 'Expiring Soon' : 'Valid')],
+      ['Days Until Expiry', scan.results.sslTls.daysUntilExpiry?.toString() || 'N/A'],
+    ];
+
+    autoTable(doc, {
+      startY: yPosition,
+      body: sslData,
+      theme: 'striped',
+      styles: { fontSize: 9 },
+    });
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+    if (scan.results.sslTls.commonNames && scan.results.sslTls.commonNames.length > 0) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Common Names:', 14, yPosition);
+      yPosition += 5;
+      doc.text(scan.results.sslTls.commonNames.join(', '), 14, yPosition);
+      yPosition += 10;
+    }
+    if (scan.results.sslTls.altNames && scan.results.sslTls.altNames.length > 0) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Alternative Names:', 14, yPosition);
+      yPosition += 5;
+      doc.text(scan.results.sslTls.altNames.join(', '), 14, yPosition);
+      yPosition += 10;
+    }
+    if (scan.results.sslTls.fingerprintSha256) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Fingerprint (SHA256):', 14, yPosition);
+      yPosition += 5;
+      doc.text(scan.results.sslTls.fingerprintSha256, 14, yPosition);
+      yPosition += 10;
     }
   }
 

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star } from 'lucide-react'; // Added Star icon
+import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock } from 'lucide-react'; // Added Link, Lock icons
 import { Scan } from '@/services/scanService';
 
 interface ScanStatusProps {
@@ -59,7 +59,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     (scan.results.sqlinjection?.vulnerable && scan.results.sqlinjection.vulnerabilities.length > 0) ||
     (scan.results.xss?.vulnerable && scan.results.xss.vulnerabilities.length > 0) ||
     (scan.results.lfi?.vulnerable && scan.results.lfi.vulnerabilities.length > 0) ||
-    (scan.results.wordpress?.vulnerabilities && scan.results.wordpress.vulnerabilities.length > 0);
+    (scan.results.wordpress?.vulnerabilities && scan.results.wordpress.vulnerabilities.length > 0) ||
+    (scan.results.virustotal?.reputation !== undefined && scan.results.virustotal.reputation < 0) || // New
+    (scan.results.sslTls?.isExpired); // New
 
   const moduleIcons: Record<string, React.ElementType> = {
     siteInfo: Globe,
@@ -78,6 +80,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     wordpress: Code,
     seo: TrendingUp,
     ddosFirewall: Zap,
+    virustotal: Link, // New icon
+    emailEnum: Mail, // New icon
+    sslTls: Lock, // New icon
   };
 
   const moduleLabels: Record<string, string> = {
@@ -97,6 +102,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     wordpress: 'WordPress',
     seo: 'SEO',
     ddosFirewall: 'DDoS Firewall',
+    virustotal: 'VirusTotal', // New label
+    emailEnum: 'Email Enum', // New label
+    sslTls: 'SSL/TLS', // New label
   };
 
   return (
@@ -175,7 +183,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
             {Object.entries(scan.config).map(([key, value]) => {
               if (value === true && moduleLabels[key]) {
                 const Icon = moduleIcons[key];
-                const isVulnModule = ['sqlinjection', 'xss', 'lfi'].includes(key);
+                const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls'].includes(key); // Updated
                 const isSecurityModule = ['ddosFirewall'].includes(key);
                 return (
                   <Badge 

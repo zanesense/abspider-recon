@@ -15,6 +15,9 @@ import { performLFIScan, LFIScanResult } from './lfiScanService';
 import { performWordPressScan, WordPressScanResult } from './wordpressService';
 import { performSEOAnalysis, SEOAnalysis } from './seoService';
 import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService';
+import { performVirusTotalScan, VirusTotalResult } from './virustotalService'; // New import
+import { performEmailEnumeration, EmailEnumerationResult } from './emailEnumService'; // New import
+import { performSslTlsAnalysis, SslTlsResult } from './sslTlsService'; // New import
 import { getSettings } from './settingsService'; // Import getSettings from Supabase-backed service
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
@@ -42,6 +45,9 @@ export interface ScanConfig {
   wordpress: boolean;
   seo: boolean;
   ddosFirewall: boolean;
+  virustotal: boolean; // New module
+  emailEnum: boolean; // New module
+  sslTls: boolean; // New module
   xssPayloads: number;
   sqliPayloads: number;
   lfiPayloads: number;
@@ -67,6 +73,9 @@ export interface ScanResults {
   wordpress?: WordPressScanResult;
   seo?: SEOAnalysis;
   ddosFirewall?: DDoSFirewallResult;
+  virustotal?: VirusTotalResult; // New module result
+  emailEnum?: EmailEnumerationResult; // New module result
+  sslTls?: SslTlsResult; // New module result
 }
 
 export interface Scan {
@@ -363,6 +372,18 @@ const runScan = async (
             case 'ddosFirewall':
               moduleResult = await performDDoSFirewallTest(config.target, config.ddosRequests, 100, requestManager);
               currentScan.results.ddosFirewall = moduleResult;
+              break;
+            case 'virustotal': // New module case
+              moduleResult = await performVirusTotalScan(config.target, requestManager, apiKeys);
+              currentScan.results.virustotal = moduleResult;
+              break;
+            case 'emailEnum': // New module case
+              moduleResult = await performEmailEnumeration(config.target, requestManager, apiKeys);
+              currentScan.results.emailEnum = moduleResult;
+              break;
+            case 'sslTls': // New module case
+              moduleResult = await performSslTlsAnalysis(config.target, requestManager);
+              currentScan.results.sslTls = moduleResult;
               break;
             default:
               console.warn(`[ScanService] Unknown module: ${moduleName}`);

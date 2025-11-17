@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle } from 'lucide-react';
+import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle, Mail, Lock } from 'lucide-react'; // Added Mail, Lock
 import { useToast } from '@/hooks/use-toast';
 import { startScan } from '@/services/scanService';
 import { useForm } from 'react-hook-form';
@@ -47,6 +47,9 @@ const scanFormSchema = z.object({
   wordpress: z.boolean(),
   seo: z.boolean(),
   ddosFirewall: z.boolean(),
+  virustotal: z.boolean(), // New module
+  emailEnum: z.boolean(), // New module
+  sslTls: z.boolean(), // New module
   xssPayloads: z.number().min(1).max(100).default(20),
   sqliPayloads: z.number().min(1).max(100).default(20),
   lfiPayloads: z.number().min(1).max(100).default(20),
@@ -120,6 +123,9 @@ const NewScan = () => {
       wordpress: false,
       seo: true,
       ddosFirewall: false,
+      virustotal: false, // Default to false
+      emailEnum: false, // Default to false
+      sslTls: false, // Default to false
       xssPayloads: 20,
       sqliPayloads: 20,
       lfiPayloads: 20,
@@ -179,7 +185,7 @@ const NewScan = () => {
   };
 
   const toggleNetworkIntelligence = () => {
-    const allChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
+    const allChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip && formData.emailEnum;
     setValue('whois', !allChecked);
     setValue('geoip', !allChecked);
     setValue('dns', !allChecked);
@@ -188,13 +194,15 @@ const NewScan = () => {
     setValue('ports', !allChecked);
     setValue('subdomains', !allChecked);
     setValue('reverseip', !allChecked);
+    setValue('emailEnum', !allChecked); // New module
   };
 
   const toggleVulnerabilityAssessment = () => {
-    const allChecked = formData.sqlinjection && formData.xss && formData.lfi;
+    const allChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal;
     setValue('sqlinjection', !allChecked);
     setValue('xss', !allChecked);
     setValue('lfi', !allChecked);
+    setValue('virustotal', !allChecked); // New module
   };
 
   const toggleCmsDetection = () => {
@@ -208,18 +216,19 @@ const NewScan = () => {
   };
 
   const toggleSecurityTesting = () => {
-    const allChecked = formData.ddosFirewall;
+    const allChecked = formData.ddosFirewall && formData.sslTls;
     setValue('ddosFirewall', !allChecked);
+    setValue('sslTls', !allChecked); // New module
   };
 
   const allBasicChecked = formData.siteInfo && formData.headers;
   const anyBasicChecked = formData.siteInfo || formData.headers;
 
-  const allNetworkChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
-  const anyNetworkChecked = formData.whois || formData.geoip || formData.dns || formData.mx || formData.subnet || formData.ports || formData.subdomains || formData.reverseip;
+  const allNetworkChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip && formData.emailEnum;
+  const anyNetworkChecked = formData.whois || formData.geoip || formData.dns || formData.mx || formData.subnet || formData.ports || formData.subdomains || formData.reverseip || formData.emailEnum;
 
-  const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi;
-  const anyVulnChecked = formData.sqlinjection || formData.xss || formData.lfi;
+  const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal;
+  const anyVulnChecked = formData.sqlinjection || formData.xss || formData.lfi || formData.virustotal;
 
   const allCmsChecked = formData.wordpress;
   const anyCmsChecked = formData.wordpress;
@@ -227,8 +236,8 @@ const NewScan = () => {
   const allSeoChecked = formData.seo;
   const anySeoChecked = formData.seo;
 
-  const allSecurityChecked = formData.ddosFirewall;
-  const anySecurityChecked = formData.ddosFirewall;
+  const allSecurityChecked = formData.ddosFirewall && formData.sslTls;
+  const anySecurityChecked = formData.ddosFirewall || formData.sslTls;
 
   const targetHostname = formData.target ? extractHostname(formData.target) : '';
   const isTargetInternal = targetHostname && (isInternalIP(targetHostname) || targetHostname === 'localhost');
@@ -536,6 +545,16 @@ const NewScan = () => {
                       <span className="font-medium">Reverse IP Lookup</span> - Sites on same server
                     </label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="emailEnum"
+                      checked={formData.emailEnum}
+                      onCheckedChange={(checked) => setValue('emailEnum', checked as boolean)}
+                    />
+                    <label htmlFor="emailEnum" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Email Enumeration</span> - Discover emails (Hunter.io)
+                    </label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -584,6 +603,16 @@ const NewScan = () => {
                     />
                     <label htmlFor="lfi" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">LFI Detection</span> - Local file inclusion test
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="virustotal"
+                      checked={formData.virustotal}
+                      onCheckedChange={(checked) => setValue('virustotal', checked as boolean)}
+                    />
+                    <label htmlFor="virustotal" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">VirusTotal Scan</span> - Domain reputation & malware
                     </label>
                   </div>
                 </div>
@@ -717,6 +746,16 @@ const NewScan = () => {
                     />
                     <label htmlFor="ddosFirewall" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">DDoS Firewall Test</span> - Detect WAF/DDoS protection
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="sslTls"
+                      checked={formData.sslTls}
+                      onCheckedChange={(checked) => setValue('sslTls', checked as boolean)}
+                    />
+                    <label htmlFor="sslTls" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">SSL/TLS Analysis</span> - Certificate details & expiry
                     </label>
                   </div>
                 </div>
