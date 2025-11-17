@@ -590,12 +590,6 @@ const AppSettings = () => {
                 </div>
               </div>
               
-              <div className="bg-muted/50 border border-border rounded-lg p-4">
-                <p className="text-xs text-muted-foreground flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  API keys are stored locally in your browser and never sent to external servers except the respective API providers
-                </p>
-              </div>
             </CardContent>
           </Card>
 
