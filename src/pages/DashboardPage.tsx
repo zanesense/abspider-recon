@@ -14,6 +14,7 @@ import { supabase } from '@/SupabaseClient';
 import DatabaseStatusCard from '@/components/DatabaseStatusCard';
 import APIKeyStatusCard from '@/components/APIKeyStatusCard'; // New import
 import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard'; // Existing, but now used here
+import CurrentDateTime from '@/components/CurrentDateTime'; // Import the new component
 
 const DashboardPage = () => {
   const { toast } = useToast();
@@ -80,6 +81,7 @@ const DashboardPage = () => {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Overview of your reconnaissance activities</p>
         </div>
+        <CurrentDateTime className="hidden md:flex" /> {/* Display current date and time */}
         <div className="flex items-center gap-2">
           {userEmail && (
             <Badge variant="secondary" className="flex items-center gap-1 text-muted-foreground">
