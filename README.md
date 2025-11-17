@@ -54,30 +54,24 @@ Experience ABSpider Recon Dashboard in action right now!
 
 ABSpider employs a modular approach, offering both stealthy passive checks and comprehensive active vulnerability scans.
 
-### 🌐 Passive Reconnaissance (Stealthy & Informative)
-
-*   **Site Information:** Basic website details, IP, web server, CMS, and `robots.txt` analysis.
-*   **HTTP Headers Analysis:** Real-time security header scoring (HSTS, CSP, XFO) and technology fingerprinting.
-*   **WHOIS / RDAP Lookup:** Domain registration, registrar, nameservers, and date information.
-*   **GeoIP Location:** Pinpoints the physical location of the target server's IP address.
-*   **DNS Records:** Enumerates A, AAAA, CNAME, TXT, MX, NS, and SOA records.
-*   **MX Records:** Analyzes mail server configurations, including SPF and DMARC.
-*   **Subdomain Enumeration:** Discovers subdomains using Certificate Transparency (CT) logs and DNS lookups.
-*   **Reverse IP Lookup:** Identifies other domains hosted on the same IP address.
-*   **SEO Analysis:** Analyzes meta tags, headings, links, and page performance for SEO insights.
-
-### 🚨 Active Vulnerability Assessment (Requires Authorization)
-
-*   **Port Scanning:** Checks connectivity and identifies services on common ports, with Shodan integration.
-*   **SQL Injection Test:** Checks for potential **SQL Injection (SQLi)** vulnerabilities.
-*   **XSS Detection:** Detects reflected, DOM, and stored **XSS** vulnerabilities.
-*   **LFI Scanning:** Scans for Local File Inclusions using real payloads.
-*   **DDoS Firewall Test:** Detects WAF/DDoS protection mechanisms (e.g., Cloudflare, Sucuri).
-
-### 🛠️ Utility & CMS Specific
-
-*   **Subnet Scan:** Calculates network range details for a given IP and CIDR.
-*   **WordPress Scan:** Identifies WordPress versions, plugins, themes, and common vulnerabilities.
+| Module                     | Description                                                              | Type      |
+| :------------------------- | :----------------------------------------------------------------------- | :-------- |
+| 🌐 Site Information        | Basic website details, IP, web server, CMS, and `robots.txt` analysis.   | Passive   |
+| 🛡️ HTTP Headers Analysis   | Real-time security header scoring (HSTS, CSP, XFO) and technology fingerprinting. | Passive   |
+| 📜 WHOIS / RDAP Lookup     | Domain registration, registrar, nameservers, and date information.       | Passive   |
+| 📍 GeoIP Location          | Pinpoints the physical location of the target server's IP address.       | Passive   |
+| 📡 DNS Records             | Enumerates A, AAAA, CNAME, TXT, MX, NS, and SOA records.                 | Passive   |
+| 📧 MX Records               | Analyzes mail server configurations, including SPF and DMARC.            | Passive   |
+| 🔍 Subdomain Enumeration    | Discovers subdomains using Certificate Transparency (CT) logs and DNS lookups. | Passive   |
+| 🔄 Reverse IP Lookup        | Identifies other domains hosted on the same IP address.                  | Passive   |
+| 📈 SEO Analysis            | Analyzes meta tags, headings, links, and page performance for SEO insights. | Passive   |
+| 🔌 Port Scanning           | Checks connectivity and identifies services on common ports, with Shodan integration. | Active    |
+| 💉 SQL Injection Test      | Checks for potential **SQL Injection (SQLi)** vulnerabilities.          | Active    |
+| ✍️ XSS Detection            | Detects reflected, DOM, and stored **XSS** vulnerabilities.              | Active    |
+| 📁 LFI Scanning            | Scans for Local File Inclusions using real payloads.                     | Active    |
+| 🧱 DDoS Firewall Test      | Detects WAF/DDoS protection mechanisms (e.g., Cloudflare, Sucuri).       | Active    |
+| 🔢 Subnet Scan             | Calculates network range details for a given IP and CIDR.                | Utility   |
+| 💻 WordPress Scan          | Identifies WordPress versions, plugins, themes, and common vulnerabilities. | Utility   |
 
 ---
 
@@ -111,15 +105,15 @@ Our reports are designed for professional security analysis and include:
 > API keys are stored in your Supabase database, but are still accessible client-side. This means any Cross-Site Scripting (XSS) vulnerability or physical access to your browser could expose these keys.
 > **DO NOT store sensitive, paid, or production API keys here.** This feature is intended for testing with non-critical keys only. For production use, a secure backend for API key management is strongly recommended.
 
-Configure these API keys in the **Settings** tab for enhanced data:
-
-*   **Shodan:** Enhanced port scanning, banner grabbing, and vulnerability detection.
-*   **VirusTotal:** Domain reputation, malware scanning, and threat intelligence.
-*   **SecurityTrails:** Historical DNS data, subdomain discovery, and WHOIS history.
-*   **BuiltWith:** Technology stack detection, analytics, and framework identification.
-*   **OpenCage:** Enhanced geocoding, reverse geocoding, and detailed location data.
-*   **Hunter.io:** Email discovery, domain search, and email verification.
-*   **Clearbit:** Company data enrichment, logo API, and business intelligence.
+| Service        | Purpose                                                              | Status   |
+| :------------- | :------------------------------------------------------------------- | :------- |
+| Shodan         | Enhanced port scanning, banner grabbing, and vulnerability detection. | Optional |
+| VirusTotal     | Domain reputation, malware scanning, and threat intelligence.        | Optional |
+| SecurityTrails | Historical DNS data, subdomain discovery, and WHOIS history.         | Optional |
+| BuiltWith      | Technology stack detection, analytics, and framework identification. | Optional |
+| OpenCage       | Enhanced geocoding, reverse geocoding, and detailed location data.   | Optional |
+| Hunter.io      | Email discovery, domain search, and email verification.              | Optional |
+| Clearbit       | Company data enrichment, logo API, and business intelligence.        | Optional |
 
 ---
 
@@ -150,7 +144,7 @@ yarn dev
 
 ## 📸 Interface Preview
 
-<img src="https://i.postimg.cc/RFqKLDfD/localhost-5000.png" alt="ABSpider Recon Dashboard Interface" width="100%">
+<img src="https://i.postimg.cc/Ss4nWCRY/localhost-5000.png" alt="ABSpider Recon Dashboard Interface" width="100%">
 
 ---
 
