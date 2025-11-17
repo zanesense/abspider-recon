@@ -11,7 +11,7 @@ export default defineConfig({
     allowedHosts: true,
   },
   optimizeDeps: {
-    // Removed exclude: ["lucide-react"] as it's primarily for dev and might interfere with build
+    include: ['lucide-react'], // Explicitly include lucide-react for optimization
   },
   resolve: {
     alias: {
