@@ -30,9 +30,10 @@ import SslTlsResults from '@/components/SslTlsResults';
 import TechStackInfo from '@/components/TechStackInfo';
 import BrokenLinkResults from '@/components/BrokenLinkResults';
 import CorsMisconfigResults from '@/components/CorsMisconfigResults';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Ensure AlertTitle is imported
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import ModuleCardWrapper from '@/components/ModuleCardWrapper'; // Import the new wrapper
 
 const ScanResults = () => {
   const { id } = useParams();
@@ -128,6 +129,11 @@ const ScanResults = () => {
     );
   }
 
+  // Helper to get module-specific error
+  const getModuleError = (moduleName: string) => {
+    return scan.errors.find(error => error.startsWith(`${moduleName}:`));
+  };
+
   return (
     <div className="flex flex-col h-full w-full">
       <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl">
@@ -187,31 +193,115 @@ const ScanResults = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
-              {scan.results.siteInfo && <SiteInfo siteInfo={scan.results.siteInfo} />}
-              {scan.results.headers && <HeadersAnalysis headersAnalysis={scan.results.headers} />}
-              {scan.results.techStack && <TechStackInfo techStack={scan.results.techStack} />}
-              {scan.results.whois && <WhoisInfo whois={scan.results.whois} />}
-              {scan.results.dns && <DNSInfo dns={scan.results.dns} />}
-              {scan.results.mx && <MXInfo mx={scan.results.mx} />}
-              {scan.results.subnet && <SubnetInfo subnet={scan.results.subnet} />}
-              {scan.results.ports && <PortScanResults ports={scan.results.ports} />}
-              {scan.results.virustotal && <VirusTotalResults virustotal={scan.results.virustotal} />}
+              <SiteInfo 
+                siteInfo={scan.results.siteInfo} 
+                isTested={scan.config.siteInfo} 
+                moduleError={getModuleError('siteInfo')} 
+              />
+              <HeadersAnalysis 
+                headersAnalysis={scan.results.headers} 
+                isTested={scan.config.headers} 
+                moduleError={getModuleError('headers')} 
+              />
+              <TechStackInfo 
+                techStack={scan.results.techStack} 
+                isTested={scan.config.techStack} 
+                moduleError={getModuleError('techStack')} 
+              />
+              <WhoisInfo 
+                whois={scan.results.whois} 
+                isTested={scan.config.whois} 
+                moduleError={getModuleError('whois')} 
+              />
+              <DNSInfo 
+                dns={scan.results.dns} 
+                isTested={scan.config.dns} 
+                moduleError={getModuleError('dns')} 
+              />
+              <MXInfo 
+                mx={scan.results.mx} 
+                isTested={scan.config.mx} 
+                moduleError={getModuleError('mx')} 
+              />
+              <SubnetInfo 
+                subnet={scan.results.subnet} 
+                isTested={scan.config.subnet} 
+                moduleError={getModuleError('subnet')} 
+              />
+              <PortScanResults 
+                ports={scan.results.ports} 
+                isTested={scan.config.ports} 
+                moduleError={getModuleError('ports')} 
+              />
+              <VirusTotalResults 
+                virustotal={scan.results.virustotal} 
+                isTested={scan.config.virustotal} 
+                moduleError={getModuleError('virustotal')} 
+              />
             </div>
 
             {/* Right Column */}
             <div className="space-y-6">
-              {scan.results.geoip && <GeoIPInfo geoip={scan.results.geoip} />}
-              {scan.results.subdomains && <SubdomainList subdomains={scan.results.subdomains} />}
-              {scan.results.reverseip && <ReverseIPInfo reverseip={scan.results.reverseip} />}
-              {scan.results.sqlinjection && <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />}
-              {scan.results.xss && <XSSVulnerabilities xss={scan.results.xss} />}
-              {scan.results.lfi && <LFIVulnerabilities lfi={scan.results.lfi} />}
-              {scan.results.corsMisconfig && <CorsMisconfigResults corsMisconfig={scan.results.corsMisconfig} />}
-              {scan.results.wordpress && <WordPressInfo wordpress={scan.results.wordpress} />}
-              {scan.results.seo && <SEOInfo seo={scan.results.seo} />}
-              {scan.results.brokenLinks && <BrokenLinkResults brokenLinks={scan.results.brokenLinks} />}
-              {scan.results.ddosFirewall && <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />}
-              {scan.results.sslTls && <SslTlsResults sslTls={scan.results.sslTls} />}
+              <GeoIPInfo 
+                geoip={scan.results.geoip} 
+                isTested={scan.config.geoip} 
+                moduleError={getModuleError('geoip')} 
+              />
+              <SubdomainList 
+                subdomains={scan.results.subdomains} 
+                isTested={scan.config.subdomains} 
+                moduleError={getModuleError('subdomains')} 
+              />
+              <ReverseIPInfo 
+                reverseip={scan.results.reverseip} 
+                isTested={scan.config.reverseip} 
+                moduleError={getModuleError('reverseip')} 
+              />
+              <SQLVulnerabilities 
+                sqlinjection={scan.results.sqlinjection} 
+                isTested={scan.config.sqlinjection} 
+                moduleError={getModuleError('sqlinjection')} 
+              />
+              <XSSVulnerabilities 
+                xss={scan.results.xss} 
+                isTested={scan.config.xss} 
+                moduleError={getModuleError('xss')} 
+              />
+              <LFIVulnerabilities 
+                lfi={scan.results.lfi} 
+                isTested={scan.config.lfi} 
+                moduleError={getModuleError('lfi')} 
+              />
+              <CorsMisconfigResults 
+                corsMisconfig={scan.results.corsMisconfig} 
+                isTested={scan.config.corsMisconfig} 
+                moduleError={getModuleError('corsMisconfig')} 
+              />
+              <WordPressInfo 
+                wordpress={scan.results.wordpress} 
+                isTested={scan.config.wordpress} 
+                moduleError={getModuleError('wordpress')} 
+              />
+              <SEOInfo 
+                seo={scan.results.seo} 
+                isTested={scan.config.seo} 
+                moduleError={getModuleError('seo')} 
+              />
+              <BrokenLinkResults 
+                brokenLinks={scan.results.brokenLinks} 
+                isTested={scan.config.brokenLinks} 
+                moduleError={getModuleError('brokenLinks')} 
+              />
+              <DDoSFirewallResults 
+                ddosFirewall={scan.results.ddosFirewall} 
+                isTested={scan.config.ddosFirewall} 
+                moduleError={getModuleError('ddosFirewall')} 
+              />
+              <SslTlsResults 
+                sslTls={scan.results.sslTls} 
+                isTested={scan.config.sslTls} 
+                moduleError={getModuleError('sslTls')} 
+              />
             </div>
           </div>
 
