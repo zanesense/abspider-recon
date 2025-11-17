@@ -29,30 +29,37 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
       setEnrollmentError(null);
       try {
         // First, check if 2FA is already enabled
-        const { data: { totp: existingFactors }, error: listError } = await supabase.auth.mfa.listFactors();
-        if (listError) throw listError;
+        const { data, error: listError } = await supabase.auth.mfa.listFactors();
+        if (listError) {
+          console.error('Error listing MFA factors:', listError);
+          throw new Error(`Failed to check existing 2FA factors: ${listError.message}`);
+        }
 
-        if (existingFactors && existingFactors.length > 0) {
+        const existingFactors = data?.totp || []; // Ensure it's an array, handle data being null/undefined
+        console.log('Existing MFA factors:', existingFactors);
+
+        if (existingFactors.length > 0) {
           toast({
             title: "2FA Already Enabled",
             description: "You already have Two-Factor Authentication set up. Redirecting to settings.",
             variant: "default",
           });
           navigate('/settings');
-          return;
+          return; // IMPORTANT: Return here to stop further execution
         }
 
         // If no existing factors, proceed with enrollment
-        const { data, error: enrollError } = await supabase.auth.mfa.enroll({
+        const { data: enrollData, error: enrollError } = await supabase.auth.mfa.enroll({
           factorType: 'totp',
           issuer: 'ABSpider Recon',
+          friendlyName: 'ABSpider Authenticator', // Provide a unique friendly name
         });
 
         if (enrollError) throw enrollError;
 
-        setSecret(data.totp.secret);
-        setQrCodeUrl(data.totp.qrCode);
-        setFactorId(data.id);
+        setSecret(enrollData.totp.secret);
+        setQrCodeUrl(enrollData.totp.qrCode);
+        setFactorId(enrollData.id);
         toast({
           title: "2FA Enrollment Started",
           description: "Scan the QR code with your authenticator app.",
@@ -109,10 +116,10 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
       console.error('2FA Verification Error:', error);
       setEnrollmentError(error.message || 'Failed to verify 2FA enrollment.');
       toast({
-        title: "2FA Verification Failed",
-        description: error.message || "Could not verify 2FA enrollment.",
-        variant: "destructive",
-      });
+          title: "2FA Verification Failed",
+          description: error.message || "Could not verify 2FA enrollment.",
+          variant: "destructive",
+        });
     } finally {
       setLoading(false);
     }
