@@ -272,6 +272,10 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
                     For Android: Settings &gt; System &gt; Date & time &gt; Use network-provided time.
                     <br />
                     For iOS: Settings &gt; General &gt; Date & Time &gt; Set Automatically.
+                    <br />
+                    <strong className="text-yellow-700 dark:text-yellow-200">For Google Authenticator specifically:</strong>
+                    <br />
+                    Open Google Authenticator &gt; Tap the three dots (menu) &gt; Settings &gt; Time correction for codes &gt; Sync now.
                   </p>
                 </div>
               </div>
