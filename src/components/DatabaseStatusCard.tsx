@@ -38,7 +38,7 @@ const DatabaseStatusCard = ({ isLoading, isError }: DatabaseStatusCardProps) => 
           Supabase database connection status
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2"> {/* Changed from space-y-3 to space-y-2 */}
         <div className="flex items-center justify-between">
           <span className="text-foreground">Status</span>
           <Badge className={`flex items-center gap-1 ${statusColorClass}`}>
