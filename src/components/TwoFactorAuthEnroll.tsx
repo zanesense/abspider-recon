@@ -72,6 +72,9 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
       }
 
       console.log('Supabase MFA Enroll Data:', enrollData);
+      console.log('Enrollment ID:', enrollData?.id);
+      console.log('TOTP Secret:', enrollData?.totp?.secret);
+      console.log('TOTP QR Code:', enrollData?.totp?.qrCode);
 
       if (enrollData?.totp?.secret && enrollData?.totp?.qrCode && enrollData?.id) {
         setSecret(enrollData.totp.secret);
@@ -82,7 +85,11 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
           description: "Scan the QR code with your authenticator app.",
         });
       } else {
-        throw new Error("Enrollment data incomplete from Supabase.");
+        const missingParts = [];
+        if (!enrollData?.id) missingParts.push('ID');
+        if (!enrollData?.totp?.secret) missingParts.push('Secret');
+        if (!enrollData?.totp?.qrCode) missingParts.push('QR Code');
+        throw new Error(`Enrollment data incomplete from Supabase. Missing: ${missingParts.join(', ')}.`);
       }
     } catch (error: any) {
       console.error('2FA Enrollment Error (Caught):', error);
