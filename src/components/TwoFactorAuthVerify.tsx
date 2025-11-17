@@ -33,10 +33,12 @@ const TwoFactorAuthVerify: React.FC = () => {
     event.preventDefault();
     if (!otpCode || otpCode.length !== 6) {
       setVerificationError('Please enter the 6-digit code.');
+      setOtpCode(''); // Clear OTP on invalid input length
       return;
     }
     if (!factorId || !challengeId) {
       setVerificationError('Missing 2FA challenge details. Please try logging in again.');
+      setOtpCode(''); // Clear OTP on missing challenge details
       return;
     }
 
@@ -59,6 +61,7 @@ const TwoFactorAuthVerify: React.FC = () => {
         navigate('/dashboard');
       } else {
         setVerificationError('Invalid 2FA code. Please try again.');
+        setOtpCode(''); // Clear OTP on verification failure
         toast({
           title: "2FA Verification Failed",
           description: "The code was incorrect. Please try again.",
@@ -68,6 +71,7 @@ const TwoFactorAuthVerify: React.FC = () => {
     } catch (error: any) {
       console.error('2FA Verification Error:', error);
       setVerificationError(error.message || 'Failed to verify 2FA code.');
+      setOtpCode(''); // Clear OTP on any caught error
       toast({
         title: "2FA Verification Failed",
         description: error.message || "Could not verify 2FA code.",
