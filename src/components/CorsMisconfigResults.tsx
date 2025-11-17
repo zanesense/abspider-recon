@@ -4,27 +4,16 @@ import { Bug, ShieldCheck, AlertTriangle, Lightbulb } from 'lucide-react';
 import CORSBypassIndicator from './CORSBypassIndicator';
 import { CorsMisconfigResult } from '@/services/corsMisconfigService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface CorsMisconfigResultsProps {
-  corsMisconfig: CorsMisconfigResult;
+  corsMisconfig?: CorsMisconfigResult;
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const CorsMisconfigResults = ({ corsMisconfig }: CorsMisconfigResultsProps) => {
-  if (!corsMisconfig.tested) {
-    return (
-      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Bug className="h-5 w-5 text-orange-500 dark:text-orange-400" />
-            CORS Misconfiguration Scan
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">CORS misconfiguration scan not performed.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+const CorsMisconfigResults = ({ corsMisconfig, isTested, moduleError }: CorsMisconfigResultsProps) => {
+  if (!isTested) return null;
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
@@ -35,32 +24,33 @@ const CorsMisconfigResults = ({ corsMisconfig }: CorsMisconfigResultsProps) => {
     }
   };
 
+  const hasData = !!corsMisconfig && (corsMisconfig.vulnerable || corsMisconfig.vulnerabilities.length > 0);
+
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Bug className="h-5 w-5 text-orange-500 dark:text-orange-400" />
-            CORS Misconfiguration Scan
-          </CardTitle>
-          <CORSBypassIndicator metadata={corsMisconfig.corsMetadata} />
-        </div>
-      </CardHeader>
+    <ModuleCardWrapper
+      title="CORS Misconfiguration Scan"
+      icon={Bug}
+      iconColorClass="text-orange-500 dark:text-orange-400"
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="CORS misconfiguration scan not performed or no vulnerabilities detected."
+      headerActions={<CORSBypassIndicator metadata={corsMisconfig?.corsMetadata} />}
+    >
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Status</p>
-            <Badge className={corsMisconfig.vulnerable ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'}>
-              {corsMisconfig.vulnerable ? 'VULNERABLE' : 'SECURE'}
+            <Badge className={corsMisconfig?.vulnerable ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'}>
+              {corsMisconfig?.vulnerable ? 'VULNERABLE' : 'SECURE'}
             </Badge>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Vulnerabilities Found</p>
-            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{corsMisconfig.vulnerabilities.length}</p>
+            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{corsMisconfig?.vulnerabilities.length}</p>
           </div>
         </div>
 
-        {corsMisconfig.vulnerable && corsMisconfig.vulnerabilities.length > 0 ? (
+        {corsMisconfig?.vulnerable && corsMisconfig.vulnerabilities.length > 0 ? (
           <>
             <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
               <Lightbulb className="h-4 w-4" />
@@ -120,7 +110,7 @@ const CorsMisconfigResults = ({ corsMisconfig }: CorsMisconfigResultsProps) => {
           </div>
         )}
       </CardContent>
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 

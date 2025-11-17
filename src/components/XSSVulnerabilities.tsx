@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Shield, Code, Lightbulb } from 'lucide-react';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface XSSVulnerabilitiesProps {
-  xss: {
+  xss?: {
     vulnerable: boolean;
     testedPayloads: number;
     vulnerabilities: Array<{
@@ -16,9 +17,13 @@ interface XSSVulnerabilitiesProps {
     }>;
     tested: boolean;
   };
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
+const XSSVulnerabilities = ({ xss, isTested, moduleError }: XSSVulnerabilitiesProps) => {
+  if (!isTested) return null;
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'high': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
@@ -28,37 +33,36 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
     }
   };
 
+  const hasData = !!xss && (xss.testedPayloads > 0 || xss.vulnerabilities.length > 0);
+
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <CardTitle className="text-foreground flex items-center gap-2">
-          {xss.vulnerable ? (
-            <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
-          ) : (
-            <Shield className="h-5 w-5 text-green-500 dark:text-green-400" />
-          )}
-          XSS Vulnerability Scan
-        </CardTitle>
-      </CardHeader>
+    <ModuleCardWrapper
+      title="XSS Vulnerability Scan"
+      icon={xss?.vulnerable ? AlertTriangle : Shield}
+      iconColorClass={xss?.vulnerable ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="XSS scan not performed or no vulnerabilities detected."
+    >
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Status</p>
-            <Badge className={xss.vulnerable ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'}>
-              {xss.vulnerable ? 'VULNERABLE' : 'SECURE'}
+            <Badge className={xss?.vulnerable ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'}>
+              {xss?.vulnerable ? 'VULNERABLE' : 'SECURE'}
             </Badge>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Payloads Tested</p>
-            <p className="text-2xl font-bold text-primary">{xss.testedPayloads}</p>
+            <p className="text-2xl font-bold text-primary">{xss?.testedPayloads}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Vulnerabilities Found</p>
-            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{xss.vulnerabilities.length}</p>
+            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{xss?.vulnerabilities.length}</p>
           </div>
         </div>
 
-        {xss.vulnerabilities.length > 0 ? (
+        {xss?.vulnerabilities && xss.vulnerabilities.length > 0 ? (
           <>
             <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
               <Lightbulb className="h-4 w-4" />
@@ -133,7 +137,7 @@ const XSSVulnerabilities = ({ xss }: XSSVulnerabilitiesProps) => {
           </div>
         )}
       </CardContent>
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 

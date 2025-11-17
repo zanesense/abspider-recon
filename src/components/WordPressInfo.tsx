@@ -3,9 +3,10 @@ import { Badge } from '@/components/ui/badge';
 import { Globe, AlertTriangle, Shield, FileText } from 'lucide-react';
 import CORSBypassIndicator from './CORSBypassIndicator';
 import { CORSBypassMetadata } from '@/services/corsProxy';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface WordPressInfoProps {
-  wordpress: {
+  wordpress?: {
     isWordPress: boolean;
     version?: string;
     vulnerabilities: Array<{
@@ -22,9 +23,13 @@ interface WordPressInfoProps {
     themes: string[];
     corsMetadata?: CORSBypassMetadata;
   };
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const WordPressInfo = ({ wordpress }: WordPressInfoProps) => {
+const WordPressInfo = ({ wordpress, isTested, moduleError }: WordPressInfoProps) => {
+  if (!isTested) return null;
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'high': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
@@ -34,18 +39,26 @@ const WordPressInfo = ({ wordpress }: WordPressInfoProps) => {
     }
   };
 
+  const hasData = !!wordpress && (
+    wordpress.isWordPress ||
+    !!wordpress.version ||
+    wordpress.vulnerabilities.length > 0 ||
+    wordpress.sensitiveFiles.length > 0 ||
+    wordpress.plugins.length > 0 ||
+    wordpress.themes.length > 0
+  );
+
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <Globe className="h-5 w-5 text-green-500 dark:text-green-400" />
-            WordPress Scanner
-          </CardTitle>
-          <CORSBypassIndicator metadata={wordpress.corsMetadata} />
-        </div>
-      </CardHeader>
-      {!wordpress.isWordPress ? (
+    <ModuleCardWrapper
+      title="WordPress Scanner"
+      icon={Globe}
+      iconColorClass="text-green-500 dark:text-green-400"
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="WordPress scan not performed or site is not WordPress."
+      headerActions={<CORSBypassIndicator metadata={wordpress?.corsMetadata} />}
+    >
+      {!wordpress?.isWordPress ? (
         <CardContent>
           <p className="text-muted-foreground">This site is not running WordPress</p>
         </CardContent>
@@ -137,7 +150,7 @@ const WordPressInfo = ({ wordpress }: WordPressInfoProps) => {
         </div>
       </CardContent>
       )}
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 

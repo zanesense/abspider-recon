@@ -3,50 +3,39 @@ import { Badge } from '@/components/ui/badge';
 import { Link as LinkIcon, XCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import CORSBypassIndicator from './CORSBypassIndicator';
 import { BrokenLinkResult } from '@/services/brokenLinkService';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface BrokenLinkResultsProps {
-  brokenLinks: BrokenLinkResult;
+  brokenLinks?: BrokenLinkResult;
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const BrokenLinkResults = ({ brokenLinks }: BrokenLinkResultsProps) => {
-  if (!brokenLinks.tested) {
-    return (
-      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <LinkIcon className="h-5 w-5 text-pink-500 dark:text-pink-400" />
-            Broken Link Checker
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Broken link check not performed.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+const BrokenLinkResults = ({ brokenLinks, isTested, moduleError }: BrokenLinkResultsProps) => {
+  if (!isTested) return null;
 
-  const hasBrokenLinks = brokenLinks.brokenLinks.length > 0;
+  const hasBrokenLinks = (brokenLinks?.brokenLinks?.length || 0) > 0;
+  const hasData = !!brokenLinks && (brokenLinks.totalLinksChecked > 0 || hasBrokenLinks);
 
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <LinkIcon className="h-5 w-5 text-pink-500 dark:text-pink-400" />
-            Broken Link Checker
-          </CardTitle>
-          <CORSBypassIndicator metadata={brokenLinks.corsMetadata} />
-        </div>
-      </CardHeader>
+    <ModuleCardWrapper
+      title="Broken Link Checker"
+      icon={LinkIcon}
+      iconColorClass="text-pink-500 dark:text-pink-400"
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="Broken link check not performed or no links found."
+      headerActions={<CORSBypassIndicator metadata={brokenLinks?.corsMetadata} />}
+    >
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Total Links Checked</p>
-            <p className="text-2xl font-bold text-primary">{brokenLinks.totalLinksChecked}</p>
+            <p className="text-2xl font-bold text-primary">{brokenLinks?.totalLinksChecked}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Broken Links Found</p>
-            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{brokenLinks.brokenLinks.length}</p>
+            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{brokenLinks?.brokenLinks.length}</p>
           </div>
         </div>
 
@@ -56,7 +45,7 @@ const BrokenLinkResults = ({ brokenLinks }: BrokenLinkResultsProps) => {
               <XCircle className="h-4 w-4" />
               Broken Links
             </h4>
-            {brokenLinks.brokenLinks.map((link, index) => (
+            {brokenLinks?.brokenLinks.map((link, index) => (
               <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-red-500/50">
                 <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-foreground font-mono text-sm hover:underline break-all">
                   {link.url}
@@ -87,7 +76,7 @@ const BrokenLinkResults = ({ brokenLinks }: BrokenLinkResultsProps) => {
           </div>
         )}
 
-        {brokenLinks.errors && brokenLinks.errors.length > 0 && (
+        {brokenLinks?.errors && brokenLinks.errors.length > 0 && (
           <div className="mt-4 text-sm text-destructive">
             <p className="font-semibold">Errors:</p>
             <ul className="list-disc list-inside">
@@ -96,7 +85,7 @@ const BrokenLinkResults = ({ brokenLinks }: BrokenLinkResultsProps) => {
           </div>
         )}
       </CardContent>
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 

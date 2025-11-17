@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Network } from 'lucide-react';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface DNSInfoProps {
-  dns: {
+  dns?: {
     domain: string;
     records: {
       A: Array<{ type: string; value: string; ttl?: number }>;
@@ -15,49 +16,53 @@ interface DNSInfoProps {
       SOA: Array<{ type: string; value: string; ttl?: number }>;
     };
   };
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const DNSInfo = ({ dns }: DNSInfoProps) => {
+const DNSInfo = ({ dns, isTested, moduleError }: DNSInfoProps) => {
+  if (!isTested) return null;
+
   const recordTypes = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
+  const hasData = !!dns && recordTypes.some(type => (dns.records[type as keyof typeof dns.records]?.length || 0) > 0);
 
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <CardTitle className="text-foreground flex items-center gap-2">
-          <Network className="h-5 w-5 text-purple-500 dark:text-purple-400" />
-          DNS Records
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {recordTypes.map((type) => {
-            const records = dns.records[type as keyof typeof dns.records];
-            if (records.length === 0) return null;
+    <ModuleCardWrapper
+      title="DNS Records"
+      icon={Network}
+      iconColorClass="text-purple-500 dark:text-purple-400"
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="No DNS records could be retrieved."
+    >
+      <div className="space-y-4">
+        {recordTypes.map((type) => {
+          const records = dns?.records[type as keyof typeof dns.records];
+          if (!records || records.length === 0) return null;
 
-            return (
-              <div key={type} className="bg-muted rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30">
-                    {type}
-                  </Badge>
-                  <span className="text-muted-foreground text-sm">{records.length} record(s)</span>
-                </div>
-                <div className="space-y-2">
-                  {records.map((record, index) => (
-                    <div key={index} className="flex items-start justify-between text-sm">
-                      <span className="text-foreground font-mono break-all">{record.value}</span>
-                      {record.ttl && (
-                        <span className="text-muted-foreground/70 ml-2 whitespace-nowrap">TTL: {record.ttl}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          return (
+            <div key={type} className="bg-muted rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Badge className="bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                  {type}
+                </Badge>
+                <span className="text-muted-foreground text-sm">{records.length} record(s)</span>
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              <div className="space-y-2">
+                {records.map((record, index) => (
+                  <div key={index} className="flex items-start justify-between text-sm">
+                    <span className="text-foreground font-mono break-all">{record.value}</span>
+                    {record.ttl && (
+                      <span className="text-muted-foreground/70 ml-2 whitespace-nowrap">TTL: {record.ttl}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </ModuleCardWrapper>
   );
 };
 

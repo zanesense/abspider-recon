@@ -1,66 +1,52 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Badge } => '@/components/ui/badge';
 import { ShieldCheck, ShieldOff, AlertTriangle, Zap, Info } from 'lucide-react';
 import CORSBypassIndicator from './CORSBypassIndicator';
 import { DDoSFirewallResult } from '@/services/ddosFirewallService';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface DDoSFirewallResultsProps {
-  ddosFirewall: DDoSFirewallResult;
+  ddosFirewall?: DDoSFirewallResult;
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
-  if (!ddosFirewall.tested) {
-    return (
-      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <ShieldOff className="h-5 w-5" />
-            DDoS Firewall Test
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">DDoS Firewall testing not performed or encountered an error.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+const DDoSFirewallResults = ({ ddosFirewall, isTested, moduleError }: DDoSFirewallResultsProps) => {
+  if (!isTested) return null;
+
+  const hasData = !!ddosFirewall && ddosFirewall.tested;
 
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            {ddosFirewall.firewallDetected ? (
-              <ShieldCheck className="h-5 w-5 text-green-500 dark:text-green-400" />
-            ) : (
-              <ShieldOff className="h-5 w-5 text-red-500 dark:text-red-400" />
-            )}
-            DDoS Firewall Test
-          </CardTitle>
-          <CORSBypassIndicator metadata={ddosFirewall.corsMetadata} />
-        </div>
-      </CardHeader>
+    <ModuleCardWrapper
+      title="DDoS Firewall Test"
+      icon={ddosFirewall?.firewallDetected ? ShieldCheck : ShieldOff}
+      iconColorClass={ddosFirewall?.firewallDetected ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="DDoS Firewall testing not performed or encountered an error."
+      headerActions={<CORSBypassIndicator metadata={ddosFirewall?.corsMetadata} />}
+    >
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Firewall Detected</p>
-            <Badge className={ddosFirewall.firewallDetected ? 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30'}>
-              {ddosFirewall.firewallDetected ? 'YES' : 'NO'}
+            <Badge className={ddosFirewall?.firewallDetected ? 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30'}>
+              {ddosFirewall?.firewallDetected ? 'YES' : 'NO'}
             </Badge>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Total Requests</p>
-            <p className="text-2xl font-bold text-primary">{ddosFirewall.totalRequests}</p>
+            <p className="text-2xl font-bold text-primary">{ddosFirewall?.totalRequests}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Successful / Failed</p>
             <p className="text-2xl font-bold text-foreground">
-              <span className="text-green-500 dark:text-green-400">{ddosFirewall.successfulRequests}</span> / <span className="text-red-500 dark:text-red-400">{ddosFirewall.failedRequests}</span>
+              <span className="text-green-500 dark:text-green-400">{ddosFirewall?.successfulRequests}</span> / <span className="text-red-500 dark:text-red-400">{ddosFirewall?.failedRequests}</span>
             </p>
           </div>
         </div>
 
-        {ddosFirewall.wafDetected && (
+        {ddosFirewall?.wafDetected && (
           <div className="bg-muted rounded-lg p-3">
             <p className="text-xs text-muted-foreground flex items-center gap-2">
               <Info className="h-3 w-3 text-muted-foreground/70" />
@@ -69,7 +55,7 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
           </div>
         )}
 
-        {ddosFirewall.indicators.length > 0 && (
+        {ddosFirewall?.indicators && ddosFirewall.indicators.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-yellow-600 dark:text-yellow-400 flex items-center gap-2 mb-3">
               <AlertTriangle className="h-4 w-4" />
@@ -85,7 +71,7 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
           </div>
         )}
 
-        {ddosFirewall.responseSummary.length > 0 && (
+        {ddosFirewall?.responseSummary && ddosFirewall.responseSummary.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-primary flex items-center gap-2 mb-3">
               <Zap className="h-4 w-4" />
@@ -105,7 +91,7 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
           </div>
         )}
 
-        {ddosFirewall.evidence && ddosFirewall.evidence.length > 0 && (
+        {ddosFirewall?.evidence && ddosFirewall.evidence.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-3">
               <Info className="h-4 w-4" />
@@ -121,7 +107,7 @@ const DDoSFirewallResults = ({ ddosFirewall }: DDoSFirewallResultsProps) => {
           </div>
         )}
       </CardContent>
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 

@@ -2,38 +2,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Lock, ShieldCheck, ShieldOff, Calendar, Fingerprint, Info, XCircle, CheckCircle } from 'lucide-react';
 import { SslTlsResult } from '@/services/sslTlsService';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface SslTlsResultsProps {
-  sslTls: SslTlsResult;
+  sslTls?: SslTlsResult;
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const SslTlsResults = ({ sslTls }: SslTlsResultsProps) => {
-  if (!sslTls.tested) {
-    return (
-      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Lock className="h-5 w-5 text-purple-500 dark:text-purple-400" />
-            SSL/TLS Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">SSL/TLS analysis not performed or encountered an error.</p>
-          {sslTls.errors && sslTls.errors.length > 0 && (
-            <div className="mt-2 text-sm text-destructive">
-              <p className="font-semibold">Errors:</p>
-              <ul className="list-disc list-inside">
-                {sslTls.errors.map((error, i) => <li key={i}>{error}</li>)}
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
+const SslTlsResults = ({ sslTls, isTested, moduleError }: SslTlsResultsProps) => {
+  if (!isTested) return null;
 
-  const isExpired = sslTls.isExpired;
-  const daysUntilExpiry = sslTls.daysUntilExpiry;
+  const hasData = !!sslTls && sslTls.tested;
+  const isExpired = sslTls?.isExpired;
+  const daysUntilExpiry = sslTls?.daysUntilExpiry;
   const expiryStatus = isExpired ? 'Expired' : (daysUntilExpiry !== undefined && daysUntilExpiry <= 30 ? 'Expiring Soon' : 'Valid');
 
   const getExpiryBadgeClass = () => {
@@ -43,18 +25,19 @@ const SslTlsResults = ({ sslTls }: SslTlsResultsProps) => {
   };
 
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-foreground">
-          <Lock className="h-5 w-5 text-purple-500 dark:text-purple-400" />
-          SSL/TLS Analysis
-        </CardTitle>
-      </CardHeader>
+    <ModuleCardWrapper
+      title="SSL/TLS Analysis"
+      icon={Lock}
+      iconColorClass="text-purple-500 dark:text-purple-400"
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="SSL/TLS analysis not performed or encountered an error."
+    >
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Domain</p>
-            <p className="text-foreground font-mono text-lg">{sslTls.domain}</p>
+            <p className="text-foreground font-mono text-lg">{sslTls?.domain}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Certificate Status</p>
@@ -68,7 +51,7 @@ const SslTlsResults = ({ sslTls }: SslTlsResultsProps) => {
           </div>
         </div>
 
-        {sslTls.certificateIssuer && (
+        {sslTls?.certificateIssuer && (
           <div className="bg-muted rounded-lg p-3">
             <p className="text-xs text-muted-foreground flex items-center gap-2">
               <Info className="h-3 w-3 text-muted-foreground/70" />
@@ -76,7 +59,7 @@ const SslTlsResults = ({ sslTls }: SslTlsResultsProps) => {
             </p>
           </div>
         )}
-        {sslTls.certificateSubject && (
+        {sslTls?.certificateSubject && (
           <div className="bg-muted rounded-lg p-3">
             <p className="text-xs text-muted-foreground flex items-center gap-2">
               <Info className="h-3 w-3 text-muted-foreground/70" />
@@ -91,18 +74,18 @@ const SslTlsResults = ({ sslTls }: SslTlsResultsProps) => {
               <Calendar className="h-3 w-3 text-muted-foreground/70" />
               Valid From
             </p>
-            <p className="text-foreground">{sslTls.validFrom || 'N/A'}</p>
+            <p className="text-foreground">{sslTls?.validFrom || 'N/A'}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
               <Calendar className="h-3 w-3 text-muted-foreground/70" />
               Valid To
             </p>
-            <p className="text-foreground">{sslTls.validTo || 'N/A'}</p>
+            <p className="text-foreground">{sslTls?.validTo || 'N/A'}</p>
           </div>
         </div>
 
-        {sslTls.commonNames && sslTls.commonNames.length > 0 && (
+        {sslTls?.commonNames && sslTls.commonNames.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-primary flex items-center gap-2 mb-3">
               <Info className="h-4 w-4" />
@@ -118,7 +101,7 @@ const SslTlsResults = ({ sslTls }: SslTlsResultsProps) => {
           </div>
         )}
 
-        {sslTls.altNames && sslTls.altNames.length > 0 && (
+        {sslTls?.altNames && sslTls.altNames.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-primary flex items-center gap-2 mb-3">
               <Info className="h-4 w-4" />
@@ -134,7 +117,7 @@ const SslTlsResults = ({ sslTls }: SslTlsResultsProps) => {
           </div>
         )}
 
-        {sslTls.fingerprintSha256 && (
+        {sslTls?.fingerprintSha256 && (
           <div>
             <h4 className="text-sm font-medium text-primary flex items-center gap-2 mb-3">
               <Fingerprint className="h-4 w-4" />
@@ -143,17 +126,8 @@ const SslTlsResults = ({ sslTls }: SslTlsResultsProps) => {
             <p className="text-foreground bg-muted rounded p-3 text-sm font-mono break-all">{sslTls.fingerprintSha256}</p>
           </div>
         )}
-
-        {sslTls.errors && sslTls.errors.length > 0 && (
-          <div className="mt-4 text-sm text-destructive">
-            <p className="font-semibold">Errors:</p>
-            <ul className="list-disc list-inside">
-              {sslTls.errors.map((error, i) => <li key={i}>{error}</li>)}
-            </ul>
-          </div>
-        )}
       </CardContent>
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 

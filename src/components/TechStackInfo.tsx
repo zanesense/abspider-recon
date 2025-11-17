@@ -3,27 +3,18 @@ import { Badge } from '@/components/ui/badge';
 import { Fingerprint, Info } from 'lucide-react';
 import CORSBypassIndicator from './CORSBypassIndicator';
 import { TechStackResult } from '@/services/techStackService';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface TechStackInfoProps {
-  techStack: TechStackResult;
+  techStack?: TechStackResult;
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const TechStackInfo = ({ techStack }: TechStackInfoProps) => {
-  if (!techStack.tested || techStack.technologies.length === 0) {
-    return (
-      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Fingerprint className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-            Technology Stack Fingerprinting
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No technologies detected or scan not performed.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+const TechStackInfo = ({ techStack, isTested, moduleError }: TechStackInfoProps) => {
+  if (!isTested) return null;
+
+  const hasData = !!techStack && techStack.tested && techStack.technologies.length > 0;
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
@@ -39,19 +30,18 @@ const TechStackInfo = ({ techStack }: TechStackInfoProps) => {
   };
 
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Fingerprint className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-            Technology Stack Fingerprinting ({techStack.technologies.length})
-          </CardTitle>
-          <CORSBypassIndicator metadata={techStack.corsMetadata} />
-        </div>
-      </CardHeader>
+    <ModuleCardWrapper
+      title={`Technology Stack Fingerprinting (${techStack?.technologies.length || 0})`}
+      icon={Fingerprint}
+      iconColorClass="text-blue-500 dark:text-blue-400"
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="No technologies detected or scan not performed."
+      headerActions={<CORSBypassIndicator metadata={techStack?.corsMetadata} />}
+    >
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {techStack.technologies.map((tech, index) => (
+          {techStack?.technologies.map((tech, index) => (
             <div key={index} className="bg-muted rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium text-foreground">{tech.name}</span>
@@ -72,7 +62,7 @@ const TechStackInfo = ({ techStack }: TechStackInfoProps) => {
           ))}
         </div>
       </CardContent>
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 

@@ -2,9 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { FileWarning, AlertTriangle, CheckCircle2, FileText, Lightbulb } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface LFIVulnerabilitiesProps {
-  lfi: {
+  lfi?: {
     vulnerable: boolean;
     tested: boolean;
     testedPayloads: number;
@@ -18,22 +19,12 @@ interface LFIVulnerabilitiesProps {
       confidence: number;
     }>;
   };
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
-  if (!lfi || !lfi.tested) {
-    return (
-      <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-500 dark:text-orange-400">
-            <FileWarning className="h-5 w-5" />
-            LFI Vulnerability Assessment
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">Local File Inclusion vulnerability testing not performed</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesProps) => {
+  if (!isTested) return null;
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
@@ -44,19 +35,19 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
     }
   };
 
+  const hasData = !!lfi && (lfi.testedPayloads > 0 || lfi.vulnerabilities.length > 0);
+
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-orange-500 dark:text-orange-400">
-          <FileWarning className="h-5 w-5" />
-          LFI Vulnerability Assessment
-        </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Tested {lfi.testedPayloads} Local File Inclusion payloads
-        </CardDescription>
-      </CardHeader>
+    <ModuleCardWrapper
+      title="LFI Vulnerability Assessment"
+      icon={FileWarning}
+      iconColorClass="text-orange-500 dark:text-orange-400"
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="Local File Inclusion vulnerability testing not performed or no vulnerabilities detected."
+    >
       <CardContent className="space-y-4">
-        {lfi.vulnerable && lfi.vulnerabilities.length > 0 ? (
+        {lfi?.vulnerable && lfi.vulnerabilities.length > 0 ? (
           <>
             <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
               <AlertTriangle className="h-4 w-4" />
@@ -142,11 +133,11 @@ const LFIVulnerabilities = ({ lfi }: LFIVulnerabilitiesProps) => {
         <div className="pt-2 border-t border-border">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <FileText className="h-4 w-4" />
-            <span>Status: {lfi.vulnerable ? 'Vulnerable' : 'Secure'} • {lfi.testedPayloads} payloads tested</span>
+            <span>Status: {lfi?.vulnerable ? 'Vulnerable' : 'Secure'} • {lfi?.testedPayloads} payloads tested</span>
           </div>
         </div>
       </CardContent>
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 

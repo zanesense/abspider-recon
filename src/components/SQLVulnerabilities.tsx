@@ -4,9 +4,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Shield, Code, Info, Lightbulb } from 'lucide-react';
 import CORSBypassIndicator from './CORSBypassIndicator';
 import { CORSBypassMetadata } from '@/services/corsProxy';
+import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 
 interface SQLVulnerabilitiesProps {
-  sqlinjection: {
+  sqlinjection?: {
     vulnerable: boolean;
     testedPayloads: number;
     vulnerabilities: Array<{
@@ -20,9 +21,13 @@ interface SQLVulnerabilitiesProps {
     method?: string;
     corsMetadata?: CORSBypassMetadata;
   };
+  isTested: boolean; // New prop
+  moduleError?: string; // New prop
 }
 
-const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
+const SQLVulnerabilities = ({ sqlinjection, isTested, moduleError }: SQLVulnerabilitiesProps) => {
+  if (!isTested) return null;
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'high': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
@@ -32,40 +37,37 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
     }
   };
 
+  const hasData = !!sqlinjection && (sqlinjection.testedPayloads > 0 || sqlinjection.vulnerabilities.length > 0);
+
   return (
-    <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-foreground flex items-center gap-2">
-            {sqlinjection.vulnerable ? (
-              <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
-            ) : (
-              <Shield className="h-5 w-5 text-green-500 dark:text-green-400" />
-            )}
-            SQL Injection Scan
-          </CardTitle>
-          <CORSBypassIndicator metadata={sqlinjection.corsMetadata} />
-        </div>
-      </CardHeader>
+    <ModuleCardWrapper
+      title="SQL Injection Scan"
+      icon={sqlinjection?.vulnerable ? AlertTriangle : Shield}
+      iconColorClass={sqlinjection?.vulnerable ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}
+      moduleError={moduleError}
+      hasData={hasData}
+      noDataMessage="SQL Injection scan not performed or no vulnerabilities detected."
+      headerActions={<CORSBypassIndicator metadata={sqlinjection?.corsMetadata} />}
+    >
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Status</p>
-            <Badge className={sqlinjection.vulnerable ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'}>
-              {sqlinjection.vulnerable ? 'VULNERABLE' : 'SECURE'}
+            <Badge className={sqlinjection?.vulnerable ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'}>
+              {sqlinjection?.vulnerable ? 'VULNERABLE' : 'SECURE'}
             </Badge>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Payloads Tested</p>
-            <p className="text-2xl font-bold text-primary">{sqlinjection.testedPayloads}</p>
+            <p className="text-2xl font-bold text-primary">{sqlinjection?.testedPayloads}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Vulnerabilities Found</p>
-            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{sqlinjection.vulnerabilities.length}</p>
+            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{sqlinjection?.vulnerabilities.length}</p>
           </div>
         </div>
 
-        {sqlinjection.method && (
+        {sqlinjection?.method && (
           <div className="bg-muted rounded-lg p-3">
             <p className="text-xs text-muted-foreground flex items-center gap-2">
               <Info className="h-3 w-3 text-muted-foreground/70" />
@@ -74,7 +76,7 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
           </div>
         )}
 
-        {sqlinjection.vulnerabilities.length > 0 ? (
+        {sqlinjection?.vulnerabilities && sqlinjection.vulnerabilities.length > 0 ? (
           <>
             <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
               <Lightbulb className="h-4 w-4" />
@@ -149,7 +151,7 @@ const SQLVulnerabilities = ({ sqlinjection }: SQLVulnerabilitiesProps) => {
           </div>
         )}
       </CardContent>
-    </Card>
+    </ModuleCardWrapper>
   );
 };
 
