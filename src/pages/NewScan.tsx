@@ -7,14 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Import Alert components
-import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startScan } from '@/services/scanService';
-import { useForm } from 'react-hook-form'; // Import useForm
-import { zodResolver } from '@hookform/resolvers/zod'; // Import zodResolver
-import * as z from 'zod'; // Import Zod
-import { isInternalIP, extractHostname } from '@/services/apiUtils'; // Import isInternalIP and extractHostname
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { isInternalIP, extractHostname } from '@/services/apiUtils';
+import { addScheduledScan } from '@/services/scheduledScanService'; // Import addScheduledScan
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Import Select components
+import { format } from 'date-fns'; // Import format from date-fns
 
 // Define validation schema with Zod
 const scanFormSchema = z.object({
@@ -27,6 +30,7 @@ const scanFormSchema = z.object({
         return false;
       }
     }, { message: "Invalid URL or IP address format." }),
+  scanName: z.string().optional(), // New: Name for scheduled scan
   siteInfo: z.boolean(),
   headers: z.boolean(),
   whois: z.boolean(),
@@ -43,12 +47,49 @@ const scanFormSchema = z.object({
   wordpress: z.boolean(),
   seo: z.boolean(),
   ddosFirewall: z.boolean(),
-  xssPayloads: z.number().min(1).max(100).default(20), // New: XSS payloads
-  sqliPayloads: z.number().min(1).max(100).default(20), // New: SQLi payloads
-  lfiPayloads: z.number().min(1).max(100).default(20), // New: LFI payloads
-  ddosRequests: z.number().min(1).max(100).default(20), // New: DDoS requests
+  xssPayloads: z.number().min(1).max(100).default(20),
+  sqliPayloads: z.number().min(1).max(100).default(20),
+  lfiPayloads: z.number().min(1).max(100).default(20),
+  ddosRequests: z.number().min(1).max(100).default(20),
   useProxy: z.boolean(),
-  threads: z.number().min(1).max(50), // Max threads reduced to 50
+  threads: z.number().min(1).max(50),
+  
+  // Scheduling fields
+  scheduleScan: z.boolean().default(false),
+  scheduleFrequency: z.enum(['once', 'daily', 'weekly', 'monthly']).optional(),
+  scheduleStartDate: z.string().optional(), // YYYY-MM-DD
+  scheduleStartTime: z.string().optional(), // HH:mm
+}).superRefine((data, ctx) => {
+  if (data.scheduleScan) {
+    if (!data.scanName || data.scanName.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Scheduled scan requires a name.",
+        path: ['scanName'],
+      });
+    }
+    if (!data.scheduleFrequency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Frequency is required for scheduled scans.",
+        path: ['scheduleFrequency'],
+      });
+    }
+    if (!data.scheduleStartDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Start date is required for scheduled scans.",
+        path: ['scheduleStartDate'],
+      });
+    }
+    if (!data.scheduleStartTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Start time is required for scheduled scans.",
+        path: ['scheduleStartTime'],
+      });
+    }
+  }
 });
 
 type ScanFormValues = z.infer<typeof scanFormSchema>;
@@ -62,6 +103,7 @@ const NewScan = () => {
     resolver: zodResolver(scanFormSchema),
     defaultValues: {
       target: '',
+      scanName: '',
       siteInfo: true,
       headers: true,
       whois: true,
@@ -78,38 +120,58 @@ const NewScan = () => {
       wordpress: false,
       seo: true,
       ddosFirewall: false,
-      xssPayloads: 20, // Default
-      sqliPayloads: 20, // Default
-      lfiPayloads: 20, // Default
-      ddosRequests: 20, // Default
+      xssPayloads: 20,
+      sqliPayloads: 20,
+      lfiPayloads: 20,
+      ddosRequests: 20,
       useProxy: false,
       threads: 20,
+      scheduleScan: false,
+      scheduleFrequency: 'daily', // Default for scheduling
+      scheduleStartDate: format(new Date(), 'yyyy-MM-dd'), // Default to today
+      scheduleStartTime: format(new Date(), 'HH:mm'), // Default to current time
     },
   });
 
   const { watch, setValue, handleSubmit, formState: { errors } } = form;
-  const formData = watch(); // Watch all form data for dynamic updates
+  const formData = watch();
 
   const onSubmit = async (data: ScanFormValues) => {
     setIsScanning(true);
     try {
-      const scanId = await startScan(data);
-      toast({
-        title: "Scan Started",
-        description: `Scanning ${data.target}...`,
-      });
-      navigate(`/scan/${scanId}`);
+      if (data.scheduleScan) {
+        if (!data.scanName || !data.scheduleFrequency || !data.scheduleStartDate || !data.scheduleStartTime) {
+          throw new Error("Missing scheduling details.");
+        }
+        const { scanName, scheduleFrequency, scheduleStartDate, scheduleStartTime, ...scanConfig } = data;
+        addScheduledScan(scanName, scanConfig, {
+          frequency: scheduleFrequency,
+          startDate: scheduleStartDate,
+          startTime: scheduleStartTime,
+        });
+        toast({
+          title: "Scan Scheduled",
+          description: `Scan '${scanName}' has been scheduled to run ${scheduleFrequency}.`,
+        });
+        navigate('/dashboard'); // Redirect to dashboard to see scheduled scans
+      } else {
+        const scanId = await startScan(data);
+        toast({
+          title: "Scan Started",
+          description: `Scanning ${data.target}...`,
+        });
+        navigate(`/scan/${scanId}`);
+      }
     } catch (error: any) {
       toast({
-        title: "Failed to Start Scan",
-        description: error.message || "An unexpected error occurred while trying to start the scan.",
+        title: "Failed to Process Scan",
+        description: error.message || "An unexpected error occurred.",
         variant: "destructive",
       });
       setIsScanning(false);
     }
   };
 
-  // Helper functions for "Select All" toggles
   const toggleBasicScans = () => {
     const allChecked = formData.siteInfo && formData.headers;
     setValue('siteInfo', !allChecked);
@@ -146,19 +208,17 @@ const NewScan = () => {
   };
 
   const toggleSecurityTesting = () => {
-    const allChecked = formData.ddosFirewall; // Only one DDoS module now
+    const allChecked = formData.ddosFirewall;
     setValue('ddosFirewall', !allChecked);
   };
 
-  // Determine if all checkboxes in a group are checked for button text/icon
   const allBasicChecked = formData.siteInfo && formData.headers;
   const allNetworkChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
   const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi;
   const allCmsChecked = formData.wordpress;
   const allSeoChecked = formData.seo;
-  const allSecurityChecked = formData.ddosFirewall; // Only one DDoS module now
+  const allSecurityChecked = formData.ddosFirewall;
 
-  // Check for internal IP
   const targetHostname = formData.target ? extractHostname(formData.target) : '';
   const isTargetInternal = targetHostname && (isInternalIP(targetHostname) || targetHostname === 'localhost');
 
@@ -225,6 +285,105 @@ const NewScan = () => {
                   )}
                 </div>
               </CardContent>
+            </Card>
+
+            {/* Schedule Scan Feature */}
+            <Card className="bg-card/50 backdrop-blur-sm border border-purple-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-purple-500/50">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                  <CalendarDays className="h-5 w-5" />
+                  Schedule Scan
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="scheduleScan" className="text-sm text-muted-foreground">Enable Scheduling</Label>
+                  <Checkbox
+                    id="scheduleScan"
+                    checked={formData.scheduleScan}
+                    onCheckedChange={(checked) => setValue('scheduleScan', checked as boolean)}
+                  />
+                </div>
+              </CardHeader>
+              {formData.scheduleScan && (
+                <CardContent className="space-y-4">
+                  <Alert className="border-blue-500/50 bg-blue-500/10">
+                    <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                    <AlertTitle className="text-blue-600 dark:text-blue-400 font-bold">
+                      Client-Side Scheduling
+                    </AlertTitle>
+                    <AlertDescription className="text-sm mt-2 text-blue-600 dark:text-blue-300">
+                      Scheduled scans will only run when this application is open in your browser.
+                      Ensure the tab remains active for scans to execute as planned.
+                    </AlertDescription>
+                  </Alert>
+                  <div className="space-y-2">
+                    <Label htmlFor="scanName">Scheduled Scan Name</Label>
+                    <Input
+                      id="scanName"
+                      type="text"
+                      placeholder="My Daily Website Check"
+                      {...form.register("scanName")}
+                      className={cn("bg-muted/30 border-border focus:border-primary focus:ring-primary", errors.scanName && "border-destructive focus:border-destructive focus:ring-destructive")}
+                    />
+                    {errors.scanName && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertTriangle className="h-4 w-4" /> {errors.scanName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduleFrequency">Frequency</Label>
+                      <Select
+                        onValueChange={(value) => setValue('scheduleFrequency', value as 'once' | 'daily' | 'weekly' | 'monthly')}
+                        value={formData.scheduleFrequency}
+                      >
+                        <SelectTrigger className={cn("bg-muted/30 border-border focus:ring-primary", errors.scheduleFrequency && "border-destructive focus:border-destructive focus:ring-destructive")}>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="once">Once</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.scheduleFrequency && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertTriangle className="h-4 w-4" /> {errors.scheduleFrequency.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduleStartDate">Start Date</Label>
+                      <Input
+                        id="scheduleStartDate"
+                        type="date"
+                        {...form.register("scheduleStartDate")}
+                        className={cn("bg-muted/30 border-border focus:border-primary focus:ring-primary", errors.scheduleStartDate && "border-destructive focus:border-destructive focus:ring-destructive")}
+                      />
+                      {errors.scheduleStartDate && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertTriangle className="h-4 w-4" /> {errors.scheduleStartDate.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduleStartTime">Start Time</Label>
+                      <Input
+                        id="scheduleStartTime"
+                        type="time"
+                        {...form.register("scheduleStartTime")}
+                        className={cn("bg-muted/30 border-border focus:border-primary focus:ring-primary", errors.scheduleStartTime && "border-destructive focus:border-destructive focus:ring-destructive")}
+                      />
+                      {errors.scheduleStartTime && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertTriangle className="h-4 w-4" /> {errors.scheduleStartTime.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              )}
             </Card>
 
             {/* Basic Scans */}
@@ -588,8 +747,8 @@ const NewScan = () => {
                     <Input
                       id="threads"
                       type="range"
-                      min="1" // Min threads can be 1
-                      max="50" // Max threads reduced to 50
+                      min="1"
+                      max="50"
                       value={formData.threads}
                       onChange={(e) => setValue('threads', parseInt(e.target.value))}
                       className="accent-primary"
@@ -622,12 +781,12 @@ const NewScan = () => {
                 {isScanning ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Starting Scan...
+                    {formData.scheduleScan ? 'Scheduling...' : 'Starting Scan...'}
                   </>
                 ) : (
                   <>
-                    <Shield className="mr-2 h-4 w-4" />
-                    Launch Scan
+                    {formData.scheduleScan ? <CalendarDays className="mr-2 h-4 w-4" /> : <Shield className="mr-2 h-4 w-4" />}
+                    {formData.scheduleScan ? 'Schedule Scan' : 'Launch Scan'}
                   </>
                 )}
               </Button>

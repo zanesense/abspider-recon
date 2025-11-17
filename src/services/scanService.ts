@@ -20,7 +20,8 @@ import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
 import { createRequestManager, RequestManager } from './requestManager';
 import { getAPIKeys, APIKeys } from './apiKeyService';
-import { calculateSecurityGrade } from './securityGradingService'; // Import the new service
+import { calculateSecurityGrade } from './securityGradingService';
+import { startScheduledScanChecker } from './scheduledScanService'; // Import the checker
 
 export interface ScanConfig {
   target: string;
@@ -82,7 +83,7 @@ export interface Scan {
   errors: string[];
   elapsedMs?: number;
   completedAt?: number;
-  securityGrade?: number; // New field for security grade
+  securityGrade?: number;
 }
 
 const SCAN_STORAGE_KEY = 'abspider-scan-history';
@@ -377,3 +378,6 @@ export const deleteScan = async (id: string): Promise<void> => {
     throw new Error('Scan not found');
   }
 };
+
+// Start the scheduled scan checker when the scan service is initialized
+startScheduledScanChecker();
