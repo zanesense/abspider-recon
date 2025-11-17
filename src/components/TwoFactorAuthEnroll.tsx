@@ -8,6 +8,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Label } from '@/components/ui/label';
 import { Loader2, QrCode, CheckCircle, XCircle, AlertCircle, KeyRound, Trash2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { v4 as uuidv4 } from 'uuid'; // Import uuid for unique names
 
 interface TwoFactorAuthEnrollProps {
   onEnrollSuccess?: () => void;
@@ -27,6 +28,10 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
   const checkAndEnrollFactor = async () => {
     setLoading(true);
     setEnrollmentError(null);
+    setSecret(null); // Clear previous state
+    setQrCodeUrl(null); // Clear previous state
+    setFactorId(null); // Clear previous state
+
     try {
       // First, check if 2FA is already enabled
       const { data, error: listError } = await supabase.auth.mfa.listFactors();
@@ -52,23 +57,35 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
       }
 
       // If no existing factors, proceed with enrollment
+      const uniqueFriendlyName = `ABSpider Authenticator ${uuidv4().substring(0, 8)}`;
+      console.log(`Attempting to enroll with friendly name: ${uniqueFriendlyName}`);
+
       const { data: enrollData, error: enrollError } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
         issuer: 'ABSpider Recon',
-        friendlyName: 'ABSpider Authenticator', // Provide a unique friendly name
+        friendlyName: uniqueFriendlyName,
       });
 
-      if (enrollError) throw enrollError;
+      if (enrollError) {
+        console.error('Supabase MFA Enroll Error:', enrollError);
+        throw enrollError;
+      }
 
-      setSecret(enrollData.totp.secret);
-      setQrCodeUrl(enrollData.totp.qrCode);
-      setFactorId(enrollData.id);
-      toast({
-        title: "2FA Enrollment Started",
-        description: "Scan the QR code with your authenticator app.",
-      });
+      console.log('Supabase MFA Enroll Data:', enrollData);
+
+      if (enrollData?.totp?.secret && enrollData?.totp?.qrCode && enrollData?.id) {
+        setSecret(enrollData.totp.secret);
+        setQrCodeUrl(enrollData.totp.qrCode);
+        setFactorId(enrollData.id);
+        toast({
+          title: "2FA Enrollment Started",
+          description: "Scan the QR code with your authenticator app.",
+        });
+      } else {
+        throw new Error("Enrollment data incomplete from Supabase.");
+      }
     } catch (error: any) {
-      console.error('2FA Enrollment Error:', error);
+      console.error('2FA Enrollment Error (Caught):', error);
       setEnrollmentError(error.message || 'Failed to enroll 2FA factor.');
       toast({
         title: "2FA Enrollment Failed",
@@ -183,15 +200,6 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
     }
   };
 
-  if (loading) { // Show loading state while checking for existing factors or enrolling
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-muted-foreground">Loading 2FA enrollment...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans px-4">
       <Card className="w-full max-w-lg border-border shadow-xl">
@@ -205,14 +213,17 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {enrollmentError && (
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="ml-4 text-muted-foreground">Loading 2FA enrollment...</p>
+            </div>
+          ) : enrollmentError ? (
             <div className="p-4 rounded-lg flex items-center gap-3 bg-red-500/10 border-red-500/50 text-red-600 dark:text-red-400 border">
               <XCircle className="h-5 w-5" />
               <p className="text-sm">{enrollmentError}</p>
             </div>
-          )}
-
-          {secret && qrCodeUrl ? (
+          ) : secret && qrCodeUrl ? (
             <>
               <div className="text-center space-y-4">
                 <p className="text-muted-foreground">
@@ -264,9 +275,10 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
               </form>
             </>
           ) : (
+            // Fallback for unexpected state if no error was explicitly set
             <div className="p-4 rounded-lg flex items-center gap-3 bg-blue-500/10 border-blue-500/50 text-blue-600 dark:text-blue-400 border">
               <AlertCircle className="h-5 w-5" />
-              <p className="text-sm">Failed to load 2FA enrollment details. Please try again.</p>
+              <p className="text-sm">An unexpected issue occurred. Please try again or contact support.</p>
             </div>
           )}
 
