@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Label } from '@/components/ui/label';
 import { Loader2, QrCode, CheckCircle, XCircle, AlertCircle, KeyRound } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react'; // Changed import from default to named export
+import { QRCodeSVG } from 'qrcode.react';
 
 interface TwoFactorAuthEnrollProps {
   onEnrollSuccess?: () => void;
 }
 
 const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSuccess }) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Set to true initially to load factors
   const [secret, setSecret] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [otpCode, setOtpCode] = useState('');
@@ -24,16 +24,31 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
   const navigate = useNavigate();
 
   useEffect(() => {
-    const enrollFactor = async () => {
+    const checkAndEnrollFactor = async () => {
       setLoading(true);
       setEnrollmentError(null);
       try {
-        const { data, error } = await supabase.auth.mfa.enroll({
+        // First, check if 2FA is already enabled
+        const { data: { totp: existingFactors }, error: listError } = await supabase.auth.mfa.listFactors();
+        if (listError) throw listError;
+
+        if (existingFactors && existingFactors.length > 0) {
+          toast({
+            title: "2FA Already Enabled",
+            description: "You already have Two-Factor Authentication set up. Redirecting to settings.",
+            variant: "default",
+          });
+          navigate('/settings');
+          return;
+        }
+
+        // If no existing factors, proceed with enrollment
+        const { data, error: enrollError } = await supabase.auth.mfa.enroll({
           factorType: 'totp',
           issuer: 'ABSpider Recon',
         });
 
-        if (error) throw error;
+        if (enrollError) throw enrollError;
 
         setSecret(data.totp.secret);
         setQrCodeUrl(data.totp.qrCode);
@@ -55,8 +70,8 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
       }
     };
 
-    enrollFactor();
-  }, []);
+    checkAndEnrollFactor();
+  }, [navigate, toast]);
 
   const handleVerifyEnrollment = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -103,11 +118,11 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
     }
   };
 
-  if (loading && !secret) {
+  if (loading) { // Show loading state while checking for existing factors or enrolling
     return (
       <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-muted-foreground">Starting 2FA enrollment...</p>
+        <p className="ml-4 text-muted-foreground">Loading 2FA enrollment...</p>
       </div>
     );
   }
@@ -139,7 +154,7 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
                   Scan the QR code below with your authenticator app (e.g., Google Authenticator, Authy).
                 </p>
                 <div className="flex justify-center p-4 bg-white rounded-lg shadow-inner">
-                  <QRCodeSVG value={qrCodeUrl} size={200} level="H" /> {/* Changed to QRCodeSVG */}
+                  <QRCodeSVG value={qrCodeUrl} size={200} level="H" />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Alternatively, enter the secret key manually: <code className="font-mono text-foreground bg-muted px-2 py-1 rounded">{secret}</code>
