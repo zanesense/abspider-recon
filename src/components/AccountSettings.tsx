@@ -3,10 +3,12 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2, Shield, ArrowLeft, UserCircle, Zap } from 'lucide-react';
+import { AlertCircle, Loader2, Shield, ArrowLeft, UserCircle, Zap, Save, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/SupabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const AccountSettings = () => {
   const { toast } = useToast();
@@ -14,6 +16,12 @@ const AccountSettings = () => {
   const [loadingUser, setLoadingUser] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loadingProfileUpdate, setLoadingProfileUpdate] = useState(false);
+  const [loadingPasswordChange, setLoadingPasswordChange] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -23,6 +31,8 @@ const AccountSettings = () => {
         if (user) {
           setUserEmail(user.email);
           setUserId(user.id);
+          setFirstName(user.user_metadata.first_name || '');
+          setLastName(user.user_metadata.last_name || '');
         }
       } catch (error: any) {
         console.error('Failed to fetch user info:', error.message);
@@ -37,6 +47,75 @@ const AccountSettings = () => {
     };
     fetchUser();
   }, []);
+
+  const handleProfileUpdate = async () => {
+    setLoadingProfileUpdate(true);
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        data: { first_name: firstName, last_name: lastName },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Profile Updated",
+        description: "Your first name and last name have been updated.",
+      });
+    } catch (error: any) {
+      console.error('Failed to update profile:', error.message);
+      toast({
+        title: "Profile Update Failed",
+        description: error.message || "Could not update profile information.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingProfileUpdate(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password Error",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Password Error",
+        description: "New password and confirmation do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingPasswordChange(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password Changed",
+        description: "Your password has been updated successfully.",
+      });
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      console.error('Failed to change password:', error.message);
+      toast({
+        title: "Password Change Failed",
+        description: error.message || "Could not change password.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPasswordChange(false);
+    }
+  };
 
   if (loadingUser) {
     return (
@@ -81,7 +160,7 @@ const AccountSettings = () => {
                 Your account information
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <UserCircle className="h-12 w-12 text-muted-foreground" />
                 <div>
@@ -89,6 +168,99 @@ const AccountSettings = () => {
                   <p className="text-sm text-muted-foreground">User ID: {userId ? `${userId.substring(0, 8)}...` : 'N/A'}</p>
                 </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                  />
+                </div>
+              </div>
+              <Button
+                onClick={handleProfileUpdate}
+                disabled={loadingProfileUpdate}
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
+              >
+                {loadingProfileUpdate ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Profile
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Change Password */}
+          <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-orange-500/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                <KeyRound className="h-5 w-5" />
+                Change Password
+              </CardTitle>
+              <CardDescription>
+                Update your account password
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                />
+              </div>
+              <Button
+                onClick={handleChangePassword}
+                disabled={loadingPasswordChange || !newPassword || !confirmPassword}
+                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg shadow-orange-500/30"
+              >
+                {loadingPasswordChange ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Changing Password...
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    Change Password
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
