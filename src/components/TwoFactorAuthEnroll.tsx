@@ -73,8 +73,7 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
 
       console.log('Supabase MFA Enroll Data:', enrollData);
       console.log('Enrollment ID:', enrollData?.id);
-      console.log('TOTP Secret:', enrollData?.totp?.secret);
-      console.log('TOTP QR Code (from Supabase):', enrollData?.totp?.qrCode);
+      console.log('TOTP Secret (from enrollData):', enrollData?.totp?.secret); // Added log
 
       if (enrollData?.totp?.secret && enrollData?.id) {
         setSecret(enrollData.totp.secret);
@@ -88,7 +87,8 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
           const userEmail = user?.email || 'unknown_user';
           const issuer = encodeURIComponent('ABSpider Recon');
           const accountName = encodeURIComponent(userEmail);
-          const totpSecret = enrollData.totp.secret; // Corrected typo here
+          const totpSecret = enrollData.totp.secret; // Correct variable name
+          console.log('Using totpSecret for QR code construction:', totpSecret); // Added log
           finalQrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${totpSecret}&issuer=${issuer}`;
           console.log('Manually constructed TOTP QR Code URL:', finalQrCodeUrl);
         }
