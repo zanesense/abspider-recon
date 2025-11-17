@@ -42,8 +42,8 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/enroll-2fa" element={<TwoFactorAuthEnroll />} /> {/* New 2FA enrollment route */}
-                <Route path="/verify-2fa" element={<TwoFactorAuthVerify />} /> {/* New 2FA verification route */}
+                {/* The /verify-2fa route can remain outside RequireAuth as it's part of the login flow */}
+                <Route path="/verify-2fa" element={<TwoFactorAuthVerify />} /> 
                 
                 {/* Protected Routes */}
                 <Route path="*" element={
@@ -60,6 +60,8 @@ function App() {
                               <Route path="/all-scans" element={<AllScans />} />
                               <Route path="/scan/:id" element={<ScanResults />} />
                               <Route path="/settings" element={<Settings />} />
+                              {/* Move /enroll-2fa inside RequireAuth */}
+                              <Route path="/enroll-2fa" element={<TwoFactorAuthEnroll />} /> 
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </div>
