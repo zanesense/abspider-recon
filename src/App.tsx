@@ -18,7 +18,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
 import RequireAuth from "@/components/RequireAuth";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
+import TwoFactorAuthEnroll from "@/components/TwoFactorAuthEnroll"; // New import
+import TwoFactorAuthVerify from "@/components/TwoFactorAuthVerify"; // New import
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,11 +42,13 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/enroll-2fa" element={<TwoFactorAuthEnroll />} /> {/* New 2FA enrollment route */}
+                <Route path="/verify-2fa" element={<TwoFactorAuthVerify />} /> {/* New 2FA verification route */}
                 
                 {/* Protected Routes */}
                 <Route path="*" element={
                   <RequireAuth>
-                    <LegalDisclaimer /> {/* Moved here */}
+                    <LegalDisclaimer />
                     <SidebarProvider>
                       <div className="flex min-h-screen w-full bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
                         <AppSidebar />

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield } from 'lucide-react';
+import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield, QrCode, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl } from '@/services/settingsService';
 import { getAPIKeys, saveAPIKeys, APIKeys } from '@/services/apiKeyService'; // Import APIKeys interface
@@ -21,6 +21,8 @@ import {
   testOpenCageAPI,
 } from '@/services/apiTestService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; // Import react-query hooks
+import { supabase } from '@/SupabaseClient';
+import { Link } from 'react-router-dom';
 
 type APIKeyService = keyof APIKeys; // Use keyof APIKeys for type safety
 
@@ -30,6 +32,9 @@ const Settings = () => {
   const [settings, setSettings] = useState(getSettings());
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [apiKeyTestStatus, setApiKeyTestStatus] = useState<Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>>({});
+  const [mfaFactors, setMfaFactors] = useState<any[]>([]);
+  const [loadingMfa, setLoadingMfa] = useState(true);
+  const [unenrollLoading, setUnenrollLoading] = useState(false);
 
   // Fetch API keys using react-query
   const { data: apiKeys = {}, isLoading: isLoadingApiKeys, isError: isErrorApiKeys } = useQuery({
@@ -56,6 +61,27 @@ const Settings = () => {
       });
     },
   });
+
+  useEffect(() => {
+    const fetchMfaFactors = async () => {
+      setLoadingMfa(true);
+      try {
+        const { data, error } = await supabase.auth.mfa.listFactors();
+        if (error) throw error;
+        setMfaFactors(data.totp || []);
+      } catch (error: any) {
+        console.error('Failed to fetch MFA factors:', error.message);
+        toast({
+          title: "MFA Error",
+          description: "Failed to load 2FA status.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingMfa(false);
+      }
+    };
+    fetchMfaFactors();
+  }, []);
 
   const handleSaveSettings = () => {
     try {
@@ -169,6 +195,28 @@ const Settings = () => {
     }
   };
 
+  const handleUnenroll2FA = async (factorId: string) => {
+    setUnenrollLoading(true);
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId });
+      if (error) throw error;
+      setMfaFactors(prev => prev.filter(f => f.id !== factorId));
+      toast({
+        title: "2FA Disabled",
+        description: "Two-Factor Authentication has been successfully disabled.",
+      });
+    } catch (error: any) {
+      console.error('Failed to unenroll 2FA factor:', error.message);
+      toast({
+        title: "2FA Unenrollment Failed",
+        description: error.message || "Could not disable 2FA.",
+        variant: "destructive",
+      });
+    } finally {
+      setUnenrollLoading(false);
+    }
+  };
+
   const getStatusIcon = (service: APIKeyService) => {
     const status = apiKeyTestStatus[service];
     if (status === 'testing') return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
@@ -180,11 +228,11 @@ const Settings = () => {
 
   const isTestingAPI = (service: APIKeyService) => apiKeyTestStatus[service] === 'testing';
 
-  if (isLoadingApiKeys) {
+  if (isLoadingApiKeys || loadingMfa) {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-muted-foreground">Loading API keys...</p>
+        <p className="ml-4 text-muted-foreground">Loading settings...</p>
       </div>
     );
   }
@@ -201,6 +249,8 @@ const Settings = () => {
     );
   }
 
+  const is2FAEnabled = mfaFactors.length > 0;
+
   return (
     <div className="flex flex-col h-full w-full">
       <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl">
@@ -215,6 +265,67 @@ const Settings = () => {
       
       <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* 2FA Settings */}
+          <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Two-Factor Authentication (2FA)
+              </CardTitle>
+              <CardDescription>
+                Add an extra layer of security to your account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {is2FAEnabled ? (
+                <Alert className="bg-green-500/10 border-green-500/50">
+                  <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
+                  <AlertTitle className="text-green-600 dark:text-green-400">2FA is Enabled</AlertTitle>
+                  <AlertDescription className="text-sm text-green-600 dark:text-green-400">
+                    Your account is protected with 2FA. You have {mfaFactors.length} active factor(s).
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert className="bg-yellow-500/10 border-yellow-500/50">
+                  <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+                  <AlertTitle className="text-yellow-600 dark:text-yellow-400">2FA is Not Enabled</AlertTitle>
+                  <AlertDescription className="text-sm text-yellow-600 dark:text-yellow-300">
+                    Enhance your account security by enabling Two-Factor Authentication.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {is2FAEnabled ? (
+                <div className="space-y-2">
+                  {mfaFactors.map((factor) => (
+                    <div key={factor.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
+                      <div className="flex items-center gap-2">
+                        <QrCode className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-foreground">{factor.friendly_name || `Authenticator App (${factor.id.substring(0, 4)}...)`}</span>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleUnenroll2FA(factor.id)}
+                        disabled={unenrollLoading}
+                      >
+                        {unenrollLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        <span className="ml-2">Disable</span>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Button asChild className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
+                  <Link to="/enroll-2fa">
+                    <QrCode className="mr-2 h-4 w-4" />
+                    Enable 2FA
+                  </Link>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
           {/* General Settings */}
           <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg">
             <CardHeader>

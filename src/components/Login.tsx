@@ -36,19 +36,37 @@ export default function Login() {
     setMessageType('info');
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         throw error;
       }
 
-      setMessage("Logged in successfully!");
-      setMessageType('success');
-      toast({
-        title: "Login Successful",
-        description: "You have been successfully logged in.",
-      });
-      navigate('/dashboard');
+      if (data.session) {
+        setMessage("Logged in successfully!");
+        setMessageType('success');
+        toast({
+          title: "Login Successful",
+          description: "You have been successfully logged in.",
+        });
+        navigate('/dashboard');
+      } else if (data.user && data.session === null && data.action === 'mfa_challenge') {
+        // 2FA is required
+        toast({
+          title: "2FA Required",
+          description: "Please enter your 2FA code to complete login.",
+        });
+        navigate('/verify-2fa', { state: { factorId: data.factorId, challengeId: data.challengeId } });
+      } else {
+        // This case should ideally not be reached with email/password + 2FA
+        setMessage("An unexpected authentication state occurred.");
+        setMessageType('error');
+        toast({
+          title: "Login Error",
+          description: "An unexpected authentication state occurred.",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       setMessage(error.message);
       setMessageType('error');
