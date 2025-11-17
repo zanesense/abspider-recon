@@ -345,17 +345,6 @@ const AppSettings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Alert className="border-yellow-500/50 bg-yellow-500/10">
-                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-                <AlertTitle className="text-yellow-600 dark:text-yellow-400 font-bold">
-                  WARNING: Public CORS Proxy Risks
-                </AlertTitle>
-                <AlertDescription className="text-sm mt-2 text-yellow-600 dark:text-yellow-300">
-                  Using public CORS proxies can expose your target URLs, headers, and response content to the proxy operators.
-                  For sensitive operations, consider setting up a self-hosted, trusted CORS proxy or using a direct fetch only mode.
-                  The security and reliability of these third-party services are not guaranteed.
-                </AlertDescription>
-              </Alert>
               <div className="space-y-2">
                 <Label htmlFor="proxyList">Proxy List</Label>
                 <Textarea
