@@ -16,6 +16,7 @@ const AccountSettings = () => {
   const [loadingMfa, setLoadingMfa] = useState(true);
   const [unenrollLoading, setUnenrollLoading] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null); // New state for user ID
 
   useEffect(() => {
     const fetchUserAndMfaFactors = async () => {
@@ -24,6 +25,7 @@ const AccountSettings = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setUserEmail(user.email);
+          setUserId(user.id); // Set the user ID here
         }
 
         const { data, error } = await supabase.auth.mfa.listFactors();
@@ -115,7 +117,7 @@ const AccountSettings = () => {
                 <UserCircle className="h-12 w-12 text-muted-foreground" />
                 <div>
                   <p className="text-lg font-semibold text-foreground">{userEmail || 'N/A'}</p>
-                  <p className="text-sm text-muted-foreground">User ID: {supabase.auth.getUser().then(res => res.data.user?.id.substring(0, 8) + '...') || 'N/A'}</p>
+                  <p className="text-sm text-muted-foreground">User ID: {userId ? `${userId.substring(0, 8)}...` : 'N/A'}</p>
                 </div>
               </div>
             </CardContent>
