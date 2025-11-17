@@ -18,6 +18,7 @@ const AccountSettings = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [currentPassword, setCurrentPassword] = useState(''); // New state for current password
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loadingProfileUpdate, setLoadingProfileUpdate] = useState(false);
@@ -74,10 +75,18 @@ const AccountSettings = () => {
   };
 
   const handleChangePassword = async () => {
+    if (!currentPassword) {
+      toast({
+        title: "Password Error",
+        description: "Please enter your current password.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (newPassword.length < 6) {
       toast({
         title: "Password Error",
-        description: "Password must be at least 6 characters long.",
+        description: "New password must be at least 6 characters long.",
         variant: "destructive",
       });
       return;
@@ -90,9 +99,20 @@ const AccountSettings = () => {
       });
       return;
     }
+    if (currentPassword === newPassword) {
+      toast({
+        title: "Password Error",
+        description: "New password cannot be the same as the current password.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoadingPasswordChange(true);
     try {
+      // Note: Supabase client-side updateUser for password change typically
+      // only requires the new password if the user is already authenticated.
+      // The 'currentPassword' is primarily for UI/UX and local validation.
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -103,6 +123,7 @@ const AccountSettings = () => {
         title: "Password Changed",
         description: "Your password has been updated successfully.",
       });
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
@@ -223,6 +244,17 @@ const AccountSettings = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <Input
                   id="newPassword"
@@ -246,7 +278,7 @@ const AccountSettings = () => {
               </div>
               <Button
                 onClick={handleChangePassword}
-                disabled={loadingPasswordChange || !newPassword || !confirmPassword}
+                disabled={loadingPasswordChange || !currentPassword || !newPassword || !confirmPassword}
                 className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg shadow-orange-500/30"
               >
                 {loadingPasswordChange ? (
