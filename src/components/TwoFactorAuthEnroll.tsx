@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Label } from '@/components/ui/label';
 import { Loader2, QrCode, CheckCircle, XCircle, AlertCircle, KeyRound } from 'lucide-react';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react'; // Changed import from default to named export
 
 interface TwoFactorAuthEnrollProps {
   onEnrollSuccess?: () => void;
@@ -139,7 +139,7 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
                   Scan the QR code below with your authenticator app (e.g., Google Authenticator, Authy).
                 </p>
                 <div className="flex justify-center p-4 bg-white rounded-lg shadow-inner">
-                  <QRCode value={qrCodeUrl} size={200} level="H" />
+                  <QRCodeSVG value={qrCodeUrl} size={200} level="H" /> {/* Changed to QRCodeSVG */}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Alternatively, enter the secret key manually: <code className="font-mono text-foreground bg-muted px-2 py-1 rounded">{secret}</code>
