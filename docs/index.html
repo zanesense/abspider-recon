@@ -200,6 +200,11 @@
             <h4 class="font-semibold text-md mb-1">Discord Alerts</h4>
             <p class="text-sm text-gray-400">Webhook integration provides <span class="text-white">real-time notifications</span> when scans complete.</p>
         </div>
+        <div class="p-5 rounded-lg border border-gray-700 bg-content-bg hover-raise">
+            <i data-lucide="calendar-check" class="w-5 h-5 text-cyan-400 mb-2"></i>
+            <h4 class="font-semibold text-md mb-1">Client-Side Scheduling</h4>
+            <p class="text-sm text-gray-400">Automate reconnaissance tasks with flexible daily, weekly, or monthly scheduling.</p>
+        </div>
       </div>
     </section>
 
@@ -220,6 +225,10 @@
                 </div>
                 <div class="module-item">
                     <strong><i data-lucide="server" class="w-4 h-4"></i> HTTP Headers Analysis</strong>
+                    <span class="chip chip-passive">PASSIVE</span>
+                </div>
+                <div class="module-item">
+                    <strong><i data-lucide="fingerprint" class="w-4 h-4"></i> Tech Stack Fingerprinting</strong>
                     <span class="chip chip-passive">PASSIVE</span>
                 </div>
             </div>
@@ -280,6 +289,14 @@
                     <strong><i data-lucide="file" class="w-4 h-4"></i> LFI Scanning</strong>
                     <span class="chip chip-active">ACTIVE</span>
                 </div>
+                <div class="module-item">
+                    <strong><i data-lucide="bug" class="w-4 h-4"></i> CORS Misconfiguration</strong>
+                    <span class="chip chip-active">ACTIVE</span>
+                </div>
+                <div class="module-item">
+                    <strong><i data-lucide="virus" class="w-4 h-4"></i> VirusTotal Scan</strong>
+                    <span class="chip chip-active">ACTIVE</span>
+                </div>
             </div>
         </div>
 
@@ -302,16 +319,24 @@
                     <strong><i data-lucide="bar-chart-2" class="w-4 h-4"></i> SEO Analysis</strong>
                     <span class="chip chip-passive">PASSIVE</span>
                 </div>
+                <div class="module-item">
+                    <strong><i data-lucide="link-2-off" class="w-4 h-4"></i> Broken Link Checker</strong>
+                    <span class="chip chip-active">ACTIVE</span>
+                </div>
             </div>
         </div>
 
         <div class="module-card">
             <h4 class="module-card-header text-purple-400"><i data-lucide="zap" class="w-5 h-5"></i> Security Testing</h4>
-            <p class="text-sm text-gray-400">DDoS/WAF protection detection.</p>
+            <p class="text-sm text-gray-400">DDoS/WAF protection detection and SSL/TLS certificate analysis.</p>
             <div class="module-card-body">
                 <div class="module-item">
                     <strong><i data-lucide="shield-check" class="w-4 h-4"></i> DDoS Firewall Test</strong>
                     <span class="chip chip-active">ACTIVE</span>
+                </div>
+                <div class="module-item">
+                    <strong><i data-lucide="lock" class="w-4 h-4"></i> SSL/TLS Analysis</strong>
+                    <span class="chip chip-passive">PASSIVE</span>
                 </div>
             </div>
         </div>
@@ -385,6 +410,13 @@
                             <p class="text-gray-400 text-sm">In <span class="font-bold">Settings</span>, enter your proxy list (one per line, e.g., <code>http://proxy1.example.com:8080</code>) and click <span class="font-bold">"Save Settings"</span>. Enable <span class="font-bold">"Use Proxy Rotation"</span> when starting scans to help avoid rate limiting.</p>
                         </div>
                     </li>
+                    <li class="flex items-start">
+                        <div class="step-icon bg-gray-600">D</div>
+                        <div>
+                            <p class="font-medium text-white">Client-Side Scheduling</p>
+                            <p class="text-gray-400 text-sm">When creating a new scan, enable "Schedule Scan" and configure the name, frequency, start date, and time. Remember, scheduled scans only run when the application is open in your browser.</p>
+                        </div>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -451,6 +483,7 @@
                     <li><span class="font-bold">Use responsibly</span> - Only scan domains you own or have explicit written permission for.</li>
                     <li><span class="font-bold">Save important scans</span> - Download PDF reports for critical findings.</li>
                     <li><span class="font-bold">Configure Discord</span> - Get notified when long scans complete.</li>
+                    <li><span class="font-bold">Client-Side Scheduling:</span> Remember that scheduled scans only run when the application is open in your browser.</li>
                 </ul>
             </div>
             <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">

@@ -47,6 +47,7 @@ Experience ABSpider Recon Dashboard in action right now!
 *   **⚙️ Seamless Configuration:** Manage all scan parameters, proxies, and API keys directly through a secure, centralized **Dashboard Settings UI**.
 *   **🛡️ Intelligent Bypass:** Overcome common web protections with built-in **CORS & Cloudflare Bypass** mechanisms.
 *   **⚡ Blazing Fast:** Built with **Vite + React** for a lightning-fast development and user experience.
+*   **⏰ Client-Side Scheduling:** Automate your reconnaissance tasks with flexible daily, weekly, or monthly scheduling (requires the browser tab to be open).
 
 ---
 
@@ -58,6 +59,7 @@ ABSpider employs a modular approach, offering both stealthy passive checks and c
 | :------------------------- | :----------------------------------------------------------------------- | :-------- |
 | 🌐 Site Information        | Basic website details, IP, web server, CMS, and `robots.txt` analysis.   | Passive   |
 | 🛡️ HTTP Headers Analysis   | Real-time security header scoring (HSTS, CSP, XFO) and technology fingerprinting. | Passive   |
+| 💻 Tech Stack Fingerprinting | Identifies web technologies, frameworks, and analytics used by the target. | Passive   |
 | 📜 WHOIS / RDAP Lookup     | Domain registration, registrar, nameservers, and date information.       | Passive   |
 | 📍 GeoIP Location          | Pinpoints the physical location of the target server's IP address.       | Passive   |
 | 📡 DNS Records             | Enumerates A, AAAA, CNAME, TXT, MX, NS, and SOA records.                 | Passive   |
@@ -69,9 +71,13 @@ ABSpider employs a modular approach, offering both stealthy passive checks and c
 | 💉 SQL Injection Test      | Checks for potential **SQL Injection (SQLi)** vulnerabilities.          | Active    |
 | ✍️ XSS Detection            | Detects reflected, DOM, and stored **XSS** vulnerabilities.              | Active    |
 | 📁 LFI Scanning            | Scans for Local File Inclusions using real payloads.                     | Active    |
+| ⚠️ CORS Misconfiguration   | Identifies Cross-Origin Resource Sharing (CORS) vulnerabilities.         | Active    |
+| 🦠 VirusTotal Scan          | Domain reputation, malware scanning, and threat intelligence via VirusTotal API. | Active    |
+| 🔗 Broken Link Checker      | Scans for broken internal and external links on the target website.      | Active    |
 | 🧱 DDoS Firewall Test      | Detects WAF/DDoS protection mechanisms (e.g., Cloudflare, Sucuri).       | Active    |
+| 🔒 SSL/TLS Analysis        | Analyzes SSL/TLS certificate details, issuer, expiry, and common names.  | Passive   |
 | 🔢 Subnet Scan             | Calculates network range details for a given IP and CIDR.                | Utility   |
-| 💻 WordPress Scan          | Identifies WordPress versions, plugins, themes, and common vulnerabilities. | Utility   |
+| ⚙️ WordPress Scan          | Identifies WordPress versions, plugins, themes, and common vulnerabilities. | Utility   |
 
 ---
 
