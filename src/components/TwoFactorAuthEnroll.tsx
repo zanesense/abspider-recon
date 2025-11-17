@@ -89,7 +89,7 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
           const issuer = encodeURIComponent('ABSpider Recon');
           const accountName = encodeURIComponent(userEmail);
           const totpSecret = enrollData.totp.secret;
-          finalQrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${totpSecret}&issuer=${issuer}`;
+          finalQrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${tototSecret}&issuer=${issuer}`;
           console.log('Manually constructed TOTP QR Code URL:', finalQrCodeUrl);
         }
         
@@ -135,7 +135,7 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
     setLoading(true);
     setEnrollmentError(null);
     
-    console.log(`[2FA Verify] Attempting to verify factorId: ${factorId}, code: ${otpCode}`); // Debug log
+    console.log(`[2FA Enroll Verify] Attempting to verify factorId: ${factorId}, code: ${otpCode}`); // Debug log
 
     try {
       const { data, error } = await supabase.auth.mfa.challengeAndVerify({
@@ -143,7 +143,11 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
         code: otpCode,
       });
 
-      if (error) throw error;
+      console.log('[2FA Enroll Verify] Supabase response data:', data); // NEW LOG
+      if (error) {
+        console.error('[2FA Enroll Verify] Supabase verification error:', error); // NEW LOG
+        throw error;
+      }
 
       if (data.session) {
         toast({
@@ -153,6 +157,7 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
         onEnrollSuccess?.(); // Call callback if provided
         navigate('/settings'); // Redirect to settings or dashboard
       } else {
+        console.warn('[2FA Enroll Verify] Verification failed, but no explicit error from Supabase. Data:', data); // NEW LOG
         setEnrollmentError('Verification failed. Please try again.');
         toast({
           title: "2FA Verification Failed",
@@ -161,7 +166,7 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
         });
       }
     } catch (error: any) {
-      console.error('2FA Verification Error:', error);
+      console.error('[2FA Enroll Verify] Caught error during verification:', error); // NEW LOG
       setEnrollmentError(error.message || 'Failed to verify 2FA enrollment.');
       toast({
           title: "2FA Verification Failed",
