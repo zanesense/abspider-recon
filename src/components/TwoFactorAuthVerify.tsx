@@ -44,6 +44,13 @@ const TwoFactorAuthVerify: React.FC = () => {
 
     setLoading(true);
     setVerificationError(null);
+
+    console.log('[2FA Verify] Attempting verification with:', {
+      factorId,
+      challengeId,
+      otpCode,
+    });
+
     try {
       const { data, error } = await supabase.auth.mfa.verify({
         factorId: factorId,
@@ -51,7 +58,10 @@ const TwoFactorAuthVerify: React.FC = () => {
         code: otpCode,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[2FA Verify] Supabase verification error:', error);
+        throw error;
+      }
 
       if (data.session) {
         toast({
@@ -60,6 +70,7 @@ const TwoFactorAuthVerify: React.FC = () => {
         });
         navigate('/dashboard');
       } else {
+        console.warn('[2FA Verify] Verification failed, but no explicit error from Supabase. Data:', data);
         setVerificationError('Invalid 2FA code. Please try again.');
         setOtpCode(''); // Clear OTP on verification failure
         toast({
@@ -69,7 +80,7 @@ const TwoFactorAuthVerify: React.FC = () => {
         });
       }
     } catch (error: any) {
-      console.error('2FA Verification Error:', error);
+      console.error('[2FA Verify] Caught error during verification:', error);
       setVerificationError(error.message || 'Failed to verify 2FA code.');
       setOtpCode(''); // Clear OTP on any caught error
       toast({
