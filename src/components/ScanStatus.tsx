@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock } from 'lucide-react'; // Removed Mail from import as it's no longer used for emailEnum
+import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug } from 'lucide-react';
 import { Scan } from '@/services/scanService';
 
 interface ScanStatusProps {
@@ -60,8 +60,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     (scan.results.xss?.vulnerable && scan.results.xss.vulnerabilities.length > 0) ||
     (scan.results.lfi?.vulnerable && scan.results.lfi.vulnerabilities.length > 0) ||
     (scan.results.wordpress?.vulnerabilities && scan.results.wordpress.vulnerabilities.length > 0) ||
-    (scan.results.virustotal?.reputation !== undefined && scan.results.virustotal.reputation < 0) || // New
-    (scan.results.sslTls?.isExpired); // New
+    (scan.results.virustotal?.reputation !== undefined && scan.results.virustotal.reputation < 0) ||
+    (scan.results.sslTls?.isExpired) ||
+    (scan.results.corsMisconfig?.vulnerable && scan.results.corsMisconfig.vulnerabilities.length > 0); // New
 
   const moduleIcons: Record<string, React.ElementType> = {
     siteInfo: Globe,
@@ -82,6 +83,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     ddosFirewall: Zap,
     virustotal: Link,
     sslTls: Lock,
+    techStack: Fingerprint, // New
+    brokenLinks: LinkIcon, // New
+    corsMisconfig: Bug, // New
   };
 
   const moduleLabels: Record<string, string> = {
@@ -103,6 +107,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     ddosFirewall: 'DDoS Firewall',
     virustotal: 'VirusTotal',
     sslTls: 'SSL/TLS',
+    techStack: 'Tech Stack', // New
+    brokenLinks: 'Broken Links', // New
+    corsMisconfig: 'CORS Misconfig', // New
   };
 
   return (
@@ -181,7 +188,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
             {Object.entries(scan.config).map(([key, value]) => {
               if (value === true && moduleLabels[key]) {
                 const Icon = moduleIcons[key];
-                const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls'].includes(key);
+                const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls', 'corsMisconfig'].includes(key); // Updated
                 const isSecurityModule = ['ddosFirewall'].includes(key);
                 return (
                   <Badge 

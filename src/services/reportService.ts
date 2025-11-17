@@ -37,6 +37,15 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
     recommendations.push('• Deploy Web Application Firewall (WAF)');
   }
   
+  // CORS Misconfiguration recommendations
+  if (scan.results.corsMisconfig?.vulnerable) {
+    recommendations.push('CRITICAL: CORS Misconfiguration Detected');
+    recommendations.push('• Avoid `Access-Control-Allow-Origin: *` for sensitive resources.');
+    recommendations.push('• Do not reflect the `Origin` header dynamically without strict validation.');
+    recommendations.push('• Explicitly whitelist allowed origins, and ensure they are fully qualified domains.');
+    recommendations.push('• Be cautious with `null` origin; only allow if absolutely necessary.');
+  }
+
   // WordPress recommendations
   if (scan.results.wordpress?.vulnerabilities?.length > 0) {
     recommendations.push('HIGH: WordPress Security Issues');
@@ -101,6 +110,13 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
     recommendations.push('HIGH: SSL Certificate Expiring Soon');
     recommendations.push('• Renew your SSL/TLS certificate within the next 30 days to avoid service disruption.');
   }
+
+  // Broken Links recommendations
+  if (scan.results.brokenLinks?.brokenLinks && scan.results.brokenLinks.brokenLinks.length > 0) {
+    recommendations.push('MEDIUM: Broken Links Detected');
+    recommendations.push('• Fix or remove broken internal links to improve user experience and SEO.');
+    recommendations.push('• Update or remove broken external links.');
+  }
   
   return recommendations;
 };
@@ -113,11 +129,13 @@ export const generatePDFReport = (scan: Scan) => {
   const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
   const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
   const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
+  const corsMisconfigVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0; // New
   const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
-  const ddosFirewallDetected = (scan.results.ddosFirewall?.firewallDetected) ? 1 : 0; // Count as 1 if detected
-  const virustotalMalicious = (scan.results.virustotal?.maliciousVotes || 0) > 0 ? 1 : 0; // Count as 1 if malicious
-  const sslTlsExpired = (scan.results.sslTls?.isExpired) ? 1 : 0; // Count as 1 if expired
-  const totalVulns = sqlVulns + xssVulns + lfiVulns + wpVulns + ddosFirewallDetected + virustotalMalicious + sslTlsExpired;
+  const ddosFirewallDetected = (scan.results.ddosFirewall?.firewallDetected) ? 1 : 0;
+  const virustotalMalicious = (scan.results.virustotal?.maliciousVotes || 0) > 0 ? 1 : 0;
+  const sslTlsExpired = (scan.results.sslTls?.isExpired) ? 1 : 0;
+  const brokenLinksCount = (scan.results.brokenLinks?.brokenLinks?.length || 0) > 0 ? 1 : 0; // New
+  const totalVulns = sqlVulns + xssVulns + lfiVulns + corsMisconfigVulns + wpVulns + ddosFirewallDetected + virustotalMalicious + sslTlsExpired + brokenLinksCount;
 
   // Modern Header with gradient effect
   doc.setFillColor(6, 182, 212);
@@ -232,10 +250,12 @@ export const generatePDFReport = (scan: Scan) => {
       ['SQL Injection', sqlVulns.toString(), sqlVulns > 0 ? 'CRITICAL' : 'SAFE', sqlVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['Cross-Site Scripting (XSS)', xssVulns.toString(), xssVulns > 0 ? 'CRITICAL' : 'SAFE', xssVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['Local File Inclusion (LFI)', lfiVulns.toString(), lfiVulns > 0 ? 'CRITICAL' : 'SAFE', lfiVulns > 0 ? 'Immediate action required' : 'No issues found'],
+      ['CORS Misconfiguration', corsMisconfigVulns.toString(), corsMisconfigVulns > 0 ? 'CRITICAL' : 'SAFE', corsMisconfigVulns > 0 ? 'Immediate action required' : 'No issues found'], // New
       ['WordPress Security', wpVulns.toString(), wpVulns > 0 ? 'HIGH' : 'SAFE', wpVulns > 0 ? 'Update and secure' : 'No issues found'],
       ['DDoS/WAF Detection', ddosFirewallDetected.toString(), ddosFirewallDetected > 0 ? 'INFO' : 'N/A', ddosFirewallDetected > 0 ? 'Protection detected' : 'No protection detected'],
       ['VirusTotal Malicious', virustotalMalicious.toString(), virustotalMalicious > 0 ? 'HIGH' : 'SAFE', virustotalMalicious > 0 ? 'Investigate reputation' : 'No malicious activity'],
       ['SSL Certificate Expired', sslTlsExpired.toString(), sslTlsExpired > 0 ? 'CRITICAL' : 'VALID', sslTlsExpired > 0 ? 'Renew certificate immediately' : 'Certificate is valid'],
+      ['Broken Links', brokenLinksCount.toString(), brokenLinksCount > 0 ? 'MEDIUM' : 'SAFE', brokenLinksCount > 0 ? 'Review and fix links' : 'No broken links found'], // New
     ];
     
     autoTable(doc, {
@@ -347,6 +367,36 @@ export const generatePDFReport = (scan: Scan) => {
     });
   }
 
+  // Detailed CORS Misconfiguration Results
+  if (scan.results.corsMisconfig?.vulnerabilities?.length > 0) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(255, 193, 7); // Yellow for CORS
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0); // Dark text for yellow background
+    doc.setFont('helvetica', 'bold');
+    doc.text('CORS: CORS Misconfiguration Vulnerabilities', 14, yPosition);
+    yPosition += 15;
+    
+    const corsData = scan.results.corsMisconfig.vulnerabilities.map((vuln: any) => [
+      vuln.severity.toUpperCase(),
+      vuln.type.replace(/_/g, ' ') || 'N/A',
+      vuln.originTested || 'N/A',
+      vuln.evidence ? vuln.evidence.substring(0, 60) + '...' : 'N/A',
+    ]);
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Severity', 'Type', 'Origin Tested', 'Evidence']],
+      body: corsData,
+      theme: 'grid',
+      headStyles: { fillColor: [255, 193, 7], textColor: [0, 0, 0], fontStyle: 'bold' },
+      styles: { fontSize: 7 },
+    });
+  }
+
   // Site Information
   if (scan.results.siteInfo) {
     doc.addPage();
@@ -379,6 +429,37 @@ export const generatePDFReport = (scan: Scan) => {
     });
     
     yPosition = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // Technology Stack Fingerprinting
+  if (scan.results.techStack && scan.results.techStack.technologies.length > 0) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(0, 123, 255); // Blue for Tech Stack
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`TECH STACK: Technologies Detected (${scan.results.techStack.technologies.length})`, 14, yPosition);
+    yPosition += 15;
+    
+    const techStackData = scan.results.techStack.technologies.map((tech: any) => [
+      tech.name,
+      tech.category,
+      tech.version || 'N/A',
+      tech.confidence ? `${(tech.confidence * 100).toFixed(0)}%` : 'N/A',
+      tech.evidence ? tech.evidence.substring(0, 60) + '...' : 'N/A',
+    ]);
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Technology', 'Category', 'Version', 'Confidence', 'Evidence']],
+      body: techStackData,
+      theme: 'grid',
+      headStyles: { fillColor: [0, 123, 255], fontStyle: 'bold' },
+      styles: { fontSize: 7 },
+    });
   }
 
   // Security Headers Analysis
@@ -569,6 +650,36 @@ export const generatePDFReport = (scan: Scan) => {
       body: seoData,
       theme: 'striped',
       styles: { fontSize: 9 },
+    });
+  }
+
+  // Broken Link Results
+  if (scan.results.brokenLinks && scan.results.brokenLinks.brokenLinks.length > 0) {
+    doc.addPage();
+    yPosition = 20;
+    
+    doc.setFillColor(255, 99, 71); // Tomato color for Broken Links
+    doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`BROKEN LINKS: Broken Links Found (${scan.results.brokenLinks.brokenLinks.length})`, 14, yPosition);
+    yPosition += 15;
+    
+    const brokenLinkData = scan.results.brokenLinks.brokenLinks.map((link: any) => [
+      link.url.substring(0, 70) + (link.url.length > 70 ? '...' : ''),
+      link.status.toString(),
+      link.isInternal ? 'Internal' : 'External',
+      link.sourcePage ? link.sourcePage.substring(0, 50) + '...' : 'N/A',
+    ]);
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['URL', 'Status', 'Type', 'Source Page']],
+      body: brokenLinkData,
+      theme: 'grid',
+      headStyles: { fillColor: [255, 99, 71], fontStyle: 'bold' },
+      styles: { fontSize: 7 },
     });
   }
 

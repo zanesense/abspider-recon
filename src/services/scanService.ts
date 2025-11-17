@@ -15,16 +15,19 @@ import { performLFIScan, LFIScanResult } from './lfiScanService';
 import { performWordPressScan, WordPressScanResult } from './wordpressService';
 import { performSEOAnalysis, SEOAnalysis } from './seoService';
 import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService';
-import { performVirusTotalScan, VirusTotalResult } from './virustotalService'; // New import
-import { performSslTlsAnalysis, SslTlsResult } from './sslTlsService'; // New import
-import { getSettings } from './settingsService'; // Import getSettings from Supabase-backed service
+import { performVirusTotalScan, VirusTotalResult } from './virustotalService';
+import { performSslTlsAnalysis, SslTlsResult } from './sslTlsService';
+import { performTechStackFingerprinting, TechStackResult } from './techStackService'; // New import
+import { performBrokenLinkCheck, BrokenLinkResult } from './brokenLinkService'; // New import
+import { performCorsMisconfigScan, CorsMisconfigResult } from './corsMisconfigService'; // New import
+import { getSettings } from './settingsService';
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
 import { createRequestManager, RequestManager } from './requestManager';
 import { getAPIKeys, APIKeys } from './apiKeyService';
 import { calculateSecurityGrade } from './securityGradingService';
-import { startScheduledScanChecker } from './scheduledScanService'; // Import the checker
-import { supabase } from '@/SupabaseClient'; // Import supabase
+import { startScheduledScanChecker } from './scheduledScanService';
+import { supabase } from '@/SupabaseClient';
 
 export interface ScanConfig {
   target: string;
@@ -46,6 +49,9 @@ export interface ScanConfig {
   ddosFirewall: boolean;
   virustotal: boolean;
   sslTls: boolean;
+  techStack: boolean; // New module
+  brokenLinks: boolean; // New module
+  corsMisconfig: boolean; // New module
   xssPayloads: number;
   sqliPayloads: number;
   lfiPayloads: number;
@@ -73,11 +79,14 @@ export interface ScanResults {
   ddosFirewall?: DDoSFirewallResult;
   virustotal?: VirusTotalResult;
   sslTls?: SslTlsResult;
+  techStack?: TechStackResult; // New module
+  brokenLinks?: BrokenLinkResult; // New module
+  corsMisconfig?: CorsMisconfigResult; // New module
 }
 
 export interface Scan {
-  id: string; // Corresponds to scan_id in DB
-  user_id: string; // New field for Supabase RLS
+  id: string;
+  user_id: string;
   target: string;
   timestamp: number;
   status: 'running' | 'completed' | 'failed' | 'paused';
@@ -89,12 +98,11 @@ export interface Scan {
   config: ScanConfig;
   results: ScanResults;
   errors: string[];
-  elapsedMs?: number; // Mapped to elapsed_ms in DB
-  completedAt?: number; // Mapped to completed_at in DB
-  securityGrade?: number; // Mapped to security_grade in DB
+  elapsedMs?: number;
+  completedAt?: number;
+  securityGrade?: number;
 }
 
-// Map Scan interface to DB column names for Supabase interaction
 interface ScanDbRow {
   scan_id: string;
   user_id: string;
@@ -110,7 +118,6 @@ interface ScanDbRow {
   security_grade?: number;
 }
 
-// Helper to convert Scan object to DB row format
 const toScanDbRow = (scan: Scan): ScanDbRow => ({
   scan_id: scan.id,
   user_id: scan.user_id,
@@ -126,7 +133,6 @@ const toScanDbRow = (scan: Scan): ScanDbRow => ({
   security_grade: scan.securityGrade,
 });
 
-// Helper to convert DB row format to Scan object
 const fromScanDbRow = (row: ScanDbRow): Scan => ({
   id: row.scan_id,
   user_id: row.user_id,
@@ -145,7 +151,6 @@ const fromScanDbRow = (row: ScanDbRow): Scan => ({
 
 const activeScans = new Map<string, { controller: AbortController; promise: Promise<void>; requestManager: RequestManager }>();
 
-// Function to upsert a scan to Supabase
 const upsertScanToDatabase = async (scan: Scan) => {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) throw sessionError;
@@ -202,7 +207,7 @@ export const getScanById = async (id: string): Promise<Scan | undefined> => {
     .eq('user_id', session.user.id)
     .single();
 
-  if (error && error.code !== 'PGRST116') { // PGRST116 means 'no rows found', which is fine
+  if (error && error.code !== 'PGRST116') {
     console.error('[ScanService] Failed to fetch scan by ID from Supabase:', error);
     throw new Error(`Failed to load scan: ${error.message}`);
   }
@@ -220,7 +225,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
   const id = uuidv4();
   let newScan: Scan = {
     id,
-    user_id: session.user.id, // Assign user_id
+    user_id: session.user.id,
     target: config.target,
     timestamp: Date.now(),
     status: 'running',
@@ -261,11 +266,11 @@ const runScan = async (
   const totalStages = modulesToRun.length;
   let completedStages = 0;
 
-  const settings = await getSettings(); // Fetch settings from Supabase
+  const settings = await getSettings();
   setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
   requestManager.setMinRequestInterval(Math.max(20, 1000 / config.threads)); 
 
-  let currentScan = (await getScanById(scanId))!; // Fetch current scan state from DB
+  let currentScan = (await getScanById(scanId))!;
 
   let apiKeys: APIKeys = {};
   try {
@@ -274,7 +279,7 @@ const runScan = async (
   } catch (error) {
     console.error('[ScanService] Failed to load API keys for scan:', error);
     currentScan.errors.push(`Failed to load API keys: ${(error as Error).message}`);
-    await upsertScanToDatabase(currentScan); // Save error to DB
+    await upsertScanToDatabase(currentScan);
   }
 
   try {
@@ -292,7 +297,7 @@ const runScan = async (
           stage: `Running ${moduleName} scan`,
         },
       };
-      await upsertScanToDatabase(currentScan); // Save progress to DB
+      await upsertScanToDatabase(currentScan);
 
       console.log(`[ScanService] Running module: ${moduleName}`);
 
@@ -370,27 +375,38 @@ const runScan = async (
               moduleResult = await performDDoSFirewallTest(config.target, config.ddosRequests, 100, requestManager);
               currentScan.results.ddosFirewall = moduleResult;
               break;
-            case 'virustotal': // New module case
+            case 'virustotal':
               moduleResult = await performVirusTotalScan(config.target, requestManager, apiKeys);
               currentScan.results.virustotal = moduleResult;
               break;
-            case 'sslTls': // New module case
+            case 'sslTls':
               moduleResult = await performSslTlsAnalysis(config.target, requestManager);
               currentScan.results.sslTls = moduleResult;
+              break;
+            case 'techStack': // New module execution
+              moduleResult = await performTechStackFingerprinting(config.target, requestManager);
+              currentScan.results.techStack = moduleResult;
+              break;
+            case 'brokenLinks': // New module execution
+              moduleResult = await performBrokenLinkCheck(config.target, requestManager);
+              currentScan.results.brokenLinks = moduleResult;
+              break;
+            case 'corsMisconfig': // New module execution
+              moduleResult = await performCorsMisconfigScan(config.target, requestManager);
+              currentScan.results.corsMisconfig = moduleResult;
               break;
             default:
               console.warn(`[ScanService] Unknown module: ${moduleName}`);
           }
-          await upsertScanToDatabase(currentScan); // Save module results to DB
+          await upsertScanToDatabase(currentScan);
 
         } catch (moduleError: any) {
           console.error(`[ScanService] Error in ${moduleName} module:`, moduleError);
           currentScan.errors.push(`${moduleName}: ${moduleError.message}`);
-          await upsertScanToDatabase(currentScan); // Save error to DB
+          await upsertScanToDatabase(currentScan);
         }
       }
 
-      // Calculate security grade after all modules have run
       currentScan.securityGrade = calculateSecurityGrade(currentScan);
 
       currentScan = {
@@ -400,7 +416,7 @@ const runScan = async (
         elapsedMs: Date.now() - startTime,
         completedAt: Date.now(),
       };
-      await upsertScanToDatabase(currentScan); // Save final state to DB
+      await upsertScanToDatabase(currentScan);
       console.log(`[ScanService] Scan ${scanId} completed successfully. Security Grade: ${currentScan.securityGrade}`);
 
     } catch (error: any) {
@@ -412,7 +428,7 @@ const runScan = async (
         elapsedMs: Date.now() - startTime,
         completedAt: Date.now(),
       };
-      await upsertScanToDatabase(currentScan); // Save failed state to DB
+      await upsertScanToDatabase(currentScan);
     } finally {
       activeScans.delete(scanId);
     }
@@ -444,7 +460,6 @@ export const resumeScan = async (id: string) => {
   await upsertScanToDatabase(updatedScan);
 
   console.log(`[ScanService] Resuming scan ${id}.`);
-  // Re-run the scan from its last known state
   await runScan(scan.id, scan.config, newController, requestManager);
 };
 
@@ -487,5 +502,4 @@ export const deleteScan = async (id: string): Promise<void> => {
   }
 };
 
-// Start the scheduled scan checker when the scan service is initialized
 startScheduledScanChecker();

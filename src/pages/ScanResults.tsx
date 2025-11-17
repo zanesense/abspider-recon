@@ -25,11 +25,14 @@ import LFIVulnerabilities from '@/components/LFIVulnerabilities';
 import WordPressInfo from '@/components/WordPressInfo';
 import SEOInfo from '@/components/SEOInfo';
 import DDoSFirewallResults from '@/components/DDoSFirewallResults';
-import VirusTotalResults from '@/components/VirusTotalResults'; // New import
-import SslTlsResults from '@/components/SslTlsResults'; // New import
+import VirusTotalResults from '@/components/VirusTotalResults';
+import SslTlsResults from '@/components/SslTlsResults';
+import TechStackInfo from '@/components/TechStackInfo'; // New import
+import BrokenLinkResults from '@/components/BrokenLinkResults'; // New import
+import CorsMisconfigResults from '@/components/CorsMisconfigResults'; // New import
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEffect } from 'react';
-import { Card } from '@/components/ui/card'; // Import Card to use for error display
+import { Card } from '@/components/ui/card';
 
 const ScanResults = () => {
   const { id } = useParams();
@@ -186,6 +189,7 @@ const ScanResults = () => {
             <div className="space-y-6">
               {scan.results.siteInfo && <SiteInfo siteInfo={scan.results.siteInfo} />}
               {scan.results.headers && <HeadersAnalysis headersAnalysis={scan.results.headers} />}
+              {scan.results.techStack && <TechStackInfo techStack={scan.results.techStack} />} {/* New component */}
               {scan.results.whois && <WhoisInfo whois={scan.results.whois} />}
               {scan.results.dns && <DNSInfo dns={scan.results.dns} />}
               {scan.results.mx && <MXInfo mx={scan.results.mx} />}
@@ -202,8 +206,10 @@ const ScanResults = () => {
               {scan.results.sqlinjection && <SQLVulnerabilities sqlinjection={scan.results.sqlinjection} />}
               {scan.results.xss && <XSSVulnerabilities xss={scan.results.xss} />}
               {scan.results.lfi && <LFIVulnerabilities lfi={scan.results.lfi} />}
+              {scan.results.corsMisconfig && <CorsMisconfigResults corsMisconfig={scan.results.corsMisconfig} />} {/* New component */}
               {scan.results.wordpress && <WordPressInfo wordpress={scan.results.wordpress} />}
               {scan.results.seo && <SEOInfo seo={scan.results.seo} />}
+              {scan.results.brokenLinks && <BrokenLinkResults brokenLinks={scan.results.brokenLinks} />} {/* New component */}
               {scan.results.ddosFirewall && <DDoSFirewallResults ddosFirewall={scan.results.ddosFirewall} />}
               {scan.results.sslTls && <SslTlsResults sslTls={scan.results.sslTls} />}
             </div>

@@ -13,6 +13,9 @@ export const calculateSecurityGrade = (scan: Scan): number => {
   if (scan.results.lfi?.vulnerable && scan.results.lfi.vulnerabilities.length > 0) {
     grade -= 3; // Significant deduction for LFI
   }
+  if (scan.results.corsMisconfig?.vulnerable && scan.results.corsMisconfig.vulnerabilities.length > 0) {
+    grade -= 3; // Significant deduction for CORS Misconfiguration
+  }
 
   // Deductions for high/medium vulnerabilities
   if (scan.results.wordpress?.vulnerabilities && scan.results.wordpress.vulnerabilities.length > 0) {
@@ -54,6 +57,9 @@ export const calculateSecurityGrade = (scan: Scan): number => {
     grade -= 3; // Significant deduction for expired SSL certificate
   } else if (scan.results.sslTls?.daysUntilExpiry !== undefined && scan.results.sslTls.daysUntilExpiry <= 30) {
     grade -= 1; // Deduction for SSL certificate expiring soon
+  }
+  if (scan.results.brokenLinks?.brokenLinks && scan.results.brokenLinks.brokenLinks.length > 0) {
+    grade -= 1; // Deduction for broken links
   }
 
   // Bonus for DDoS/WAF detection (indicates some protection)

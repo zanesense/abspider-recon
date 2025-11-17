@@ -8,16 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle, Mail, Lock } from 'lucide-react'; // Removed Mail from import as it's no longer used for emailEnum
+import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle, Mail, Lock, Fingerprint, Link as LinkIcon, Bug } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startScan } from '@/services/scanService';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { isInternalIP, extractHostname } from '@/services/apiUtils';
-import { addScheduledScan } from '@/services/scheduledScanService'; // Import addScheduledScan
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Import Select components
-import { format } from 'date-fns'; // Import format from date-fns
+import { addScheduledScan } from '@/services/scheduledScanService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 // Define validation schema with Zod
 const scanFormSchema = z.object({
@@ -30,7 +30,7 @@ const scanFormSchema = z.object({
         return false;
       }
     }, { message: "Invalid URL or IP address format." }),
-  scanName: z.string().optional(), // New: Name for scheduled scan
+  scanName: z.string().optional(),
   siteInfo: z.boolean(),
   headers: z.boolean(),
   whois: z.boolean(),
@@ -49,6 +49,9 @@ const scanFormSchema = z.object({
   ddosFirewall: z.boolean(),
   virustotal: z.boolean(),
   sslTls: z.boolean(),
+  techStack: z.boolean(), // New module
+  brokenLinks: z.boolean(), // New module
+  corsMisconfig: z.boolean(), // New module
   xssPayloads: z.number().min(1).max(100).default(20),
   sqliPayloads: z.number().min(1).max(100).default(20),
   lfiPayloads: z.number().min(1).max(100).default(20),
@@ -59,8 +62,8 @@ const scanFormSchema = z.object({
   // Scheduling fields
   scheduleScan: z.boolean().default(false),
   scheduleFrequency: z.enum(['once', 'daily', 'weekly', 'monthly']).optional(),
-  scheduleStartDate: z.string().optional(), // YYYY-MM-DD
-  scheduleStartTime: z.string().optional(), // HH:mm
+  scheduleStartDate: z.string().optional(),
+  scheduleStartTime: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.scheduleScan) {
     if (!data.scanName || data.scanName.trim() === '') {
@@ -124,6 +127,9 @@ const NewScan = () => {
       ddosFirewall: false,
       virustotal: false,
       sslTls: false,
+      techStack: false, // Default to false
+      brokenLinks: false, // Default to false
+      corsMisconfig: false, // Default to false
       xssPayloads: 20,
       sqliPayloads: 20,
       lfiPayloads: 20,
@@ -131,9 +137,9 @@ const NewScan = () => {
       useProxy: false,
       threads: 20,
       scheduleScan: false,
-      scheduleFrequency: 'daily', // Default for scheduling
-      scheduleStartDate: format(new Date(), 'yyyy-MM-dd'), // Default to today
-      scheduleStartTime: format(new Date(), 'HH:mm'), // Default to current time
+      scheduleFrequency: 'daily',
+      scheduleStartDate: format(new Date(), 'yyyy-MM-dd'),
+      scheduleStartTime: format(new Date(), 'HH:mm'),
     },
   });
 
@@ -157,7 +163,7 @@ const NewScan = () => {
           title: "Scan Scheduled",
           description: `Scan '${scanName}' has been scheduled to run ${scheduleFrequency}.`,
         });
-        navigate('/dashboard'); // Redirect to dashboard to see scheduled scans
+        navigate('/dashboard');
       } else {
         const scanId = await startScan(data);
         toast({
@@ -177,9 +183,10 @@ const NewScan = () => {
   };
 
   const toggleBasicScans = () => {
-    const allChecked = formData.siteInfo && formData.headers;
+    const allChecked = formData.siteInfo && formData.headers && formData.techStack;
     setValue('siteInfo', !allChecked);
     setValue('headers', !allChecked);
+    setValue('techStack', !allChecked);
   };
 
   const toggleNetworkIntelligence = () => {
@@ -195,11 +202,12 @@ const NewScan = () => {
   };
 
   const toggleVulnerabilityAssessment = () => {
-    const allChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal;
+    const allChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal && formData.corsMisconfig;
     setValue('sqlinjection', !allChecked);
     setValue('xss', !allChecked);
     setValue('lfi', !allChecked);
     setValue('virustotal', !allChecked);
+    setValue('corsMisconfig', !allChecked);
   };
 
   const toggleCmsDetection = () => {
@@ -208,8 +216,9 @@ const NewScan = () => {
   };
 
   const toggleSeoAnalytics = () => {
-    const allChecked = formData.seo;
+    const allChecked = formData.seo && formData.brokenLinks;
     setValue('seo', !allChecked);
+    setValue('brokenLinks', !allChecked);
   };
 
   const toggleSecurityTesting = () => {
@@ -218,20 +227,20 @@ const NewScan = () => {
     setValue('sslTls', !allChecked);
   };
 
-  const allBasicChecked = formData.siteInfo && formData.headers;
-  const anyBasicChecked = formData.siteInfo || formData.headers;
+  const allBasicChecked = formData.siteInfo && formData.headers && formData.techStack;
+  const anyBasicChecked = formData.siteInfo || formData.headers || formData.techStack;
 
   const allNetworkChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
   const anyNetworkChecked = formData.whois || formData.geoip || formData.dns || formData.mx || formData.subnet || formData.ports || formData.subdomains || formData.reverseip;
 
-  const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal;
-  const anyVulnChecked = formData.sqlinjection || formData.xss || formData.lfi || formData.virustotal;
+  const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal && formData.corsMisconfig;
+  const anyVulnChecked = formData.sqlinjection || formData.xss || formData.lfi || formData.virustotal || formData.corsMisconfig;
 
   const allCmsChecked = formData.wordpress;
   const anyCmsChecked = formData.wordpress;
 
-  const allSeoChecked = formData.seo;
-  const anySeoChecked = formData.seo;
+  const allSeoChecked = formData.seo && formData.brokenLinks;
+  const anySeoChecked = formData.seo || formData.brokenLinks;
 
   const allSecurityChecked = formData.ddosFirewall && formData.sslTls;
   const anySecurityChecked = formData.ddosFirewall || formData.sslTls;
@@ -442,6 +451,16 @@ const NewScan = () => {
                       <span className="font-medium">HTTP Headers</span> - Server response headers
                     </label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="techStack"
+                      checked={formData.techStack}
+                      onCheckedChange={(checked) => setValue('techStack', checked as boolean)}
+                    />
+                    <label htmlFor="techStack" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Tech Stack Fingerprinting</span> - Identify web technologies
+                    </label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -602,6 +621,16 @@ const NewScan = () => {
                       <span className="font-medium">VirusTotal Scan</span> - Domain reputation & malware
                     </label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="corsMisconfig"
+                      checked={formData.corsMisconfig}
+                      onCheckedChange={(checked) => setValue('corsMisconfig', checked as boolean)}
+                    />
+                    <label htmlFor="corsMisconfig" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">CORS Misconfiguration</span> - Cross-Origin Resource Sharing
+                    </label>
+                  </div>
                 </div>
                 {(formData.sqlinjection || formData.xss || formData.lfi) && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -703,6 +732,16 @@ const NewScan = () => {
                     />
                     <label htmlFor="seo" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">SEO Analysis</span> - Meta tags, headings, links
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="brokenLinks"
+                      checked={formData.brokenLinks}
+                      onCheckedChange={(checked) => setValue('brokenLinks', checked as boolean)}
+                    />
+                    <label htmlFor="brokenLinks" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Broken Link Checker</span> - Find broken internal/external links
                     </label>
                   </div>
                 </div>
