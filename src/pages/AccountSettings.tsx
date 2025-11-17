@@ -18,7 +18,7 @@ const AccountSettings = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [currentPassword, setCurrentPassword] = useState(''); // New state for current password
+  const [currentPassword, setCurrentPassword] = useState(''); // State for current password
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loadingProfileUpdate, setLoadingProfileUpdate] = useState(false);
@@ -75,6 +75,7 @@ const AccountSettings = () => {
   };
 
   const handleChangePassword = async () => {
+    // Client-side validations
     if (!currentPassword) {
       toast({
         title: "Password Error",
@@ -110,19 +111,37 @@ const AccountSettings = () => {
 
     setLoadingPasswordChange(true);
     try {
-      // Note: Supabase client-side updateUser for password change typically
-      // only requires the new password if the user is already authenticated.
-      // The 'currentPassword' is primarily for UI/UX and local validation.
-      const { error } = await supabase.auth.updateUser({
+      // 1. Get current user's email
+      if (!userEmail) {
+        throw new Error("User email not found. Please log in again.");
+      }
+
+      // 2. Authenticate current password by attempting to sign in
+      // This re-authenticates the user, confirming the current password is correct.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        // If sign-in fails, the current password is incorrect
+        throw new Error("Current password is incorrect. Please try again.");
+      }
+
+      // 3. If current password is correct, proceed to update the password
+      const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
-      if (error) throw error;
+      if (updateError) {
+        throw updateError;
+      }
 
       toast({
         title: "Password Changed",
         description: "Your password has been updated successfully.",
       });
+      // Clear fields after successful change
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
