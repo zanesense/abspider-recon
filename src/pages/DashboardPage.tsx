@@ -183,8 +183,8 @@ const DashboardPage = () => {
           {/* System Status Section */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-foreground">System Status</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <DatabaseStatusCard isLoading={isLoadingApiKeys} isError={isErrorApiKeys} className="self-start" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-min">
+              <DatabaseStatusCard isLoading={isLoadingApiKeys} isError={isErrorApiKeys} />
               <Card className="bg-card/50 backdrop-blur-sm border border-orange-500/30 shadow-lg">
                 <CardHeader>
                   <CardTitle className="text-orange-600 dark:text-orange-400">API Key Status</CardTitle>
