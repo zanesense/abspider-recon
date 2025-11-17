@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Label } from '@/components/ui/label';
-import { Loader2, QrCode, CheckCircle, XCircle, AlertCircle, KeyRound } from 'lucide-react';
+import { Loader2, QrCode, CheckCircle, XCircle, AlertCircle, KeyRound, Trash2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface TwoFactorAuthEnrollProps {
@@ -20,63 +20,67 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
   const [otpCode, setOtpCode] = useState('');
   const [factorId, setFactorId] = useState<string | null>(null);
   const [enrollmentError, setEnrollmentError] = useState<string | null>(null);
+  const [isDeletingAllFactors, setIsDeletingAllFactors] = useState(false); // New state for deleting all
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAndEnrollFactor = async () => {
-      setLoading(true);
-      setEnrollmentError(null);
-      try {
-        // First, check if 2FA is already enabled
-        const { data, error: listError } = await supabase.auth.mfa.listFactors();
-        if (listError) {
-          console.error('Error listing MFA factors:', listError);
-          throw new Error(`Failed to check existing 2FA factors: ${listError.message}`);
-        }
-
-        const existingFactors = data?.totp || []; // Ensure it's an array, handle data being null/undefined
-        console.log('Existing MFA factors:', existingFactors);
-
-        if (existingFactors.length > 0) {
-          toast({
-            title: "2FA Already Enabled",
-            description: "You already have Two-Factor Authentication set up. Redirecting to settings.",
-            variant: "default",
-          });
-          navigate('/settings');
-          return; // IMPORTANT: Return here to stop further execution
-        }
-
-        // If no existing factors, proceed with enrollment
-        const { data: enrollData, error: enrollError } = await supabase.auth.mfa.enroll({
-          factorType: 'totp',
-          issuer: 'ABSpider Recon',
-          friendlyName: 'ABSpider Authenticator', // Provide a unique friendly name
-        });
-
-        if (enrollError) throw enrollError;
-
-        setSecret(enrollData.totp.secret);
-        setQrCodeUrl(enrollData.totp.qrCode);
-        setFactorId(enrollData.id);
-        toast({
-          title: "2FA Enrollment Started",
-          description: "Scan the QR code with your authenticator app.",
-        });
-      } catch (error: any) {
-        console.error('2FA Enrollment Error:', error);
-        setEnrollmentError(error.message || 'Failed to enroll 2FA factor.');
-        toast({
-          title: "2FA Enrollment Failed",
-          description: error.message || "Could not start 2FA enrollment.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+  const checkAndEnrollFactor = async () => {
+    setLoading(true);
+    setEnrollmentError(null);
+    try {
+      // First, check if 2FA is already enabled
+      const { data, error: listError } = await supabase.auth.mfa.listFactors();
+      if (listError) {
+        console.error('Error listing MFA factors:', listError);
+        throw new Error(`Failed to check existing 2FA factors: ${listError.message}`);
       }
-    };
 
+      const existingTotpFactors = data?.totp || [];
+      const existingWebauthnFactors = data?.webauthn || [];
+      const allExistingFactors = [...existingTotpFactors, ...existingWebauthnFactors];
+
+      console.log('Existing MFA factors:', allExistingFactors);
+
+      if (allExistingFactors.length > 0) {
+        toast({
+          title: "2FA Already Enabled",
+          description: "You already have Two-Factor Authentication set up. Redirecting to settings.",
+          variant: "default",
+        });
+        navigate('/settings');
+        return; // IMPORTANT: Return here to stop further execution
+      }
+
+      // If no existing factors, proceed with enrollment
+      const { data: enrollData, error: enrollError } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+        issuer: 'ABSpider Recon',
+        friendlyName: 'ABSpider Authenticator', // Provide a unique friendly name
+      });
+
+      if (enrollError) throw enrollError;
+
+      setSecret(enrollData.totp.secret);
+      setQrCodeUrl(enrollData.totp.qrCode);
+      setFactorId(enrollData.id);
+      toast({
+        title: "2FA Enrollment Started",
+        description: "Scan the QR code with your authenticator app.",
+      });
+    } catch (error: any) {
+      console.error('2FA Enrollment Error:', error);
+      setEnrollmentError(error.message || 'Failed to enroll 2FA factor.');
+      toast({
+        title: "2FA Enrollment Failed",
+        description: error.message || "Could not start 2FA enrollment.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     checkAndEnrollFactor();
   }, [navigate, toast]);
 
@@ -122,6 +126,60 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
         });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAllFactors = async () => {
+    setIsDeletingAllFactors(true);
+    try {
+      const { data, error: listError } = await supabase.auth.mfa.listFactors();
+      if (listError) throw listError;
+
+      const allFactorsToDelete = [...(data?.totp || []), ...(data?.webauthn || [])];
+      
+      if (allFactorsToDelete.length === 0) {
+        toast({
+          title: "No 2FA Factors Found",
+          description: "There are no 2FA factors to delete for this account.",
+          variant: "default",
+        });
+        return;
+      }
+
+      const unenrollPromises = allFactorsToDelete.map(async (factor) => {
+        try {
+          const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+          if (unenrollError) throw unenrollError;
+          toast({
+            title: "Factor Deleted",
+            description: `Successfully deleted 2FA factor: ${factor.friendly_name || factor.id}`,
+            variant: "default",
+          });
+        } catch (unenrollError: any) {
+          toast({
+            title: "Deletion Failed",
+            description: `Failed to delete factor ${factor.friendly_name || factor.id}: ${unenrollError.message}`,
+            variant: "destructive",
+          });
+        }
+      });
+
+      await Promise.allSettled(unenrollPromises);
+      toast({
+        title: "All Factors Processed",
+        description: "Attempted to delete all 2FA factors. Refreshing...",
+        variant: "default",
+      });
+      window.location.reload(); // Reload to re-evaluate 2FA status
+    } catch (error: any) {
+      console.error('Error deleting all factors:', error);
+      toast({
+        title: "Error Deleting Factors",
+        description: error.message || "An unexpected error occurred while deleting factors.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingAllFactors(false);
     }
   };
 
@@ -210,6 +268,27 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
               <AlertCircle className="h-5 w-5" />
               <p className="text-sm">Failed to load 2FA enrollment details. Please try again.</p>
             </div>
+          )}
+
+          {enrollmentError && ( // Show delete button only if there's an enrollment error
+            <Button
+              onClick={handleDeleteAllFactors}
+              disabled={isDeletingAllFactors}
+              variant="destructive"
+              className="w-full mt-4"
+            >
+              {isDeletingAllFactors ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting All Factors...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete All 2FA Factors
+                </>
+              )}
+            </Button>
           )}
         </CardContent>
       </Card>
