@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../SupabaseClient";
-import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus, KeyRound, QrCode } from "lucide-react"; // Added QrCode icon
+import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,15 +50,8 @@ export default function Login() {
           description: "You have been successfully logged in.",
         });
         navigate('/dashboard');
-      } else if (data.user && data.session === null && data.action === 'mfa_challenge') {
-        // 2FA is required
-        toast({
-          title: "2FA Required",
-          description: "Please enter your 2FA code to complete login.",
-        });
-        navigate('/verify-2fa', { state: { factorId: data.factorId, challengeId: data.challengeId } });
       } else {
-        // This case should ideally not be reached with email/password + 2FA
+        // This case should ideally not be reached with email/password without 2FA
         setMessage("An unexpected authentication state occurred.");
         setMessageType('error');
         toast({
@@ -200,15 +193,12 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3"> {/* Changed to 3 columns */}
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">
                 <Mail className="mr-2 h-4 w-4" /> Login
               </TabsTrigger>
               <TabsTrigger value="signup">
                 <UserPlus className="mr-2 h-4 w-4" /> Sign Up
-              </TabsTrigger>
-              <TabsTrigger value="magic-link"> {/* New tab trigger */}
-                <QrCode className="mr-2 h-4 w-4" /> Magic Link
               </TabsTrigger>
             </TabsList>
             <TabsContent value="login" className="mt-6">
@@ -308,42 +298,6 @@ export default function Login() {
                     </>
                   )}
                 </Button>
-              </form>
-            </TabsContent>
-            <TabsContent value="magic-link" className="mt-6"> {/* New tab content */}
-              <form onSubmit={handleMagicLinkLogin} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email-magic-link" className="text-foreground">Email Address</Label>
-                  <Input
-                    id="email-magic-link"
-                    type="email"
-                    placeholder="your@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending Link...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Magic Link
-                    </>
-                  )}
-                </Button>
-                <p className="text-sm text-muted-foreground text-center">
-                  A magic link will be sent to your email. Click it to log in instantly.
-                </p>
               </form>
             </TabsContent>
           </Tabs>

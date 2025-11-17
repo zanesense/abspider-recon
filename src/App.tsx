@@ -10,8 +10,8 @@ import Login from "@/components/Login";
 import NotFound from "@/pages/NotFound";
 import NewScan from "@/pages/NewScan";
 import ScanResults from "@/pages/ScanResults";
-import AppSettings from "@/pages/AppSettings"; // Renamed import
-import AccountSettings from "@/pages/AccountSettings"; // New import
+import AppSettings from "@/pages/AppSettings";
+import AccountSettings from "@/pages/AccountSettings";
 import AllScans from "@/pages/AllScans";
 import DashboardPage from "@/pages/DashboardPage";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -19,8 +19,6 @@ import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
 import RequireAuth from "@/components/RequireAuth";
-import TwoFactorAuthEnroll from "@/components/TwoFactorAuthEnroll";
-import TwoFactorAuthVerify from "@/components/TwoFactorAuthVerify";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,7 +41,6 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/verify-2fa" element={<TwoFactorAuthVerify />} /> 
                 
                 {/* Protected Routes */}
                 <Route path="*" element={
@@ -59,9 +56,8 @@ function App() {
                               <Route path="/new-scan" element={<NewScan />} />
                               <Route path="/all-scans" element={<AllScans />} />
                               <Route path="/scan/:id" element={<ScanResults />} />
-                              <Route path="/settings" element={<AppSettings />} /> {/* Updated route */}
-                              <Route path="/account-settings" element={<AccountSettings />} /> {/* New route */}
-                              <Route path="/enroll-2fa" element={<TwoFactorAuthEnroll />} /> 
+                              <Route path="/settings" element={<AppSettings />} />
+                              <Route path="/account-settings" element={<AccountSettings />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </div>
