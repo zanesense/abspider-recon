@@ -18,6 +18,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
 import RequireAuth from "@/components/RequireAuth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
 
 const queryClient = new QueryClient({
   defaultOptions: {

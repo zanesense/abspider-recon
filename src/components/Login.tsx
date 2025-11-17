@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../SupabaseClient";
-import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield } from "lucide-react";
+import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
 
 export default function Login() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
+  const [currentTab, setCurrentTab] = useState("login"); // State for active tab
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -33,23 +36,95 @@ export default function Login() {
     setMessageType('info');
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         throw error;
       }
 
-      setMessage("Check your email for the magic link!");
+      setMessage("Logged in successfully!");
       setMessageType('success');
       toast({
-        title: "Magic Link Sent",
-        description: "Check your email for the login link!",
+        title: "Login Successful",
+        description: "You have been successfully logged in.",
       });
+      navigate('/dashboard');
     } catch (error: any) {
       setMessage(error.message);
       setMessageType('error');
       toast({
         title: "Login Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    setMessageType('info');
+
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user && data.session) {
+        setMessage("Signed up and logged in successfully!");
+        setMessageType('success');
+        toast({
+          title: "Sign Up Successful",
+          description: "You have been successfully signed up and logged in.",
+        });
+        navigate('/dashboard');
+      } else {
+        setMessage("Please check your email to confirm your account before logging in.");
+        setMessageType('info');
+        toast({
+          title: "Sign Up Successful",
+          description: "Please check your email to confirm your account before logging in.",
+        });
+        setCurrentTab("login"); // Switch to login tab after signup
+      }
+    } catch (error: any) {
+      setMessage(error.message);
+      setMessageType('error');
+      toast({
+        title: "Sign Up Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setLoading(true);
+    setMessage(null);
+    setMessageType('info');
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login?reset=true`, // Redirect back to login page
+      });
+      if (error) throw error;
+      setMessage("Password reset email sent. Check your inbox!");
+      setMessageType('success');
+      toast({
+        title: "Password Reset",
+        description: "Check your email for the password reset link.",
+      });
+    } catch (error: any) {
+      setMessage(error.message);
+      setMessageType('error');
+      toast({
+        title: "Password Reset Error",
         description: error.message,
         variant: "destructive",
       });
@@ -64,44 +139,122 @@ export default function Login() {
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-foreground flex items-center justify-center gap-2">
             <Shield className="w-7 h-7 text-primary" />
-            ABSpider Login
+            ABSpider Auth
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Sign in via magic link with your email below
+            Sign in or create an account to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
-              />
-            </div>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending Magic Link...
-                </>
-              ) : (
-                <>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Magic Link
-                </>
-              )}
-            </Button>
-          </form>
+          <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">
+                <Mail className="mr-2 h-4 w-4" /> Login
+              </TabsTrigger>
+              <TabsTrigger value="signup">
+                <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="login" className="mt-6">
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email-login" className="text-foreground">Email Address</Label>
+                  <Input
+                    id="email-login"
+                    type="email"
+                    placeholder="your@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password-login" className="text-foreground">Password</Label>
+                  <Input
+                    id="password-login"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging In...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Login
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={handleForgotPassword}
+                  disabled={loading || !email}
+                  className="w-full text-sm text-muted-foreground hover:text-primary"
+                >
+                  Forgot Password?
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="signup" className="mt-6">
+              <form onSubmit={handleSignUp} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email-signup" className="text-foreground">Email Address</Label>
+                  <Input
+                    id="email-signup"
+                    type="email"
+                    placeholder="your@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password-signup" className="text-foreground">Password</Label>
+                  <Input
+                    id="password-signup"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing Up...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Sign Up
+                    </>
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
           {message && (
             <div className={`mt-6 p-4 rounded-lg flex items-center gap-3 ${
               messageType === 'success' ? 'bg-green-500/10 border-green-500/50 text-green-600 dark:text-green-400' :
