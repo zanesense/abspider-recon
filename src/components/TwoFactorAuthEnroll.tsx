@@ -88,8 +88,8 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
           const userEmail = user?.email || 'unknown_user';
           const issuer = encodeURIComponent('ABSpider Recon');
           const accountName = encodeURIComponent(userEmail);
-          const totpSecret = enrollData.totp.secret;
-          finalQrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${tototSecret}&issuer=${issuer}`;
+          const totpSecret = enrollData.totp.secret; // Corrected typo here
+          finalQrCodeUrl = `otpauth://totp/${issuer}:${accountName}?secret=${totpSecret}&issuer=${issuer}`;
           console.log('Manually constructed TOTP QR Code URL:', finalQrCodeUrl);
         }
         
