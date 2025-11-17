@@ -270,7 +270,8 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
             </div>
           )}
 
-          {enrollmentError && ( // Show delete button only if there's an enrollment error
+          {/* Always show delete button on this page if not loading */}
+          {!loading && (
             <Button
               onClick={handleDeleteAllFactors}
               disabled={isDeletingAllFactors}
