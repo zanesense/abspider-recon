@@ -259,6 +259,18 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
                 <p className="text-sm text-muted-foreground">
                   Alternatively, enter the secret key manually: <code className="font-mono text-foreground bg-muted px-2 py-1 rounded">{secret}</code>
                 </p>
+
+                {/* New: Time Sync Warning */}
+                <div className="p-3 rounded-lg flex items-center gap-3 bg-yellow-500/10 border-yellow-500/50 text-yellow-600 dark:text-yellow-400 border">
+                  <AlertCircle className="h-5 w-5" />
+                  <p className="text-sm text-left">
+                    If your code is incorrect, ensure your device's time is synchronized.
+                    <br />
+                    For Android: Settings &gt; System &gt; Date & time &gt; Use network-provided time.
+                    <br />
+                    For iOS: Settings &gt; General &gt; Date & Time &gt; Set Automatically.
+                  </p>
+                </div>
               </div>
 
               <form onSubmit={handleVerifyEnrollment} className="space-y-4">
@@ -295,6 +307,17 @@ const TwoFactorAuthEnroll: React.FC<TwoFactorAuthEnrollProps> = ({ onEnrollSucce
                       Verify & Enable 2FA
                     </>
                   )}
+                </Button>
+                {/* New: Generate New QR Code Button */}
+                <Button
+                  type="button"
+                  onClick={checkAndEnrollFactor} // Call the enrollment function again
+                  disabled={loading}
+                  variant="outline"
+                  className="w-full mt-2 border-border text-foreground hover:bg-muted/50"
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Generate New QR Code
                 </Button>
               </form>
             </>
