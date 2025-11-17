@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../SupabaseClient";
-import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus, KeyRound } from "lucide-react";
+import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus, KeyRound, QrCode } from "lucide-react"; // Added QrCode icon
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -15,7 +15,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
-  const [currentTab, setCurrentTab] = useState("login"); // State for active tab
+  const [currentTab, setCurrentTab] = useState("login");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -123,6 +123,41 @@ export default function Login() {
     }
   };
 
+  const handleMagicLinkLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    setMessageType('info');
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+
+      if (error) throw error;
+
+      setMessage("Magic link sent! Check your email to log in.");
+      setMessageType('success');
+      toast({
+        title: "Magic Link Sent",
+        description: "Check your email for the login link.",
+      });
+    } catch (error: any) {
+      setMessage(error.message);
+      setMessageType('error');
+      toast({
+        title: "Magic Link Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleForgotPassword = async () => {
     setLoading(true);
     setMessage(null);
@@ -165,12 +200,15 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3"> {/* Changed to 3 columns */}
               <TabsTrigger value="login">
                 <Mail className="mr-2 h-4 w-4" /> Login
               </TabsTrigger>
               <TabsTrigger value="signup">
                 <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+              </TabsTrigger>
+              <TabsTrigger value="magic-link"> {/* New tab trigger */}
+                <QrCode className="mr-2 h-4 w-4" /> Magic Link
               </TabsTrigger>
             </TabsList>
             <TabsContent value="login" className="mt-6">
@@ -270,6 +308,42 @@ export default function Login() {
                     </>
                   )}
                 </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="magic-link" className="mt-6"> {/* New tab content */}
+              <form onSubmit={handleMagicLinkLogin} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email-magic-link" className="text-foreground">Email Address</Label>
+                  <Input
+                    id="email-magic-link"
+                    type="email"
+                    placeholder="your@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending Link...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send Magic Link
+                    </>
+                  )}
+                </Button>
+                <p className="text-sm text-muted-foreground text-center">
+                  A magic link will be sent to your email. Click it to log in instantly.
+                </p>
               </form>
             </TabsContent>
           </Tabs>
