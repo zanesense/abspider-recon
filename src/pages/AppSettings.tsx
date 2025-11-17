@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Input } => '@/components/ui/input';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -370,7 +370,6 @@ const AppSettings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Removed the critical warning about client-side API key storage */}
               <div className="grid grid-cols-1 gap-4">
                 {/* Shodan */}
                 <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
