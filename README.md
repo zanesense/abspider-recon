@@ -44,7 +44,7 @@ Experience ABSpider Recon Dashboard in action right now!
 *   **🕵️‍♂️ Intelligence-First Approach:** Prioritizes passive data collection (WHOIS, CT Logs, GeoIP) to minimize footprint, with powerful active scans (SQLi, XSS, LFI, Port Scanning) available when authorized.
 *   **📊 Professional Reporting:** Generate comprehensive, exportable **PDF reports** summarizing all findings, complete with severity, evidence, and remediation advice.
 *   **🔔 Real-time Notifications:** Stay informed with **Discord webhook notifications** for instant scan updates and critical alerts.
-*   **⚙️ Seamless Configuration:** Manage all scan parameters, proxies, and API keys directly through a secure, centralized **Dashboard Settings UI** – no manual `.env` files needed.
+*   **⚙️ Seamless Configuration:** Manage all scan parameters, proxies, and API keys directly through a secure, centralized **Dashboard Settings UI**.
 *   **🛡️ Intelligent Bypass:** Overcome common web protections with built-in **CORS & Cloudflare Bypass** mechanisms.
 *   **⚡ Blazing Fast:** Built with **Vite + React** for a lightning-fast development and user experience.
 
