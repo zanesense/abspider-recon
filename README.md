@@ -150,7 +150,7 @@ yarn dev
 
 ## 📸 Interface Preview
 
-<img src="https://i.postimg.cc/Ss4nWCRY/localhost-5000.png" alt="ABSpider Recon Dashboard Interface" width="100%">
+<img src="https://i.postimg.cc/rFBhkzDF/localhost-5000.png" alt="ABSpider Recon Dashboard Interface" width="100%">
 
 ---
 
