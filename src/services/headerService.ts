@@ -43,6 +43,8 @@ export interface HeaderAnalysisResult {
     allowMethods?: string;
     allowHeaders?: string;
     exposeHeaders?: string;
+    allowCredentials?: boolean; // New
+    maxAge?: number; // New
     issues: string[];
   };
   corsMetadata?: CORSBypassMetadata;
@@ -178,7 +180,7 @@ export const performFullHeaderAnalysis = async (
     const percentage = (score / maxScore) * 100;
     const grade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : percentage >= 50 ? 'D' : 'F';
     
-    // Detect technologies
+    // Detect technologies (header-specific)
     const technologies: string[] = [];
     const server = headers['server'];
     if (server) technologies.push(server);
@@ -249,6 +251,12 @@ export const performFullHeaderAnalysis = async (
       if (!directives.includes('max-age') && !directives.includes('s-maxage')) {
         cacheAnalysis.issues.push('Missing max-age or s-maxage directive (cache duration not explicitly set).');
       }
+      if (directives.includes('public') && (directives.includes('private') || directives.includes('no-cache') || directives.includes('no-store'))) {
+        cacheAnalysis.issues.push('Conflicting public/private cache directives detected.');
+      }
+      if (directives.includes('must-revalidate') && !directives.includes('no-cache')) {
+        cacheAnalysis.issues.push('Must-revalidate without no-cache might still serve stale content if origin is unreachable.');
+      }
     }
     
     // Analyze CORS
@@ -256,6 +264,8 @@ export const performFullHeaderAnalysis = async (
     const corsMethods = headers['access-control-allow-methods'];
     const corsHeaders = headers['access-control-allow-headers'];
     const corsExposeHeaders = headers['access-control-expose-headers'];
+    const corsAllowCredentials = headers['access-control-allow-credentials'] === 'true';
+    const corsMaxAge = headers['access-control-max-age'] ? parseInt(headers['access-control-max-age']) : undefined;
 
     const corsAnalysis = {
       enabled: !!corsOrigin,
@@ -263,17 +273,25 @@ export const performFullHeaderAnalysis = async (
       allowMethods: corsMethods,
       allowHeaders: corsHeaders,
       exposeHeaders: corsExposeHeaders,
+      allowCredentials: corsAllowCredentials,
+      maxAge: corsMaxAge,
       issues: [] as string[],
     };
     
     if (corsOrigin === '*') {
       corsAnalysis.issues.push('CORS allows all origins (`*`) - potential security risk for sensitive resources.');
     }
+    if (corsAllowCredentials && corsOrigin === '*') {
+      corsAnalysis.issues.push('CORS allows credentials with wildcard origin (`*`) - CRITICAL security risk.');
+    }
     if (corsMethods?.includes('*')) {
       corsAnalysis.issues.push('CORS allows all methods (`*`) - potential security risk.');
     }
     if (corsHeaders?.includes('*')) {
       corsAnalysis.issues.push('CORS allows all headers (`*`) - potential security risk.');
+    }
+    if (corsMaxAge !== undefined && corsMaxAge > 86400) { // Max-age typically 1 day (86400 seconds)
+      corsAnalysis.issues.push(`CORS Max-Age is very high (${corsMaxAge}s) - preflight results cached for a long time.`);
     }
     
     console.log(`[Headers] Analysis complete - Grade: ${grade}, Score: ${score}/${maxScore}`);
