@@ -12,7 +12,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User, Loader2, CircleUser, Shield, FileText } from 'lucide-react'; // Added FileText
+import { Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User, Loader2, CircleUser, Spider, FileText } from 'lucide-react'; // Changed Shield to Spider
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/SupabaseClient'; // Import supabase
@@ -86,7 +86,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-border bg-sidebar-accent">
         <div className="flex items-center gap-3 px-4 py-4">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
-            <Shield className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" size={28} /> {/* Changed icon to Shield */}
+            <Spider className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" size={28} /> {/* Changed icon to Spider */}
           </div>
           <div>
             <h1 className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"> {/* Increased font size and weight */}
@@ -129,7 +129,7 @@ export function AppSidebar() {
                   <Activity className="h-3 w-3 text-green-500 animate-pulse" />
                   <span className="text-green-500 font-medium">Online</span>
                 </div>
-              </div>
+              </div >
             </div >
           </SidebarGroupContent>
         </SidebarGroup>
