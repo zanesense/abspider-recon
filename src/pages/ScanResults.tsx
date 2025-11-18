@@ -1,10 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle, FileText, FileDown, FileType, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle, FileText, FileDown, FileType, FileSpreadsheet, Eye } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getScanById, pauseScan, resumeScan, stopScan } from '@/services/scanService';
-import { generatePdfReport, generateDocxReport, generateMarkdownReport, generateCsvReport } from '@/services/reportService';
 import { sendDiscordWebhook } from '@/services/webhookService';
 import { useToast } from '@/hooks/use-toast';
 import ScanStatus from '@/components/ScanStatus';
@@ -31,7 +30,7 @@ import TechStackInfo from '@/components/TechStackInfo';
 import BrokenLinkResults from '@/components/BrokenLinkResults';
 import CorsMisconfigResults from '@/components/CorsMisconfigResults';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useEffect, useState } from 'react'; // Import useState
+import { useEffect, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,7 +47,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label'; // Import Label
+import { Label } from '@/components/ui/label';
+import ReportPreviewDialog from '@/components/ReportPreviewDialog'; // Import the new preview dialog
+import { generateReportContent } from '@/utils/reportUtils'; // Import the new utility function
+import { saveAs } from 'file-saver'; // Import saveAs for direct download from preview
 
 type ReportFormat = 'pdf' | 'docx' | 'md' | 'csv';
 
@@ -60,6 +62,8 @@ const ScanResults = () => {
 
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
   const [selectedReportFormat, setSelectedReportFormat] = useState<ReportFormat | null>(null);
+  const [showReportPreview, setShowReportPreview] = useState(false); // State for the preview dialog
+  const [previewContent, setPreviewContent] = useState<string | null>(null); // State for the preview content
 
   const { data: scan, isLoading } = useQuery({
     queryKey: ['scan', id],
@@ -78,37 +82,98 @@ const ScanResults = () => {
     };
   }, [id]);
 
-  const handleDownloadReport = (format: ReportFormat) => {
-    if (!scan) return;
-
+  const handleGenerateAndDownload = async (format: ReportFormat) => {
+    if (!scan) {
+      toast({
+        title: "Error",
+        description: "Scan data not available for download.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
-      switch (format) {
-        case 'pdf':
-          generatePdfReport(scan);
-          break;
-        case 'docx':
-          generateDocxReport(scan);
-          break;
-        case 'md':
-          generateMarkdownReport(scan);
-          break;
-        case 'csv':
-          generateCsvReport(scan);
-          break;
-        default:
-          console.warn('Unknown report format requested:', format);
-          return;
-      }
+      await generateReportContent(scan, format, false); // Triggers direct download
       toast({
         title: "Report Generated",
         description: `The ${format.toUpperCase()} report has been downloaded successfully.`,
       });
-      setShowDownloadDialog(false); // Close dialog after download
-      setSelectedReportFormat(null); // Reset selected format
+      setShowDownloadDialog(false);
+      setSelectedReportFormat(null);
     } catch (error: any) {
       toast({
         title: "Report Generation Failed",
         description: error.message || `Failed to generate ${format.toUpperCase()} report.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePreview = async () => {
+    if (!scan || !selectedReportFormat) {
+      toast({
+        title: "Error",
+        description: "Please select a report format first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const content = await generateReportContent(scan, selectedReportFormat, true); // Get content for preview
+      if (content) {
+        setPreviewContent(content);
+        setShowReportPreview(true);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Preview Failed",
+        description: error.message || "Failed to generate report preview.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadFromPreview = () => {
+    if (!scan || !selectedReportFormat || !previewContent) {
+      toast({
+        title: "Error",
+        description: "No report content available for download.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const fileName = `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.${selectedReportFormat}`;
+      let blob: Blob;
+
+      if (selectedReportFormat === 'pdf') {
+        // For PDF data URL, extract base64 part and convert to Blob
+        const base64Data = previewContent.split(',')[1];
+        blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'application/pdf' });
+      } else if (selectedReportFormat === 'docx') {
+        // DOCX preview content is a message, not the actual binary.
+        // We need to regenerate the DOCX for download.
+        generateReportContent(scan, selectedReportFormat, false); // This will trigger direct download
+        setShowReportPreview(false); // Close preview
+        setShowDownloadDialog(false); // Close main dialog
+        return;
+      } else {
+        // For MD, CSV, it's raw text
+        blob = new Blob([previewContent], { type: `text/${selectedReportFormat};charset=utf-8` });
+      }
+      
+      saveAs(blob, fileName);
+      toast({
+        title: "Report Downloaded",
+        description: `The ${selectedReportFormat.toUpperCase()} report has been downloaded.`,
+      });
+      setShowReportPreview(false); // Close preview
+      setShowDownloadDialog(false); // Close main dialog
+    } catch (error: any) {
+      toast({
+        title: "Download Failed",
+        description: error.message || "Failed to download the report from preview.",
         variant: "destructive",
       });
     }
@@ -418,20 +483,40 @@ const ScanResults = () => {
               </DropdownMenu>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowDownloadDialog(false); setSelectedReportFormat(null); }} className="border-border text-foreground hover:bg-muted/50">
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => { setShowDownloadDialog(false); setSelectedReportFormat(null); }} 
+              className="flex-1 sm:flex-none border-border text-foreground hover:bg-muted/50"
+            >
               Cancel
             </Button>
             <Button 
-              onClick={() => selectedReportFormat && handleDownloadReport(selectedReportFormat)} 
+              onClick={handlePreview} 
               disabled={!selectedReportFormat}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
+              className="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md"
+            >
+              <Eye className="mr-2 h-4 w-4" /> Preview
+            </Button>
+            <Button 
+              onClick={() => selectedReportFormat && handleGenerateAndDownload(selectedReportFormat)} 
+              disabled={!selectedReportFormat}
+              className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
             >
               <Download className="mr-2 h-4 w-4" /> Download
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Report Preview Dialog */}
+      <ReportPreviewDialog
+        isOpen={showReportPreview}
+        onClose={() => setShowReportPreview(false)}
+        reportFormat={selectedReportFormat}
+        previewContent={previewContent || ''}
+        onDownload={handleDownloadFromPreview}
+      />
     </div>
   );
 };

@@ -25,6 +25,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
     recommendations.push('• Use HTTPOnly and Secure flags on cookies');
     recommendations.push('• Sanitize HTML input with DOMPurify or similar');
     recommendations.push('• Validate input on both client and server side');
+    recommendations.push('• Deploy Web Application Firewall (WAF)');
   }
   
   // LFI recommendations
@@ -123,7 +124,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
   return recommendations;
 };
 
-export const generatePdfReport = (scan: Scan) => {
+export const generatePdfReport = (scan: Scan, returnContent: boolean = false): string | void => {
   const doc = new jsPDF();
   let yPosition = 20;
 
@@ -876,10 +877,14 @@ export const generatePdfReport = (scan: Scan) => {
     doc.text('Confidential Security Report', 14, 290);
   }
 
-  doc.save(`abspider-security-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`);
+  if (returnContent) {
+    return doc.output('datauristring'); // Return as Data URL for preview
+  } else {
+    doc.save(`abspider-security-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`);
+  }
 };
 
-export const generateDocxReport = async (scan: Scan) => {
+export const generateDocxReport = async (scan: Scan, returnContent: boolean = false): Promise<string | void> => {
   const recommendations = getSecurityRecommendations(scan);
   const doc = new Document({
     sections: [{
@@ -928,10 +933,20 @@ export const generateDocxReport = async (scan: Scan) => {
   });
 
   const buffer = await Packer.toBuffer(doc);
-  saveAs(new Blob([buffer]), `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.docx`);
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+  if (returnContent) {
+    // For DOCX, we can't easily return a data URL for direct iframe display.
+    // Instead, we'll return a placeholder or a base64 representation if needed,
+    // but for a simple text preview, we'll extract text.
+    // For now, let's return a message indicating it's not directly previewable as text.
+    return "DOCX reports are not directly previewable as text. Please download to view.";
+  } else {
+    saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.docx`);
+  }
 };
 
-export const generateMarkdownReport = (scan: Scan) => {
+export const generateMarkdownReport = (scan: Scan, returnContent: boolean = false): string | void => {
   const recommendations = getSecurityRecommendations(scan);
   let markdown = `# ABSpider Recon Dashboard - Security Assessment Report\n\n`;
   markdown += `**Target Domain:** ${scan.target}\n`;
@@ -973,11 +988,15 @@ export const generateMarkdownReport = (scan: Scan) => {
     markdown += '\n';
   }
 
-  const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
-  saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.md`);
+  if (returnContent) {
+    return markdown;
+  } else {
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.md`);
+  }
 };
 
-export const generateCsvReport = (scan: Scan) => {
+export const generateCsvReport = (scan: Scan, returnContent: boolean = false): string | void => {
   const escapeCsv = (value: any) => {
     if (value === null || value === undefined) return '';
     let str = String(value);
@@ -1030,6 +1049,10 @@ export const generateCsvReport = (scan: Scan) => {
   }
   // Repeat for XSS, LFI, etc.
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-  saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.csv`);
+  if (returnContent) {
+    return csvContent;
+  } else {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.csv`);
+  }
 };
