@@ -31,7 +31,7 @@ import TechStackInfo from '@/components/TechStackInfo';
 import BrokenLinkResults from '@/components/BrokenLinkResults';
 import CorsMisconfigResults from '@/components/CorsMisconfigResults';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react'; // Import useState
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,13 +40,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label'; // Import Label
 
+type ReportFormat = 'pdf' | 'docx' | 'md' | 'csv';
 
 const ScanResults = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [selectedReportFormat, setSelectedReportFormat] = useState<ReportFormat | null>(null);
 
   const { data: scan, isLoading } = useQuery({
     queryKey: ['scan', id],
@@ -65,7 +78,7 @@ const ScanResults = () => {
     };
   }, [id]);
 
-  const handleDownloadReport = (format: 'pdf' | 'docx' | 'md' | 'csv') => {
+  const handleDownloadReport = (format: ReportFormat) => {
     if (!scan) return;
 
     try {
@@ -90,6 +103,8 @@ const ScanResults = () => {
         title: "Report Generated",
         description: `The ${format.toUpperCase()} report has been downloaded successfully.`,
       });
+      setShowDownloadDialog(false); // Close dialog after download
+      setSelectedReportFormat(null); // Reset selected format
     } catch (error: any) {
       toast({
         title: "Report Generation Failed",
@@ -207,32 +222,13 @@ const ScanResults = () => {
           <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
             <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                disabled={scan.status === 'running' || scan.status === 'paused'} 
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
-              >
-                <Download className="h-4 w-4 mr-2" /> Download Report
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-card border-border">
-              <DropdownMenuLabel>Choose Report Format</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleDownloadReport('pdf')} className="cursor-pointer">
-                <FileText className="mr-2 h-4 w-4" /> PDF Document (.pdf)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownloadReport('docx')} className="cursor-pointer">
-                <FileType className="mr-2 h-4 w-4" /> Word Document (.docx)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownloadReport('md')} className="cursor-pointer">
-                <FileDown className="mr-2 h-4 w-4" /> Markdown (.md)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownloadReport('csv')} className="cursor-pointer">
-                <FileSpreadsheet className="mr-2 h-4 w-4" /> CSV Spreadsheet (.csv)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button 
+            onClick={() => setShowDownloadDialog(true)} // Open dialog
+            disabled={scan.status === 'running' || scan.status === 'paused'} 
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
+          >
+            <Download className="h-4 w-4 mr-2" /> Download Report
+          </Button>
         </div>
       </header>
 
@@ -377,6 +373,65 @@ const ScanResults = () => {
           )}
         </div>
       </main>
+
+      {/* Download Report Dialog */}
+      <Dialog open={showDownloadDialog} onOpenChange={setShowDownloadDialog}>
+        <DialogContent className="sm:max-w-[425px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Download Report</DialogTitle>
+            <DialogDescription>
+              Select the desired format for your scan report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="report-format" className="text-right">
+                Format
+              </Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="col-span-3 justify-between">
+                    {selectedReportFormat ? (
+                      <span className="capitalize">{selectedReportFormat}</span>
+                    ) : (
+                      "Select a format"
+                    )}
+                    <Download className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[200px] bg-card border-border">
+                  <DropdownMenuLabel>Report Formats</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setSelectedReportFormat('pdf')} className="cursor-pointer">
+                    <FileText className="mr-2 h-4 w-4" /> PDF (.pdf)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedReportFormat('docx')} className="cursor-pointer">
+                    <FileType className="mr-2 h-4 w-4" /> Word (.docx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedReportFormat('md')} className="cursor-pointer">
+                    <FileDown className="mr-2 h-4 w-4" /> Markdown (.md)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedReportFormat('csv')} className="cursor-pointer">
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> CSV (.csv)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowDownloadDialog(false); setSelectedReportFormat(null); }} className="border-border text-foreground hover:bg-muted/50">
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => selectedReportFormat && handleDownloadReport(selectedReportFormat)} 
+              disabled={!selectedReportFormat}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
+            >
+              <Download className="mr-2 h-4 w-4" /> Download
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
