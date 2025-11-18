@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getScanHistory } from '@/services/scanService';
-import { generatePDFReport } from '@/services/reportService';
+import { generatePdfReport } from '@/services/reportService'; // Corrected import name
 
 const Reports = () => {
   const { data: scans = [] } = useQuery({
@@ -39,7 +39,7 @@ const Reports = () => {
                       </CardDescription>
                     </div>
                     <Button
-                      onClick={() => generatePDFReport(scan)}
+                      onClick={() => generatePdfReport(scan)} // Corrected function call
                       size="sm"
                       className="bg-cyan-600 hover:bg-cyan-700 text-white"
                     >
