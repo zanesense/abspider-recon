@@ -31,24 +31,22 @@ import TechStackInfo from '@/components/TechStackInfo';
 import BrokenLinkResults from '@/components/BrokenLinkResults';
 import CorsMisconfigResults from '@/components/CorsMisconfigResults';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useEffect, useState } from 'react';
-import { Card } from '@/components/ui/card';
-import ModuleCardWrapper from '@/components/ModuleCardWrapper';
+import { useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 const ScanResults = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
 
   const { data: scan, isLoading } = useQuery({
     queryKey: ['scan', id],
@@ -98,8 +96,6 @@ const ScanResults = () => {
         description: error.message || `Failed to generate ${format.toUpperCase()} report.`,
         variant: "destructive",
       });
-    } finally {
-      setIsDownloadDialogOpen(false);
     }
   };
 
@@ -211,13 +207,32 @@ const ScanResults = () => {
           <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
             <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
-          <Button 
-            onClick={() => setIsDownloadDialogOpen(true)} 
-            disabled={scan.status === 'running' || scan.status === 'paused'} 
-            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
-          >
-            <Download className="h-4 w-4 mr-2" /> Download Report
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                disabled={scan.status === 'running' || scan.status === 'paused'} 
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
+              >
+                <Download className="h-4 w-4 mr-2" /> Download Report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 bg-card border-border">
+              <DropdownMenuLabel>Choose Report Format</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleDownloadReport('pdf')} className="cursor-pointer">
+                <FileText className="mr-2 h-4 w-4" /> PDF Document (.pdf)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadReport('docx')} className="cursor-pointer">
+                <FileType className="mr-2 h-4 w-4" /> Word Document (.docx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadReport('md')} className="cursor-pointer">
+                <FileDown className="mr-2 h-4 w-4" /> Markdown (.md)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadReport('csv')} className="cursor-pointer">
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> CSV Spreadsheet (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -362,55 +377,6 @@ const ScanResults = () => {
           )}
         </div>
       </main>
-
-      <Dialog open={isDownloadDialogOpen} onOpenChange={setIsDownloadDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5 text-primary" />
-              Download Report
-            </DialogTitle>
-            <DialogDescription>
-              Choose the format for your scan report.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2 border-border text-foreground hover:bg-muted/50"
-              onClick={() => handleDownloadReport('pdf')}
-            >
-              <FileText className="h-4 w-4" /> PDF Document (.pdf)
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2 border-border text-foreground hover:bg-muted/50"
-              onClick={() => handleDownloadReport('docx')}
-            >
-              <FileType className="h-4 w-4" /> Word Document (.docx)
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2 border-border text-foreground hover:bg-muted/50"
-              onClick={() => handleDownloadReport('md')}
-            >
-              <FileDown className="h-4 w-4" /> Markdown (.md)
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2 border-border text-foreground hover:bg-muted/50"
-              onClick={() => handleDownloadReport('csv')}
-            >
-              <FileSpreadsheet className="h-4 w-4" /> CSV Spreadsheet (.csv)
-            </Button>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsDownloadDialogOpen(false)} className="border-border text-foreground hover:bg-muted/50">
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
