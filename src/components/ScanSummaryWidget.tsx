@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Network, ShieldAlert, Bug, CheckCircle, XCircle, Star, FileText } from 'lucide-react';
+import { Network, ShieldAlert, Bug, CheckCircle, XCircle, Star, Clock, ShieldOff } from 'lucide-react'; // Added Clock, ShieldOff
 import { Scan } from '@/services/scanService';
-import { Link } from 'react-router-dom'; // Import Link for navigation
-import { Button } from '@/components/ui/button'; // Import Button component
+import { Badge } from '@/components/ui/badge'; // Import Badge for better styling
 
 interface ScanSummaryWidgetProps {
   scan: Scan;
@@ -16,11 +15,11 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
   const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
   const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
   const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
-  const corsMisconfigVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0; // New
+  const corsMisconfigVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0;
   const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
-  const brokenLinksCount = scan.results.brokenLinks?.brokenLinks?.length || 0; // New
-  const sslExpired = scan.results.sslTls?.isExpired ? 1 : 0; // New
-  const virustotalMalicious = (scan.results.virustotal?.maliciousVotes || 0) > 0 ? 1 : 0; // New
+  const brokenLinksCount = scan.results.brokenLinks?.brokenLinks?.length || 0;
+  const sslExpired = scan.results.sslTls?.isExpired ? 1 : 0;
+  const virustotalMalicious = (scan.results.virustotal?.maliciousVotes || 0) > 0 ? 1 : 0;
 
   const totalVulnerabilities = sqlVulns + xssVulns + lfiVulns + corsMisconfigVulns + wpVulns + brokenLinksCount + sslExpired + virustotalMalicious;
 
@@ -78,7 +77,7 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
             {ddosFirewallDetected ? (
               <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
             ) : (
-              <XCircle className="h-8 w-8 text-red-500 mb-2" />
+              <ShieldOff className="h-8 w-8 text-red-500 mb-2" /> // Changed icon for 'None'
             )}
             <p className="text-sm text-muted-foreground">DDoS/WAF</p>
             <p className={`text-2xl font-bold ${ddosFirewallDetected ? 'text-green-500' : 'text-red-500'}`}>
@@ -98,11 +97,12 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
           </div>
         </div>
 
-        <Link to={`/scan/${scan.id}`} className="w-full">
-          <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
-            <FileText className="mr-2 h-4 w-4" /> View Full Report
-          </Button>
-        </Link>
+        {scan.completedAt && (
+          <div className="flex items-center justify-center p-3 bg-muted/30 rounded-lg border border-border">
+            <Clock className="h-4 w-4 text-muted-foreground mr-2" />
+            <span className="text-sm text-muted-foreground">Last Updated: {new Date(scan.completedAt).toLocaleString()}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
