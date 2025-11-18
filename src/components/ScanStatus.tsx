@@ -54,7 +54,8 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     }
   };
 
-  const getGradeColor = (grade: number) => {
+  const getGradeColor = (grade: number | null) => {
+    if (grade == null) return 'text-muted-foreground';
     if (grade >= 8) return 'text-green-500 dark:text-green-400';
     if (grade >= 6) return 'text-yellow-500 dark:text-yellow-400';
     if (grade >= 4) return 'text-orange-500 dark:text-orange-400';
@@ -66,7 +67,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     : 0;
 
   const formatElapsedTime = (ms?: number) => {
-    if (ms == null) return 'N/A'; // Check for both null and undefined
+    if (ms == null) return 'N/A';
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -150,9 +151,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
               <AlertTriangle className="h-3 w-3 mr-1" /> Vulnerabilities Detected
             </Badge>
           )}
-          {scan.securityGrade != null && scan.status === 'completed' && ( // Check for both null and undefined
+          {scan.securityGrade != null && scan.status === 'completed' && (
             <Badge className={`flex items-center gap-1 ${getGradeColor(scan.securityGrade)} bg-opacity-10 border-opacity-30`}>
-              <Star className="h-3 w-3 mr-1" /> Security Grade: {scan.securityGrade.toFixed(1)}/10
+              <Star className="h-3 w-3 mr-1" /> Security Grade: {scan.securityGrade?.toFixed(1) || 'N/A'}/10
             </Badge>
           )}
           <Badge className={getStatusColor()}>

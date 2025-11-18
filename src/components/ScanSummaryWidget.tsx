@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'; // Import Badge for better stylin
 
 interface ScanSummaryWidgetProps {
   scan: Scan;
-  securityGrade?: number; // Add securityGrade prop
+  securityGrade?: number | null; // Allow null for securityGrade
 }
 
 const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
@@ -32,8 +32,8 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
     (scan.config as any)[key] === true && !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests', 'scanName', 'scheduleScan', 'scheduleFrequency', 'scheduleStartDate', 'scheduleStartTime'].includes(key)
   ).length;
 
-  const getGradeColorClass = (grade?: number) => {
-    if (grade == null) return 'text-muted-foreground'; // Check for both null and undefined
+  const getGradeColorClass = (grade?: number | null) => {
+    if (grade == null) return 'text-muted-foreground';
     if (grade >= 8) return 'text-green-500 dark:text-green-400';
     if (grade >= 6) return 'text-yellow-500 dark:text-yellow-400';
     if (grade >= 4) return 'text-orange-500 dark:text-orange-400';
@@ -47,11 +47,11 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
           <ShieldAlert className="h-5 w-5 text-orange-500 dark:text-orange-400" />
           Scan Summary
         </CardTitle>
-        {securityGrade != null && ( // Check for both null and undefined
+        {securityGrade != null && (
           <div className="flex items-center gap-2">
             <Star className={`h-5 w-5 ${getGradeColorClass(securityGrade)}`} />
             <span className={`text-2xl font-bold ${getGradeColorClass(securityGrade)}`}>
-              {securityGrade.toFixed(1)}/10
+              {securityGrade?.toFixed(1) || 'N/A'}/10
             </span>
           </div>
         )}
@@ -77,7 +77,7 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
             {ddosFirewallDetected ? (
               <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
             ) : (
-              <ShieldOff className="h-8 w-8 text-red-500 mb-2" /> // Changed icon for 'None'
+              <ShieldOff className="h-8 w-8 text-red-500 mb-2" />
             )}
             <p className="text-sm text-muted-foreground">DDoS/WAF</p>
             <p className={`text-2xl font-bold ${ddosFirewallDetected ? 'text-green-500' : 'text-red-500'}`}>

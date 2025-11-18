@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../SupabaseClient";
-import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus } from "lucide-react";
+import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus, Link } from "lucide-react"; // Added Link icon
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,7 +51,6 @@ export default function Login() {
         });
         navigate('/dashboard');
       } else {
-        // This case should ideally not be reached with email/password without 2FA
         setMessage("An unexpected authentication state occurred.");
         setMessageType('error');
         toast({
@@ -157,7 +156,7 @@ export default function Login() {
     setMessageType('info');
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login?reset=true`, // Redirect back to login page
+        redirectTo: `${window.location.origin}/login?reset=true`,
       });
       if (error) throw error;
       setMessage("Password reset email sent. Check your inbox!");
@@ -244,15 +243,36 @@ export default function Login() {
                     </>
                   )}
                 </Button>
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={handleForgotPassword}
-                  disabled={loading || !email}
-                  className="w-full text-sm text-muted-foreground hover:text-primary"
-                >
-                  Forgot Password?
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleMagicLinkLogin}
+                    disabled={loading || !email}
+                    className="w-full text-sm border-border text-foreground hover:bg-muted/50"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending Link...
+                      </>
+                    ) : (
+                      <>
+                        <Link className="mr-2 h-4 w-4" />
+                        Login with Magic Link
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={handleForgotPassword}
+                    disabled={loading || !email}
+                    className="w-full text-sm text-muted-foreground hover:text-primary"
+                  >
+                    Forgot Password?
+                  </Button>
+                </div>
               </form>
             </TabsContent>
             <TabsContent value="signup" className="mt-6">
