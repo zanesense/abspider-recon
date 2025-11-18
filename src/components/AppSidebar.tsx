@@ -12,7 +12,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User, Loader2, CircleUser, Shield } from 'lucide-react'; // Changed Spider to Shield
+import { Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User, Loader2, CircleUser, Shield, FileText } from 'lucide-react'; // Added FileText
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/SupabaseClient'; // Import supabase
@@ -56,6 +56,7 @@ export function AppSidebar() {
     { title: 'Dashboard', icon: Home, href: '/dashboard' },
     { title: 'New Scan', icon: Scan, href: '/new-scan' },
     { title: 'All Scans', icon: History, href: '/all-scans' },
+    { title: 'Reports', icon: FileText, href: '/reports' }, // New Reports tab
     { title: 'App Settings', icon: Settings, href: '/settings' }, // Updated text
   ];
 

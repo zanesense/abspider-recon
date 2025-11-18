@@ -14,6 +14,7 @@ import AppSettings from "@/pages/AppSettings";
 import AccountSettings from "@/pages/AccountSettings";
 import AllScans from "@/pages/AllScans";
 import DashboardPage from "@/pages/DashboardPage";
+import ReportsPage from "@/pages/ReportsPage"; // Updated import
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
@@ -55,6 +56,7 @@ function App() {
                               <Route path="/dashboard" element={<DashboardPage />} />
                               <Route path="/new-scan" element={<NewScan />} />
                               <Route path="/all-scans" element={<AllScans />} />
+                              <Route path="/reports" element={<ReportsPage />} /> {/* New route */}
                               <Route path="/scan/:id" element={<ScanResults />} />
                               <Route path="/settings" element={<AppSettings />} />
                               <Route path="/account-settings" element={<AccountSettings />} />
