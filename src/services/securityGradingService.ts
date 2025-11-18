@@ -23,7 +23,7 @@ export const calculateSecurityGrade = (scan: Scan): number => {
   }
 
   // Deductions for missing security headers
-  const missingSecurityHeaders = scan.results.headers?._analysis?.securityHeaders?.missing || [];
+  const missingSecurityHeaders = scan.results.headers?.securityHeaders?.missing || []; // Corrected access
   let headerDeduction = 0;
   missingSecurityHeaders.forEach(header => {
     if (header.severity === 'critical' || header.severity === 'high') {

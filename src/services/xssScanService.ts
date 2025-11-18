@@ -71,14 +71,16 @@ const XSS_PAYLOADS = [
 ];
 
 const XSS_DANGEROUS_CONTEXTS = [
-  // Unquoted attribute
-  /<[^>]+\s+\w+=[^"'][^>\s]*PAYLOAD/i,
-  // Inside script tag
-  /<script[^>]*>[\s\S]*PAYLOAD[\s\S]*<\/script>/i,
-  // Event handler
-  /on\w+\s*=\s*["']?[^"']*PAYLOAD/i,
-  // href/src attribute
-  /(href|src)\s*=\s*["']?[^"']*PAYLOAD/i,
+  // Inside a script tag where it could execute directly
+  /<script[^>]*>[\s\S]*?PAYLOAD[\s\S]*?<\/script>/i,
+  // Unquoted attribute value where payload can break out
+  /<[^>]+\s+\w+=[^"'][^>\s]*?PAYLOAD/i,
+  // Within an event handler attribute
+  /on\w+\s*=\s*["']?[^"']*?PAYLOAD/i,
+  // Within href/src attributes that support javascript: scheme
+  /(href|src)\s*=\s*["']?(?:javascript|data):[^"']*?PAYLOAD/i,
+  // Directly in HTML body where it can create new tags
+  />[^<]*?PAYLOAD[^<]*?</i, // Matches payload between tags
 ];
 
 const checkReflection = (response: string, payload: string): { 
@@ -94,17 +96,20 @@ const checkReflection = (response: string, payload: string): {
   // Check for direct reflection (unencoded)
   if (lowerResponse.includes(lowerPayload)) {
     const index = lowerResponse.indexOf(lowerPayload);
-    const context = response.substring(Math.max(0, index - 150), Math.min(response.length, index + payload.length + 150));
+    const contextSnippet = response.substring(Math.max(0, index - 150), Math.min(response.length, index + payload.length + 150));
+    
+    let confidence = 0.5; // Default confidence for direct reflection
+    let contextType = 'Direct reflection in HTML (potential XSS)';
     
     // Check if in dangerous context
-    let confidence = 0.95;
-    let contextType = 'Direct reflection in HTML';
-    
+    let isDangerousContext = false;
     for (const pattern of XSS_DANGEROUS_CONTEXTS) {
+      // Create a regex that matches the payload within the pattern
       const testPattern = pattern.source.replace('PAYLOAD', payload.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
       if (new RegExp(testPattern, 'i').test(response)) {
-        confidence = 0.98;
-        contextType = 'Direct reflection in dangerous context';
+        isDangerousContext = true;
+        confidence = 0.95; // High confidence if in a dangerous context
+        contextType = 'Direct reflection in dangerous HTML context (HIGH XSS risk)';
         break;
       }
     }
@@ -112,33 +117,15 @@ const checkReflection = (response: string, payload: string): {
     return {
       reflected: true,
       context: contextType,
-      evidence: context.substring(0, 300),
+      evidence: contextSnippet.substring(0, 300),
       encoded: false,
-      confidence,
+      confidence: isDangerousContext ? 0.95 : 0.5, // Adjust confidence based on context
     };
-  }
-
-  // Check for partial reflection
-  const dangerousParts = payload.match(/<[^>]+>|alert\(|onerror=|onload=|javascript:/gi);
-  if (dangerousParts) {
-    for (const part of dangerousParts) {
-      if (lowerResponse.includes(part.toLowerCase())) {
-        const index = lowerResponse.indexOf(part.toLowerCase());
-        const context = response.substring(Math.max(0, index - 100), Math.min(response.length, index + 200));
-        
-        return {
-          reflected: true,
-          context: 'Partial reflection detected',
-          evidence: context.substring(0, 300),
-          encoded: false,
-          confidence: 0.7,
-        };
-      }
-    }
   }
 
   // Check for HTML encoded reflection (safe)
   const htmlEncodedPayload = payload
+    .replace(/&/g, '&amp;') // Must be first
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
@@ -148,9 +135,9 @@ const checkReflection = (response: string, payload: string): {
     return {
       reflected: true,
       context: 'HTML encoded (safe)',
-      evidence: 'Payload properly encoded',
+      evidence: 'Payload properly HTML encoded',
       encoded: true,
-      confidence: 0,
+      confidence: 0, // Not exploitable XSS
     };
   }
 
@@ -162,7 +149,7 @@ const checkReflection = (response: string, payload: string): {
       context: 'URL encoded (safe)',
       evidence: 'Payload URL encoded',
       encoded: true,
-      confidence: 0,
+      confidence: 0, // Not exploitable XSS
     };
   }
 
@@ -194,17 +181,24 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
     
     if (paramKeys.length === 0) {
       console.log('[XSS Scan] No parameters found, testing with default parameter');
-      paramKeys.push('q');
+      paramKeys.push('q'); // Common search parameter
+      urlObj.search = '?q=test'; // Add a default parameter for testing
     }
 
     const payloadsToTest = XSS_PAYLOADS.slice(0, payloadLimit);
 
     for (const paramKey of paramKeys) {
       for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
+        if (requestManager.scanController?.signal.aborted) {
+          throw new Error('Scan aborted');
+        }
+
         try {
           const testUrl = new URL(url);
           const testParams = new URLSearchParams(testUrl.search);
-          testParams.set(paramKey, payload);
+          const originalValue = testParams.get(paramKey) || 'test'; // Use a default value if param is empty
+          
+          testParams.set(paramKey, originalValue + payload);
           testUrl.search = testParams.toString();
 
           console.log(`[XSS Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 40)}...`);
@@ -219,7 +213,7 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
           const text = await response.text();
           const reflection = checkReflection(text, payload);
 
-          if (reflection.reflected && !reflection.encoded && reflection.confidence >= 0.7) {
+          if (reflection.reflected && !reflection.encoded && reflection.confidence >= 0.7) { // Only consider high confidence unencoded reflections
             console.log(`[XSS Scan] ⚠️ ${severity.toUpperCase()}: XSS vulnerability detected! Confidence: ${(reflection.confidence * 100).toFixed(0)}%`);
             result.vulnerable = true;
             result.vulnerabilities.push({
@@ -237,7 +231,10 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
 
           await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error: any) {
-          console.warn(`[XSS Scan] Payload test failed: ${error.message}`);
+          if (error.message === 'Scan aborted') {
+            throw error; // Re-throw if scan was aborted
+          }
+          console.warn(`[XSS Scan] Payload test failed for ${paramKey} with ${payload.substring(0, 20)}...: ${error.message}`);
         }
       }
     }
@@ -248,6 +245,9 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
     console.log(`[XSS Scan] Complete: ${result.vulnerabilities.length} high-confidence vulnerabilities from ${result.testedPayloads} tests`);
     return result;
   } catch (error: any) {
+    if (error.message === 'Scan aborted') {
+      throw error;
+    }
     console.error('[XSS Scan] Critical error:', error);
     return {
       vulnerable: false,
