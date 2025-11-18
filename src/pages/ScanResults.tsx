@@ -237,7 +237,7 @@ const ScanResults = () => {
           {/* Top Row: Scan Status and Summary Widget */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ScanStatus scan={scan} />
-            <ScanSummaryWidget scan={scan} />
+            <ScanSummaryWidget scan={scan} securityGrade={scan.securityGrade} />
           </div>
 
           {/* Main Content: Two Columns */}
