@@ -3,12 +3,37 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug } from 'lucide-react';
 import { Scan } from '@/services/scanService';
+import React, { useState, useEffect } from 'react'; // Import React and hooks
 
 interface ScanStatusProps {
   scan: Scan;
 }
 
 const ScanStatus = ({ scan }: ScanStatusProps) => {
+  const [realtimeElapsedMs, setRealtimeElapsedMs] = useState<number | undefined>(scan.elapsedMs);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (scan.status === 'running') {
+      // Initialize with current elapsed time or calculate from timestamp
+      setRealtimeElapsedMs(Date.now() - scan.timestamp);
+
+      interval = setInterval(() => {
+        setRealtimeElapsedMs(Date.now() - scan.timestamp);
+      }, 1000); // Update every second
+    } else {
+      // If not running, use the final elapsedMs from the scan object
+      setRealtimeElapsedMs(scan.elapsedMs);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [scan.status, scan.timestamp, scan.elapsedMs]); // Re-run effect if status or timestamp changes
+
   const getStatusIcon = () => {
     switch (scan.status) {
       case 'completed': return <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />;
@@ -156,7 +181,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
             <p className="text-muted-foreground mb-1">Elapsed Time</p>
             <div className="flex items-center gap-1 text-foreground">
               <Timer className="h-3 w-3" />
-              <span className="font-mono">{formatElapsedTime(scan.elapsedMs)}</span>
+              <span className="font-mono">{formatElapsedTime(realtimeElapsedMs)}</span>
             </div>
           </div>
           {scan.completedAt && (
