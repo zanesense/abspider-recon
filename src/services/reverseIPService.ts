@@ -1,58 +1,94 @@
-import { extractDomain } from './apiUtils';
-import { RequestManager } from './requestManager'; // Corrected from '=>' to 'from'
-import { APIKeys } from './apiKeyService'; // Import APIKeys interface
-import { fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
+import { extractDomain, normalizeUrl } from './apiUtils';
+import { RequestManager } from './requestManager';
+import { APIKeys } from './apiKeyService';
+import { fetchJSONWithBypass, fetchWithBypass } from './corsProxy';
+
+export interface DiscoveredDomain {
+  domain: string;
+  cms?: string;
+  httpStatus?: number;
+  title?: string;
+  webServer?: string;
+  cloudflare?: boolean;
+  technologies?: string[];
+}
 
 export interface ReverseIPResult {
   ip: string;
-  domains: Array<{
-    domain: string;
-    cms?: string;
-  }>;
+  domains: DiscoveredDomain[];
   totalDomains: number;
 }
 
-const detectCMS = async (domain: string, requestManager: RequestManager): Promise<string | undefined> => {
+// Helper function to fetch basic details for a discovered domain
+const fetchDomainDetails = async (domain: string, requestManager: RequestManager): Promise<Partial<DiscoveredDomain>> => {
+  const details: Partial<DiscoveredDomain> = { domain };
   try {
-    const url = `https://${domain}`;
-    const response = await requestManager.fetch(url, {
-      method: 'GET', // Use GET to get body for more indicators
-      timeout: 5000,
-    });
+    const url = normalizeUrl(`https://${domain}`); // Always try HTTPS first
+    const startTime = Date.now();
+    const { response } = await fetchWithBypass(url, { timeout: 5000, signal: requestManager.scanController?.signal });
+    // const responseTime = Date.now() - startTime; // Not used in details object, but could be added
 
-    const html = await response.text();
-    const lowerHtml = html.toLowerCase();
+    details.httpStatus = response.status;
 
-    // Header-based detection
+    // Check for Cloudflare
+    const cfRay = response.headers.get('cf-ray');
+    const cfCache = response.headers.get('cf-cache-status');
+    if (cfRay || cfCache) { // Check headers first
+      details.cloudflare = true;
+    } else { // Fallback to body check if headers don't indicate Cloudflare
+      const clonedResponse = response.clone();
+      const text = await clonedResponse.text();
+      if (text.includes('cloudflare')) {
+        details.cloudflare = true;
+      }
+    }
+
+    // Get headers for web server and technologies
+    const server = response.headers.get('server');
+    if (server) {
+      details.webServer = server;
+      details.technologies = details.technologies || [];
+      details.technologies.push(server);
+    }
     const poweredBy = response.headers.get('x-powered-by');
-    if (poweredBy?.toLowerCase().includes('wordpress')) return 'WordPress';
-    if (poweredBy?.toLowerCase().includes('drupal')) return 'Drupal';
-    if (poweredBy?.toLowerCase().includes('joomla')) return 'Joomla';
-    if (poweredBy?.toLowerCase().includes('shopify')) return 'Shopify';
-    if (poweredBy?.toLowerCase().includes('next.js')) return 'Next.js';
-    if (poweredBy?.toLowerCase().includes('express')) return 'Express.js';
+    if (poweredBy) {
+      details.technologies = details.technologies || [];
+      details.technologies.push(poweredBy);
+    }
 
-    // HTML body/meta tag detection
-    if (lowerHtml.includes('wp-content') || lowerHtml.includes('wordpress')) return 'WordPress';
-    if (lowerHtml.includes('joomla')) return 'Joomla';
-    if (lowerHtml.includes('drupal')) return 'Drupal';
-    if (lowerHtml.includes('shopify')) return 'Shopify';
-    if (lowerHtml.includes('wix.com')) return 'Wix';
-    if (lowerHtml.includes('squarespace')) return 'Squarespace';
-    if (lowerHtml.includes('<meta name="generator" content="wordpress')) return 'WordPress';
-    if (lowerHtml.includes('<meta name="generator" content="joomla')) return 'Joomla';
-    if (lowerHtml.includes('<meta name="generator" content="drupal')) return 'Drupal';
-    if (lowerHtml.includes('react-root') || lowerHtml.includes('__react_root')) return 'React';
-    if (lowerHtml.includes('vue-app') || lowerHtml.includes('__vue_app__')) return 'Vue.js';
-    if (lowerHtml.includes('ng-app') || lowerHtml.includes('angular')) return 'Angular';
-    if (lowerHtml.includes('data-next-js')) return 'Next.js';
+    // Fetch HTML for title and CMS detection if response is HTML
+    if (response.headers.get('content-type')?.includes('text/html')) {
+      const html = await response.text();
+      const lowerHtml = html.toLowerCase();
 
+      // Extract title
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      if (titleMatch) {
+        details.title = titleMatch[1].trim();
+      }
 
-    return undefined;
+      // Detect CMS (simplified from wordpressService for quick check)
+      if (lowerHtml.includes('wp-content') || lowerHtml.includes('wordpress')) {
+        details.cms = 'WordPress';
+        details.technologies = details.technologies || [];
+        details.technologies.push('WordPress');
+      } else if (lowerHtml.includes('joomla')) {
+        details.cms = 'Joomla';
+        details.technologies = details.technologies || [];
+        details.technologies.push('Joomla');
+      } else if (lowerHtml.includes('drupal')) {
+        details.cms = 'Drupal';
+        details.technologies = details.technologies || [];
+        details.technologies.push('Drupal');
+      }
+    }
+
   } catch (error) {
-    // If CMS detection fails or is aborted, just return undefined
-    return undefined;
+    // Log error but don't fail the whole scan for one domain's details
+    console.warn(`[Reverse IP] Failed to fetch details for ${domain}:`, (error as Error).message);
+    details.httpStatus = 0; // Indicate failure
   }
+  return details;
 };
 
 export const performReverseIPLookup = async (target: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<ReverseIPResult> => {
@@ -60,16 +96,14 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
   console.log(`[Reverse IP] Starting lookup for ${domain}`);
 
   const result: ReverseIPResult = {
-    ip: 'N/A', // Default to N/A if IP resolution fails
+    ip: 'N/A',
     domains: [],
     totalDomains: 0,
   };
 
-  // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
   const effectiveApiKeys = apiKeys ?? {};
 
   try {
-    // DNS lookup for IP
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
     const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 });
     const dnsData = await dnsResponse.json();
@@ -80,10 +114,10 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
     result.ip = dnsData.Answer[0].data;
     console.log(`[Reverse IP] Resolved to IP: ${result.ip}`);
 
-    const securitytrailsKey = effectiveApiKeys.securitytrails;
+    let rawDiscoveredDomains: string[] = [];
 
+    const securitytrailsKey = effectiveApiKeys.securitytrails;
     if (securitytrailsKey) {
-      // Use SecurityTrails API for more comprehensive reverse IP lookup
       try {
         console.log('[Reverse IP] Attempting SecurityTrails API lookup...');
         const apiUrl = `https://api.securitytrails.com/v1/ips/${result.ip}/domains`;
@@ -94,20 +128,8 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
         });
 
         if (stData.records && stData.records.length > 0) {
-          const domainPromises = stData.records.map(async (record: any) => {
-            if (requestManager.scanController?.signal.aborted) {
-              throw new Error('Scan aborted');
-            }
-            const cmsDetection = await detectCMS(record.hostname, requestManager);
-            return {
-              domain: record.hostname,
-              cms: cmsDetection,
-            };
-          });
-          result.domains = await Promise.all(domainPromises);
-          result.totalDomains = result.domains.length;
-          console.log(`[Reverse IP] ✓ Data from SecurityTrails API: ${result.totalDomains} domains`);
-          return result; // Return early if SecurityTrails provides data
+          rawDiscoveredDomains = stData.records.map((record: any) => record.hostname);
+          console.log(`[Reverse IP] ✓ Data from SecurityTrails API: ${rawDiscoveredDomains.length} domains`);
         } else if (stData.message) {
           console.warn(`[Reverse IP] SecurityTrails API returned error: ${stData.message}, falling back to PTR...`);
         } else {
@@ -120,27 +142,27 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
     }
 
     // Fallback to PTR lookup if SecurityTrails is not used or fails
-    const ptrUrl = `https://dns.google/resolve?name=${result.ip.split('.').reverse().join('.')}.in-addr.arpa&type=PTR`;
-    const ptrResponse = await requestManager.fetch(ptrUrl, { timeout: 10000 });
-    const ptrData = await ptrResponse.json();
+    if (rawDiscoveredDomains.length === 0) {
+      const ptrUrl = `https://dns.google/resolve?name=${result.ip.split('.').reverse().join('.')}.in-addr.arpa&type=PTR`;
+      const ptrResponse = await requestManager.fetch(ptrUrl, { timeout: 10000 });
+      const ptrData = await ptrResponse.json();
 
-    if (ptrData.Answer) {
-      const domainPromises = ptrData.Answer.map(async (record: any) => {
-        if (requestManager.scanController?.signal.aborted) {
-          throw new Error('Scan aborted');
-        }
-        const reverseDomain = record.data.replace(/\.$/, '');
-        const cmsDetection = await detectCMS(reverseDomain, requestManager);
-        return {
-          domain: reverseDomain,
-          cms: cmsDetection,
-        };
-      });
-      result.domains = await Promise.all(domainPromises);
+      if (ptrData.Answer) {
+        rawDiscoveredDomains = ptrData.Answer.map((record: any) => record.data.replace(/\.$/, ''));
+      }
     }
 
+    // Fetch detailed information for each discovered domain concurrently
+    const uniqueDomains = Array.from(new Set(rawDiscoveredDomains)); // Deduplicate
+    const detailedDomainPromises = uniqueDomains.map(d => fetchDomainDetails(d, requestManager));
+    const detailedDomainResults = await Promise.allSettled(detailedDomainPromises);
+
+    result.domains = detailedDomainResults
+      .filter(res => res.status === 'fulfilled' && res.value.domain)
+      .map(res => (res as PromiseFulfilledResult<Partial<DiscoveredDomain>>).value as DiscoveredDomain);
+
     result.totalDomains = result.domains.length;
-    console.log(`[Reverse IP] Complete: ${result.totalDomains} domains found`);
+    console.log(`[Reverse IP] Complete: ${result.totalDomains} domains found with details`);
     
     return result;
   } catch (error: any) {
