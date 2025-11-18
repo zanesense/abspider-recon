@@ -31,8 +31,10 @@ export const performWhoisLookup = async (target: string, requestManager: Request
       nameservers: [],
     };
 
+    // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
+    const effectiveApiKeys = apiKeys ?? {};
     // --- Try SecurityTrails API first if key is available ---
-    const securitytrailsKey = apiKeys.securitytrails;
+    const securitytrailsKey = effectiveApiKeys.securitytrails;
     if (securitytrailsKey) {
       try {
         console.log('[WHOIS] Attempting SecurityTrails API lookup...');

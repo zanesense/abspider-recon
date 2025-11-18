@@ -174,7 +174,9 @@ export const scanCommonPorts = async (
     console.log(`[Port Scan] Starting enhanced scan for ${domain}`);
     
     const results: PortResult[] = [];
-    const shodanKey = apiKeys.shodan;
+    // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
+    const effectiveApiKeys = apiKeys ?? {};
+    const shodanKey = effectiveApiKeys.shodan;
 
     let ipAddress: string | undefined;
     try {

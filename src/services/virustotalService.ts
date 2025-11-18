@@ -19,7 +19,9 @@ export interface VirusTotalResult {
 }
 
 export const performVirusTotalScan = async (target: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<VirusTotalResult> => {
-  const virustotalKey = apiKeys.virustotal;
+  // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
+  const effectiveApiKeys = apiKeys ?? {};
+  const virustotalKey = effectiveApiKeys.virustotal;
   const domain = extractDomain(target);
   console.log(`[VirusTotal] Starting scan for ${domain}`);
 

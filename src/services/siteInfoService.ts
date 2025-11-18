@@ -30,6 +30,9 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
     technologies: [],
   };
 
+  // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
+  const effectiveApiKeys = apiKeys ?? {};
+
   try {
     const url = normalizeUrl(target);
     const domain = extractDomain(target);
@@ -130,7 +133,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       }
 
       // --- Enhance with BuiltWith data if API key is available ---
-      const builtwithKey = apiKeys.builtwith;
+      const builtwithKey = effectiveApiKeys.builtwith;
       if (builtwithKey) {
         try {
           console.log('[Site Info] Attempting BuiltWith API enrichment...');

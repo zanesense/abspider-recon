@@ -39,6 +39,9 @@ export interface GeoIPResult {
 export const performGeoIPLookup = async (target: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<GeoIPResult> => {
   console.log(`[GeoIP] Starting lookup for ${target}`);
 
+  // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
+  const effectiveApiKeys = apiKeys ?? {};
+
   try {
     const domain = extractDomain(target);
 
@@ -115,7 +118,7 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
     }
 
     // --- Enhance with OpenCage data if API key is available ---
-    const opencageKey = apiKeys.opencage;
+    const opencageKey = effectiveApiKeys.opencage;
     if (opencageKey && result.latitude && result.longitude) {
       try {
         const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${result.latitude}+${result.longitude}&key=${opencageKey}`;

@@ -154,7 +154,10 @@ export const enumerateSubdomainsCrtSh = async (domain: string, requestManager: R
 };
 
 export const enumerateSubdomainsSecurityTrails = async (domain: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<string[]> => {
-  const securitytrailsKey = apiKeys.securitytrails;
+  // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
+  const effectiveApiKeys = apiKeys ?? {};
+  const securitytrailsKey = effectiveApiKeys.securitytrails;
+
   if (!securitytrailsKey) {
     console.log('[Subdomain SecurityTrails] API key not configured, skipping.');
     return [];
@@ -210,7 +213,7 @@ export const enumerateSubdomains = async (
     const allSubdomains = new Set<string>();
     // Ensure requestManager is available, create if not provided (though it should be from scanService)
     const currentRequestManager = requestManager || createRequestManager(scanController);
-    const currentApiKeys = apiKeys || {}; // Ensure apiKeys is an object
+    const currentApiKeys = apiKeys ?? {}; // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
 
     // Run all methods in parallel
     const [dnsResults, crtResults, securitytrailsResults] = await Promise.allSettled([

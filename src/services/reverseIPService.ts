@@ -65,6 +65,9 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
     totalDomains: 0,
   };
 
+  // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
+  const effectiveApiKeys = apiKeys ?? {};
+
   try {
     // DNS lookup for IP
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
@@ -77,7 +80,7 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
     result.ip = dnsData.Answer[0].data;
     console.log(`[Reverse IP] Resolved to IP: ${result.ip}`);
 
-    const securitytrailsKey = apiKeys.securitytrails;
+    const securitytrailsKey = effectiveApiKeys.securitytrails;
 
     if (securitytrailsKey) {
       // Use SecurityTrails API for more comprehensive reverse IP lookup
