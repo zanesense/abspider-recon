@@ -7,18 +7,21 @@ type ReportFormat = 'pdf' | 'docx' | 'md' | 'csv';
 export const generateReportContent = async (
   scan: Scan,
   format: ReportFormat,
-  returnContent: boolean = false // If true, returns content; if false, triggers download
-): Promise<string | void> => {
+): Promise<void> => { // Removed returnContent parameter
   try {
     switch (format) {
       case 'pdf':
-        return generatePdfReport(scan, returnContent);
+        generatePdfReport(scan); // Always triggers download
+        break;
       case 'docx':
-        return generateDocxReport(scan, returnContent);
+        generateDocxReport(scan); // Always triggers download
+        break;
       case 'md':
-        return generateMarkdownReport(scan, returnContent);
+        generateMarkdownReport(scan); // Always triggers download
+        break;
       case 'csv':
-        return generateCsvReport(scan, returnContent);
+        generateCsvReport(scan); // Always triggers download
+        break;
       default:
         toast({
           title: "Error",
