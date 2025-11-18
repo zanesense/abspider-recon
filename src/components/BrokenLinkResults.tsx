@@ -61,7 +61,7 @@ const BrokenLinkResults = ({ brokenLinks, isTested, moduleError }: BrokenLinkRes
                 {link.sourcePage && (
                   <div className="mt-1 flex items-start gap-2 text-xs">
                     <Info className="h-3 w-3 text-muted-foreground/70" />
-                    <span className="text-muted-foreground">From: <a href={link.sourcePage} target="_blank" rel="noopener noreferrer" className="hover:underline">{link.sourcePage}</a></span>
+                    <span className="text-muted-foreground">From: <a href={link.sourcePage} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">{link.sourcePage}</a></span>
                   </div>
                 )}
               </div>
@@ -80,7 +80,7 @@ const BrokenLinkResults = ({ brokenLinks, isTested, moduleError }: BrokenLinkRes
           <div className="mt-4 text-sm text-destructive">
             <p className="font-semibold">Errors:</p>
             <ul className="list-disc list-inside">
-              {brokenLinks.errors.map((error, i) => <li key={i}>{error}</li>)}
+              {brokenLinks.errors.map((error, i) => <li key={i} className="break-words">{error}</li>)}
             </ul>
           </div>
         )}

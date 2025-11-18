@@ -63,9 +63,9 @@ const PortScanResults = ({ ports, isTested, moduleError }: PortScanResultsProps)
                   <span className="text-primary font-mono font-bold text-lg">
                     {port.port}
                   </span>
-                  <span className="text-foreground">{port.service}</span>
+                  <span className="text-foreground break-words">{port.service}</span>
                   {port.product && (
-                    <Badge variant="outline" className="text-xs text-blue-600 dark:text-blue-400 border-blue-500/30">
+                    <Badge variant="outline" className="text-xs text-blue-600 dark:text-blue-400 border-blue-500/30 break-words">
                       {port.product}
                     </Badge>
                   )}
@@ -83,19 +83,19 @@ const PortScanResults = ({ ports, isTested, moduleError }: PortScanResultsProps)
               {port.banner && (
                 <div className="mt-2 flex items-start gap-2 text-xs">
                   <Info className="h-3 w-3 text-muted-foreground/70" />
-                  <span className="text-muted-foreground font-mono">{port.banner}</span>
+                  <span className="text-muted-foreground font-mono break-words">{port.banner}</span>
                 </div>
               )}
               {port.os && (
                 <div className="mt-1 flex items-start gap-2 text-xs">
                   <Info className="h-3 w-3 text-muted-foreground/70" />
-                  <span className="text-muted-foreground">OS: {port.os}</span>
+                  <span className="text-muted-foreground break-words">OS: {port.os}</span>
                 </div>
               )}
               {port.vulnerabilities && port.vulnerabilities.length > 0 && (
                 <div className="mt-1 flex items-start gap-2 text-xs">
                   <Bug className="h-3 w-3 text-red-500" />
-                  <span className="text-red-600 dark:text-red-400">Vulnerabilities: {port.vulnerabilities.join(', ')}</span>
+                  <span className="text-red-600 dark:text-red-400 break-words">Vulnerabilities: {port.vulnerabilities.join(', ')}</span>
                 </div>
               )}
             </div>

@@ -33,7 +33,7 @@ const ReverseIPInfo = ({ reverseip, isTested, moduleError }: ReverseIPInfoProps)
       <div className="space-y-4">
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">IP Address</p>
-          <p className="text-foreground font-mono text-lg">{reverseip?.ip || 'N/A'}</p>
+          <p className="text-foreground font-mono text-lg break-all">{reverseip?.ip || 'N/A'}</p>
         </div>
         
         <div>
@@ -42,9 +42,9 @@ const ReverseIPInfo = ({ reverseip, isTested, moduleError }: ReverseIPInfoProps)
             {reverseip?.domains && reverseip.domains.length > 0 ? (
               reverseip.domains.map((item, index) => (
                 <div key={index} className="bg-muted rounded-lg p-3 flex items-center justify-between">
-                  <span className="text-foreground font-mono">{item.domain}</span>
+                  <span className="text-foreground font-mono break-all">{item.domain}</span>
                   {item.cms && (
-                    <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                    <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30 break-words">
                       {item.cms}
                     </Badge>
                   )}

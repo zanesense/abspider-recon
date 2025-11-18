@@ -82,17 +82,17 @@ const CorsMisconfigResults = ({ corsMisconfig, isTested, moduleError }: CorsMisc
                       <span className="text-foreground font-medium">{vuln.type.replace(/_/g, ' ')}</span>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">{vuln.description}</p>
+                  <p className="text-sm text-muted-foreground mb-2 break-words">{vuln.description}</p>
                   <div className="mb-2">
                     <span className="text-xs text-muted-foreground block mb-1">Evidence:</span>
-                    <code className="text-xs bg-muted/50 px-2 py-1 rounded block overflow-x-auto text-foreground">
+                    <code className="text-xs bg-muted/50 px-2 py-1 rounded block overflow-x-auto text-foreground break-all">
                       {vuln.evidence}
                     </code>
                   </div>
                   {vuln.originTested && (
                     <div>
                       <span className="text-xs text-muted-foreground block mb-1">Origin Tested:</span>
-                      <code className="text-xs bg-muted/50 px-2 py-1 rounded block overflow-x-auto text-foreground">
+                      <code className="text-xs bg-muted/50 px-2 py-1 rounded block overflow-x-auto text-foreground break-all">
                         {vuln.originTested}
                       </code>
                     </div>

@@ -44,13 +44,13 @@ const MXInfo = ({ mx, isTested, moduleError }: MXInfoProps) => {
               {mx.mxRecords.map((record, index) => (
                 <div key={index} className="bg-muted rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-foreground font-medium">{record.exchange}</span>
+                    <span className="text-foreground font-medium break-all">{record.exchange}</span>
                     <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">
                       Priority: {record.priority}
                     </Badge>
                   </div>
                   {record.ip && (
-                    <p className="text-sm text-muted-foreground">IP: <span className="text-foreground font-mono">{record.ip}</span></p> 
+                    <p className="text-sm text-muted-foreground">IP: <span className="text-foreground font-mono break-all">{record.ip}</span></p> 
                   )}
                 </div>
               ))}

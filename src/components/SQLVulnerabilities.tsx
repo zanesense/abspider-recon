@@ -69,7 +69,7 @@ const SQLVulnerabilities = ({ sqlinjection, isTested, moduleError }: SQLVulnerab
 
         {sqlinjection?.method && (
           <div className="bg-muted rounded-lg p-3">
-            <p className="text-xs text-muted-foreground flex items-center gap-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-2 break-words">
               <Info className="h-3 w-3 text-muted-foreground/70" />
               Testing Method: {sqlinjection.method}
             </p>
@@ -126,7 +126,7 @@ const SQLVulnerabilities = ({ sqlinjection, isTested, moduleError }: SQLVulnerab
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Indicator:</p>
-                      <p className="text-destructive dark:text-red-400">{vuln.indicator}</p>
+                      <p className="text-destructive dark:text-red-400 break-words">{vuln.indicator}</p>
                     </div>
                     {vuln.evidence && (
                       <div>

@@ -54,22 +54,22 @@ const WhoisInfo = ({ whois, isTested, moduleError }: WhoisInfoProps) => {
         <div className="space-y-4">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Domain</p>
-            <p className="text-foreground font-medium">{whois?.domain || 'N/A'}</p>
+            <p className="text-foreground font-medium break-all">{whois?.domain || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-1">Registrar</p>
-            <p className="text-foreground">{whois?.registrar || 'N/A'}</p>
+            <p className="text-foreground break-words">{whois?.registrar || 'N/A'}</p>
           </div>
           {whois?.status && (
             <div>
               <p className="text-sm text-muted-foreground mb-1">Status</p>
-              <p className="text-foreground">{whois.status}</p>
+              <p className="text-foreground break-words">{whois.status}</p>
             </div>
           )}
           {whois?.dnssec && (
             <div>
               <p className="text-sm text-muted-foreground mb-1">DNSSEC</p>
-              <p className="text-foreground">{whois.dnssec}</p>
+              <p className="text-foreground break-words">{whois.dnssec}</p>
             </div>
           )}
         </div>
@@ -80,14 +80,14 @@ const WhoisInfo = ({ whois, isTested, moduleError }: WhoisInfoProps) => {
               <Calendar className="h-3 w-3 text-muted-foreground/70" />
               Created
             </p>
-            <p className="text-foreground">{whois?.created || 'N/A'}</p>
+            <p className="text-foreground break-words">{whois?.created || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
               <Calendar className="h-3 w-3 text-muted-foreground/70" />
               Expires
             </p>
-            <p className="text-foreground">{whois?.expires || 'N/A'}</p>
+            <p className="text-foreground break-words">{whois?.expires || 'N/A'}</p>
           </div>
           {whois?.updated && (
             <div>
@@ -95,7 +95,7 @@ const WhoisInfo = ({ whois, isTested, moduleError }: WhoisInfoProps) => {
                 <Calendar className="h-3 w-3 text-muted-foreground/70" />
                 Last Updated
               </p>
-              <p className="text-foreground">{whois.updated}</p>
+              <p className="text-foreground break-words">{whois.updated}</p>
             </div>
           )}
           <div>
@@ -106,7 +106,7 @@ const WhoisInfo = ({ whois, isTested, moduleError }: WhoisInfoProps) => {
             <div className="space-y-1">
               {whois?.nameservers && whois.nameservers.length > 0 ? (
                 whois.nameservers.map((ns, index) => (
-                  <p key={index} className="text-foreground text-sm font-mono">{ns}</p> 
+                  <p key={index} className="text-foreground text-sm font-mono break-all">{ns}</p> 
                 ))
               ) : (
                 <p className="text-muted-foreground/70 text-sm">N/A</p>
@@ -121,19 +121,19 @@ const WhoisInfo = ({ whois, isTested, moduleError }: WhoisInfoProps) => {
           <p className="text-sm text-muted-foreground mb-2">Registrant Details</p>
           <div className="space-y-2">
             {whois.registrant.organization && (
-              <div className="flex items-center gap-2 text-sm text-foreground">
+              <div className="flex items-center gap-2 text-sm text-foreground break-words">
                 <Building2 className="h-4 w-4 text-muted-foreground/70" />
                 <span>Organization: {whois.registrant.organization}</span>
               </div>
             )}
             {whois.registrant.country && (
-              <div className="flex items-center gap-2 text-sm text-foreground">
+              <div className="flex items-center gap-2 text-sm text-foreground break-words">
                 <Globe className="h-4 w-4 text-muted-foreground/70" />
                 <span>Country: {whois.registrant.country}</span>
               </div>
             )}
             {whois.registrant.email && (
-              <div className="flex items-center gap-2 text-sm text-foreground">
+              <div className="flex items-center gap-2 text-sm text-foreground break-words">
                 <Mail className="h-4 w-4 text-muted-foreground/70" />
                 <span>Email: {whois.registrant.email}</span>
               </div>
@@ -145,7 +145,7 @@ const WhoisInfo = ({ whois, isTested, moduleError }: WhoisInfoProps) => {
       {whois?.whoisRaw && (
         <div className="mt-6 pt-6 border-t border-border">
           <p className="text-sm text-muted-foreground mb-2">Raw WHOIS Data</p>
-          <pre className="text-xs text-foreground bg-muted p-3 rounded overflow-x-auto max-h-64">
+          <pre className="text-xs text-foreground bg-muted p-3 rounded overflow-x-auto max-h-64 break-words">
             {whois.whoisRaw}
           </pre>
         </div>

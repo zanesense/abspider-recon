@@ -60,25 +60,25 @@ const SiteInfo = ({ siteInfo, isTested, moduleError }: SiteInfoProps) => {
               <FileText className="h-3 w-3 text-muted-foreground/70" />
               Site Title
             </p>
-            <p className="text-foreground font-medium">{siteInfo?.title || 'N/A'}</p>
+            <p className="text-foreground font-medium break-words">{siteInfo?.title || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
               <Globe className="h-3 w-3 text-muted-foreground/70" />
               IP Address
             </p>
-            <p className="text-foreground font-mono">{siteInfo?.ip || 'N/A'}</p>
+            <p className="text-foreground font-mono break-all">{siteInfo?.ip || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
               <Server className="h-3 w-3 text-muted-foreground/70" />
               Web Server
             </p>
-            <p className="text-foreground">{siteInfo?.webServer || 'N/A'}</p>
+            <p className="text-foreground break-words">{siteInfo?.webServer || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-1">CMS Detected</p>
-            <p className="text-foreground">{siteInfo?.cms || 'None detected'}</p>
+            <p className="text-foreground break-words">{siteInfo?.cms || 'None detected'}</p>
           </div>
         </div>
         
@@ -104,7 +104,7 @@ const SiteInfo = ({ siteInfo, isTested, moduleError }: SiteInfoProps) => {
                 <Clock className="h-3 w-3 text-muted-foreground/70" />
                 Response Time
               </p>
-              <p className="text-foreground">{siteInfo.responseTime}ms</p>
+              <p className="text-foreground break-words">{siteInfo.responseTime}ms</p>
             </div>
           )}
           <div>
@@ -112,7 +112,7 @@ const SiteInfo = ({ siteInfo, isTested, moduleError }: SiteInfoProps) => {
             <div className="flex flex-wrap gap-1">
               {siteInfo?.technologies && siteInfo.technologies.length > 0 ? (
                 siteInfo.technologies.map((tech, index) => (
-                  <Badge key={index} className="bg-primary/20 text-primary border-primary/30">
+                  <Badge key={index} className="bg-primary/20 text-primary border-primary/30 break-words">
                     {tech}
                   </Badge>
                 ))
@@ -127,7 +127,7 @@ const SiteInfo = ({ siteInfo, isTested, moduleError }: SiteInfoProps) => {
       {siteInfo?.robotsTxt && (
         <div className="mt-6 pt-6 border-t border-border">
           <p className="text-sm text-muted-foreground mb-2">robots.txt</p>
-          <pre className="text-xs text-foreground bg-muted p-3 rounded overflow-x-auto max-h-48">
+          <pre className="text-xs text-foreground bg-muted p-3 rounded overflow-x-auto max-h-48 break-words">
             {siteInfo.robotsTxt}
           </pre>
         </div>

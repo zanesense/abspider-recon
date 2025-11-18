@@ -81,14 +81,14 @@ const SEOInfo = ({ seo, isTested, moduleError }: SEOInfoProps) => {
         {seo?.title && (
           <div>
             <p className="text-sm text-muted-foreground mb-2">Page Title</p>
-            <p className="text-foreground bg-muted rounded p-3">{seo.title}</p>
+            <p className="text-foreground bg-muted rounded p-3 break-words">{seo.title}</p>
           </div>
         )}
 
         {seo?.metaDescription && (
           <div>
             <p className="text-sm text-muted-foreground mb-2">Meta Description</p>
-            <p className="text-foreground bg-muted rounded p-3 text-sm">{seo.metaDescription}</p>
+            <p className="text-foreground bg-muted rounded p-3 text-sm break-words">{seo.metaDescription}</p>
           </div>
         )}
 
@@ -98,7 +98,7 @@ const SEOInfo = ({ seo, isTested, moduleError }: SEOInfoProps) => {
               <p className="text-sm text-muted-foreground mb-2">H1 Tags ({seo.h1Tags.length})</p>
               <div className="space-y-1">
                 {seo.h1Tags.map((tag, index) => (
-                  <p key={index} className="text-foreground bg-muted rounded p-2">{tag}</p>
+                  <p key={index} className="text-foreground bg-muted rounded p-2 break-words">{tag}</p>
                 ))}
               </div>
             </div>
@@ -108,10 +108,10 @@ const SEOInfo = ({ seo, isTested, moduleError }: SEOInfoProps) => {
               <p className="text-sm text-muted-foreground mb-2">H2 Tags ({seo.h2Tags.length})</p>
               <div className="space-y-1">
                 {seo.h2Tags.slice(0, 5).map((tag, index) => (
-                  <p key={index} className="text-foreground bg-muted rounded p-2">{tag}</p>
+                  <p key={index} className="text-foreground bg-muted rounded p-2 break-words">{tag}</p>
                 ))}
                 {seo.h2Tags.length > 5 && (
-                  <p className="text-muted-foreground/70 p-2">+ {seo.h2Tags.length - 5} more</p>
+                  <p className="text-muted-foreground/70 p-2 break-words">+ {seo.h2Tags.length - 5} more</p>
                 )}
               </div>
             </div>
@@ -146,31 +146,31 @@ const SEOInfo = ({ seo, isTested, moduleError }: SEOInfoProps) => {
             <p className="text-sm text-muted-foreground mb-3">Social Media Links</p>
             <div className="flex flex-wrap gap-2">
               {seo.socialLinks.facebook && (
-                <a href={seo.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors">
+                <a href={seo.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors break-all">
                   <Facebook className="h-4 w-4 text-blue-500" />
                   <span className="text-foreground">Facebook</span>
                 </a>
               )}
               {seo.socialLinks.twitter && (
-                <a href={seo.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors">
+                <a href={seo.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors break-all">
                   <Twitter className="h-4 w-4 text-sky-500" />
                   <span className="text-foreground">Twitter</span>
                 </a>
               )}
               {seo.socialLinks.instagram && (
-                <a href={seo.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors">
+                <a href={seo.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors break-all">
                   <Instagram className="h-4 w-4 text-pink-500" />
                   <span className="text-foreground">Instagram</span>
                 </a>
               )}
               {seo.socialLinks.linkedin && (
-                <a href={seo.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors">
+                <a href={seo.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors break-all">
                   <Linkedin className="h-4 w-4 text-blue-600" />
                   <span className="text-foreground">LinkedIn</span>
                 </a>
               )}
               {seo.socialLinks.youtube && (
-                <a href={seo.socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors">
+                <a href={seo.socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted hover:bg-muted/50 rounded px-3 py-2 transition-colors break-all">
                   <Youtube className="h-4 w-4 text-red-500" />
                   <span className="text-foreground">YouTube</span>
                 </a>

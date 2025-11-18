@@ -44,18 +44,18 @@ const TechStackInfo = ({ techStack, isTested, moduleError }: TechStackInfoProps)
           {techStack?.technologies.map((tech, index) => (
             <div key={index} className="bg-muted rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-foreground">{tech.name}</span>
+                <span className="font-medium text-foreground break-words">{tech.name}</span>
                 <Badge className={getCategoryColor(tech.category)}>
                   {tech.category}
                 </Badge>
               </div>
               {tech.version && (
-                <p className="text-sm text-muted-foreground">Version: {tech.version}</p>
+                <p className="text-sm text-muted-foreground break-words">Version: {tech.version}</p>
               )}
               {tech.evidence && (
                 <div className="mt-1 flex items-start gap-2 text-xs">
                   <Info className="h-3 w-3 text-muted-foreground/70" />
-                  <span className="text-muted-foreground">{tech.evidence}</span>
+                  <span className="text-muted-foreground break-words">{tech.evidence}</span>
                 </div>
               )}
             </div>

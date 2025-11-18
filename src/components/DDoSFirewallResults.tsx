@@ -48,7 +48,7 @@ const DDoSFirewallResults = ({ ddosFirewall, isTested, moduleError }: DDoSFirewa
 
         {ddosFirewall?.wafDetected && (
           <div className="bg-muted rounded-lg p-3">
-            <p className="text-xs text-muted-foreground flex items-center gap-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-2 break-words">
               <Info className="h-3 w-3 text-muted-foreground/70" />
               WAF/CDN Detected: <span className="text-foreground font-medium">{ddosFirewall.wafDetected}</span>
             </p>
@@ -64,7 +64,7 @@ const DDoSFirewallResults = ({ ddosFirewall, isTested, moduleError }: DDoSFirewa
             <div className="space-y-2">
               {ddosFirewall.indicators.map((indicator, index) => (
                 <div key={index} className="bg-muted rounded-lg p-3 border-l-4 border-yellow-500/50">
-                  <p className="text-foreground text-sm">{indicator}</p>
+                  <p className="text-foreground text-sm break-words">{indicator}</p>
                 </div>
               ))}
             </div>
@@ -99,7 +99,7 @@ const DDoSFirewallResults = ({ ddosFirewall, isTested, moduleError }: DDoSFirewa
             </h4>
             <div className="space-y-2">
               {ddosFirewall.evidence.map((snippet, index) => (
-                <pre key={index} className="text-xs text-foreground bg-muted/50 p-2 rounded overflow-x-auto max-h-24">
+                <pre key={index} className="text-xs text-foreground bg-muted/50 p-2 rounded overflow-x-auto max-h-24 break-words">
                   {snippet}
                 </pre>
               ))}

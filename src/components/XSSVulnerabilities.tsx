@@ -112,7 +112,7 @@ const XSSVulnerabilities = ({ xss, isTested, moduleError }: XSSVulnerabilitiesPr
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Location:</p>
-                      <p className="text-yellow-600 dark:text-yellow-400">{vuln.location}</p>
+                      <p className="text-yellow-600 dark:text-yellow-400 break-words">{vuln.location}</p>
                     </div>
                     {vuln.evidence && (
                       <div>

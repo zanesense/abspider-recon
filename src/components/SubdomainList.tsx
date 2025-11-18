@@ -28,7 +28,7 @@ const SubdomainList = ({ subdomains, isTested, moduleError }: SubdomainListProps
       <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
         {Object.entries(sources).map(([sourceName, count]) => (
           <div key={sourceName} className="bg-muted p-3 rounded-lg flex items-center justify-between">
-            <span className="text-sm text-muted-foreground capitalize">{sourceName.replace('crtsh', 'crt.sh')}</span>
+            <span className="text-sm text-muted-foreground capitalize break-words">{sourceName.replace('crtsh', 'crt.sh')}</span>
             <span className="text-foreground font-medium">{count}</span>
           </div>
         ))}

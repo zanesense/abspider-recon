@@ -37,35 +37,35 @@ const SubnetInfo = ({ subnet, isTested, moduleError }: SubnetInfoProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">IP Address / CIDR</p>
-          <p className="text-foreground font-mono text-lg">{subnet?.ip}/{subnet?.cidr}</p>
+          <p className="text-foreground font-mono text-lg break-all">{subnet?.ip}/{subnet?.cidr}</p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">IP Class</p>
-          <p className="text-foreground font-medium">{subnet?.ipClass}</p>
+          <p className="text-foreground font-medium break-words">{subnet?.ipClass}</p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">Network Address</p>
-          <p className="text-foreground font-mono">{subnet?.networkAddress}</p>
+          <p className="text-foreground font-mono break-all">{subnet?.networkAddress}</p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">Broadcast Address</p>
-          <p className="text-foreground font-mono">{subnet?.broadcastAddress}</p>
+          <p className="text-foreground font-mono break-all">{subnet?.broadcastAddress}</p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">Subnet Mask</p>
-          <p className="text-foreground font-mono">{subnet?.subnetMask}</p>
+          <p className="text-foreground font-mono break-all">{subnet?.subnetMask}</p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">Wildcard Mask</p>
-          <p className="text-foreground font-mono">{subnet?.wildcardMask}</p>
+          <p className="text-foreground font-mono break-all">{subnet?.wildcardMask}</p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">First Usable IP</p>
-          <p className="text-foreground font-mono">{subnet?.firstUsable}</p>
+          <p className="text-foreground font-mono break-all">{subnet?.firstUsable}</p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">Last Usable IP</p>
-          <p className="text-foreground font-mono">{subnet?.lastUsable}</p>
+          <p className="text-foreground font-mono break-all">{subnet?.lastUsable}</p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">Total Hosts</p>

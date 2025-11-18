@@ -26,13 +26,13 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
     },
     technologies: [],
     cookies: [],
-    cors: {
-      enabled: false,
-      issues: [],
-    },
     cacheControl: {
       present: false,
       directives: [],
+      issues: [],
+    },
+    cors: {
+      enabled: false,
       issues: [],
     },
     corsMetadata: {
@@ -89,7 +89,7 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Technologies</p>
-            <p className="text-foreground text-sm">
+            <p className="text-foreground text-sm break-words">
               {currentHeadersAnalysis.technologies?.length > 0 ? currentHeadersAnalysis.technologies.join(', ') : 'None'}
             </p>
           </div>
@@ -121,9 +121,9 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
                           {header.severity}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground font-mono">{header.value}</p>
+                      <p className="text-xs text-muted-foreground font-mono break-all">{header.value}</p>
                       {header.recommendation && (
-                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
+                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1 break-words">
                           ⚠️ {header.recommendation}
                         </p>
                       )}
@@ -149,7 +149,7 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
                             {header.severity}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">{header.recommendation}</p>
+                        <p className="text-xs text-muted-foreground break-words">{header.recommendation}</p>
                       </div>
                     </div>
                   </div>
@@ -168,22 +168,74 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
             {currentHeadersAnalysis.cookies.map((cookie: any, index: number) => (
               <div key={index} className="bg-muted rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-foreground">{cookie.name}</span>
-                  <div className="flex gap-2">
+                  <span className="font-medium text-foreground break-all">{cookie.name}</span>
+                  <div className="flex gap-2 flex-wrap justify-end">
                     {cookie.secure && <Badge className="bg-green-500/20 text-green-600 dark:text-green-500 border-green-500/30">Secure</Badge>}
                     {cookie.httpOnly && <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-500 border-blue-500/30">HttpOnly</Badge>}
                     {cookie.sameSite && <Badge className="bg-purple-500/20 text-purple-600 dark:text-purple-500 border-purple-500/30">{cookie.sameSite}</Badge>}
+                    {cookie.domain && <span className="text-xs text-muted-foreground break-all">Domain: {cookie.domain}</span>}
+                    {cookie.path && <span className="text-xs text-muted-foreground break-all">Path: {cookie.path}</span>}
+                    {cookie.expires && <span className="text-xs text-muted-foreground break-all">Expires: {cookie.expires}</span>}
                   </div>
                 </div>
                 {cookie.issues && cookie.issues.length > 0 && (
-                  <div className="text-xs text-yellow-600 dark:text-yellow-500">
+                  <div className="text-xs text-yellow-600 dark:text-yellow-500 space-y-1">
                     {cookie.issues.map((issue: string, i: number) => (
-                      <div key={i}>⚠️ {issue}</div>
+                      <div key={i} className="break-words">⚠️ {issue}</div>
                     ))}
                   </div>
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Cache Control Analysis */}
+        {currentHeadersAnalysis.cacheControl && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Info className="h-4 w-4 text-orange-500 dark:text-orange-400" />
+              Cache Control
+            </h4>
+            <div className="bg-muted rounded-lg p-3">
+              <p className="text-sm text-muted-foreground mb-1">Directives:</p>
+              <p className="text-foreground font-mono text-xs break-all">
+                {currentHeadersAnalysis.cacheControl.directives.length > 0 ? currentHeadersAnalysis.cacheControl.directives.join(', ') : 'None'}
+              </p>
+              {currentHeadersAnalysis.cacheControl.issues.length > 0 && (
+                <div className="text-xs text-yellow-600 dark:text-yellow-500 mt-2 space-y-1">
+                  {currentHeadersAnalysis.cacheControl.issues.map((issue, i) => (
+                    <div key={i} className="break-words">⚠️ {issue}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* CORS Analysis */}
+        {currentHeadersAnalysis.cors && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Info className="h-4 w-4 text-red-500 dark:text-red-400" />
+              CORS Policy
+            </h4>
+            <div className="bg-muted rounded-lg p-3">
+              <p className="text-sm text-muted-foreground mb-1">Enabled: <span className="text-foreground">{currentHeadersAnalysis.cors.enabled ? 'Yes' : 'No'}</span></p>
+              {currentHeadersAnalysis.cors.allowOrigin && <p className="text-sm text-muted-foreground break-all">Allow-Origin: <span className="text-foreground font-mono">{currentHeadersAnalysis.cors.allowOrigin}</span></p>}
+              {currentHeadersAnalysis.cors.allowMethods && <p className="text-sm text-muted-foreground break-all">Allow-Methods: <span className="text-foreground font-mono">{currentHeadersAnalysis.cors.allowMethods}</span></p>}
+              {currentHeadersAnalysis.cors.allowHeaders && <p className="text-sm text-muted-foreground break-all">Allow-Headers: <span className="text-foreground font-mono">{currentHeadersAnalysis.cors.allowHeaders}</span></p>}
+              {currentHeadersAnalysis.cors.exposeHeaders && <p className="text-sm text-muted-foreground break-all">Expose-Headers: <span className="text-foreground font-mono">{currentHeadersAnalysis.cors.exposeHeaders}</span></p>}
+              {currentHeadersAnalysis.cors.allowCredentials && <p className="text-sm text-muted-foreground">Allow-Credentials: <span className="text-foreground">{currentHeadersAnalysis.cors.allowCredentials ? 'Yes' : 'No'}</span></p>}
+              {currentHeadersAnalysis.cors.maxAge !== undefined && <p className="text-sm text-muted-foreground">Max-Age: <span className="text-foreground">{currentHeadersAnalysis.cors.maxAge}s</span></p>}
+              {currentHeadersAnalysis.cors.issues.length > 0 && (
+                <div className="text-xs text-red-600 dark:text-red-400 mt-2 space-y-1">
+                  {currentHeadersAnalysis.cors.issues.map((issue, i) => (
+                    <div key={i} className="break-words">⚠️ {issue}</div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -194,7 +246,7 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
             <div className="space-y-1 font-mono text-xs">
               {Object.entries(currentHeadersAnalysis.headers).map(([key, value]) => (
                 <div key={key} className="flex gap-2">
-                  <span className="text-primary">{key}:</span>
+                  <span className="text-primary break-words">{key}:</span>
                   <span className="text-muted-foreground break-all">{String(value)}</span>
                 </div>
               ))}

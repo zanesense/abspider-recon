@@ -91,20 +91,20 @@ const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesPr
                   {vuln.parameter && (
                     <div className="mb-2">
                       <span className="text-xs text-muted-foreground">Parameter: </span>
-                      <code className="text-xs bg-muted/50 px-1.5 py-0.5 rounded text-foreground">{vuln.parameter}</code>
+                      <code className="text-xs bg-muted/50 px-1.5 py-0.5 rounded text-foreground break-all">{vuln.parameter}</code>
                     </div>
                   )}
 
                   <div className="mb-2">
                     <span className="text-xs text-muted-foreground block mb-1">Payload:</span>
-                    <code className="text-xs bg-muted/50 px-2 py-1 rounded block overflow-x-auto text-foreground">
+                    <code className="text-xs bg-muted/50 px-2 py-1 rounded block overflow-x-auto text-foreground break-all">
                       {vuln.payload}
                     </code>
                   </div>
 
                   <div className="mb-2">
                     <span className="text-xs text-muted-foreground block mb-1">Indicator:</span>
-                    <div className="text-amber-600 dark:text-amber-400 font-mono">
+                    <div className="text-amber-600 dark:text-amber-400 font-mono break-words">
                       {vuln.indicator}
                     </div>
                   </div>
@@ -112,7 +112,7 @@ const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesPr
                   {vuln.evidence && (
                     <div>
                       <span className="text-xs text-muted-foreground block mb-1">Evidence:</span>
-                      <pre className="text-xs bg-muted/50 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto text-foreground">
+                      <pre className="text-xs bg-muted/50 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto text-foreground break-words">
                         {vuln.evidence}
                       </pre>
                     </div>

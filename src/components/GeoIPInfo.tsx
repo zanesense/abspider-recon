@@ -50,7 +50,7 @@ const GeoIPInfo = ({ geoip, isTested, moduleError }: GeoIPInfoProps) => {
           {leftFields.map((f, index) => (
             <div key={index} className="bg-muted rounded-lg p-3">
               <p className="text-sm text-muted-foreground mb-1">{f.label}</p>
-              <p className="text-foreground font-mono flex items-center gap-2">
+              <p className="text-foreground font-mono flex items-center gap-2 break-all">
                 {f.icon && <f.icon className="h-4 w-4 text-muted-foreground/70" />}
                 {f.flag && <span className="text-2xl">{f.flag}</span>}
                 {f.value}
@@ -62,7 +62,7 @@ const GeoIPInfo = ({ geoip, isTested, moduleError }: GeoIPInfoProps) => {
           {rightFields.map((f, index) => (
             <div key={index} className="bg-muted rounded-lg p-3">
               <p className="text-sm text-muted-foreground mb-1">{f.label}</p>
-              <p className="text-foreground font-mono flex items-center gap-2">
+              <p className="text-foreground font-mono flex items-center gap-2 break-all">
                 {f.icon && <f.icon className="h-4 w-4 text-muted-foreground/70" />}
                 {f.flag && <span className="text-2xl">{f.flag}</span>}
                 {f.value}

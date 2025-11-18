@@ -37,7 +37,7 @@ const SslTlsResults = ({ sslTls, isTested, moduleError }: SslTlsResultsProps) =>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Domain</p>
-            <p className="text-foreground font-mono text-lg">{sslTls?.domain}</p>
+            <p className="text-foreground font-mono text-lg break-all">{sslTls?.domain}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Certificate Status</p>
@@ -53,7 +53,7 @@ const SslTlsResults = ({ sslTls, isTested, moduleError }: SslTlsResultsProps) =>
 
         {sslTls?.certificateIssuer && (
           <div className="bg-muted rounded-lg p-3">
-            <p className="text-xs text-muted-foreground flex items-center gap-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-2 break-words">
               <Info className="h-3 w-3 text-muted-foreground/70" />
               Issuer: <span className="text-foreground font-medium">{sslTls.certificateIssuer}</span>
             </p>
@@ -61,7 +61,7 @@ const SslTlsResults = ({ sslTls, isTested, moduleError }: SslTlsResultsProps) =>
         )}
         {sslTls?.certificateSubject && (
           <div className="bg-muted rounded-lg p-3">
-            <p className="text-xs text-muted-foreground flex items-center gap-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-2 break-words">
               <Info className="h-3 w-3 text-muted-foreground/70" />
               Subject: <span className="text-foreground font-medium">{sslTls.certificateSubject}</span>
             </p>
@@ -74,14 +74,14 @@ const SslTlsResults = ({ sslTls, isTested, moduleError }: SslTlsResultsProps) =>
               <Calendar className="h-3 w-3 text-muted-foreground/70" />
               Valid From
             </p>
-            <p className="text-foreground">{sslTls?.validFrom || 'N/A'}</p>
+            <p className="text-foreground break-words">{sslTls?.validFrom || 'N/A'}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
               <Calendar className="h-3 w-3 text-muted-foreground/70" />
               Valid To
             </p>
-            <p className="text-foreground">{sslTls?.validTo || 'N/A'}</p>
+            <p className="text-foreground break-words">{sslTls?.validTo || 'N/A'}</p>
           </div>
         </div>
 
@@ -93,7 +93,7 @@ const SslTlsResults = ({ sslTls, isTested, moduleError }: SslTlsResultsProps) =>
             </h4>
             <div className="flex flex-wrap gap-2">
               {sslTls.commonNames.map((name, index) => (
-                <Badge key={index} variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                <Badge key={index} variant="outline" className="bg-primary/10 text-primary border-primary/30 break-words">
                   {name}
                 </Badge>
               ))}
@@ -109,7 +109,7 @@ const SslTlsResults = ({ sslTls, isTested, moduleError }: SslTlsResultsProps) =>
             </h4>
             <div className="flex flex-wrap gap-2">
               {sslTls.altNames.map((name, index) => (
-                <Badge key={index} variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                <Badge key={index} variant="outline" className="bg-primary/10 text-primary border-primary/30 break-words">
                   {name}
                 </Badge>
               ))}

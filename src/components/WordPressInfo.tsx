@@ -73,7 +73,7 @@ const WordPressInfo = ({ wordpress, isTested, moduleError }: WordPressInfoProps)
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Version</p>
-            <p className="text-foreground font-mono">{wordpress.version || 'Unknown'}</p>
+            <p className="text-foreground font-mono break-words">{wordpress.version || 'Unknown'}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Vulnerabilities</p>
@@ -91,12 +91,12 @@ const WordPressInfo = ({ wordpress, isTested, moduleError }: WordPressInfoProps)
               {wordpress.vulnerabilities.map((vuln, index) => (
                 <div key={index} className="bg-muted rounded-lg p-4 border border-destructive/30">
                   <div className="flex items-start justify-between mb-2">
-                    <span className="text-foreground font-medium">{vuln.title}</span>
+                    <span className="text-foreground font-medium break-words">{vuln.title}</span>
                     <Badge className={getSeverityColor(vuln.severity)}>
                       {vuln.severity.toUpperCase()}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{vuln.description}</p>
+                  <p className="text-sm text-muted-foreground break-words">{vuln.description}</p>
                 </div>
               ))}
             </div>
@@ -112,7 +112,7 @@ const WordPressInfo = ({ wordpress, isTested, moduleError }: WordPressInfoProps)
             <div className="space-y-1">
               {wordpress.sensitiveFiles.map((file, index) => (
                 <div key={index} className="bg-muted rounded p-2 flex items-center justify-between">
-                  <span className="text-foreground font-mono text-sm">{file.path}</span>
+                  <span className="text-foreground font-mono text-sm break-all">{file.path}</span>
                   {file.size && (
                     <span className="text-muted-foreground/70 text-xs">{(file.size / 1024).toFixed(2)} KB</span>
                   )}
@@ -128,7 +128,7 @@ const WordPressInfo = ({ wordpress, isTested, moduleError }: WordPressInfoProps)
               <h4 className="text-sm font-medium text-foreground mb-2">Plugins ({wordpress.plugins.length})</h4>
               <div className="flex flex-wrap gap-1">
                 {wordpress.plugins.map((plugin, index) => (
-                  <Badge key={index} className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">
+                  <Badge key={index} className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30 break-words">
                     {plugin}
                   </Badge>
                 ))}
@@ -140,7 +140,7 @@ const WordPressInfo = ({ wordpress, isTested, moduleError }: WordPressInfoProps)
               <h4 className="text-sm font-medium text-foreground mb-2">Themes ({wordpress.themes.length})</h4>
               <div className="flex flex-wrap gap-1">
                 {wordpress.themes.map((theme, index) => (
-                  <Badge key={index} className="bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                  <Badge key={index} className="bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30 break-words">
                     {theme}
                   </Badge>
                 ))}
