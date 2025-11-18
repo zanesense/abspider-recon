@@ -1,5 +1,5 @@
 import { extractDomain } from './apiUtils';
-import { RequestManager } => './requestManager'; // Corrected from '=>' to 'from'
+import { RequestManager } from './requestManager'; // Corrected from '=>' to 'from'
 import { APIKeys } from './apiKeyService'; // Import APIKeys interface
 import { fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
 
