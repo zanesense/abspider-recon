@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Network, ShieldAlert, Bug, CheckCircle, XCircle, Star, FileText } from 'lucide-react';
 import { Scan } from '@/services/scanService';
 import { Link } from 'react-router-dom'; // Import Link for navigation
+import { Button } from '@/components/ui/button'; // Import Button component
 
 interface ScanSummaryWidgetProps {
   scan: Scan;
