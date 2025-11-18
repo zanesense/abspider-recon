@@ -33,7 +33,7 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
   ).length;
 
   const getGradeColorClass = (grade?: number) => {
-    if (grade === undefined) return 'text-muted-foreground';
+    if (grade == null) return 'text-muted-foreground'; // Check for both null and undefined
     if (grade >= 8) return 'text-green-500 dark:text-green-400';
     if (grade >= 6) return 'text-yellow-500 dark:text-yellow-400';
     if (grade >= 4) return 'text-orange-500 dark:text-orange-400';
@@ -47,7 +47,7 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
           <ShieldAlert className="h-5 w-5 text-orange-500 dark:text-orange-400" />
           Scan Summary
         </CardTitle>
-        {securityGrade !== undefined && (
+        {securityGrade != null && ( // Check for both null and undefined
           <div className="flex items-center gap-2">
             <Star className={`h-5 w-5 ${getGradeColorClass(securityGrade)}`} />
             <span className={`text-2xl font-bold ${getGradeColorClass(securityGrade)}`}>
