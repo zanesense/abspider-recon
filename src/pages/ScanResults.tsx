@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle, FileText, FileDown, FileType, FileSpreadsheet } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getScanById, pauseScan, resumeScan, stopScan } from '@/services/scanService';
-import { generatePDFReport } from '@/services/reportService';
+import { generatePdfReport, generateDocxReport, generateMarkdownReport, generateCsvReport } from '@/services/reportService';
 import { sendDiscordWebhook } from '@/services/webhookService';
 import { useToast } from '@/hooks/use-toast';
 import ScanStatus from '@/components/ScanStatus';
@@ -31,15 +31,24 @@ import TechStackInfo from '@/components/TechStackInfo';
 import BrokenLinkResults from '@/components/BrokenLinkResults';
 import CorsMisconfigResults from '@/components/CorsMisconfigResults';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import ModuleCardWrapper from '@/components/ModuleCardWrapper'; // Import the new wrapper
+import ModuleCardWrapper from '@/components/ModuleCardWrapper';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const ScanResults = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
 
   const { data: scan, isLoading } = useQuery({
     queryKey: ['scan', id],
@@ -58,13 +67,40 @@ const ScanResults = () => {
     };
   }, [id]);
 
-  const handleDownloadReport = () => {
+  const handleDownloadReport = (format: 'pdf' | 'docx' | 'md' | 'csv') => {
     if (!scan) return;
-    generatePDFReport(scan);
-    toast({
-      title: "Report Generated",
-      description: "Comprehensive PDF report has been downloaded successfully",
-    });
+
+    try {
+      switch (format) {
+        case 'pdf':
+          generatePdfReport(scan);
+          break;
+        case 'docx':
+          generateDocxReport(scan);
+          break;
+        case 'md':
+          generateMarkdownReport(scan);
+          break;
+        case 'csv':
+          generateCsvReport(scan);
+          break;
+        default:
+          console.warn('Unknown report format requested:', format);
+          return;
+      }
+      toast({
+        title: "Report Generated",
+        description: `The ${format.toUpperCase()} report has been downloaded successfully.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Report Generation Failed",
+        description: error.message || `Failed to generate ${format.toUpperCase()} report.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadDialogOpen(false);
+    }
   };
 
   const handleSendToDiscord = async () => {
@@ -175,7 +211,11 @@ const ScanResults = () => {
           <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
             <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
-          <Button onClick={handleDownloadReport} disabled={scan.status === 'running' || scan.status === 'paused'} className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md">
+          <Button 
+            onClick={() => setIsDownloadDialogOpen(true)} 
+            disabled={scan.status === 'running' || scan.status === 'paused'} 
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
+          >
             <Download className="h-4 w-4 mr-2" /> Download Report
           </Button>
         </div>
@@ -322,6 +362,55 @@ const ScanResults = () => {
           )}
         </div>
       </main>
+
+      <Dialog open={isDownloadDialogOpen} onOpenChange={setIsDownloadDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5 text-primary" />
+              Download Report
+            </DialogTitle>
+            <DialogDescription>
+              Choose the format for your scan report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2 border-border text-foreground hover:bg-muted/50"
+              onClick={() => handleDownloadReport('pdf')}
+            >
+              <FileText className="h-4 w-4" /> PDF Document (.pdf)
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2 border-border text-foreground hover:bg-muted/50"
+              onClick={() => handleDownloadReport('docx')}
+            >
+              <FileType className="h-4 w-4" /> Word Document (.docx)
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2 border-border text-foreground hover:bg-muted/50"
+              onClick={() => handleDownloadReport('md')}
+            >
+              <FileDown className="h-4 w-4" /> Markdown (.md)
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2 border-border text-foreground hover:bg-muted/50"
+              onClick={() => handleDownloadReport('csv')}
+            >
+              <FileSpreadsheet className="h-4 w-4" /> CSV Spreadsheet (.csv)
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsDownloadDialogOpen(false)} className="border-border text-foreground hover:bg-muted/50">
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

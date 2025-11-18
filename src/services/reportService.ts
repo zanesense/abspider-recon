@@ -1,5 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver'; // For saving DOCX files
 import { Scan } from './scanService';
 
 const getSecurityRecommendations = (scan: Scan): string[] => {
@@ -66,7 +68,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
   }
   
   // Security headers recommendations
-  const headers = scan.results.headers?._analysis;
+  const headers = scan.results.headers;
   if (headers?.securityHeaders) {
     const missing = headers.securityHeaders.missing || [];
     if (missing.length > 0) {
@@ -121,7 +123,7 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
   return recommendations;
 };
 
-export const generatePDFReport = (scan: Scan) => {
+export const generatePdfReport = (scan: Scan) => {
   const doc = new jsPDF();
   let yPosition = 20;
 
@@ -129,12 +131,12 @@ export const generatePDFReport = (scan: Scan) => {
   const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
   const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
   const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
-  const corsMisconfigVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0; // New
+  const corsMisconfigVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0;
   const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
   const ddosFirewallDetected = (scan.results.ddosFirewall?.firewallDetected) ? 1 : 0;
   const virustotalMalicious = (scan.results.virustotal?.maliciousVotes || 0) > 0 ? 1 : 0;
   const sslTlsExpired = (scan.results.sslTls?.isExpired) ? 1 : 0;
-  const brokenLinksCount = (scan.results.brokenLinks?.brokenLinks?.length || 0) > 0 ? 1 : 0; // New
+  const brokenLinksCount = (scan.results.brokenLinks?.brokenLinks?.length || 0) > 0 ? 1 : 0;
   const totalVulns = sqlVulns + xssVulns + lfiVulns + corsMisconfigVulns + wpVulns + ddosFirewallDetected + virustotalMalicious + sslTlsExpired + brokenLinksCount;
 
   // Modern Header with gradient effect
@@ -250,12 +252,12 @@ export const generatePDFReport = (scan: Scan) => {
       ['SQL Injection', sqlVulns.toString(), sqlVulns > 0 ? 'CRITICAL' : 'SAFE', sqlVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['Cross-Site Scripting (XSS)', xssVulns.toString(), xssVulns > 0 ? 'CRITICAL' : 'SAFE', xssVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['Local File Inclusion (LFI)', lfiVulns.toString(), lfiVulns > 0 ? 'CRITICAL' : 'SAFE', lfiVulns > 0 ? 'Immediate action required' : 'No issues found'],
-      ['CORS Misconfiguration', corsMisconfigVulns.toString(), corsMisconfigVulns > 0 ? 'CRITICAL' : 'SAFE', corsMisconfigVulns > 0 ? 'Immediate action required' : 'No issues found'], // New
+      ['CORS Misconfiguration', corsMisconfigVulns.toString(), corsMisconfigVulns > 0 ? 'CRITICAL' : 'SAFE', corsMisconfigVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['WordPress Security', wpVulns.toString(), wpVulns > 0 ? 'HIGH' : 'SAFE', wpVulns > 0 ? 'Update and secure' : 'No issues found'],
       ['DDoS/WAF Detection', ddosFirewallDetected.toString(), ddosFirewallDetected > 0 ? 'INFO' : 'N/A', ddosFirewallDetected > 0 ? 'Protection detected' : 'No protection detected'],
       ['VirusTotal Malicious', virustotalMalicious.toString(), virustotalMalicious > 0 ? 'HIGH' : 'SAFE', virustotalMalicious > 0 ? 'Investigate reputation' : 'No malicious activity'],
       ['SSL Certificate Expired', sslTlsExpired.toString(), sslTlsExpired > 0 ? 'CRITICAL' : 'VALID', sslTlsExpired > 0 ? 'Renew certificate immediately' : 'Certificate is valid'],
-      ['Broken Links', brokenLinksCount.toString(), brokenLinksCount > 0 ? 'MEDIUM' : 'SAFE', brokenLinksCount > 0 ? 'Review and fix links' : 'No broken links found'], // New
+      ['Broken Links', brokenLinksCount.toString(), brokenLinksCount > 0 ? 'MEDIUM' : 'SAFE', brokenLinksCount > 0 ? 'Review and fix links' : 'No broken links found'],
     ];
     
     autoTable(doc, {
@@ -463,11 +465,11 @@ export const generatePDFReport = (scan: Scan) => {
   }
 
   // Security Headers Analysis
-  if (scan.results.headers?._analysis?.securityHeaders) {
+  if (scan.results.headers?.securityHeaders) {
     doc.addPage();
     yPosition = 20;
     
-    const headers = scan.results.headers._analysis;
+    const headers = scan.results.headers;
     const grade = headers.securityHeaders.grade || 'N/A';
     const gradeColor = grade === 'A+' || grade === 'A' ? [16, 185, 129] : 
                        grade === 'B' ? [234, 179, 8] : [239, 68, 68];
@@ -875,4 +877,159 @@ export const generatePDFReport = (scan: Scan) => {
   }
 
   doc.save(`abspider-security-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`);
+};
+
+export const generateDocxReport = async (scan: Scan) => {
+  const recommendations = getSecurityRecommendations(scan);
+  const doc = new Document({
+    sections: [{
+      children: [
+        new Paragraph({
+          text: 'ABSpider Recon Dashboard',
+          heading: HeadingLevel.TITLE,
+          alignment: AlignmentType.CENTER,
+        }),
+        new Paragraph({
+          text: 'Comprehensive Security Assessment Report',
+          heading: HeadingLevel.HEADING1,
+          alignment: AlignmentType.CENTER,
+        }),
+        new Paragraph({
+          text: `Generated: ${new Date().toLocaleString()} | Classification: CONFIDENTIAL`,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          text: 'Executive Summary',
+          heading: HeadingLevel.HEADING2,
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: `Target Domain: ${scan.target}`, break: 1 }),
+            new TextRun({ text: `Scan ID: ${scan.id}`, break: 1 }),
+            new TextRun({ text: `Timestamp: ${new Date(scan.timestamp).toLocaleString()}`, break: 1 }),
+            new TextRun({ text: `Status: ${scan.status.toUpperCase()}`, break: 1 }),
+            new TextRun({ text: `Security Grade: ${scan.securityGrade?.toFixed(1) || 'N/A'}/10`, break: 1 }),
+          ],
+          spacing: { after: 200 },
+        }),
+        ...(recommendations.length > 0 ? [
+          new Paragraph({
+            text: 'Security Recommendations',
+            heading: HeadingLevel.HEADING2,
+            spacing: { after: 100 },
+          }),
+          ...recommendations.map(rec => new Paragraph({ text: rec })),
+        ] : []),
+        // Add more sections as needed for DOCX
+      ],
+    }],
+  });
+
+  const buffer = await Packer.toBuffer(doc);
+  saveAs(new Blob([buffer]), `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.docx`);
+};
+
+export const generateMarkdownReport = (scan: Scan) => {
+  const recommendations = getSecurityRecommendations(scan);
+  let markdown = `# ABSpider Recon Dashboard - Security Assessment Report\n\n`;
+  markdown += `**Target Domain:** ${scan.target}\n`;
+  markdown += `**Scan ID:** ${scan.id}\n`;
+  markdown += `**Generated:** ${new Date().toLocaleString()}\n`;
+  markdown += `**Status:** ${scan.status.toUpperCase()}\n`;
+  markdown += `**Security Grade:** ${scan.securityGrade?.toFixed(1) || 'N/A'}/10\n\n`;
+
+  markdown += `## Executive Summary\n\n`;
+  markdown += `This report summarizes the reconnaissance and security assessment performed by ABSpider Recon Dashboard on \`${scan.target}\`.\n\n`;
+  markdown += `The scan was initiated on ${new Date(scan.timestamp).toLocaleString()} and completed with a status of **${scan.status.toUpperCase()}**.\n\n`;
+  markdown += `Overall Security Grade: **${scan.securityGrade?.toFixed(1) || 'N/A'}/10**.\n\n`;
+
+  if (recommendations.length > 0) {
+    markdown += `## Security Recommendations\n\n`;
+    recommendations.forEach(rec => {
+      markdown += `- ${rec}\n`;
+    });
+    markdown += '\n';
+  }
+
+  // Add more sections as needed for Markdown
+  // Example: Vulnerability Summary
+  const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
+  const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
+  const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
+  const corsMisconfigVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0;
+  const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
+
+  if (sqlVulns > 0 || xssVulns > 0 || lfiVulns > 0 || corsMisconfigVulns > 0 || wpVulns > 0) {
+    markdown += `## Vulnerability Overview\n\n`;
+    markdown += `| Vulnerability Type        | Count |\n`;
+    markdown += `|---------------------------|-------|\n`;
+    if (sqlVulns > 0) markdown += `| SQL Injection             | ${sqlVulns}    |\n`;
+    if (xssVulns > 0) markdown += `| XSS Vulnerabilities       | ${xssVulns}    |\n`;
+    if (lfiVulns > 0) markdown += `| LFI Vulnerabilities       | ${lfiVulns}    |\n`;
+    if (corsMisconfigVulns > 0) markdown += `| CORS Misconfiguration     | ${corsMisconfigVulns}    |\n`;
+    if (wpVulns > 0) markdown += `| WordPress Issues          | ${wpVulns}    |\n`;
+    markdown += '\n';
+  }
+
+  const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+  saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.md`);
+};
+
+export const generateCsvReport = (scan: Scan) => {
+  const escapeCsv = (value: any) => {
+    if (value === null || value === undefined) return '';
+    let str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  let csvContent = `Report Type,ABSpider Recon Dashboard\n`;
+  csvContent += `Target,${escapeCsv(scan.target)}\n`;
+  csvContent += `Scan ID,${escapeCsv(scan.id)}\n`;
+  csvContent += `Generated,${escapeCsv(new Date().toLocaleString())}\n`;
+  csvContent += `Status,${escapeCsv(scan.status.toUpperCase())}\n`;
+  csvContent += `Security Grade,${escapeCsv(scan.securityGrade?.toFixed(1) || 'N/A')}/10\n`;
+  csvContent += `\n`;
+
+  csvContent += `Vulnerability Summary\n`;
+  csvContent += `Vulnerability Type,Count,Severity\n`;
+
+  const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
+  const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
+  const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
+  const corsMisconfigVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0;
+  const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
+  const ddosFirewallDetected = (scan.results.ddosFirewall?.firewallDetected) ? 1 : 0;
+  const virustotalMalicious = (scan.results.virustotal?.maliciousVotes || 0) > 0 ? 1 : 0;
+  const sslTlsExpired = (scan.results.sslTls?.isExpired) ? 1 : 0;
+  const brokenLinksCount = (scan.results.brokenLinks?.brokenLinks?.length || 0) > 0 ? 1 : 0;
+
+  csvContent += `SQL Injection,${escapeCsv(sqlVulns)},${escapeCsv(sqlVulns > 0 ? 'CRITICAL' : 'SAFE')}\n`;
+  csvContent += `Cross-Site Scripting (XSS),${escapeCsv(xssVulns)},${escapeCsv(xssVulns > 0 ? 'CRITICAL' : 'SAFE')}\n`;
+  csvContent += `Local File Inclusion (LFI),${escapeCsv(lfiVulns)},${escapeCsv(lfiVulns > 0 ? 'CRITICAL' : 'SAFE')}\n`;
+  csvContent += `CORS Misconfiguration,${escapeCsv(corsMisconfigVulns)},${escapeCsv(corsMisconfigVulns > 0 ? 'CRITICAL' : 'SAFE')}\n`;
+  csvContent += `WordPress Security,${escapeCsv(wpVulns)},${escapeCsv(wpVulns > 0 ? 'HIGH' : 'SAFE')}\n`;
+  csvContent += `DDoS/WAF Detection,${escapeCsv(ddosFirewallDetected)},${escapeCsv(ddosFirewallDetected > 0 ? 'INFO' : 'N/A')}\n`;
+  csvContent += `VirusTotal Malicious,${escapeCsv(virustotalMalicious)},${escapeCsv(virustotalMalicious > 0 ? 'HIGH' : 'SAFE')}\n`;
+  csvContent += `SSL Certificate Expired,${escapeCsv(sslTlsExpired)},${escapeCsv(sslTlsExpired > 0 ? 'CRITICAL' : 'VALID')}\n`;
+  csvContent += `Broken Links,${escapeCsv(brokenLinksCount)},${escapeCsv(brokenLinksCount > 0 ? 'MEDIUM' : 'SAFE')}\n`;
+  csvContent += `\n`;
+
+  // Add more detailed module summaries if needed, e.g., for SQLi vulnerabilities
+  if (sqlVulns > 0) {
+    csvContent += `SQL Injection Details\n`;
+    csvContent += `Severity,Type,Parameter,Payload,Evidence\n`;
+    scan.results.sqlinjection?.vulnerabilities?.forEach(vuln => {
+      csvContent += `${escapeCsv(vuln.severity.toUpperCase())},${escapeCsv(vuln.type || 'N/A')},${escapeCsv(vuln.parameter || 'N/A')},${escapeCsv(vuln.payload)},${escapeCsv(vuln.evidence || 'N/A')}\n`;
+    });
+    csvContent += `\n`;
+  }
+  // Repeat for XSS, LFI, etc.
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+  saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.csv`);
 };
