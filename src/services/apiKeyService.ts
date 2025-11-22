@@ -1,12 +1,13 @@
 import { supabase } from '@/SupabaseClient';
 
-interface APIKeys {
+export interface APIKeys {
   shodan?: string;
   virustotal?: string;
   securitytrails?: string;
   builtwith?: string;
   clearbit?: string;
   opencage?: string;
+  hunterio?: string; // Added hunterio key
 }
 
 // Define the structure for the Supabase table row
@@ -70,9 +71,3 @@ export const saveAPIKeys = async (keys: APIKeys) => {
     throw new Error(`Failed to save API keys: ${error.message}`);
   }
 };
-
-// The hasAPIKey function is no longer needed as keys will be passed directly
-// export const hasAPIKey = async (service: keyof APIKeys): Promise<boolean> => {
-//   const key = await getAPIKey(service);
-//   return !!key && key.trim().length > 0;
-// };

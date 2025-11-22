@@ -348,7 +348,7 @@ const runScan = async (
             currentScan.results.subdomains = moduleResult;
             break;
           case 'reverseip':
-            moduleResult = await performReverseIPLookup(config.target, requestManager);
+            moduleResult = await performReverseIPLookup(config.target, requestManager, apiKeys);
             currentScan.results.reverseip = moduleResult;
             break;
           case 'sqlinjection':
@@ -439,7 +439,7 @@ export const pauseScan = async (id: string) => {
   if (scanEntry) {
     scanEntry.controller.abort();
     const currentScan = (await getScanById(id))!;
-    const updatedScan = { ...currentScan, status: 'paused', progress: { ...currentScan.progress!, stage: 'Paused' } };
+    const updatedScan: Scan = { ...currentScan, status: 'paused', progress: { ...currentScan.progress!, stage: 'Paused' } };
     await upsertScanToDatabase(updatedScan);
     console.log(`[ScanService] Scan ${id} paused.`);
   }
@@ -456,7 +456,7 @@ export const resumeScan = async (id: string) => {
   const requestManager = createRequestManager(newController);
   activeScans.set(id, { controller: newController, promise: Promise.resolve(), requestManager });
 
-  const updatedScan = { ...scan, status: 'running', progress: { ...scan.progress!, stage: 'Resuming' } };
+  const updatedScan: Scan = { ...scan, status: 'running', progress: { ...scan.progress!, stage: 'Resuming' } };
   await upsertScanToDatabase(updatedScan);
 
   console.log(`[ScanService] Resuming scan ${id}.`);
@@ -470,7 +470,7 @@ export const stopScan = async (id: string) => {
     scanEntry.requestManager.abortAll();
     activeScans.delete(id);
     const currentScan = (await getScanById(id))!;
-    const updatedScan = { 
+    const updatedScan: Scan = { 
       ...currentScan, 
       status: 'failed', 
       errors: [...currentScan.errors, 'Scan stopped by user'], 

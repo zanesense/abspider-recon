@@ -49,6 +49,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { generateReportContent } from '@/utils/reportUtils';
+import { SQLScanResult } from '@/services/sqlScanService';
+import { XSSScanResult } from '@/services/xssScanService';
+import { LFIScanResult } from '@/services/lfiScanService';
 
 type ReportFormat = 'pdf' | 'docx' | 'md' | 'csv';
 
@@ -299,17 +302,17 @@ const ScanResults = () => {
                 moduleError={getModuleError('reverseip')} 
               />
               <SQLVulnerabilities 
-                sqlinjection={scan.results.sqlinjection} 
+                sqlinjection={scan.results.sqlinjection as SQLScanResult} 
                 isTested={scan.config.sqlinjection}
                 moduleError={getModuleError('sqlinjection')}
               />
               <XSSVulnerabilities 
-                xss={scan.results.xss} 
+                xss={scan.results.xss as XSSScanResult} 
                 isTested={scan.config.xss}
                 moduleError={getModuleError('xss')}
               />
               <LFIVulnerabilities 
-                lfi={scan.results.lfi} 
+                lfi={scan.results.lfi as LFIScanResult} 
                 isTested={scan.config.lfi} 
                 moduleError={getModuleError('lfi')} 
               />

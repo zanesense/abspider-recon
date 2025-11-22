@@ -21,7 +21,12 @@ export class RequestManager {
   private rateLimiter: Map<string, number> = new Map();
   private minRequestInterval = 200;
 
-  constructor(private scanController?: AbortController) {}
+  // Made public to allow access to signal from service files (TS2341 fix)
+  public scanController?: AbortController; 
+
+  constructor(scanController?: AbortController) {
+    this.scanController = scanController;
+  }
 
   async fetch(
     url: string,
@@ -63,13 +68,16 @@ export class RequestManager {
           abortController.signal,
         ].filter(Boolean) as AbortSignal[]);
 
+        // Fix TS2322 by explicitly casting headers to Record<string, string>
+        const headers: Record<string, string> = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          ...(fetchOptions.headers as Record<string, string> || {}),
+        };
+
         // Use fetchWithBypass instead of native fetch
         const fetchResult: FetchWithBypassResult = await fetchWithBypass(url, {
           method: fetchOptions.method,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            ...fetchOptions.headers,
-          },
+          headers: headers,
           body: fetchOptions.body as string, // Cast body to string as fetchWithBypass expects it
           timeout,
           signal: combinedSignal,

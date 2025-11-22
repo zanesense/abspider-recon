@@ -691,7 +691,7 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
     doc.addPage();
     yPosition = 20;
     
-    doc.setFillColor(128, 0, 128); // Purple color for DDoS
+    doc.setFillColor(128, 0, 128); // Purple for DDoS
     doc.rect(0, yPosition - 5, 210, 10, 'F');
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
@@ -933,7 +933,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
   });
 
   const buffer = await Packer.toBuffer(doc);
-  // Convert Buffer to ArrayBuffer before creating Blob
+  // Fix TS2322: Ensure we get a standard ArrayBuffer from the Buffer
   const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
   const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
