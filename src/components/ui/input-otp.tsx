@@ -42,7 +42,7 @@ const InputOTPSlot = React.forwardRef<
   const inputOTPContext = React.useContext(OTPInputContext)
   // Destructure properties from the slot object provided by the context, casting to the expected type
   const { char, hasValue, isActive, isFocused, isHovered, isLast } =
-    inputOTPContext.slots[index] as SlotContextProps
+    inputOTPContext.slots[index] as unknown as SlotContextProps
 
   return (
     <div
