@@ -48,6 +48,23 @@ const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesPr
       noDataMessage="Local File Inclusion vulnerability testing not performed or no vulnerabilities detected."
     >
       <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Status</p>
+            <Badge className={lfi?.vulnerable ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'}>
+              {lfi?.vulnerable ? 'VULNERABLE' : 'SECURE'}
+            </Badge>
+          </div>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Payloads Tested</p>
+            <p className="text-2xl font-bold text-primary">{lfi?.testedPayloads}</p>
+          </div>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-sm text-muted-foreground mb-1">Vulnerabilities Found</p>
+            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{lfi?.vulnerabilities.length}</p>
+          </div>
+        </div>
+
         {lfi?.vulnerable && lfi.vulnerabilities.length > 0 ? (
           <>
             <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
@@ -130,13 +147,6 @@ const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesPr
             </AlertDescription>
           </Alert>
         )}
-
-        <div className="pt-2 border-t border-border">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <FileText className="h-4 w-4" />
-            <span>Status: {lfi?.vulnerable ? 'Vulnerable' : 'Secure'} • {lfi?.testedPayloads} payloads tested</span>
-          </div>
-        </div>
       </CardContent>
     </ModuleCardWrapper>
   );
