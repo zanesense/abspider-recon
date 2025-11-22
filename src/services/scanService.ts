@@ -502,4 +502,25 @@ export const deleteScan = async (id: string): Promise<void> => {
   }
 };
 
+export const deleteAllScans = async (): Promise<void> => {
+  console.log(`[Delete All Scans] Deleting all scans for current user`);
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!session?.user) {
+    throw new Error('User not authenticated. Cannot delete all scans.');
+  }
+
+  // Note: Supabase RLS should ensure only the user's own rows are deleted.
+  const { error } = await supabase
+    .from('user_scans')
+    .delete()
+    .eq('user_id', session.user.id);
+
+  if (error) {
+    console.error('[ScanService] Failed to delete all scans from Supabase:', error);
+    throw new Error(`Failed to delete all scans: ${error.message}`);
+  }
+  console.log('[Delete All Scans] Successfully deleted all scans.');
+};
+
 startScheduledScanChecker();
