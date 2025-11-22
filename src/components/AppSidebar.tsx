@@ -25,7 +25,7 @@ export function AppSidebar() {
   const { toast } = useToast();
   const [session, setSession] = useState<any>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [loadingLogout, setLoadingLogout] = useState(false);
+  // Removed loadingLogout state
 
   useEffect(() => {
     const getSession = async () => {
@@ -44,6 +44,10 @@ export function AppSidebar() {
         setUserEmail(session.user.email);
       } else {
         setUserEmail(null);
+        // If session is null, navigate to login (handled by RequireAuth, but good practice here too)
+        if (_event === 'SIGNED_OUT') {
+            navigate('/login');
+        }
       }
     });
 
@@ -60,26 +64,7 @@ export function AppSidebar() {
     { title: 'App Settings', icon: Settings, href: '/settings' }, // Updated text
   ];
 
-  const handleLogout = async () => {
-    setLoadingLogout(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-      navigate('/login');
-    } catch (error: any) {
-      toast({
-        title: "Logout Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingLogout(false);
-    }
-  };
+  // Removed handleLogout function
 
   return (
     <Sidebar className="border-r border-border bg-sidebar shadow-xl">
@@ -155,22 +140,6 @@ export function AppSidebar() {
               <LogIn className="h-4 w-4" />
               <span>Login</span>
             </Link>
-          </Button>
-        )}
-        {session && (
-          <Button
-            onClick={handleLogout}
-            disabled={loadingLogout}
-            variant="outline"
-            size="sm"
-            className="w-full justify-start gap-2 bg-muted/30 hover:bg-muted/50 border-border text-foreground"
-          >
-            {loadingLogout ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <LogOut className="h-4 w-4" />
-            )}
-            <span>Logout</span>
           </Button>
         )}
         <Button

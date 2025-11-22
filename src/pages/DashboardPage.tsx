@@ -17,25 +17,15 @@ import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard';
 import CurrentDateTime from '@/components/CurrentDateTime';
 import { getScheduledScans, updateScheduledScan, deleteScheduledScan, ScheduledScan } from '@/services/scheduledScanService';
 import { format } from 'date-fns';
+import ProfileCardPopover from '@/components/ProfileCardPopover'; // Import the new component
 
 const DashboardPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [session, setSession] = useState<any>(null);
-  const [loadingLogout, setLoadingLogout] = useState(false);
+  // Removed userEmail, session, loadingLogout states as they are handled by ProfileCardPopover
 
-  useEffect(() => {
-    const fetchUserAndSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      if (session?.user) { // Access user from session
-        setUserEmail(session.user.email);
-      }
-    };
-    fetchUserAndSession();
-  }, []);
+  // Removed useEffect for fetching user/session
 
   const { data: scans = [], refetch } = useQuery({
     queryKey: ['scanHistory'],
@@ -57,26 +47,7 @@ const DashboardPage = () => {
   const totalApiKeys = 7; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit
   const configuredApiKeys = Object.values(apiKeys).filter(key => typeof key === 'string' && key.trim().length > 0).length;
 
-  const handleLogout = async () => {
-    setLoadingLogout(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-      navigate('/login');
-    } catch (error: any) {
-      toast({
-        title: "Logout Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingLogout(false);
-    }
-  };
+  // Removed handleLogout function
 
   const handleToggleScheduledScanStatus = (scan: ScheduledScan) => {
     const newStatus = scan.status === 'active' ? 'paused' : 'active';
@@ -130,27 +101,8 @@ const DashboardPage = () => {
         </div>
         <CurrentDateTime className="hidden md:flex" />
         <div className="flex items-center gap-2">
-          {userEmail && (
-            <Badge variant="secondary" className="flex items-center gap-1 text-muted-foreground">
-              <User className="h-3 w-3" />
-              {userEmail}
-            </Badge>
-          )}
-          {session && (
-            <Button
-              onClick={handleLogout}
-              disabled={loadingLogout}
-              variant="outline"
-              size="sm"
-              className="border-border text-foreground hover:bg-muted/50"
-            >
-              {loadingLogout ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <LogOut className="h-4 w-4" />
-              )}
-            </Button>
-          )}
+          {/* Replaced email badge and logout button with ProfileCardPopover */}
+          <ProfileCardPopover /> 
           <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
             <Link to="/new-scan">
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -209,7 +161,7 @@ const DashboardPage = () => {
           {/* System Status & API Keys */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-foreground">System Status</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-min">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 auto-rows-min">
               <DatabaseStatusCard isLoading={isLoadingApiKeys} isError={isErrorApiKeys} />
               <APIKeyStatusCard 
                 configuredKeys={configuredApiKeys} 
