@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl, Settings } from '@/services/settingsService'; // Import Settings interface
+import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl, Settings } from '@/services/settingsService';
 import { getAPIKeys, saveAPIKeys, APIKeys } from '@/services/apiKeyService';
 import {
   testShodanAPI,
@@ -154,7 +154,7 @@ const AppSettings = () => {
     if (!key) {
       toast({
         title: "Error",
-        description: `Please enter a ${service} API key first.`,
+        description: `Please enter a ${String(service)} API key first.`, // Cast service to string
         variant: "destructive",
       });
       return;
@@ -177,13 +177,13 @@ const AppSettings = () => {
       if (result.success) {
         setApiKeyTestStatus(prev => ({ ...prev, [service]: 'success' }));
         toast({
-          title: `${service} API Test Successful`,
+          title: `${String(service)} API Test Successful`, // Cast service to string
           description: result.message || 'API key is valid.',
         });
       } else {
         setApiKeyTestStatus(prev => ({ ...prev, [service]: 'error' }));
         toast({
-          title: `${service} API Test Failed`,
+          title: `${String(service)} API Test Failed`, // Cast service to string
           description: result.message || 'API key is invalid or an error occurred.',
           variant: "destructive",
         });
@@ -191,7 +191,7 @@ const AppSettings = () => {
     } catch (error: any) {
       setApiKeyTestStatus(prev => ({ ...prev, [service]: 'error' }));
       toast({
-        title: `${service} API Test Failed`,
+        title: `${String(service)} API Test Failed`, // Cast service to string
         description: error.message || 'An unexpected error occurred during the test.',
         variant: "destructive",
       });

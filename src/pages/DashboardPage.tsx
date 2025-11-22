@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, History, Shield, Zap, AlertTriangle, CheckCircle, Loader2, LogOut, User, CalendarDays, Pause, Play, Trash2, Clock as ClockIcon, Repeat } from 'lucide-react'; // Added CalendarDays, Pause, Play, Trash2, ClockIcon, Repeat
+import { PlusCircle, History, Shield, Zap, AlertTriangle, CheckCircle, Loader2, LogOut, User, CalendarDays, Pause, Play, Trash2, Clock as ClockIcon, Repeat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
@@ -15,8 +15,8 @@ import DatabaseStatusCard from '@/components/DatabaseStatusCard';
 import APIKeyStatusCard from '@/components/APIKeyStatusCard';
 import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard';
 import CurrentDateTime from '@/components/CurrentDateTime';
-import { getScheduledScans, updateScheduledScan, deleteScheduledScan, ScheduledScan } from '@/services/scheduledScanService'; // Import scheduled scan services
-import { format } from 'date-fns'; // Import format from date-fns
+import { getScheduledScans, updateScheduledScan, deleteScheduledScan, ScheduledScan } from '@/services/scheduledScanService';
+import { format } from 'date-fns';
 
 const DashboardPage = () => {
   const { toast } = useToast();
@@ -28,10 +28,10 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const fetchUserAndSession = async () => {
-      const { data: { user, session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      if (user) {
-        setUserEmail(user.email);
+      if (session?.user) { // Access user from session
+        setUserEmail(session.user.email);
       }
     };
     fetchUserAndSession();
@@ -46,7 +46,7 @@ const DashboardPage = () => {
   const { data: scheduledScans = [], refetch: refetchScheduledScans } = useQuery({
     queryKey: ['scheduledScans'],
     queryFn: getScheduledScans,
-    refetchInterval: 5000, // Refresh scheduled scans every 5 seconds
+    refetchInterval: 5000,
   });
 
   const { data: apiKeys = {}, isLoading: isLoadingApiKeys, isError: isErrorApiKeys } = useQuery({

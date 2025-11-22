@@ -1,9 +1,7 @@
-"use client"
-
 import * as React from "react"
-import { OTPInput, Slot, type OTPInputProps } from "input-otp"
+import { OTPInput, type OTPInputProps } from "input-otp"
+import { Slot } from "@radix-ui/react-slot" // Corrected import for Slot
 import { Dot } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 
 const InputOTP = React.forwardRef<
@@ -23,61 +21,65 @@ const InputOTP = React.forwardRef<
 InputOTP.displayName = "InputOTP"
 
 const InputOTPGroup = React.forwardRef<
-  HTMLDivElement, // Corrected ref type
-  React.HTMLAttributes<HTMLDivElement> // Corrected props type
+  React.ElementRef<"div">,
+  React.ComponentPropsWithoutRef<"div">
 >(({ className, ...props }, ref) => (
   <div ref={ref} className={cn("flex items-center", className)} {...props} />
 ))
 InputOTPGroup.displayName = "InputOTPGroup"
 
-// Define props for InputOTPSlot directly, including those passed by input-otp's render prop
-interface InputOTPSlotProps extends React.HTMLAttributes<HTMLDivElement> {
-  char: string;
-  isActive: boolean;
-  isFocused: boolean;
-  isPlaceholder: boolean;
-  placeholderChar: string;
-  hasFakeCaret: boolean;
-  index: number;
-}
-
 const InputOTPSlot = React.forwardRef<
-  HTMLDivElement, // Corrected ref type
-  InputOTPSlotProps // Corrected props type
->(({ char, isActive, className, isFocused, isPlaceholder, placeholderChar, hasFakeCaret, index, ...props }, ref) => {
+  React.ElementRef<"div">,
+  React.ComponentPropsWithoutRef<"div"> & { index: number }
+>(({ index, className, ...props }, ref) => {
+  const inputOTPContext = React.useContext(OTPInput.Context)
+  const { char, hasValue, isActive, isFocused, isHovered, isLast } =
+    inputOTPContext.slots[index]
+
   return (
     <div
       ref={ref}
       className={cn(
         "relative flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm shadow-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-        isActive && "z-10 ring-1 ring-ring",
+        isActive && "z-10 border-primary ring-1 ring-primary",
+        isFocused && "z-10 border-primary ring-1 ring-primary",
+        isHovered && "z-10 border-primary ring-1 ring-primary",
+        isLast && "last:border-r",
         className
       )}
-      {...props} // Now 'props' should only contain standard HTMLDivElement attributes
+      {...props}
     >
       {char}
-      {isActive && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
-        </div>
+      {hasValue && !isLast && (
+        <div className="absolute right-0 top-1/2 h-4 w-px -translate-y-1/2 bg-border" />
       )}
     </div>
   )
 })
 InputOTPSlot.displayName = "InputOTPSlot"
 
-const InputOTPDot = React.forwardRef<
-  React.ElementRef<typeof Dot>,
-  React.ComponentPropsWithoutRef<typeof Dot>
+const InputOTPMarker = React.forwardRef<
+  React.ElementRef<"div">,
+  React.ComponentPropsWithoutRef<"div">
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("flex items-center justify-center", className)}
     {...props}
-  >
-    <Dot className="h-4 w-4" />
-  </div>
+  />
+))
+InputOTPMarker.displayName = "InputOTPMarker"
+
+const InputOTPDot = React.forwardRef<
+  React.ElementRef<SVGSVGElement>, // Corrected ref type to SVGSVGElement
+  React.ComponentPropsWithoutRef<typeof Dot>
+>(({ className, ...props }, ref) => (
+  <Dot
+    ref={ref}
+    className={cn("h-4 w-4", className)}
+    {...props}
+  />
 ))
 InputOTPDot.displayName = "InputOTPDot"
 
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPDot }
+export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPMarker, InputOTPDot }
