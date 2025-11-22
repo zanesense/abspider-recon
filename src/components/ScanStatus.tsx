@@ -88,7 +88,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     (scan.results.wordpress?.vulnerabilities && scan.results.wordpress.vulnerabilities.length > 0) ||
     (scan.results.virustotal?.reputation !== undefined && scan.results.virustotal.reputation < 0) ||
     (scan.results.sslTls?.isExpired) ||
-    (scan.results.corsMisconfig?.vulnerable && scan.results.corsMisconfig.vulnerabilities.length > 0); // New
+    (scan.results.corsMisconfig?.vulnerable && scan.results.corsMisconfig.vulnerabilities.length > 0);
 
   const moduleIcons: Record<string, React.ElementType> = {
     siteInfo: Globe,
@@ -109,9 +109,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     ddosFirewall: Zap,
     virustotal: Link,
     sslTls: Lock,
-    techStack: Fingerprint, // New
-    brokenLinks: LinkIcon, // New
-    corsMisconfig: Bug, // New
+    techStack: Fingerprint,
+    brokenLinks: LinkIcon,
+    corsMisconfig: Bug,
   };
 
   const moduleLabels: Record<string, string> = {
@@ -133,9 +133,9 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     ddosFirewall: 'DDoS Firewall',
     virustotal: 'VirusTotal',
     sslTls: 'SSL/TLS',
-    techStack: 'Tech Stack', // New
-    brokenLinks: 'Broken Links', // New
-    corsMisconfig: 'CORS Misconfig', // New
+    techStack: 'Tech Stack',
+    brokenLinks: 'Broken Links',
+    corsMisconfig: 'CORS Misconfig',
   };
 
   return (
@@ -204,7 +204,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
                 {scan.progress.current} / {scan.progress.total}
               </span>
             </div>
-            <Progress value={progressPercentage} className="h-2 bg-muted" indicatorColor="bg-primary" />
+            <Progress value={progressPercentage} className="h-2 bg-muted" /> {/* Removed indicatorColor */}
           </div>
         )}
 
@@ -214,7 +214,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
             {Object.entries(scan.config).map(([key, value]) => {
               if (value === true && moduleLabels[key]) {
                 const Icon = moduleIcons[key];
-                const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls', 'corsMisconfig'].includes(key); // Updated
+                const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls', 'corsMisconfig'].includes(key);
                 const isSecurityModule = ['ddosFirewall'].includes(key);
                 return (
                   <Badge 

@@ -8,7 +8,7 @@ export interface LFIScanResult {
   vulnerabilities: Array<{
     payload: string;
     indicator: string;
-    severity: 'critical' | 'high' | 'medium';
+    severity: 'critical' | 'high' | 'medium' | 'catastrophic'; // Added 'catastrophic'
     type: string;
     evidence?: string;
     parameter?: string;
@@ -203,7 +203,7 @@ export const performLFIScan = async (
     let baselineLength = 0;
     let baselineStatus = 0;
     try {
-      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.scanController?.signal });
+      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager?.scanController?.signal });
       result.corsMetadata = baselineResult.metadata;
       const baselineText = await baselineResult.response.text();
       baselineLength = baselineText.length;
@@ -217,7 +217,7 @@ export const performLFIScan = async (
 
     for (const paramKey of paramKeys) {
       for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
-        if (requestManager.scanController?.signal.aborted) {
+        if (requestManager?.scanController?.signal.aborted) {
           throw new Error('Scan aborted');
         }
 
@@ -234,7 +234,7 @@ export const performLFIScan = async (
           if (requestManager) {
             response = await requestManager.fetch(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal });
           } else {
-            const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal });
+            const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager?.scanController?.signal });
             response = testResult.response;
           }
           
@@ -276,11 +276,11 @@ export const performLFIScan = async (
                 result.vulnerabilities.push({
                   payload,
                   indicator: 'Significant response size increase',
-                  severity: 'medium',
+                  severity: 'medium', // Lower confidence for size change alone
                   type,
                   evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, +${percentDiff.toFixed(1)}%)`,
                   parameter: paramKey,
-                  confidence: 0.6, // Lower confidence for size change alone
+                  confidence: 0.6, // Lower confidence
                 });
               }
             }
@@ -315,7 +315,7 @@ export const performLFIScan = async (
 
     result.vulnerabilities = result.vulnerabilities.filter(v => v.confidence >= 0.7);
 
-    console.log(`[LFI Scan] Complete: ${result.vulnerabilities.length} vulnerabilities from ${result.testedPayloads} tests`);
+    console.log(`[LFI Scan] Complete: ${result.vulnerabilities.length} high-confidence vulnerabilities from ${result.testedPayloads} tests`);
     return result;
   } catch (error: any) {
     if (error.message === 'Scan aborted') {

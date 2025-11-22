@@ -8,7 +8,7 @@ export interface SQLScanResult {
   vulnerabilities: Array<{
     payload: string;
     indicator: string;
-    severity: 'critical' | 'high' | 'medium' | 'low' | 'catastrophic';
+    severity: 'critical' | 'high' | 'medium' | 'low' | 'catastrophic'; // Added 'critical' and 'catastrophic'
     type: string;
     evidence?: string;
     parameter?: string;
@@ -181,7 +181,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
     let baselineLength = 0;
     
     try {
-      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.scanController?.signal }); // Pass signal
+      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.scanController?.signal });
       result.corsMetadata = baselineResult.metadata;
       baselineResponse = baselineResult.response;
       baselineText = await baselineResponse.text();
@@ -212,7 +212,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
 
           // Time-based testing
           if (type.includes('Time-based Blind')) { // Check for time-based payloads
-            const { vulnerable, duration } = await testTimeBased(testUrl.toString(), requestManager); // Pass requestManager
+            const { vulnerable, duration } = await testTimeBased(testUrl.toString(), requestManager);
             
             if (vulnerable) {
               console.log(`[SQL Scan] ⚠️ CRITICAL: Time-based SQL injection confirmed (${duration}ms delay)`);
@@ -234,7 +234,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
           }
 
           // Error-based and other testing
-          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal }); // Pass signal
+          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal });
           const response = testResult.response;
           result.testedPayloads++;
 

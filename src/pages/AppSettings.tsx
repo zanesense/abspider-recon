@@ -17,6 +17,7 @@ import {
   testBuiltWithAPI,
   testClearbitAPI,
   testOpenCageAPI,
+  testHunterAPI, // Import testHunterAPI
 } from '@/services/apiTestService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -154,13 +155,13 @@ const AppSettings = () => {
     if (!key) {
       toast({
         title: "Error",
-        description: `Please enter a ${String(service)} API key first.`, // Cast service to string
+        description: `Please enter a ${String(service)} API key first.`,
         variant: "destructive",
       });
       return;
     }
 
-    setApiKeyTestStatus(prev => ({ ...prev, [service]: 'testing' }));
+    setApiKeyTestStatus(prev => ({ ...prev, [service]: 'testing' as const })); // Explicitly cast
 
     try {
       let result;
@@ -171,27 +172,28 @@ const AppSettings = () => {
         case 'builtwith': result = await testBuiltWithAPI(key); break;
         case 'clearbit': result = await testClearbitAPI(key); break;
         case 'opencage': result = await testOpenCageAPI(key); break;
+        case 'hunterio': result = await testHunterAPI(key); break; // Add Hunter.io test
         default: throw new Error('Unknown API service');
       }
 
       if (result.success) {
-        setApiKeyTestStatus(prev => ({ ...prev, [service]: 'success' }));
+        setApiKeyTestStatus(prev => ({ ...prev, [service]: 'success' as const })); // Explicitly cast
         toast({
-          title: `${String(service)} API Test Successful`, // Cast service to string
+          title: `${String(service)} API Test Successful`,
           description: result.message || 'API key is valid.',
         });
       } else {
-        setApiKeyTestStatus(prev => ({ ...prev, [service]: 'error' }));
+        setApiKeyTestStatus(prev => ({ ...prev, [service]: 'error' as const })); // Explicitly cast
         toast({
-          title: `${String(service)} API Test Failed`, // Cast service to string
+          title: `${String(service)} API Test Failed`,
           description: result.message || 'API key is invalid or an error occurred.',
           variant: "destructive",
         });
       }
     } catch (error: any) {
-      setApiKeyTestStatus(prev => ({ ...prev, [service]: 'error' }));
+      setApiKeyTestStatus(prev => ({ ...prev, [service]: 'error' as const })); // Explicitly cast
       toast({
-        title: `${String(service)} API Test Failed`, // Cast service to string
+        title: `${String(service)} API Test Failed`,
         description: error.message || 'An unexpected error occurred during the test.',
         variant: "destructive",
       });
@@ -203,13 +205,13 @@ const AppSettings = () => {
     if (status === 'testing') return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
     if (status === 'success') return <CheckCircle className="h-4 w-4 text-green-500" />;
     if (status === 'error') return <XCircle className="h-4 w-4 text-red-500" />;
-    if (apiKeys[service]) return <CheckCircle className="h-4 w-4 text-muted-foreground/70" />; // Key is present but not tested
-    return <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />; // Key is missing
+    if (apiKeys[service]) return <CheckCircle className="h-4 w-4 text-muted-foreground/70" />;
+    return <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />;
   };
 
   const isTestingAPI = (service: APIKeyService) => apiKeyTestStatus[service] === 'testing';
 
-  const totalApiKeys = 6; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Clearbit
+  const totalApiKeys = 7; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit
   const configuredApiKeys = Object.values(apiKeys).filter(key => typeof key === 'string' && key.trim().length > 0).length;
 
 
@@ -507,6 +509,34 @@ const AppSettings = () => {
                     className="bg-background border-border focus:border-primary focus:ring-primary"
                   />
                   <p className="text-xs text-muted-foreground">Enhanced geocoding, reverse geocoding, and detailed location data</p>
+                </div>
+
+                {/* Hunter.io */}
+                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="hunterio" className="text-base font-semibold">Hunter.io API Key</Label>
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon('hunterio')}
+                      <Button
+                        onClick={() => handleTestAPIKey('hunterio')}
+                        disabled={isTestingAPI('hunterio')}
+                        variant="outline"
+                        size="sm"
+                        className="border-border text-foreground hover:bg-muted/50"
+                      >
+                        {isTestingAPI('hunterio') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <Input
+                    id="hunterio"
+                    type="password"
+                    placeholder="Enter Hunter.io API key"
+                    value={apiKeys.hunterio || ''}
+                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, hunterio: e.target.value as string })}
+                    className="bg-background border-border focus:border-primary focus:ring-primary"
+                  />
+                  <p className="text-xs text-muted-foreground">Email discovery, domain search, and email verification</p>
                 </div>
 
                 {/* Clearbit */}

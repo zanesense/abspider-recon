@@ -8,7 +8,7 @@ export interface XSSScanResult {
   vulnerabilities: Array<{
     payload: string;
     location: string;
-    severity: 'critical' | 'high' | 'medium' | 'low';
+    severity: 'critical' | 'high' | 'medium' | 'low'; // Added 'critical'
     type: string;
     evidence?: string;
     parameter?: string;
@@ -203,7 +203,7 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
 
           console.log(`[XSS Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 40)}...`);
 
-          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal }); // Pass signal
+          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal });
           if (!result.corsMetadata) {
             result.corsMetadata = testResult.metadata;
           }

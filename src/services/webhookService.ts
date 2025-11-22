@@ -58,11 +58,12 @@ export const sendDiscordWebhook = async (scan: Scan) => {
     }
 
     if (scan.results.headers) {
-      const analysis = scan.results.headers._analysis;
-      if (analysis) {
+      // Directly use scan.results.headers as it contains the analysis
+      const headersAnalysis = scan.results.headers; 
+      if (headersAnalysis?.securityHeaders) {
         embed.fields.push({
           name: '🔒 Security Headers',
-          value: `${analysis.securityHeaders.present.length} present, ${analysis.securityHeaders.missing.length} missing`,
+          value: `${headersAnalysis.securityHeaders.present.length} present, ${headersAnalysis.securityHeaders.missing.length} missing`,
           inline: true,
         });
       }
@@ -71,7 +72,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
     if (scan.results.subdomains) {
       embed.fields.push({
         name: '🌐 Subdomains',
-        value: `${scan.results.subdomains.subdomains.length} discovered`, // Corrected to access subdomains array
+        value: `${scan.results.subdomains.subdomains.length} discovered`,
         inline: true,
       });
     }

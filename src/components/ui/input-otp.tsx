@@ -1,7 +1,9 @@
+"use client"
+
 import * as React from "react"
-import { OTPInput, type OTPInputProps } from "input-otp"
-import { Slot } from "@radix-ui/react-slot" // Corrected import for Slot
+import { OTPInput, OTPInputContext } from "input-otp"
 import { Dot } from "lucide-react"
+
 import { cn } from "@/lib/utils"
 
 const InputOTP = React.forwardRef<
@@ -30,56 +32,43 @@ InputOTPGroup.displayName = "InputOTPGroup"
 
 const InputOTPSlot = React.forwardRef<
   React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div"> & { index: number }
+  React.ComponentPropsWithoutRef<"div">
 >(({ index, className, ...props }, ref) => {
-  const inputOTPContext = React.useContext(OTPInput.Context)
+  const inputOTPContext = React.useContext(OTPInputContext) // Corrected to use OTPInputContext
   const { char, hasValue, isActive, isFocused, isHovered, isLast } =
-    inputOTPContext.slots[index]
+    inputOTPContext.slots[index] // Access slots from context
 
   return (
     <div
       ref={ref}
       className={cn(
         "relative flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm shadow-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-        isActive && "z-10 border-primary ring-1 ring-primary",
-        isFocused && "z-10 border-primary ring-1 ring-primary",
-        isHovered && "z-10 border-primary ring-1 ring-primary",
-        isLast && "last:border-r",
+        isActive && "z-10 ring-1 ring-ring",
         className
       )}
       {...props}
     >
       {char}
       {hasValue && !isLast && (
-        <div className="absolute right-0 top-1/2 h-4 w-px -translate-y-1/2 bg-border" />
+        <Dot className="absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2" />
       )}
     </div>
   )
 })
 InputOTPSlot.displayName = "InputOTPSlot"
 
-const InputOTPMarker = React.forwardRef<
+const InputOTPSeparator = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div">
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center justify-center", className)}
+    className={cn("-mx-2 flex items-center justify-center", className)}
     {...props}
-  />
+  >
+    <Dot />
+  </div>
 ))
-InputOTPMarker.displayName = "InputOTPMarker"
+InputOTPSeparator.displayName = "InputOTPSeparator"
 
-const InputOTPDot = React.forwardRef<
-  React.ElementRef<SVGSVGElement>, // Corrected ref type to SVGSVGElement
-  React.ComponentPropsWithoutRef<typeof Dot>
->(({ className, ...props }, ref) => (
-  <Dot
-    ref={ref}
-    className={cn("h-4 w-4", className)}
-    {...props}
-  />
-))
-InputOTPDot.displayName = "InputOTPDot"
-
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPMarker, InputOTPDot }
+export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator }

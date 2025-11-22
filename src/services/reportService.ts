@@ -896,7 +896,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
         }),
         new Paragraph({
           text: 'Comprehensive Security Assessment Report',
-          heading: HeadingLevel.HEADING1,
+          heading: HeadingLevel.HEADING_1, // Corrected to HEADING_1
           alignment: AlignmentType.CENTER,
         }),
         new Paragraph({
@@ -906,7 +906,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
         }),
         new Paragraph({
           text: 'Executive Summary',
-          heading: HeadingLevel.HEADING2,
+          heading: HeadingLevel.HEADING_2, // Corrected to HEADING_2
           spacing: { after: 100 },
         }),
         new Paragraph({
@@ -922,7 +922,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
         ...(recommendations.length > 0 ? [
           new Paragraph({
             text: 'Security Recommendations',
-            heading: HeadingLevel.HEADING2,
+            heading: HeadingLevel.HEADING_2, // Corrected to HEADING_2
             spacing: { after: 100 },
           }),
           ...recommendations.map(rec => new Paragraph({ text: rec })),
@@ -933,13 +933,11 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
   });
 
   const buffer = await Packer.toBuffer(doc);
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  // Convert Buffer to ArrayBuffer before creating Blob
+  const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
   if (returnContent) {
-    // For DOCX, we can't easily return a data URL for direct iframe display.
-    // Instead, we'll return a placeholder or a base64 representation if needed,
-    // but for a simple text preview, we'll extract text.
-    // For now, let's return a message indicating it's not directly previewable as text.
     return "DOCX reports are not directly previewable as text. Please download to view.";
   } else {
     saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.docx`);

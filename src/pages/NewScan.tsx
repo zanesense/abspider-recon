@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle, Mail, Lock, Fingerprint, Link as LinkIcon, Bug } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { startScan } from '@/services/scanService';
+import { startScan, ScanConfig } from '@/services/scanService'; // Import ScanConfig
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -49,9 +49,9 @@ const scanFormSchema = z.object({
   ddosFirewall: z.boolean(),
   virustotal: z.boolean(),
   sslTls: z.boolean(),
-  techStack: z.boolean(), // New module
-  brokenLinks: z.boolean(), // New module
-  corsMisconfig: z.boolean(), // New module
+  techStack: z.boolean(),
+  brokenLinks: z.boolean(),
+  corsMisconfig: z.boolean(),
   xssPayloads: z.number().min(1).max(100).default(20),
   sqliPayloads: z.number().min(1).max(100).default(20),
   lfiPayloads: z.number().min(1).max(100).default(20),
@@ -127,9 +127,9 @@ const NewScan = () => {
       ddosFirewall: false,
       virustotal: false,
       sslTls: false,
-      techStack: false, // Default to false
-      brokenLinks: false, // Default to false
-      corsMisconfig: false, // Default to false
+      techStack: false,
+      brokenLinks: false,
+      corsMisconfig: false,
       xssPayloads: 20,
       sqliPayloads: 20,
       lfiPayloads: 20,
@@ -153,8 +153,11 @@ const NewScan = () => {
         if (!data.scanName || !data.scheduleFrequency || !data.scheduleStartDate || !data.scheduleStartTime) {
           throw new Error("Missing scheduling details.");
         }
-        const { scanName, scheduleFrequency, scheduleStartDate, scheduleStartTime, ...scanConfig } = data;
-        addScheduledScan(scanName, scanConfig, {
+        // Extract scheduling fields and ensure remaining data matches ScanConfig
+        const { scanName, scheduleFrequency, scheduleStartDate, scheduleStartTime, scheduleScan, ...scanConfig } = data;
+        
+        // Explicitly cast to ScanConfig to satisfy the type
+        addScheduledScan(scanName, scanConfig as ScanConfig, {
           frequency: scheduleFrequency,
           startDate: scheduleStartDate,
           startTime: scheduleStartTime,
@@ -165,7 +168,8 @@ const NewScan = () => {
         });
         navigate('/dashboard');
       } else {
-        const scanId = await startScan(data);
+        // Explicitly cast to ScanConfig to satisfy the type
+        const scanId = await startScan(data as ScanConfig);
         toast({
           title: "Scan Started",
           description: `Scanning ${data.target}...`,

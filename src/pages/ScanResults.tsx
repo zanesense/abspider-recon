@@ -48,7 +48,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
-import { generateReportContent } from '@/utils/reportUtils'; // Import the new utility function
+import { generateReportContent } from '@/utils/reportUtils';
 
 type ReportFormat = 'pdf' | 'docx' | 'md' | 'csv';
 
@@ -213,7 +213,7 @@ const ScanResults = () => {
             <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
           <Button 
-            onClick={() => setShowDownloadDialog(true)} // Open dialog
+            onClick={() => setShowDownloadDialog(true)}
             disabled={scan.status === 'running' || scan.status === 'paused'} 
             className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
           >
@@ -300,13 +300,13 @@ const ScanResults = () => {
               />
               <SQLVulnerabilities 
                 sqlinjection={scan.results.sqlinjection} 
-                isTested={scan.config.sqlinjection} 
-                moduleError={getModuleError('sqlinjection')} 
+                isTested={scan.config.sqlinjection}
+                moduleError={getModuleError('sqlinjection')}
               />
               <XSSVulnerabilities 
                 xss={scan.results.xss} 
-                isTested={scan.config.xss} 
-                moduleError={getModuleError('xss')} 
+                isTested={scan.config.xss}
+                moduleError={getModuleError('xss')}
               />
               <LFIVulnerabilities 
                 lfi={scan.results.lfi} 

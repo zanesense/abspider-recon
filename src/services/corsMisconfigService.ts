@@ -14,6 +14,7 @@ export interface CorsMisconfigResult {
   tested: boolean;
   vulnerable: boolean;
   vulnerabilities: CorsMisconfigVulnerability[];
+  errors?: string[]; // Added errors property
   corsMetadata?: any; // From fetchWithBypass
 }
 
@@ -32,6 +33,7 @@ export const performCorsMisconfigScan = async (target: string, requestManager: R
     tested: true,
     vulnerable: false,
     vulnerabilities: [],
+    errors: [], // Initialize errors array
   };
 
   const url = normalizeUrl(target);
@@ -62,6 +64,7 @@ export const performCorsMisconfigScan = async (target: string, requestManager: R
       }
     } catch (e: any) {
       console.warn(`[CORS Misconfig] Error checking wildcard origin: ${e.message}`);
+      result.errors?.push(`Wildcard origin check failed: ${e.message}`);
     }
 
     // 2. Test for dynamic origin reflection and null origin
@@ -103,6 +106,7 @@ export const performCorsMisconfigScan = async (target: string, requestManager: R
         }
       } catch (e: any) {
         console.warn(`[CORS Misconfig] Error testing origin ${origin}: ${e.message}`);
+        result.errors?.push(`Origin test for ${origin} failed: ${e.message}`);
       }
       await new Promise(resolve => setTimeout(resolve, 200)); // Small delay
     }
