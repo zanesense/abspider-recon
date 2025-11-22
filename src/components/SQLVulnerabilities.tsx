@@ -13,7 +13,7 @@ interface SQLVulnerabilitiesProps {
     vulnerabilities: Array<{
       payload: string;
       indicator: string;
-      severity: 'high' | 'medium' | 'low';
+      severity: 'critical' | 'high' | 'medium' | 'low' | 'catastrophic'; // Updated severity types
       type?: string;
       evidence?: string;
     }>;
@@ -30,6 +30,8 @@ const SQLVulnerabilities = ({ sqlinjection, isTested, moduleError }: SQLVulnerab
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
+      case 'critical':
+      case 'catastrophic': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
       case 'high': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
       case 'medium': return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
       case 'low': return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';

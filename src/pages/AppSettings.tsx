@@ -28,7 +28,7 @@ const AppSettings = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
-  const [apiKeyTestStatus, setApiKeyTestStatus] = useState<Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>>({});
+  const [apiKeyTestStatus, setApiKeyTestStatus] = useState<Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>>({} as Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>);
 
   // Fetch general settings using react-query
   const { data: settings = { discordWebhook: '', proxyList: '', defaultThreads: 20, timeout: 30 }, isLoading: isLoadingSettings, isError: isErrorSettings } = useQuery<Settings>({

@@ -11,7 +11,7 @@ interface XSSVulnerabilitiesProps {
     vulnerabilities: Array<{
       payload: string;
       location: string;
-      severity: 'high' | 'medium' | 'low';
+      severity: 'critical' | 'high' | 'medium' | 'low'; // Updated severity types
       type?: string;
       evidence?: string;
     }>;
@@ -26,6 +26,7 @@ const XSSVulnerabilities = ({ xss, isTested, moduleError }: XSSVulnerabilitiesPr
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
+      case 'critical':
       case 'high': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
       case 'medium': return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
       case 'low': return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';

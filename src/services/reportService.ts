@@ -934,7 +934,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
 
   const buffer = await Packer.toBuffer(doc);
   // Fix TS2322: Ensure we get a standard ArrayBuffer from the Buffer
-  const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
   const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
   if (returnContent) {

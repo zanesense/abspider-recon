@@ -12,7 +12,7 @@ interface LFIVulnerabilitiesProps {
     vulnerabilities: Array<{
       payload: string;
       indicator: string;
-      severity: 'critical' | 'high' | 'medium';
+      severity: 'critical' | 'high' | 'medium' | 'catastrophic'; // Updated severity types
       type: string;
       evidence?: string;
       parameter?: string;
@@ -28,7 +28,8 @@ const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesPr
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
-      case 'critical': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
+      case 'critical':
+      case 'catastrophic': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
       case 'high': return 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30';
       case 'medium': return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
       default: return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';

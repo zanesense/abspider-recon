@@ -21,6 +21,16 @@ const InputOTP = React.forwardRef<
 ))
 InputOTP.displayName = "InputOTP"
 
+// Define the expected structure of the slot object from OTPInputContext
+interface SlotContextProps {
+  char: string;
+  hasValue: boolean;
+  isActive: boolean;
+  isFocused: boolean;
+  isHovered: boolean;
+  isLast: boolean;
+}
+
 interface InputOTPSlotProps extends React.ComponentPropsWithoutRef<"div"> {
   index: number;
 }
@@ -30,9 +40,9 @@ const InputOTPSlot = React.forwardRef<
   InputOTPSlotProps
 >(({ index, className, ...props }, ref) => {
   const inputOTPContext = React.useContext(OTPInputContext)
-  // Destructure properties from the slot object provided by the context
+  // Destructure properties from the slot object provided by the context, casting to the expected type
   const { char, hasValue, isActive, isFocused, isHovered, isLast } =
-    inputOTPContext.slots[index]
+    inputOTPContext.slots[index] as SlotContextProps
 
   return (
     <div
