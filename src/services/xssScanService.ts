@@ -71,7 +71,7 @@ const checkReflection = (response: string, payload: string): {
     const index = lowerResponse.indexOf(lowerPayload);
     const contextSnippet = response.substring(Math.max(0, index - 150), Math.min(response.length, index + payload.length + 150));
     
-    let confidence = 0.5; // Default confidence for direct reflection
+    let confidence = 0.7; // Default confidence for direct reflection (Raised from 0.5 to 0.7 for better detection)
     let contextType = 'Direct reflection in HTML (potential XSS)';
     
     // Check if in dangerous context
@@ -92,7 +92,7 @@ const checkReflection = (response: string, payload: string): {
       context: contextType,
       evidence: contextSnippet.substring(0, 300),
       encoded: false,
-      confidence: isDangerousContext ? 0.95 : 0.5, // Adjust confidence based on context
+      confidence: isDangerousContext ? 0.95 : 0.7, // Use 0.7 for general unencoded reflection
     };
   }
 
