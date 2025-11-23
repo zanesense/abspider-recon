@@ -17,6 +17,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/SupabaseClient';
 import { useToast } from '@/hooks/use-toast';
+import ProfileCardPopover from './ProfileCardPopover'; // Import ProfileCardPopover
 
 export function AppSidebar() {
   const location = useLocation();
@@ -102,13 +103,17 @@ export function AppSidebar() {
                   <Activity className="h-3 w-3 text-green-500 animate-pulse" />
                   <span className="text-green-500 font-medium">Online</span>
                 </div>
-              </div>
+              </div >
             </div >
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       
       <SidebarFooter className="border-t border-border p-4 space-y-2">
+        {/* Profile Card Popover moved here */}
+        <div className="flex items-center justify-center">
+          <ProfileCardPopover />
+        </div>
         {!session && (
           <Button
             asChild
