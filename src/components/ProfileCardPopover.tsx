@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { CircleUser, LogOut, Settings, Loader2, Mail, Calendar, Shield, KeyRound } from 'lucide-react';
+import { CircleUser, LogOut, Settings, Loader2, Mail, Calendar, Shield, KeyRound, ChevronDown } from 'lucide-react'; // Added ChevronDown
 import { format } from 'date-fns';
 
 interface UserProfile {
@@ -106,14 +106,24 @@ const ProfileCardPopover = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 p-0 border-2 border-transparent hover:border-primary/50 transition-colors">
-          {userProfile.initials.length > 1 ? (
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
-              {userProfile.initials}
+        <Button
+          variant="ghost"
+          className="w-full h-auto p-2 flex items-center justify-between rounded-lg border border-transparent hover:border-primary/50 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            {userProfile.initials.length > 1 ? (
+              <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm flex-shrink-0">
+                {userProfile.initials}
+              </div>
+            ) : (
+              <CircleUser className="h-9 w-9 text-primary flex-shrink-0" />
+            )}
+            <div className="flex flex-col items-start overflow-hidden">
+              <p className="text-sm font-semibold text-foreground truncate w-full text-left">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate w-full text-left">{userProfile.email}</p>
             </div>
-          ) : (
-            <CircleUser className="h-8 w-8 text-primary" />
-          )}
+          </div>
+          <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 p-4 bg-card border-border shadow-2xl" align="end">

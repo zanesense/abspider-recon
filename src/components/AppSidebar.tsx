@@ -111,7 +111,7 @@ export function AppSidebar() {
       
       <SidebarFooter className="border-t border-border p-4 space-y-2">
         {/* Profile Card Popover moved here */}
-        <div className="flex items-center justify-center">
+        <div> {/* Removed justify-center as the button will be w-full */}
           <ProfileCardPopover />
         </div>
         {!session && (
