@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { History, Shield, AlertTriangle, Search, Filter, Trash2, Loader2 } from 'lucide-react';
+import { History, Shield, AlertTriangle, Search, Filter, Trash2, Loader2, StopCircle } from 'lucide-react';
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory, deleteAllScans } from '@/services/scanService';
 import ScanOverviewCards from '@/components/ScanOverviewCards';
@@ -141,6 +141,7 @@ const AllScans = () => {
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="failed">Failed</SelectItem>
               <SelectItem value="paused">Paused</SelectItem>
+              <SelectItem value="stopped">Stopped</SelectItem> {/* Added 'stopped' */}
             </SelectContent>
           </Select>
         </div>

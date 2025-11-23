@@ -89,7 +89,7 @@ export interface Scan {
   user_id: string;
   target: string;
   timestamp: number;
-  status: 'running' | 'completed' | 'failed' | 'paused';
+  status: 'running' | 'completed' | 'failed' | 'paused' | 'stopped'; // Added 'stopped'
   progress?: {
     current: number;
     total: number;
@@ -138,7 +138,7 @@ const fromScanDbRow = (row: ScanDbRow): Scan => ({
   user_id: row.user_id,
   target: row.target,
   timestamp: row.timestamp,
-  status: row.status as 'running' | 'completed' | 'failed' | 'paused',
+  status: row.status as 'running' | 'completed' | 'failed' | 'paused' | 'stopped', // Added 'stopped'
   progress: row.progress,
   config: row.config,
   results: row.results,
@@ -292,7 +292,7 @@ const runScan = async (
       }
 
       if (scanController.signal.aborted) {
-        // If aborted, the outer catch/finally will set status to 'paused'
+        // If aborted, the outer catch/finally will set status to 'paused' or 'stopped'
         throw new Error('Scan execution aborted'); 
       }
 
@@ -433,7 +433,7 @@ const runScan = async (
       // Fetch the latest scan state from DB to see if it was already handled by pause/stop
       const latestScanState = await getScanById(scanId);
       
-      if (latestScanState && (latestScanState.status === 'paused' || latestScanState.status === 'failed')) {
+      if (latestScanState && (latestScanState.status === 'paused' || latestScanState.status === 'failed' || latestScanState.status === 'stopped')) { // Added 'stopped'
         // Status already set by pauseScan or stopScan, do nothing further in this catch block
         console.log(`[ScanService] Scan ${scanId} status already handled by external action (${latestScanState.status}).`);
         // Re-throw the error so the promise chain correctly rejects, but don't modify DB status again.
@@ -451,7 +451,7 @@ const runScan = async (
       await upsertScanToDatabase(currentScan);
     } finally {
       // Only remove from activeScans if it's truly finished or failed, not just paused
-      if (currentScan.status === 'completed' || currentScan.status === 'failed') {
+      if (currentScan.status === 'completed' || currentScan.status === 'failed' || currentScan.status === 'stopped') { // Added 'stopped'
         activeScans.delete(scanId);
       }
     }
@@ -512,7 +512,7 @@ export const stopScan = async (id: string) => {
     const currentScan = (await getScanById(id))!;
     const updatedScan: Scan = { 
       ...currentScan, 
-      status: 'failed', // Correctly sets to 'failed' here
+      status: 'stopped', // Changed from 'failed' to 'stopped'
       errors: [...currentScan.errors, 'Scan stopped by user'], 
       elapsedMs: Date.now() - currentScan.timestamp, 
       completedAt: Date.now() 
@@ -581,7 +581,7 @@ export const cleanupStuckScans = async (): Promise<void> => {
       .from('user_scans')
       .select('scan_id, target, timestamp, status') // Also fetch status
       .eq('user_id', session.user.id)
-      .in('status', ['running', 'paused']); // Check both running and paused
+      .in('status', ['running', 'paused']); // Only check running and paused
 
     if (error) {
       console.error('[ScanService] Error fetching active scans for cleanup:', error);

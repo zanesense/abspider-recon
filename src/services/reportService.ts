@@ -188,7 +188,12 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
     doc.text(`Duration: ${timeStr}`, 20, yPosition + 39);
   }
   
-  const statusColor = scan.status === 'completed' ? [16, 185, 129] : [239, 68, 68];
+  let statusColor;
+  switch (scan.status) {
+    case 'completed': statusColor = [16, 185, 129]; break;
+    case 'stopped': statusColor = [251, 146, 60]; break; // Orange for stopped
+    default: statusColor = [239, 68, 68]; break; // Red for failed/running/paused
+  }
   doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
@@ -914,7 +919,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
             new TextRun({ text: `Target Domain: ${scan.target}`, break: 1 }),
             new TextRun({ text: `Scan ID: ${scan.id}`, break: 1 }),
             new TextRun({ text: `Timestamp: ${new Date(scan.timestamp).toLocaleString()}`, break: 1 }),
-            new TextRun({ text: `Status: ${scan.status.toUpperCase()}`, break: 1 }),
+            new TextRun({ text: `Status: ${scan.status.toUpperCase()}`, break: 1 }), // Updated status
             new TextRun({ text: `Security Grade: ${scan.securityGrade?.toFixed(1) || 'N/A'}/10`, break: 1 }),
           ],
           spacing: { after: 200 },
@@ -950,7 +955,7 @@ export const generateMarkdownReport = (scan: Scan, returnContent: boolean = fals
   markdown += `**Target Domain:** ${scan.target}\n`;
   markdown += `**Scan ID:** ${scan.id}\n`;
   markdown += `**Generated:** ${new Date().toLocaleString()}\n`;
-  markdown += `**Status:** ${scan.status.toUpperCase()}\n`;
+  markdown += `**Status:** ${scan.status.toUpperCase()}\n`; // Updated status
   markdown += `**Security Grade:** ${scan.securityGrade?.toFixed(1) || 'N/A'}/10\n\n`;
 
   markdown += `## Executive Summary\n\n`;
@@ -1008,7 +1013,7 @@ export const generateCsvReport = (scan: Scan, returnContent: boolean = false): s
   csvContent += `Target,${escapeCsv(scan.target)}\n`;
   csvContent += `Scan ID,${escapeCsv(scan.id)}\n`;
   csvContent += `Generated,${escapeCsv(new Date().toLocaleString())}\n`;
-  csvContent += `Status,${escapeCsv(scan.status.toUpperCase())}\n`;
+  csvContent += `Status,${escapeCsv(scan.status.toUpperCase())}\n`; // Updated status
   csvContent += `Security Grade,${escapeCsv(scan.securityGrade?.toFixed(1) || 'N/A')}/10\n`;
   csvContent += `\n`;
 

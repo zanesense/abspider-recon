@@ -12,10 +12,17 @@ export const sendDiscordWebhook = async (scan: Scan) => {
     console.log('[Discord Webhook] Preparing to send scan results');
     console.log('[Discord Webhook] Webhook URL:', settings.discordWebhook.substring(0, 50) + '...');
 
+    let embedColor;
+    switch (scan.status) {
+      case 'completed': embedColor = 0x06B6D4; break; // Cyan
+      case 'stopped': embedColor = 0xF59E0B; break; // Amber/Orange
+      default: embedColor = 0xEF4444; break; // Red for failed/running/paused
+    }
+
     const embed = {
-      title: '🔍 ABSpider Reconnaissance Complete',
-      description: `Scan completed for **${scan.target}**`,
-      color: scan.status === 'completed' ? 0x06B6D4 : 0xEF4444,
+      title: '🔍 ABSpider Reconnaissance Update', // Changed title to be more general
+      description: `Scan **${scan.target}** has been **${scan.status.toUpperCase()}**`, // Updated description
+      color: embedColor,
       fields: [
         {
           name: '🎯 Target',
@@ -38,7 +45,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
           inline: true,
         },
         {
-          name: '✅ Completed',
+          name: '✅ Last Update', // Changed from Completed to Last Update
           value: scan.completedAt ? new Date(scan.completedAt).toLocaleString() : 'N/A',
           inline: true,
         },
