@@ -523,4 +523,61 @@ export const deleteAllScans = async (): Promise<void> => {
   console.log('[Delete All Scans] Successfully deleted all scans.');
 };
 
+/**
+ * Cleans up any scans that were marked as 'running' in the database
+ * but are no longer active in the current browser session.
+ * These scans are marked as 'failed'.
+ */
+export const cleanupStuckScans = async (): Promise<void> => {
+  console.log('[ScanService] Cleaning up stuck scans...');
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session?.user) {
+    console.warn('[ScanService] No active session for cleanup, skipping stuck scan cleanup.');
+    return;
+  }
+
+  try {
+    const { data: runningScansInDb, error } = await supabase
+      .from('user_scans')
+      .select('scan_id, target, timestamp')
+      .eq('user_id', session.user.id)
+      .eq('status', 'running');
+
+    if (error) {
+      console.error('[ScanService] Error fetching running scans for cleanup:', error);
+      return;
+    }
+
+    if (runningScansInDb && runningScansInDb.length > 0) {
+      for (const dbScan of runningScansInDb) {
+        if (!activeScans.has(dbScan.scan_id)) {
+          // This scan is 'running' in DB but not active in current session -> it's stuck
+          console.warn(`[ScanService] Detected stuck scan: ${dbScan.scan_id} (${dbScan.target}). Marking as failed.`);
+          const stuckScan = await getScanById(dbScan.scan_id);
+          if (stuckScan) {
+            const updatedScan: Scan = {
+              ...stuckScan,
+              status: 'failed',
+              errors: [...stuckScan.errors, 'Scan failed: Browser tab/window was closed unexpectedly.'],
+              elapsedMs: Date.now() - stuckScan.timestamp,
+              completedAt: Date.now(),
+            };
+            await upsertScanToDatabase(updatedScan);
+          }
+        }
+      }
+    }
+    console.log('[ScanService] Stuck scan cleanup complete.');
+  } catch (error: any) {
+    console.error('[ScanService] Unexpected error during stuck scan cleanup:', error.message);
+  }
+};
+
+/**
+ * Returns the number of scans currently active in the browser session.
+ */
+export const getRunningScanCount = (): number => {
+  return activeScans.size;
+};
+
 startScheduledScanChecker();
