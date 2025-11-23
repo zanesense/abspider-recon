@@ -15,7 +15,7 @@ export interface LFIScanResult {
     confidence: number;
   }>;
   tested: boolean;
-  corsMetadata?: CORSBypassMetadata;
+  corsMetadata?: CORSBypassMetadata; // Added corsMetadata
 }
 
 const LFI_ERROR_PATTERNS = [
@@ -106,6 +106,45 @@ const LFI_PAYLOADS = [
   { payload: 'file:///C:/Windows/win.ini', type: 'File URI Scheme (Windows)', severity: 'critical' as const, confidence: 0.95 },
 ];
 
+const LFI_ERROR_PATTERNS = [
+  // Linux/Unix file content signatures
+  /root:x:0:0:/i,  // /etc/passwd
+  /daemon:x:1:1:/i, // /etc/passwd
+  /bin:x:2:2:/i,    // /etc/passwd
+  /sys:x:3:3:/i,    // /etc/passwd
+  /nobody:x:/i,    // /etc/passwd
+  /\[boot loader\]/i,  // boot.ini
+  /\[extensions\]/i,  // php.ini
+  /\[fonts\]/i,  // win.ini
+  /DOCUMENT_ROOT/i,  // PHP environment
+  /LoadModule/i,  // Apache config
+  /extension=/i,  // PHP config
+  /allow_url_include/i, // PHP config
+  /disable_functions/i, // PHP config
+  /ServerRoot/i, // Apache config
+  /Listen \d+/i, // Apache config
+  /User-Agent: /i, // /proc/self/environ or access logs
+  /GET \//i, // access logs
+  
+  // Error messages indicating file access
+  /failed to open stream/i,
+  /No such file or directory/i,
+  /Permission denied/i,
+  /include_path/i,
+  /failed opening/i,
+  /Warning.*include/i,
+  /require\(\): failed opening required/i,
+  /Fatal error.*include/i,
+  /file_get_contents/i,
+  /fopen\(/i,
+  
+  // PHP wrappers exposure
+  /php:\/\/filter/i,
+  /php:\/\/input/i,
+  /data:\/\/text/i,
+  /expect:\/\//i,
+];
+
 const checkLFISignature = (response: string): { found: boolean; pattern?: string; confidence: number } => {
   const lowerResponse = response.toLowerCase();
   
@@ -191,9 +230,11 @@ export const performLFIScan = async (
     // Get baseline
     let baselineLength = 0;
     let baselineStatus = 0;
+    let corsMetadata: CORSBypassMetadata | undefined;
+    
     try {
       const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager?.scanController?.signal });
-      result.corsMetadata = baselineResult.metadata;
+      corsMetadata = baselineResult.metadata;
       const baselineText = await baselineResult.response.text();
       baselineLength = baselineText.length;
       baselineStatus = baselineResult.response.status;
@@ -201,6 +242,7 @@ export const performLFIScan = async (
     } catch (error) {
       console.warn('[LFI Scan] Could not get baseline, continuing anyway');
     }
+    result.corsMetadata = corsMetadata;
 
     const payloadsToTest = LFI_PAYLOADS.slice(0, payloadLimit);
 
@@ -220,10 +262,14 @@ export const performLFIScan = async (
           console.log(`[LFI Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 40)}...`);
 
           let response: Response;
+          let testResult;
+          
           if (requestManager) {
-            response = await requestManager.fetch(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal });
+            // Use requestManager's fetch which internally uses fetchWithBypass
+            response = await requestManager.fetch(testUrl.toString(), { timeout: 10000 });
           } else {
-            const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager?.scanController?.signal });
+            // Fallback if requestManager is not provided (shouldn't happen in normal flow)
+            testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager?.scanController?.signal });
             response = testResult.response;
           }
           
@@ -322,6 +368,7 @@ export const performLFIScan = async (
       testedPayloads: 0,
       vulnerabilities: [],
       tested: false,
+      corsMetadata: corsMetadata,
     };
   }
 };

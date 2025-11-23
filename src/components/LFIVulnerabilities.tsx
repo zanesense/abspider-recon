@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileWarning, AlertTriangle, CheckCircle2, FileText, Lightbulb } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
+import CORSBypassIndicator from './CORSBypassIndicator'; // Import CORSBypassIndicator
 
 interface LFIVulnerabilitiesProps {
   lfi?: {
@@ -18,6 +19,7 @@ interface LFIVulnerabilitiesProps {
       parameter?: string;
       confidence: number;
     }>;
+    corsMetadata?: any; // Added corsMetadata
   };
   isTested: boolean; // New prop
   moduleError?: string; // New prop
@@ -46,6 +48,7 @@ const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesPr
       moduleError={moduleError}
       hasData={hasData}
       noDataMessage="Local File Inclusion vulnerability testing not performed or no vulnerabilities detected."
+      headerActions={<CORSBypassIndicator metadata={lfi?.corsMetadata} />}
     >
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
