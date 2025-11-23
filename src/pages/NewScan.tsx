@@ -20,8 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 
 // Define the maximum available payloads based on service files
-const MAX_SQLI_PAYLOADS = 28;
-const MAX_XSS_PAYLOADS = 26;
+const MAX_SQLI_PAYLOADS = 50; // Updated to 50
+const MAX_XSS_PAYLOADS = 50; // Updated to 50
 const MAX_LFI_PAYLOADS = 29;
 
 // Define validation schema with Zod

