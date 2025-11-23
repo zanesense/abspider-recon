@@ -85,7 +85,23 @@ const DashboardPage = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      {/* The header content is now global in App.tsx */}
+      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl">
+        <SidebarTrigger />
+        <div className="flex-1">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-3">
+            <Shield className="h-7 w-7 text-blue-600 dark:text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+            ABSpider Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">Overview of your reconnaissance activities</p>
+        </div>
+        <CurrentDateTime className="hidden md:flex" />
+        <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
+          <Link to="/new-scan">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Scan
+          </Link>
+        </Button>
+      </header>
       
       <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <div className="max-w-7xl mx-auto space-y-6">
