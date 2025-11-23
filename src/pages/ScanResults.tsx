@@ -1,9 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle, FileText, FileDown, FileType, FileSpreadsheet } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getScanById, pauseScan, resumeScan, stopScan } from '@/services/scanService';
+import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle, FileText, FileDown, FileType, FileSpreadsheet, RotateCcw, RefreshCcw } from 'lucide-react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { getScanById, pauseScan, resumeScan, stopScan, startScan } from '@/services/scanService';
 import { sendDiscordWebhook } from '@/services/webhookService';
 import { useToast } from '@/hooks/use-toast';
 import ScanStatus from '@/components/ScanStatus';
@@ -145,6 +145,33 @@ const ScanResults = () => {
     toast({ title: "Scan Stopped", description: "The scan has been stopped" });
   };
 
+  const rescanMutation = useMutation({
+    mutationFn: async (config: typeof scan.config) => {
+      const newScanId = await startScan(config);
+      return newScanId;
+    },
+    onSuccess: (newScanId, config) => {
+      toast({
+        title: "Scan Initiated",
+        description: `New scan for ${config.target} started successfully.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['scanHistory'] });
+      navigate(`/scan/${newScanId}`);
+    },
+    onError: (error: any, config) => {
+      toast({
+        title: "Failed to Start Scan",
+        description: error.message || `Could not start new scan for ${config.target}.`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRetryRescan = () => {
+    if (!scan) return;
+    rescanMutation.mutate(scan.config);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full bg-background">
@@ -173,6 +200,8 @@ const ScanResults = () => {
   const getModuleError = (moduleName: string) => {
     return scan.errors.find(error => error.startsWith(`${moduleName}:`));
   };
+
+  const isScanActive = scan.status === 'running' || scan.status === 'paused';
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -212,12 +241,47 @@ const ScanResults = () => {
               </Button>
             </>
           )}
-          <Button onClick={handleSendToDiscord} disabled={scan.status === 'running' || scan.status === 'paused'} variant="outline" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
+
+          {scan.status === 'failed' && (
+            <Button
+              onClick={handleRetryRescan}
+              disabled={isScanActive || rescanMutation.isPending}
+              variant="outline"
+              size="sm"
+              className="border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20"
+            >
+              {rescanMutation.isPending ? (
+                <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4 mr-2" />
+              )}
+              Retry Scan
+            </Button>
+          )}
+
+          {scan.status === 'completed' && (
+            <Button
+              onClick={handleRetryRescan}
+              disabled={isScanActive || rescanMutation.isPending}
+              variant="outline"
+              size="sm"
+              className="border-primary text-primary hover:bg-primary/20"
+            >
+              {rescanMutation.isPending ? (
+                <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4 mr-2" />
+              )}
+              Rescan
+            </Button>
+          )}
+
+          <Button onClick={handleSendToDiscord} disabled={isScanActive} variant="outline" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
             <Send className="h-4 w-4 mr-2" /> Send to Discord
           </Button>
           <Button 
             onClick={() => setShowDownloadDialog(true)}
-            disabled={scan.status === 'running' || scan.status === 'paused'} 
+            disabled={isScanActive} 
             className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md"
           >
             <Download className="h-4 w-4 mr-2" /> Download Report
