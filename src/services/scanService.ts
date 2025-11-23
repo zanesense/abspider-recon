@@ -429,10 +429,21 @@ const runScan = async (
 
     } catch (error: any) {
       console.error(`[ScanService] Scan ${scanId} failed or was aborted:`, error);
-      const finalStatus = scanController.signal.aborted ? 'paused' : 'failed'; // Determine if it was a pause or a real failure
+      
+      // Fetch the latest scan state from DB to see if it was already handled by pause/stop
+      const latestScanState = await getScanById(scanId);
+      
+      if (latestScanState && (latestScanState.status === 'paused' || latestScanState.status === 'failed')) {
+        // Status already set by pauseScan or stopScan, do nothing further in this catch block
+        console.log(`[ScanService] Scan ${scanId} status already handled by external action (${latestScanState.status}).`);
+        // Re-throw the error so the promise chain correctly rejects, but don't modify DB status again.
+        throw error; 
+      }
+
+      // If not already handled, then it's a genuine failure within runScan
       currentScan = {
         ...currentScan,
-        status: finalStatus,
+        status: 'failed', // Always 'failed' if it wasn't explicitly paused/stopped
         errors: [...currentScan.errors, error.message],
         elapsedMs: Date.now() - currentScan.timestamp,
         completedAt: Date.now(),
@@ -501,7 +512,7 @@ export const stopScan = async (id: string) => {
     const currentScan = (await getScanById(id))!;
     const updatedScan: Scan = { 
       ...currentScan, 
-      status: 'failed', 
+      status: 'failed', // Correctly sets to 'failed' here
       errors: [...currentScan.errors, 'Scan stopped by user'], 
       elapsedMs: Date.now() - currentScan.timestamp, 
       completedAt: Date.now() 
