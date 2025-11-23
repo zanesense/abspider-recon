@@ -433,10 +433,11 @@ const runScan = async (
       // Fetch the latest scan state from DB to see if it was already handled by pause/stop
       const latestScanState = await getScanById(scanId);
       
-      if (latestScanState && (latestScanState.status === 'paused' || latestScanState.status === 'failed' || latestScanState.status === 'stopped')) { // Added 'stopped'
-        // Status already set by pauseScan or stopScan, do nothing further in this catch block
-        console.log(`[ScanService] Scan ${scanId} status already handled by external action (${latestScanState.status}).`);
-        // Re-throw the error so the promise chain correctly rejects, but don't modify DB status again.
+      // IMPORTANT: If the scan was explicitly stopped, do NOT overwrite its status to 'failed'.
+      // This handles potential race conditions where stopScan updates DB, then runScan's catch
+      // block is triggered by the abort signal.
+      if (latestScanState && latestScanState.status === 'stopped') {
+        console.log(`[ScanService] Scan ${scanId} was explicitly stopped. Not overwriting status to 'failed'.`);
         throw error; 
       }
 
