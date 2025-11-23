@@ -269,7 +269,7 @@ export const performLFIScan = async (
                   type,
                   evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, +${percentDiff.toFixed(1)}%)`,
                   parameter: paramKey,
-                  confidence: 0.6, // Lower confidence
+                  confidence: 0.7, // Increased confidence to 0.7
                 });
               }
             }

