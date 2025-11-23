@@ -18,9 +18,10 @@ import { isInternalIP, extractHostname } from '@/services/apiUtils';
 import { addScheduledScan } from '@/services/scheduledScanService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
+import PayloadCountDisplay from '@/components/PayloadCountDisplay';
 
 // Define the maximum available payloads based on service files
-const MAX_SQLI_PAYLOADS = 50; // Updated to 50
+const MAX_SQLI_PAYLOADS = 51; // Updated based on actual payload count in service file
 const MAX_XSS_PAYLOADS = 50; // Updated to 50
 const MAX_LFI_PAYLOADS = 29;
 
@@ -641,6 +642,17 @@ const NewScan = () => {
                     </label>
                   </div>
                 </div>
+                
+                {/* NEW PAYLOAD COUNT DISPLAY */}
+                <div className="mt-6">
+                  <PayloadCountDisplay 
+                    maxSqli={MAX_SQLI_PAYLOADS}
+                    maxXss={MAX_XSS_PAYLOADS}
+                    maxLfi={MAX_LFI_PAYLOADS}
+                  />
+                </div>
+                {/* END NEW PAYLOAD COUNT DISPLAY */}
+
                 {(formData.sqlinjection || formData.xss || formData.lfi) && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div className="space-y-2">
