@@ -192,7 +192,10 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
   switch (scan.status) {
     case 'completed': statusColor = [16, 185, 129]; break;
     case 'stopped': statusColor = [251, 146, 60]; break; // Orange for stopped
-    default: statusColor = [239, 68, 68]; break; // Red for failed/running/paused
+    case 'failed': statusColor = [239, 68, 68]; break; // Red for failed
+    case 'running': statusColor = [234, 179, 8]; break; // Yellow for running
+    case 'paused': statusColor = [59, 130, 246]; break; // Blue for paused
+    default: statusColor = [128, 128, 128]; break; // Gray for unknown
   }
   doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
   doc.setFont('helvetica', 'bold');

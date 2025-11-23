@@ -202,6 +202,7 @@ const ScanResults = () => {
   };
 
   const isScanActive = scan.status === 'running' || scan.status === 'paused';
+  const canRescan = scan.status === 'completed' || scan.status === 'failed' || scan.status === 'stopped'; // Enable rescan for stopped
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -242,37 +243,20 @@ const ScanResults = () => {
             </>
           )}
 
-          {scan.status === 'failed' && (
+          {canRescan && (
             <Button
               onClick={handleRetryRescan}
               disabled={isScanActive || rescanMutation.isPending}
               variant="outline"
               size="sm"
-              className="border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20"
-            >
-              {rescanMutation.isPending ? (
-                <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RotateCcw className="h-4 w-4 mr-2" />
-              )}
-              Retry Scan
-            </Button>
-          )}
-
-          {scan.status === 'completed' && (
-            <Button
-              onClick={handleRetryRescan}
-              disabled={isScanActive || rescanMutation.isPending}
-              variant="outline"
-              size="sm"
-              className="border-primary text-primary hover:bg-primary/20"
+              className={scan.status === 'failed' ? "border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20" : "border-primary text-primary hover:bg-primary/20"}
             >
               {rescanMutation.isPending ? (
                 <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <RefreshCcw className="h-4 w-4 mr-2" />
               )}
-              Rescan
+              {scan.status === 'failed' ? 'Retry Scan' : 'Rescan'}
             </Button>
           )}
 

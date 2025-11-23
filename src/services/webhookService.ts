@@ -16,7 +16,10 @@ export const sendDiscordWebhook = async (scan: Scan) => {
     switch (scan.status) {
       case 'completed': embedColor = 0x06B6D4; break; // Cyan
       case 'stopped': embedColor = 0xF59E0B; break; // Amber/Orange
-      default: embedColor = 0xEF4444; break; // Red for failed/running/paused
+      case 'failed': embedColor = 0xEF4444; break; // Red
+      case 'running': embedColor = 0xFACC15; break; // Yellow
+      case 'paused': embedColor = 0x3B82F6; break; // Blue
+      default: embedColor = 0x808080; break; // Gray for unknown
     }
 
     const embed = {
