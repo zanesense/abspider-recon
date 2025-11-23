@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 // Define the maximum available payloads based on service files
 const MAX_SQLI_PAYLOADS = 51; // Updated based on actual payload count in service file
 const MAX_XSS_PAYLOADS = 50; // Updated to 50
-const MAX_LFI_PAYLOADS = 29;
+const MAX_LFI_PAYLOADS = 65; // Updated to 65 based on expanded list
 
 // Define validation schema with Zod
 const scanFormSchema = z.object({
