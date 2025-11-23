@@ -260,17 +260,16 @@ const runScan = async (
   scanController: AbortController,
   requestManager: RequestManager
 ) => {
-  const startTime = Date.now();
+  let currentScan = (await getScanById(scanId))!; // Always fetch latest state
+
   const modulesToRun = Object.keys(config).filter(key => (config as any)[key] === true && 
     !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests'].includes(key));
   const totalStages = modulesToRun.length;
-  let completedStages = 0;
+  let completedStages = currentScan.progress?.current || 0; // Start from where it left off
 
   const settings = await getSettings();
   setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
   requestManager.setMinRequestInterval(Math.max(20, 1000 / config.threads)); 
-
-  let currentScan = (await getScanById(scanId))!;
 
   let apiKeys: APIKeys = {};
   try {
@@ -283,12 +282,21 @@ const runScan = async (
   }
 
   try {
-    for (const moduleName of modulesToRun) {
-      if (scanController.signal.aborted) {
-        throw new Error('Scan aborted by user');
+    for (let i = 0; i < modulesToRun.length; i++) {
+      const moduleName = modulesToRun[i];
+
+      // Skip modules that were already completed
+      if (i < completedStages) {
+        console.log(`[ScanService] Skipping already completed module: ${moduleName}`);
+        continue;
       }
 
-      completedStages++;
+      if (scanController.signal.aborted) {
+        // If aborted, the outer catch/finally will set status to 'paused'
+        throw new Error('Scan execution aborted'); 
+      }
+
+      completedStages++; // Increment for the module we are about to run
       currentScan = {
         ...currentScan,
         progress: {
@@ -413,35 +421,46 @@ const runScan = async (
         ...currentScan,
         status: 'completed',
         progress: { current: totalStages, total: totalStages, stage: 'Scan Completed' },
-        elapsedMs: Date.now() - startTime,
+        elapsedMs: Date.now() - currentScan.timestamp,
         completedAt: Date.now(),
       };
       await upsertScanToDatabase(currentScan);
       console.log(`[ScanService] Scan ${scanId} completed successfully. Security Grade: ${currentScan.securityGrade}`);
 
     } catch (error: any) {
-      console.error(`[ScanService] Scan ${scanId} failed:`, error);
+      console.error(`[ScanService] Scan ${scanId} failed or was aborted:`, error);
+      const finalStatus = scanController.signal.aborted ? 'paused' : 'failed'; // Determine if it was a pause or a real failure
       currentScan = {
         ...currentScan,
-        status: 'failed',
+        status: finalStatus,
         errors: [...currentScan.errors, error.message],
-        elapsedMs: Date.now() - startTime,
+        elapsedMs: Date.now() - currentScan.timestamp,
         completedAt: Date.now(),
       };
       await upsertScanToDatabase(currentScan);
     } finally {
-      activeScans.delete(scanId);
+      // Only remove from activeScans if it's truly finished or failed, not just paused
+      if (currentScan.status === 'completed' || currentScan.status === 'failed') {
+        activeScans.delete(scanId);
+      }
     }
   };
 
 export const pauseScan = async (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
-    scanEntry.controller.abort();
+    scanEntry.controller.abort(); // Abort the current execution
     const currentScan = (await getScanById(id))!;
-    const updatedScan: Scan = { ...currentScan, status: 'paused', progress: { ...currentScan.progress!, stage: 'Paused' } };
+    const updatedScan: Scan = { 
+      ...currentScan, 
+      status: 'paused', 
+      progress: { ...currentScan.progress!, stage: 'Paused' },
+      elapsedMs: Date.now() - currentScan.timestamp, // Capture elapsed time up to pause
+      completedAt: Date.now(), // Update completedAt to reflect pause time
+    };
     await upsertScanToDatabase(updatedScan);
     console.log(`[ScanService] Scan ${id} paused.`);
+    // Do NOT delete from activeScans, so it can be resumed
   }
 };
 
@@ -449,26 +468,36 @@ export const resumeScan = async (id: string) => {
   const scan = await getScanById(id);
   if (!scan || scan.status !== 'paused') {
     console.warn(`[ScanService] Cannot resume scan ${id}: not found or not paused.`);
-    return;
+    throw new Error('Cannot resume scan: not found or not paused.');
   }
 
+  // Create a new controller and request manager for the resumed execution
   const newController = new AbortController();
-  const requestManager = createRequestManager(newController);
-  activeScans.set(id, { controller: newController, promise: Promise.resolve(), requestManager });
+  const newRequestManager = createRequestManager(newController);
+  
+  // Update activeScans map with the new controller and manager
+  activeScans.set(id, { controller: newController, promise: Promise.resolve(), requestManager: newRequestManager });
 
-  const updatedScan: Scan = { ...scan, status: 'running', progress: { ...scan.progress!, stage: 'Resuming' } };
+  const updatedScan: Scan = { 
+    ...scan, 
+    status: 'running', 
+    progress: { ...scan.progress!, stage: 'Resuming scan' },
+    // Keep original timestamp, elapsedMs will be recalculated at completion
+  };
   await upsertScanToDatabase(updatedScan);
 
   console.log(`[ScanService] Resuming scan ${id}.`);
-  await runScan(scan.id, scan.config, newController, requestManager);
+  // Re-run the scan logic. It will pick up from where it left off based on `updatedScan.progress.current`.
+  await runScan(updatedScan.id, updatedScan.config, newController, newRequestManager);
 };
 
 export const stopScan = async (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
-    scanEntry.controller.abort();
-    scanEntry.requestManager.abortAll();
-    activeScans.delete(id);
+    scanEntry.controller.abort(); // Abort the current execution
+    scanEntry.requestManager.abortAll(); // Abort any pending requests
+    activeScans.delete(id); // Remove from active scans
+    
     const currentScan = (await getScanById(id))!;
     const updatedScan: Scan = { 
       ...currentScan, 
@@ -524,7 +553,7 @@ export const deleteAllScans = async (): Promise<void> => {
 };
 
 /**
- * Cleans up any scans that were marked as 'running' in the database
+ * Cleans up any scans that were marked as 'running' or 'paused' in the database
  * but are no longer active in the current browser session.
  * These scans are marked as 'failed'.
  */
@@ -537,27 +566,27 @@ export const cleanupStuckScans = async (): Promise<void> => {
   }
 
   try {
-    const { data: runningScansInDb, error } = await supabase
+    const { data: activeScansInDb, error } = await supabase
       .from('user_scans')
-      .select('scan_id, target, timestamp')
+      .select('scan_id, target, timestamp, status') // Also fetch status
       .eq('user_id', session.user.id)
-      .eq('status', 'running');
+      .in('status', ['running', 'paused']); // Check both running and paused
 
     if (error) {
-      console.error('[ScanService] Error fetching running scans for cleanup:', error);
+      console.error('[ScanService] Error fetching active scans for cleanup:', error);
       return;
     }
 
-    if (runningScansInDb && runningScansInDb.length > 0) {
-      for (const dbScan of runningScansInDb) {
+    if (activeScansInDb && activeScansInDb.length > 0) {
+      for (const dbScan of activeScansInDb) {
         if (!activeScans.has(dbScan.scan_id)) {
-          // This scan is 'running' in DB but not active in current session -> it's stuck
+          // This scan is 'running' or 'paused' in DB but not active in current session -> it's stuck
           console.warn(`[ScanService] Detected stuck scan: ${dbScan.scan_id} (${dbScan.target}). Marking as failed.`);
           const stuckScan = await getScanById(dbScan.scan_id);
           if (stuckScan) {
             const updatedScan: Scan = {
               ...stuckScan,
-              status: 'failed',
+              status: 'failed', // Always mark as failed if browser closed
               errors: [...stuckScan.errors, 'Scan failed: Browser tab/window was closed unexpectedly.'],
               elapsedMs: Date.now() - stuckScan.timestamp,
               completedAt: Date.now(),

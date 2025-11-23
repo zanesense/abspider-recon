@@ -40,7 +40,7 @@ function App() {
     // Add event listener for beforeunload
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (getRunningScanCount() > 0) {
-        const message = "You have active scans running. Closing this page will stop all ongoing scans. Are you sure you want to leave?";
+        const message = "You have active ABSpider reconnaissance scans running. Closing this page will stop all ongoing scans. Are you sure you want to leave?";
         event.returnValue = message; // Standard for browser warning
         return message; // For older browsers
       }
