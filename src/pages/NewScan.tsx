@@ -19,6 +19,11 @@ import { addScheduledScan } from '@/services/scheduledScanService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 
+// Define the maximum available payloads based on service files
+const MAX_SQLI_PAYLOADS = 28;
+const MAX_XSS_PAYLOADS = 26;
+const MAX_LFI_PAYLOADS = 29;
+
 // Define validation schema with Zod
 const scanFormSchema = z.object({
   target: z.string().min(1, { message: "Target URL or IP address is required." })
@@ -52,9 +57,9 @@ const scanFormSchema = z.object({
   techStack: z.boolean(),
   brokenLinks: z.boolean(),
   corsMisconfig: z.boolean(),
-  xssPayloads: z.number().min(1).max(100).default(20),
-  sqliPayloads: z.number().min(1).max(100).default(20),
-  lfiPayloads: z.number().min(1).max(100).default(20),
+  xssPayloads: z.number().min(1).max(MAX_XSS_PAYLOADS).default(20),
+  sqliPayloads: z.number().min(1).max(MAX_SQLI_PAYLOADS).default(20),
+  lfiPayloads: z.number().min(1).max(MAX_LFI_PAYLOADS).default(20),
   ddosRequests: z.number().min(1).max(100).default(20),
   useProxy: z.boolean(),
   threads: z.number().min(1).max(50),
@@ -639,12 +644,12 @@ const NewScan = () => {
                 {(formData.sqlinjection || formData.xss || formData.lfi) && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="sqliPayloads">SQLi Payloads ({formData.sqliPayloads})</Label>
+                      <Label htmlFor="sqliPayloads">SQLi Payloads ({formData.sqliPayloads} / {MAX_SQLI_PAYLOADS})</Label>
                       <Input
                         id="sqliPayloads"
                         type="range"
                         min="1"
-                        max="100"
+                        max={MAX_SQLI_PAYLOADS}
                         value={formData.sqliPayloads}
                         onChange={(e) => setValue('sqliPayloads', parseInt(e.target.value))}
                         className="accent-primary"
@@ -652,12 +657,12 @@ const NewScan = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="xssPayloads">XSS Payloads ({formData.xssPayloads})</Label>
+                      <Label htmlFor="xssPayloads">XSS Payloads ({formData.xssPayloads} / {MAX_XSS_PAYLOADS})</Label>
                       <Input
                         id="xssPayloads"
                         type="range"
                         min="1"
-                        max="100"
+                        max={MAX_XSS_PAYLOADS}
                         value={formData.xssPayloads}
                         onChange={(e) => setValue('xssPayloads', parseInt(e.target.value))}
                         className="accent-primary"
@@ -665,12 +670,12 @@ const NewScan = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lfiPayloads">LFI Payloads ({formData.lfiPayloads})</Label>
+                      <Label htmlFor="lfiPayloads">LFI Payloads ({formData.lfiPayloads} / {MAX_LFI_PAYLOADS})</Label>
                       <Input
                         id="lfiPayloads"
                         type="range"
                         min="1"
-                        max="100"
+                        max={MAX_LFI_PAYLOADS}
                         value={formData.lfiPayloads}
                         onChange={(e) => setValue('lfiPayloads', parseInt(e.target.value))}
                         className="accent-primary"
@@ -791,7 +796,7 @@ const NewScan = () => {
                 </div>
                 {formData.ddosFirewall && (
                   <div className="space-y-2 mt-4">
-                    <Label htmlFor="ddosRequests">DDoS Test Requests ({formData.ddosRequests})</Label>
+                    <Label htmlFor="ddosRequests">DDoS Test Requests ({formData.ddosRequests} / 100)</Label>
                     <Input
                       id="ddosRequests"
                       type="range"
@@ -844,7 +849,7 @@ const NewScan = () => {
                     </label>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="threads">Concurrent Threads: {formData.threads}</Label>
+                    <Label htmlFor="threads">Concurrent Threads: {formData.threads} / 50</Label>
                     <Input
                       id="threads"
                       type="range"

