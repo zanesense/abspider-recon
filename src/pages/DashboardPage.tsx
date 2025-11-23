@@ -17,15 +17,12 @@ import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard';
 import CurrentDateTime from '@/components/CurrentDateTime';
 import { getScheduledScans, updateScheduledScan, deleteScheduledScan, ScheduledScan } from '@/services/scheduledScanService';
 import { format } from 'date-fns';
-import ProfileCardPopover from '@/components/ProfileCardPopover'; // Import the new component
+// Removed import of ProfileCardPopover as it's now global
 
 const DashboardPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  // Removed userEmail, session, loadingLogout states as they are handled by ProfileCardPopover
-
-  // Removed useEffect for fetching user/session
 
   const { data: scans = [], refetch } = useQuery({
     queryKey: ['scanHistory'],
@@ -46,8 +43,6 @@ const DashboardPage = () => {
 
   const totalApiKeys = 7; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit
   const configuredApiKeys = Object.values(apiKeys).filter(key => typeof key === 'string' && key.trim().length > 0).length;
-
-  // Removed handleLogout function
 
   const handleToggleScheduledScanStatus = (scan: ScheduledScan) => {
     const newStatus = scan.status === 'active' ? 'paused' : 'active';
@@ -90,27 +85,7 @@ const DashboardPage = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl">
-        <SidebarTrigger />
-        <div className="flex-1">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-3">
-            <Shield className="h-7 w-7 text-blue-600 dark:text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-            ABSpider Dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Overview of your reconnaissance activities</p>
-        </div>
-        <CurrentDateTime className="hidden md:flex" />
-        <div className="flex items-center gap-2">
-          {/* Replaced email badge and logout button with ProfileCardPopover */}
-          <ProfileCardPopover /> 
-          <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
-            <Link to="/new-scan">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Scan
-            </Link>
-          </Button>
-        </div>
-      </header>
+      {/* The header content is now global in App.tsx */}
       
       <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
         <div className="max-w-7xl mx-auto space-y-6">

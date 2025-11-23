@@ -12,11 +12,11 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, LogOut, User, Loader2, CircleUser, Shield, FileText } from 'lucide-react'; // Added FileText
+import { Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, Shield, FileText } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/SupabaseClient'; // Import supabase
-import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { supabase } from '@/SupabaseClient';
+import { useToast } from '@/hooks/use-toast';
 
 export function AppSidebar() {
   const location = useLocation();
@@ -24,30 +24,20 @@ export function AppSidebar() {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const [session, setSession] = useState<any>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  // Removed loadingLogout state
+  // Removed userEmail state as it's no longer displayed here
 
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      if (session?.user?.email) {
-        setUserEmail(session.user.email);
-      }
     };
 
     getSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session?.user?.email) {
-        setUserEmail(session.user.email);
-      } else {
-        setUserEmail(null);
-        // If session is null, navigate to login (handled by RequireAuth, but good practice here too)
-        if (_event === 'SIGNED_OUT') {
-            navigate('/login');
-        }
+      if (!session && _event === 'SIGNED_OUT') {
+          navigate('/login');
       }
     });
 
@@ -60,24 +50,22 @@ export function AppSidebar() {
     { title: 'Dashboard', icon: Home, href: '/dashboard' },
     { title: 'New Scan', icon: Scan, href: '/new-scan' },
     { title: 'All Scans', icon: History, href: '/all-scans' },
-    { title: 'Reports', icon: FileText, href: '/reports' }, // New Reports tab
-    { title: 'App Settings', icon: Settings, href: '/settings' }, // Updated text
+    { title: 'Reports', icon: FileText, href: '/reports' },
+    { title: 'App Settings', icon: Settings, href: '/settings' },
   ];
-
-  // Removed handleLogout function
 
   return (
     <Sidebar className="border-r border-border bg-sidebar shadow-xl">
       <SidebarHeader className="border-b border-border bg-sidebar-accent">
         <div className="flex items-center gap-3 px-4 py-4">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
-            <Shield className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" size={28} /> {/* Changed icon to Shield */}
+            <Shield className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" size={28} />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"> {/* Increased font size and weight */}
+            <h1 className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
               ABSpider
             </h1>
-            <p className="text-sm text-gray-400">Recon Dashboard</p> {/* Adjusted font size and color */}
+            <p className="text-sm text-gray-400">Recon Dashboard</p>
           </div>
         </div>
       </SidebarHeader>
@@ -121,15 +109,7 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter className="border-t border-border p-4 space-y-2">
-        {session ? (
-          <Link 
-            to="/account-settings" 
-            className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-          >
-            <CircleUser className="h-5 w-5 text-primary" /> {/* Default PFP */}
-            <span className="truncate font-medium">{userEmail || 'Guest User'}</span>
-          </Link>
-        ) : (
+        {!session && (
           <Button
             asChild
             variant="outline"
