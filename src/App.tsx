@@ -2,7 +2,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { Routes, Route, BrowserRouter, Link } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
@@ -15,15 +15,15 @@ import AccountSettings from "@/pages/AccountSettings";
 import AllScans from "@/pages/AllScans";
 import DashboardPage from "@/pages/DashboardPage";
 import ReportsPage from "@/pages/ReportsPage";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"; // Import SidebarTrigger
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
 import RequireAuth from "@/components/RequireAuth";
-import ProfileCardPopover from "@/components/ProfileCardPopover"; // Import ProfileCardPopover
-import CurrentDateTime from "@/components/CurrentDateTime"; // Import CurrentDateTime
-import { Button } from "@/components/ui/button"; // Import Button
-import { PlusCircle, Shield } from "lucide-react"; // Import icons
+import ProfileCardPopover from "@/components/ProfileCardPopover";
+import CurrentDateTime from "@/components/CurrentDateTime";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, Shield } from "lucide-react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
