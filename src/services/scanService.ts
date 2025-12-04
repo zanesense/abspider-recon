@@ -58,6 +58,7 @@ export interface ScanConfig {
   ddosRequests: number;
   useProxy: boolean;
   threads: number;
+  smartScanEnabled: boolean; // New: Enable/disable smart scan
 }
 
 export interface ScanResults {
@@ -101,7 +102,7 @@ export interface Scan {
   elapsedMs?: number;
   completedAt?: number;
   securityGrade?: number;
-  throttleLevel: number; // Added throttleLevel
+  smartScanLevel: number; // Renamed from throttleLevel
 }
 
 interface ScanDbRow {
@@ -117,7 +118,7 @@ interface ScanDbRow {
   elapsed_ms?: number;
   completed_at?: number;
   security_grade?: number;
-  throttle_level: number; // Added throttle_level
+  smart_scan_level: number; // Mapped to DB column
 }
 
 const toScanDbRow = (scan: Scan): ScanDbRow => ({
@@ -133,7 +134,7 @@ const toScanDbRow = (scan: Scan): ScanDbRow => ({
   elapsed_ms: scan.elapsedMs,
   completed_at: scan.completedAt,
   security_grade: scan.securityGrade,
-  throttle_level: scan.throttleLevel, // Map to DB column
+  smart_scan_level: scan.smartScanLevel, // Map to DB column
 });
 
 const fromScanDbRow = (row: ScanDbRow): Scan => ({
@@ -149,7 +150,7 @@ const fromScanDbRow = (row: ScanDbRow): Scan => ({
   elapsedMs: row.elapsed_ms,
   completedAt: row.completed_at,
   securityGrade: row.security_grade,
-  throttleLevel: row.throttle_level, // Map from DB column
+  smartScanLevel: row.smart_scan_level, // Map from DB column
 });
 
 
@@ -236,12 +237,12 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     progress: {
       current: 0,
       total: Object.keys(config).filter(key => (config as any)[key] === true && 
-        !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests'].includes(key)).length
+        !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests', 'smartScanEnabled'].includes(key)).length
     , stage: 'Initializing' },
     config,
     results: {},
     errors: [],
-    throttleLevel: 0, // Initialize throttle level
+    smartScanLevel: 0, // Initialize smart scan level
   };
 
   try {
@@ -268,7 +269,7 @@ const runScan = async (
   let currentScan = (await getScanById(scanId))!;
 
   const modulesToRun = Object.keys(config).filter(key => (config as any)[key] === true && 
-    !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests'].includes(key));
+    !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests', 'smartScanEnabled'].includes(key));
   const totalStages = modulesToRun.length;
   let completedStages = currentScan.progress?.current || 0;
 
@@ -289,10 +290,10 @@ const runScan = async (
   }
 
   // Dynamic throttling parameters
-  const THROTTLE_RESPONSE_TIME_HIGH = 2000; // ms
-  const THROTTLE_RESPONSE_TIME_LOW = 500; // ms
-  const THROTTLE_ERROR_RATE_HIGH = 15; // %
-  const THROTTLE_ERROR_RATE_LOW = 5; // %
+  const SMART_SCAN_RESPONSE_TIME_HIGH = 2000; // ms
+  const SMART_SCAN_RESPONSE_TIME_LOW = 500; // ms
+  const SMART_SCAN_ERROR_RATE_HIGH = 15; // %
+  const SMART_SCAN_ERROR_RATE_LOW = 5; // %
 
   const MAX_PAYLOADS_SQLI = 51;
   const MAX_PAYLOADS_XSS = 50;
@@ -305,45 +306,54 @@ const runScan = async (
   let currentLfiPayloads = config.lfiPayloads;
   let currentDdosRequests = config.ddosRequests;
 
-  // Function to apply throttling adjustments
-  const applyThrottling = async () => {
+  // Function to apply smart scan adjustments
+  const applySmartScanAdjustments = async () => {
+    if (!config.smartScanEnabled) {
+      // If smart scan is not enabled, use user's configured values directly
+      currentSqliPayloads = config.sqliPayloads;
+      currentXssPayloads = config.xssPayloads;
+      currentLfiPayloads = config.lfiPayloads;
+      currentDdosRequests = config.ddosRequests;
+      return;
+    }
+
     const metrics = requestManager.getPerformanceMetrics();
     if (metrics.totalRequests < requestManager.metricsBufferSize / 2) {
       // Not enough data to make informed decisions yet
       return;
     }
 
-    let newThrottleLevel = currentScan.throttleLevel;
+    let newSmartScanLevel = currentScan.smartScanLevel;
     let changed = false;
 
-    // Increase throttling if performance is poor
-    if (metrics.avgResponseTime > THROTTLE_RESPONSE_TIME_HIGH || metrics.errorRate > THROTTLE_ERROR_RATE_HIGH) {
-      newThrottleLevel = Math.min(10, newThrottleLevel + 1); // Max throttle level 10
+    // Increase smartScanLevel if performance is poor
+    if (metrics.avgResponseTime > SMART_SCAN_RESPONSE_TIME_HIGH || metrics.errorRate > SMART_SCAN_ERROR_RATE_HIGH) {
+      newSmartScanLevel = Math.min(10, newSmartScanLevel + 1); // Max smart scan level 10
       changed = true;
     }
-    // Decrease throttling if performance is good
-    else if (metrics.avgResponseTime < THROTTLE_RESPONSE_TIME_LOW && metrics.errorRate < THROTTLE_ERROR_RATE_LOW) {
-      newThrottleLevel = Math.max(0, newThrottleLevel - 1); // Min throttle level 0
+    // Decrease smartScanLevel if performance is good
+    else if (metrics.avgResponseTime < SMART_SCAN_RESPONSE_TIME_LOW && metrics.errorRate < SMART_SCAN_ERROR_RATE_LOW) {
+      newSmartScanLevel = Math.max(0, newSmartScanLevel - 1); // Min smart scan level 0
       changed = true;
     }
 
     if (changed) {
-      currentScan.throttleLevel = newThrottleLevel;
-      console.log(`[ScanService] Adjusting throttle level to: ${newThrottleLevel}`);
+      currentScan.smartScanLevel = newSmartScanLevel;
+      console.log(`[ScanService] Adjusting Smart Scan Level to: ${newSmartScanLevel}`);
 
       // Adjust request rate (minRequestInterval)
-      // Higher throttleLevel means longer interval (slower requests)
-      const intervalFactor = 1 + (newThrottleLevel * 0.2); // e.g., level 0 -> 1x, level 5 -> 2x, level 10 -> 3x
+      // Higher smartScanLevel means longer interval (slower requests)
+      const intervalFactor = 1 + (newSmartScanLevel * 0.2); // e.g., level 0 -> 1x, level 5 -> 2x, level 10 -> 3x
       requestManager.adjustMinRequestInterval(Math.max(50, (1000 / config.threads) * intervalFactor));
 
-      // Adjust payload counts (reduce for higher throttle)
-      const payloadReductionFactor = 1 - (newThrottleLevel * 0.05); // e.g., level 0 -> 1x, level 5 -> 0.75x, level 10 -> 0.5x
+      // Adjust payload counts (reduce for higher smartScanLevel)
+      const payloadReductionFactor = 1 - (newSmartScanLevel * 0.05); // e.g., level 0 -> 1x, level 5 -> 0.75x, level 10 -> 0.5x
       currentSqliPayloads = Math.max(1, Math.floor(config.sqliPayloads * payloadReductionFactor));
       currentXssPayloads = Math.max(1, Math.floor(config.xssPayloads * payloadReductionFactor));
       currentLfiPayloads = Math.max(1, Math.floor(config.lfiPayloads * payloadReductionFactor));
       currentDdosRequests = Math.max(1, Math.floor(config.ddosRequests * payloadReductionFactor));
       
-      // Update scan in DB to reflect new throttle level
+      // Update scan in DB to reflect new smart scan level
       await upsertScanToDatabase(currentScan);
     }
   };
@@ -361,8 +371,8 @@ const runScan = async (
         throw new Error('Scan execution aborted'); 
       }
 
-      // Apply throttling before running each module
-      await applyThrottling();
+      // Apply smart scan adjustments before running each module
+      await applySmartScanAdjustments();
 
       completedStages++;
       currentScan = {
@@ -652,7 +662,7 @@ export const cleanupStuckScans = async (): Promise<void> => {
               errors: [...stuckScan.errors, 'Scan failed: Browser tab/window was closed unexpectedly.'],
               elapsedMs: Date.now() - stuckScan.timestamp,
               completedAt: Date.now(),
-              throttleLevel: 0, // Reset throttle level on cleanup
+              smartScanLevel: 0, // Reset smart scan level on cleanup
             };
             await upsertScanToDatabase(updatedScan);
           }

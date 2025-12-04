@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug, StopCircle, Gauge } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug, StopCircle, Gauge, Brain } from 'lucide-react';
 import { Scan } from '@/services/scanService';
 import React, { useState, useEffect } from 'react';
 
@@ -62,7 +62,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     return 'text-red-500 dark:text-red-400';
   };
 
-  const getThrottleColor = (level: number) => {
+  const getSmartScanLevelColor = (level: number) => {
     if (level === 0) return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
     if (level <= 3) return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
     if (level <= 7) return 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30';
@@ -201,12 +201,12 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
               </div>
             </div>
           )}
-          {scan.status === 'running' && (
+          {scan.status === 'running' && scan.config.smartScanEnabled && (
             <div className="flex flex-col">
-              <p className="text-muted-foreground mb-1">Throttle Level</p>
-              <Badge className={`flex items-center gap-1 ${getThrottleColor(scan.throttleLevel)}`}>
-                <Gauge className="h-3 w-3" />
-                Level {scan.throttleLevel}
+              <p className="text-muted-foreground mb-1">Smart Scan Level</p>
+              <Badge className={`flex items-center gap-1 ${getSmartScanLevelColor(scan.smartScanLevel)}`}>
+                <Brain className="h-3 w-3" />
+                Level {scan.smartScanLevel}
               </Badge>
             </div>
           )}

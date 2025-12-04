@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle, Mail, Lock, Fingerprint, Link as LinkIcon, Bug } from 'lucide-react';
+import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle, Mail, Lock, Fingerprint, Link as LinkIcon, Bug, Brain } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startScan, ScanConfig } from '@/services/scanService'; // Import ScanConfig
 import { useForm } from 'react-hook-form';
@@ -64,6 +64,7 @@ const scanFormSchema = z.object({
   ddosRequests: z.number().min(1).max(100).default(20),
   useProxy: z.boolean(),
   threads: z.number().min(1).max(50),
+  smartScanEnabled: z.boolean().default(false), // New: Smart Scan Enabled
   
   // Scheduling fields
   scheduleScan: z.boolean().default(false),
@@ -142,6 +143,7 @@ const NewScan = () => {
       ddosRequests: 20,
       useProxy: false,
       threads: 20,
+      smartScanEnabled: false, // Default to disabled
       scheduleScan: false,
       scheduleFrequency: 'daily',
       scheduleStartDate: format(new Date(), 'yyyy-MM-dd'),
@@ -868,6 +870,31 @@ const NewScan = () => {
                       Higher thread counts can degrade browser performance and may trigger rate limiting on target servers.
                     </p>
                   </div>
+                  {/* New: Smart Scan Feature */}
+                  <div className="flex items-center space-x-2 pt-4 border-t border-border">
+                    <Checkbox
+                      id="smartScanEnabled"
+                      checked={formData.smartScanEnabled}
+                      onCheckedChange={(checked) => setValue('smartScanEnabled', checked as boolean)}
+                    />
+                    <label htmlFor="smartScanEnabled" className="text-sm text-foreground cursor-pointer flex items-center gap-1">
+                      <Brain className="h-4 w-4 text-blue-500" />
+                      <span className="font-medium">Smart Scan (Auto-adjust payloads)</span>
+                    </label>
+                  </div>
+                  {formData.smartScanEnabled && (
+                    <Alert className="border-blue-500/50 bg-blue-500/10 mt-2">
+                      <Info className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                      <AlertTitle className="text-blue-600 dark:text-blue-400 font-bold">
+                        Smart Scan Enabled
+                      </AlertTitle>
+                      <AlertDescription className="text-sm mt-2 text-blue-600 dark:text-blue-300">
+                        When enabled, the tool will automatically adjust payload counts for SQLi, XSS, LFI, and DDoS
+                        based on target responsiveness and error rates. You can still set initial/maximum values
+                        using the sliders above.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               </CardContent>
             </Card>
