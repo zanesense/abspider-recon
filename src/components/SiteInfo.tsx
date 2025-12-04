@@ -15,7 +15,6 @@ interface SiteInfoProps {
     robotsTxt?: string;
     statusCode?: number;
     responseTime?: number;
-    technologies: string[];
     meta?: {
       description?: string;
       keywords?: string;
@@ -39,8 +38,7 @@ const SiteInfo = ({ siteInfo, isTested, moduleError }: SiteInfoProps) => {
     siteInfo.cloudflare ||
     !!siteInfo.robotsTxt ||
     !!siteInfo.statusCode ||
-    !!siteInfo.responseTime ||
-    siteInfo.technologies.length > 0
+    !!siteInfo.responseTime
   );
 
   return (
@@ -107,20 +105,6 @@ const SiteInfo = ({ siteInfo, isTested, moduleError }: SiteInfoProps) => {
               <p className="text-foreground break-words">{siteInfo.responseTime}ms</p>
             </div>
           )}
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Technologies</p>
-            <div className="flex flex-wrap gap-1">
-              {siteInfo?.technologies && siteInfo.technologies.length > 0 ? (
-                siteInfo.technologies.map((tech, index) => (
-                  <Badge key={index} className="bg-primary/20 text-primary border-primary/30 break-words">
-                    {tech}
-                  </Badge>
-                ))
-              ) : (
-                <span className="text-muted-foreground/70 text-sm">None detected</span>
-              )}
-            </div>
-          </div>
         </div>
       </div>
       

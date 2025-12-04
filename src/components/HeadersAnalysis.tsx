@@ -24,7 +24,6 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
       score: 0,
       grade: 'N/A',
     },
-    technologies: [],
     cookies: [],
     cacheControl: {
       present: false,
@@ -58,7 +57,6 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
     Object.keys(headersAnalysis.headers).length > 0 ||
     headersAnalysis.securityHeaders.present.length > 0 ||
     headersAnalysis.securityHeaders.missing.length > 0 ||
-    headersAnalysis.technologies.length > 0 ||
     headersAnalysis.cookies.length > 0
   );
 
@@ -74,7 +72,7 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
     >
       <React.Fragment> {/* Added React.Fragment here */}
         {/* Security Score */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Status Code</p>
             <p className="text-primary font-bold text-2xl">{currentHeadersAnalysis.statusCode}</p>
@@ -86,12 +84,6 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
           <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-1">Score</p>
             <p className="text-purple-500 dark:text-purple-400 font-bold text-2xl">{securityHeaders.score}</p>
-          </div>
-          <div className="bg-muted rounded-lg p-4">
-            <p className="text-sm text-muted-foreground mb-1">Technologies</p>
-            <p className="text-foreground text-sm break-words">
-              {currentHeadersAnalysis.technologies?.length > 0 ? currentHeadersAnalysis.technologies.join(', ') : 'None'}
-            </p>
           </div>
         </div>
 

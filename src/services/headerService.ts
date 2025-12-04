@@ -20,7 +20,6 @@ export interface HeaderAnalysisResult {
     score: number;
     grade: string;
   };
-  technologies: string[];
   cookies: Array<{
     name: string;
     value: string;
@@ -180,21 +179,6 @@ export const performFullHeaderAnalysis = async (
     const percentage = (score / maxScore) * 100;
     const grade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : percentage >= 50 ? 'D' : 'F';
     
-    // Detect technologies (header-specific)
-    const technologies: string[] = [];
-    const server = headers['server'];
-    if (server) technologies.push(server);
-    
-    const poweredBy = headers['x-powered-by'];
-    if (poweredBy) technologies.push(poweredBy);
-
-    const contentType = headers['content-type'];
-    if (contentType?.includes('php')) technologies.push('PHP');
-    if (contentType?.includes('asp.net')) technologies.push('ASP.NET');
-    if (headers['x-generator']?.includes('WordPress')) technologies.push('WordPress');
-    if (headers['x-drupal-cache']) technologies.push('Drupal');
-    if (headers['x-shopify-stage']) technologies.push('Shopify');
-    
     // Analyze cookies
     const cookies: HeaderAnalysisResult['cookies'] = [];
     const setCookieHeader = response.headers.get('set-cookie');
@@ -305,7 +289,6 @@ export const performFullHeaderAnalysis = async (
         score,
         grade,
       },
-      technologies,
       cookies,
       cacheControl: cacheAnalysis,
       cors: corsAnalysis,

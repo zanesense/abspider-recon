@@ -12,7 +12,6 @@ export interface SiteInfo {
   robotsTxt?: string;
   statusCode?: number;
   responseTime?: number;
-  technologies: string[];
   meta?: {
     description?: string;
     keywords?: string;
@@ -27,7 +26,6 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
   
   const result: SiteInfo = {
     cloudflare: false,
-    technologies: [],
   };
 
   // Ensure apiKeys is an object, even if it somehow comes in as null/undefined
@@ -89,13 +87,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       const server = response.headers.get('server');
       if (server) {
         result.webServer = server;
-        result.technologies.push(server);
         console.log(`[Site Info] Web Server: ${server}`);
-      }
-
-      const poweredBy = response.headers.get('x-powered-by');
-      if (poweredBy) {
-        result.technologies.push(poweredBy);
       }
 
       // Check for Cloudflare
@@ -103,29 +95,22 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       const cfCache = response.headers.get('cf-cache-status');
       if (cfRay || cfCache || html.includes('cloudflare')) {
         result.cloudflare = true;
-        result.technologies.push('Cloudflare');
         console.log(`[Site Info] Cloudflare detected`);
       }
 
       // Detect CMS
       if (html.includes('wp-content') || html.includes('wordpress')) {
         result.cms = 'WordPress';
-        result.technologies.push('WordPress');
       } else if (html.includes('joomla')) {
         result.cms = 'Joomla';
-        result.technologies.push('Joomla');
       } else if (html.includes('drupal')) {
         result.cms = 'Drupal';
-        result.technologies.push('Drupal');
       } else if (html.includes('shopify')) {
         result.cms = 'Shopify';
-        result.technologies.push('Shopify');
       } else if (html.includes('wix.com')) {
         result.cms = 'Wix';
-        result.technologies.push('Wix');
       } else if (html.includes('squarespace')) {
         result.cms = 'Squarespace';
-        result.technologies.push('Squarespace');
       }
 
       if (result.cms) {
@@ -142,13 +127,8 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
           const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000, signal: requestManager.scanController?.signal });
 
           if (builtwithData.Results && builtwithData.Results.length > 0) {
-            const technologies = builtwithData.Results[0].Result.Paths[0].Technologies;
-            technologies.forEach((tech: any) => {
-              if (tech.Name && !result.technologies.includes(tech.Name)) {
-                result.technologies.push(tech.Name);
-              }
-            });
-            console.log(`[Site Info] ✓ Enhanced with BuiltWith data`);
+            // No longer adding to result.technologies here, as TechStackInfo handles it
+            console.log(`[Site Info] ✓ BuiltWith data fetched (processed by TechStackInfo)`);
           } else if (builtwithData.Errors && builtwithData.Errors.length > 0) {
             console.warn(`[Site Info] BuiltWith API returned error: ${builtwithData.Errors[0].Message}`);
           }
