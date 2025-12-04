@@ -659,7 +659,7 @@ const NewScan = () => {
                         value={formData.sqliPayloads}
                         onChange={(e) => setValue('sqliPayloads', parseInt(e.target.value))}
                         className="accent-primary"
-                        disabled={!formData.sqlinjection}
+                        disabled={!formData.sqlinjection || formData.smartScanEnabled}
                       />
                     </div>
                     <div className="space-y-2">
@@ -672,7 +672,7 @@ const NewScan = () => {
                         value={formData.xssPayloads}
                         onChange={(e) => setValue('xssPayloads', parseInt(e.target.value))}
                         className="accent-primary"
-                        disabled={!formData.xss}
+                        disabled={!formData.xss || formData.smartScanEnabled}
                       />
                     </div>
                     <div className="space-y-2">
@@ -685,7 +685,7 @@ const NewScan = () => {
                         value={formData.lfiPayloads}
                         onChange={(e) => setValue('lfiPayloads', parseInt(e.target.value))}
                         className="accent-primary"
-                        disabled={!formData.lfi}
+                        disabled={!formData.lfi || formData.smartScanEnabled}
                       />
                     </div>
                   </div>
@@ -811,7 +811,7 @@ const NewScan = () => {
                       value={formData.ddosRequests}
                       onChange={(e) => setValue('ddosRequests', parseInt(e.target.value))}
                       className="accent-primary"
-                      disabled={!formData.ddosFirewall}
+                      disabled={!formData.ddosFirewall || formData.smartScanEnabled}
                     />
                   </div>
                 )}

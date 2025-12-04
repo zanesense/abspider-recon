@@ -232,6 +232,26 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
                 const Icon = moduleIcons[key];
                 const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls', 'corsMisconfig'].includes(key);
                 const isSecurityModule = ['ddosFirewall'].includes(key);
+                
+                let payloadInfo = '';
+                if (key === 'sqlinjection' && scan.results.sqlinjection) {
+                  payloadInfo = scan.config.smartScanEnabled 
+                    ? ` (Sent: ${scan.results.sqlinjection.testedPayloads} / Configured: ${scan.config.sqliPayloads} payloads)`
+                    : ` (${scan.config.sqliPayloads} payloads)`;
+                } else if (key === 'xss' && scan.results.xss) {
+                  payloadInfo = scan.config.smartScanEnabled
+                    ? ` (Sent: ${scan.results.xss.testedPayloads} / Configured: ${scan.config.xssPayloads} payloads)`
+                    : ` (${scan.config.xssPayloads} payloads)`;
+                } else if (key === 'lfi' && scan.results.lfi) {
+                  payloadInfo = scan.config.smartScanEnabled
+                    ? ` (Sent: ${scan.results.lfi.testedPayloads} / Configured: ${scan.config.lfiPayloads} payloads)`
+                    : ` (${scan.config.lfiPayloads} payloads)`;
+                } else if (key === 'ddosFirewall' && scan.results.ddosFirewall) {
+                  payloadInfo = scan.config.smartScanEnabled
+                    ? ` (Sent: ${scan.results.ddosFirewall.totalRequests} / Configured: ${scan.config.ddosRequests} requests)`
+                    : ` (${scan.config.ddosRequests} requests)`;
+                }
+
                 return (
                   <Badge 
                     key={key} 
@@ -242,10 +262,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
                   >
                     {Icon && <Icon className="h-3 w-3" />}
                     {moduleLabels[key]}
-                    {key === 'sqlinjection' && ` (${scan.config.sqliPayloads} payloads)`}
-                    {key === 'xss' && ` (${scan.config.xssPayloads} payloads)`}
-                    {key === 'lfi' && ` (${scan.config.lfiPayloads} payloads)`}
-                    {key === 'ddosFirewall' && ` (${scan.config.ddosRequests} requests)`}
+                    {payloadInfo}
                   </Badge>
                 );
               }
