@@ -64,7 +64,7 @@ const scanFormSchema = z.object({
   ddosRequests: z.number().min(1).max(100).default(20),
   useProxy: z.boolean(),
   threads: z.number().min(1).max(50),
-  smartScanEnabled: z.boolean().default(false), // New: Smart Scan Enabled
+  smartScanEnabled: z.boolean().default(false), // Default to disabled
   
   // Scheduling fields
   scheduleScan: z.boolean().default(false),
@@ -650,7 +650,9 @@ const NewScan = () => {
                 {(formData.sqlinjection || formData.xss || formData.lfi) && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="sqliPayloads">SQLi Payloads ({formData.sqliPayloads} / {MAX_SQLI_PAYLOADS})</Label>
+                      <Label htmlFor="sqliPayloads">
+                        SQLi Payloads {formData.smartScanEnabled ? '(Auto-managed)' : `(${formData.sqliPayloads} / ${MAX_SQLI_PAYLOADS})`}
+                      </Label>
                       <Input
                         id="sqliPayloads"
                         type="range"
@@ -663,7 +665,9 @@ const NewScan = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="xssPayloads">XSS Payloads ({formData.xssPayloads} / {MAX_XSS_PAYLOADS})</Label>
+                      <Label htmlFor="xssPayloads">
+                        XSS Payloads {formData.smartScanEnabled ? '(Auto-managed)' : `(${formData.xssPayloads} / ${MAX_XSS_PAYLOADS})`}
+                      </Label>
                       <Input
                         id="xssPayloads"
                         type="range"
@@ -676,7 +680,9 @@ const NewScan = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lfiPayloads">LFI Payloads ({formData.lfiPayloads} / {MAX_LFI_PAYLOADS})</Label>
+                      <Label htmlFor="lfiPayloads">
+                        LFI Payloads {formData.smartScanEnabled ? '(Auto-managed)' : `(${formData.lfiPayloads} / ${MAX_LFI_PAYLOADS})`}
+                      </Label>
                       <Input
                         id="lfiPayloads"
                         type="range"
@@ -802,7 +808,9 @@ const NewScan = () => {
                 </div>
                 {formData.ddosFirewall && (
                   <div className="space-y-2 mt-4">
-                    <Label htmlFor="ddosRequests">DDoS Test Requests ({formData.ddosRequests} / 100)</Label>
+                    <Label htmlFor="ddosRequests">
+                      DDoS Test Requests {formData.smartScanEnabled ? '(Auto-managed)' : `(${formData.ddosRequests} / 100)`}
+                    </Label>
                     <Input
                       id="ddosRequests"
                       type="range"

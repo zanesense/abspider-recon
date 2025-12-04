@@ -260,6 +260,16 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
   return id;
 };
 
+// Define min/max payloads for smart scan
+const SMART_SCAN_MIN_SQLI_PAYLOADS = 5;
+const SMART_SCAN_MAX_SQLI_PAYLOADS = 51;
+const SMART_SCAN_MIN_XSS_PAYLOADS = 5;
+const SMART_SCAN_MAX_XSS_PAYLOADS = 50;
+const SMART_SCAN_MIN_LFI_PAYLOADS = 3;
+const SMART_SCAN_MAX_LFI_PAYLOADS = 65;
+const SMART_SCAN_MIN_DDOS_REQUESTS = 5;
+const SMART_SCAN_MAX_DDOS_REQUESTS = 100;
+
 const runScan = async (
   scanId: string,
   config: ScanConfig,
@@ -295,16 +305,29 @@ const runScan = async (
   const SMART_SCAN_ERROR_RATE_HIGH = 15; // %
   const SMART_SCAN_ERROR_RATE_LOW = 5; // %
 
-  const MAX_PAYLOADS_SQLI = 51;
-  const MAX_PAYLOADS_XSS = 50;
-  const MAX_PAYLOADS_LFI = 65;
-  const MAX_DDOS_REQUESTS = 100;
-
   // Local copies of config values that can be adjusted dynamically
-  let currentSqliPayloads = config.sqliPayloads;
-  let currentXssPayloads = config.xssPayloads;
-  let currentLfiPayloads = config.lfiPayloads;
-  let currentDdosRequests = config.ddosRequests;
+  // Initialize based on smart scan level if enabled, otherwise use config values
+  let currentSqliPayloads: number;
+  let currentXssPayloads: number;
+  let currentLfiPayloads: number;
+  let currentDdosRequests: number;
+
+  const calculatePayloadsForLevel = (level: number, min: number, max: number) => {
+    // Linear interpolation: level 0 = max, level 10 = min
+    return Math.round(max - (level / 10) * (max - min));
+  };
+
+  if (config.smartScanEnabled) {
+    currentSqliPayloads = calculatePayloadsForLevel(currentScan.smartScanLevel, SMART_SCAN_MIN_SQLI_PAYLOADS, SMART_SCAN_MAX_SQLI_PAYLOADS);
+    currentXssPayloads = calculatePayloadsForLevel(currentScan.smartScanLevel, SMART_SCAN_MIN_XSS_PAYLOADS, SMART_SCAN_MAX_XSS_PAYLOADS);
+    currentLfiPayloads = calculatePayloadsForLevel(currentScan.smartScanLevel, SMART_SCAN_MIN_LFI_PAYLOADS, SMART_SCAN_MAX_LFI_PAYLOADS);
+    currentDdosRequests = calculatePayloadsForLevel(currentScan.smartScanLevel, SMART_SCAN_MIN_DDOS_REQUESTS, SMART_SCAN_MAX_DDOS_REQUESTS);
+  } else {
+    currentSqliPayloads = config.sqliPayloads;
+    currentXssPayloads = config.xssPayloads;
+    currentLfiPayloads = config.lfiPayloads;
+    currentDdosRequests = config.ddosRequests;
+  }
 
   // Function to apply smart scan adjustments
   const applySmartScanAdjustments = async () => {
@@ -346,12 +369,11 @@ const runScan = async (
       const intervalFactor = 1 + (newSmartScanLevel * 0.2); // e.g., level 0 -> 1x, level 5 -> 2x, level 10 -> 3x
       requestManager.adjustMinRequestInterval(Math.max(50, (1000 / config.threads) * intervalFactor));
 
-      // Adjust payload counts (reduce for higher smartScanLevel)
-      const payloadReductionFactor = 1 - (newSmartScanLevel * 0.05); // e.g., level 0 -> 1x, level 5 -> 0.75x, level 10 -> 0.5x
-      currentSqliPayloads = Math.max(1, Math.floor(config.sqliPayloads * payloadReductionFactor));
-      currentXssPayloads = Math.max(1, Math.floor(config.xssPayloads * payloadReductionFactor));
-      currentLfiPayloads = Math.max(1, Math.floor(config.lfiPayloads * payloadReductionFactor));
-      currentDdosRequests = Math.max(1, Math.floor(config.ddosRequests * payloadReductionFactor));
+      // Adjust payload counts directly based on newSmartScanLevel
+      currentSqliPayloads = calculatePayloadsForLevel(newSmartScanLevel, SMART_SCAN_MIN_SQLI_PAYLOADS, SMART_SCAN_MAX_SQLI_PAYLOADS);
+      currentXssPayloads = calculatePayloadsForLevel(newSmartScanLevel, SMART_SCAN_MIN_XSS_PAYLOADS, SMART_SCAN_MAX_XSS_PAYLOADS);
+      currentLfiPayloads = calculatePayloadsForLevel(newSmartScanLevel, SMART_SCAN_MIN_LFI_PAYLOADS, SMART_SCAN_MAX_LFI_PAYLOADS);
+      currentDdosRequests = calculatePayloadsForLevel(newSmartScanLevel, SMART_SCAN_MIN_DDOS_REQUESTS, SMART_SCAN_MAX_DDOS_REQUESTS);
       
       // Update scan in DB to reflect new smart scan level
       await upsertScanToDatabase(currentScan);
