@@ -201,7 +201,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
               </div>
             </div>
           )}
-          {scan.status === 'running' && scan.config.smartScanEnabled && (
+          {scan.config.smartScanEnabled && (
             <div className="flex flex-col">
               <p className="text-muted-foreground mb-1">Smart Scan Level</p>
               <Badge className={`flex items-center gap-1 ${getSmartScanLevelColor(scan.smartScanLevel)}`}>
