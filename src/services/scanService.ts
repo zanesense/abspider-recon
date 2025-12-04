@@ -17,9 +17,9 @@ import { performSEOAnalysis, SEOAnalysis } from './seoService';
 import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService';
 import { performVirusTotalScan, VirusTotalResult } from './virustotalService';
 import { performSslTlsAnalysis, SslTlsResult } from './sslTlsService';
-import { performTechStackFingerprinting, TechStackResult } from './techStackService'; // New import
-import { performBrokenLinkCheck, BrokenLinkResult } from './brokenLinkService'; // New import
-import { performCorsMisconfigScan, CorsMisconfigResult } from './corsMisconfigService'; // New import
+import { performTechStackFingerprinting, TechStackResult } from './techStackService';
+import { performBrokenLinkCheck, BrokenLinkResult } from './brokenLinkService';
+import { performCorsMisconfigScan, CorsMisconfigResult } from './corsMisconfigService';
 import { getSettings } from './settingsService';
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
@@ -49,9 +49,9 @@ export interface ScanConfig {
   ddosFirewall: boolean;
   virustotal: boolean;
   sslTls: boolean;
-  techStack: boolean; // New module
-  brokenLinks: boolean; // New module
-  corsMisconfig: boolean; // New module
+  techStack: boolean;
+  brokenLinks: boolean;
+  corsMisconfig: boolean;
   xssPayloads: number;
   sqliPayloads: number;
   lfiPayloads: number;
@@ -79,9 +79,9 @@ export interface ScanResults {
   ddosFirewall?: DDoSFirewallResult;
   virustotal?: VirusTotalResult;
   sslTls?: SslTlsResult;
-  techStack?: TechStackResult; // New module
-  brokenLinks?: BrokenLinkResult; // New module
-  corsMisconfig?: CorsMisconfigResult; // New module
+  techStack?: TechStackResult;
+  brokenLinks?: BrokenLinkResult;
+  corsMisconfig?: CorsMisconfigResult;
 }
 
 export interface Scan {
@@ -89,7 +89,7 @@ export interface Scan {
   user_id: string;
   target: string;
   timestamp: number;
-  status: 'running' | 'completed' | 'failed' | 'paused' | 'stopped'; // Added 'stopped'
+  status: 'running' | 'completed' | 'failed' | 'paused' | 'stopped';
   progress?: {
     current: number;
     total: number;
@@ -101,6 +101,7 @@ export interface Scan {
   elapsedMs?: number;
   completedAt?: number;
   securityGrade?: number;
+  throttleLevel: number; // Added throttleLevel
 }
 
 interface ScanDbRow {
@@ -116,6 +117,7 @@ interface ScanDbRow {
   elapsed_ms?: number;
   completed_at?: number;
   security_grade?: number;
+  throttle_level: number; // Added throttle_level
 }
 
 const toScanDbRow = (scan: Scan): ScanDbRow => ({
@@ -131,6 +133,7 @@ const toScanDbRow = (scan: Scan): ScanDbRow => ({
   elapsed_ms: scan.elapsedMs,
   completed_at: scan.completedAt,
   security_grade: scan.securityGrade,
+  throttle_level: scan.throttleLevel, // Map to DB column
 });
 
 const fromScanDbRow = (row: ScanDbRow): Scan => ({
@@ -138,7 +141,7 @@ const fromScanDbRow = (row: ScanDbRow): Scan => ({
   user_id: row.user_id,
   target: row.target,
   timestamp: row.timestamp,
-  status: row.status as 'running' | 'completed' | 'failed' | 'paused' | 'stopped', // Added 'stopped'
+  status: row.status as 'running' | 'completed' | 'failed' | 'paused' | 'stopped',
   progress: row.progress,
   config: row.config,
   results: row.results,
@@ -146,6 +149,7 @@ const fromScanDbRow = (row: ScanDbRow): Scan => ({
   elapsedMs: row.elapsed_ms,
   completedAt: row.completed_at,
   securityGrade: row.security_grade,
+  throttleLevel: row.throttle_level, // Map from DB column
 });
 
 
@@ -237,6 +241,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
     config,
     results: {},
     errors: [],
+    throttleLevel: 0, // Initialize throttle level
   };
 
   try {
@@ -260,16 +265,18 @@ const runScan = async (
   scanController: AbortController,
   requestManager: RequestManager
 ) => {
-  let currentScan = (await getScanById(scanId))!; // Always fetch latest state
+  let currentScan = (await getScanById(scanId))!;
 
   const modulesToRun = Object.keys(config).filter(key => (config as any)[key] === true && 
     !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests'].includes(key));
   const totalStages = modulesToRun.length;
-  let completedStages = currentScan.progress?.current || 0; // Start from where it left off
+  let completedStages = currentScan.progress?.current || 0;
 
   const settings = await getSettings();
   setProxyList(config.useProxy ? settings.proxyList.split('\n').map(p => p.trim()).filter(Boolean) : []);
-  requestManager.setMinRequestInterval(Math.max(20, 1000 / config.threads)); 
+  
+  // Set initial minRequestInterval based on configured threads
+  requestManager.adjustMinRequestInterval(1000 / config.threads); 
 
   let apiKeys: APIKeys = {};
   try {
@@ -281,22 +288,83 @@ const runScan = async (
     await upsertScanToDatabase(currentScan);
   }
 
+  // Dynamic throttling parameters
+  const THROTTLE_RESPONSE_TIME_HIGH = 2000; // ms
+  const THROTTLE_RESPONSE_TIME_LOW = 500; // ms
+  const THROTTLE_ERROR_RATE_HIGH = 15; // %
+  const THROTTLE_ERROR_RATE_LOW = 5; // %
+
+  const MAX_PAYLOADS_SQLI = 51;
+  const MAX_PAYLOADS_XSS = 50;
+  const MAX_PAYLOADS_LFI = 65;
+  const MAX_DDOS_REQUESTS = 100;
+
+  // Local copies of config values that can be adjusted dynamically
+  let currentSqliPayloads = config.sqliPayloads;
+  let currentXssPayloads = config.xssPayloads;
+  let currentLfiPayloads = config.lfiPayloads;
+  let currentDdosRequests = config.ddosRequests;
+
+  // Function to apply throttling adjustments
+  const applyThrottling = async () => {
+    const metrics = requestManager.getPerformanceMetrics();
+    if (metrics.totalRequests < requestManager.metricsBufferSize / 2) {
+      // Not enough data to make informed decisions yet
+      return;
+    }
+
+    let newThrottleLevel = currentScan.throttleLevel;
+    let changed = false;
+
+    // Increase throttling if performance is poor
+    if (metrics.avgResponseTime > THROTTLE_RESPONSE_TIME_HIGH || metrics.errorRate > THROTTLE_ERROR_RATE_HIGH) {
+      newThrottleLevel = Math.min(10, newThrottleLevel + 1); // Max throttle level 10
+      changed = true;
+    }
+    // Decrease throttling if performance is good
+    else if (metrics.avgResponseTime < THROTTLE_RESPONSE_TIME_LOW && metrics.errorRate < THROTTLE_ERROR_RATE_LOW) {
+      newThrottleLevel = Math.max(0, newThrottleLevel - 1); // Min throttle level 0
+      changed = true;
+    }
+
+    if (changed) {
+      currentScan.throttleLevel = newThrottleLevel;
+      console.log(`[ScanService] Adjusting throttle level to: ${newThrottleLevel}`);
+
+      // Adjust request rate (minRequestInterval)
+      // Higher throttleLevel means longer interval (slower requests)
+      const intervalFactor = 1 + (newThrottleLevel * 0.2); // e.g., level 0 -> 1x, level 5 -> 2x, level 10 -> 3x
+      requestManager.adjustMinRequestInterval(Math.max(50, (1000 / config.threads) * intervalFactor));
+
+      // Adjust payload counts (reduce for higher throttle)
+      const payloadReductionFactor = 1 - (newThrottleLevel * 0.05); // e.g., level 0 -> 1x, level 5 -> 0.75x, level 10 -> 0.5x
+      currentSqliPayloads = Math.max(1, Math.floor(config.sqliPayloads * payloadReductionFactor));
+      currentXssPayloads = Math.max(1, Math.floor(config.xssPayloads * payloadReductionFactor));
+      currentLfiPayloads = Math.max(1, Math.floor(config.lfiPayloads * payloadReductionFactor));
+      currentDdosRequests = Math.max(1, Math.floor(config.ddosRequests * payloadReductionFactor));
+      
+      // Update scan in DB to reflect new throttle level
+      await upsertScanToDatabase(currentScan);
+    }
+  };
+
   try {
     for (let i = 0; i < modulesToRun.length; i++) {
       const moduleName = modulesToRun[i];
 
-      // Skip modules that were already completed
       if (i < completedStages) {
         console.log(`[ScanService] Skipping already completed module: ${moduleName}`);
         continue;
       }
 
       if (scanController.signal.aborted) {
-        // If aborted, the outer catch/finally will set status to 'paused' or 'stopped'
         throw new Error('Scan execution aborted'); 
       }
 
-      completedStages++; // Increment for the module we are about to run
+      // Apply throttling before running each module
+      await applyThrottling();
+
+      completedStages++;
       currentScan = {
         ...currentScan,
         progress: {
@@ -360,15 +428,15 @@ const runScan = async (
             currentScan.results.reverseip = moduleResult;
             break;
           case 'sqlinjection':
-            moduleResult = await performSQLScan(config.target, requestManager, config.sqliPayloads);
+            moduleResult = await performSQLScan(config.target, requestManager, currentSqliPayloads);
             currentScan.results.sqlinjection = moduleResult;
             break;
             case 'xss':
-              moduleResult = await performXSSScan(config.target, requestManager, config.xssPayloads);
+              moduleResult = await performXSSScan(config.target, requestManager, currentXssPayloads);
               currentScan.results.xss = moduleResult;
               break;
             case 'lfi':
-              moduleResult = await performLFIScan(config.target, requestManager, config.lfiPayloads);
+              moduleResult = await performLFIScan(config.target, requestManager, currentLfiPayloads);
               currentScan.results.lfi = moduleResult;
               break;
             case 'wordpress':
@@ -380,7 +448,7 @@ const runScan = async (
               currentScan.results.seo = moduleResult;
               break;
             case 'ddosFirewall':
-              moduleResult = await performDDoSFirewallTest(config.target, config.ddosRequests, 100, requestManager);
+              moduleResult = await performDDoSFirewallTest(config.target, currentDdosRequests, requestManager.getMinRequestInterval(), requestManager);
               currentScan.results.ddosFirewall = moduleResult;
               break;
             case 'virustotal':
@@ -391,15 +459,15 @@ const runScan = async (
               moduleResult = await performSslTlsAnalysis(config.target, requestManager);
               currentScan.results.sslTls = moduleResult;
               break;
-            case 'techStack': // New module execution
+            case 'techStack':
               moduleResult = await performTechStackFingerprinting(config.target, requestManager);
               currentScan.results.techStack = moduleResult;
               break;
-            case 'brokenLinks': // New module execution
+            case 'brokenLinks':
               moduleResult = await performBrokenLinkCheck(config.target, requestManager);
               currentScan.results.brokenLinks = moduleResult;
               break;
-            case 'corsMisconfig': // New module execution
+            case 'corsMisconfig':
               moduleResult = await performCorsMisconfigScan(config.target, requestManager);
               currentScan.results.corsMisconfig = moduleResult;
               break;
@@ -430,29 +498,23 @@ const runScan = async (
     } catch (error: any) {
       console.error(`[ScanService] Scan ${scanId} failed or was aborted:`, error);
       
-      // Fetch the latest scan state from DB to see if it was already handled by pause/stop
       const latestScanState = await getScanById(scanId);
       
-      // IMPORTANT: If the scan was explicitly stopped, do NOT overwrite its status to 'failed'.
-      // This handles potential race conditions where stopScan updates DB, then runScan's catch
-      // block is triggered by the abort signal.
       if (latestScanState && latestScanState.status === 'stopped') {
         console.log(`[ScanService] Scan ${scanId} was explicitly stopped. Not overwriting status to 'failed'.`);
         throw error; 
       }
 
-      // If not already handled, then it's a genuine failure within runScan
       currentScan = {
         ...currentScan,
-        status: 'failed', // Always 'failed' if it wasn't explicitly paused/stopped
+        status: 'failed',
         errors: [...currentScan.errors, error.message],
         elapsedMs: Date.now() - currentScan.timestamp,
         completedAt: Date.now(),
       };
       await upsertScanToDatabase(currentScan);
     } finally {
-      // Only remove from activeScans if it's truly finished or failed, not just paused
-      if (currentScan.status === 'completed' || currentScan.status === 'failed' || currentScan.status === 'stopped') { // Added 'stopped'
+      if (currentScan.status === 'completed' || currentScan.status === 'failed' || currentScan.status === 'stopped') {
         activeScans.delete(scanId);
       }
     }
@@ -461,18 +523,17 @@ const runScan = async (
 export const pauseScan = async (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
-    scanEntry.controller.abort(); // Abort the current execution
+    scanEntry.controller.abort();
     const currentScan = (await getScanById(id))!;
     const updatedScan: Scan = { 
       ...currentScan, 
       status: 'paused', 
       progress: { ...currentScan.progress!, stage: 'Paused' },
-      elapsedMs: Date.now() - currentScan.timestamp, // Capture elapsed time up to pause
-      completedAt: Date.now(), // Update completedAt to reflect pause time
+      elapsedMs: Date.now() - currentScan.timestamp,
+      completedAt: Date.now(),
     };
     await upsertScanToDatabase(updatedScan);
     console.log(`[ScanService] Scan ${id} paused.`);
-    // Do NOT delete from activeScans, so it can be resumed
   }
 };
 
@@ -483,37 +544,33 @@ export const resumeScan = async (id: string) => {
     throw new Error('Cannot resume scan: not found or not paused.');
   }
 
-  // Create a new controller and request manager for the resumed execution
   const newController = new AbortController();
   const newRequestManager = createRequestManager(newController);
   
-  // Update activeScans map with the new controller and manager
   activeScans.set(id, { controller: newController, promise: Promise.resolve(), requestManager: newRequestManager });
 
   const updatedScan: Scan = { 
     ...scan, 
     status: 'running', 
     progress: { ...scan.progress!, stage: 'Resuming scan' },
-    // Keep original timestamp, elapsedMs will be recalculated at completion
   };
   await upsertScanToDatabase(updatedScan);
 
   console.log(`[ScanService] Resuming scan ${id}.`);
-  // Re-run the scan logic. It will pick up from where it left off based on `updatedScan.progress.current`.
   await runScan(updatedScan.id, updatedScan.config, newController, newRequestManager);
 };
 
 export const stopScan = async (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
-    scanEntry.controller.abort(); // Abort the current execution
-    scanEntry.requestManager.abortAll(); // Abort any pending requests
-    activeScans.delete(id); // Remove from active scans
+    scanEntry.controller.abort();
+    scanEntry.requestManager.abortAll();
+    activeScans.delete(id);
     
     const currentScan = (await getScanById(id))!;
     const updatedScan: Scan = { 
       ...currentScan, 
-      status: 'stopped', // Changed from 'failed' to 'stopped'
+      status: 'stopped',
       errors: [...currentScan.errors, 'Scan stopped by user'], 
       elapsedMs: Date.now() - currentScan.timestamp, 
       completedAt: Date.now() 
@@ -551,7 +608,6 @@ export const deleteAllScans = async (): Promise<void> => {
     throw new Error('User not authenticated. Cannot delete all scans.');
   }
 
-  // Note: Supabase RLS should ensure only the user's own rows are deleted.
   const { error } = await supabase
     .from('user_scans')
     .delete()
@@ -564,11 +620,6 @@ export const deleteAllScans = async (): Promise<void> => {
   console.log('[Delete All Scans] Successfully deleted all scans.');
 };
 
-/**
- * Cleans up any scans that were marked as 'running' or 'paused' in the database
- * but are no longer active in the current browser session.
- * These scans are marked as 'failed'.
- */
 export const cleanupStuckScans = async (): Promise<void> => {
   console.log('[ScanService] Cleaning up stuck scans...');
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -580,9 +631,9 @@ export const cleanupStuckScans = async (): Promise<void> => {
   try {
     const { data: activeScansInDb, error } = await supabase
       .from('user_scans')
-      .select('scan_id, target, timestamp, status') // Also fetch status
+      .select('scan_id, target, timestamp, status')
       .eq('user_id', session.user.id)
-      .in('status', ['running', 'paused']); // Only check running and paused
+      .in('status', ['running', 'paused']);
 
     if (error) {
       console.error('[ScanService] Error fetching active scans for cleanup:', error);
@@ -592,16 +643,16 @@ export const cleanupStuckScans = async (): Promise<void> => {
     if (activeScansInDb && activeScansInDb.length > 0) {
       for (const dbScan of activeScansInDb) {
         if (!activeScans.has(dbScan.scan_id)) {
-          // This scan is 'running' or 'paused' in DB but not active in current session -> it's stuck
           console.warn(`[ScanService] Detected stuck scan: ${dbScan.scan_id} (${dbScan.target}). Marking as failed.`);
           const stuckScan = await getScanById(dbScan.scan_id);
           if (stuckScan) {
             const updatedScan: Scan = {
               ...stuckScan,
-              status: 'failed', // Always mark as failed if browser closed
+              status: 'failed',
               errors: [...stuckScan.errors, 'Scan failed: Browser tab/window was closed unexpectedly.'],
               elapsedMs: Date.now() - stuckScan.timestamp,
               completedAt: Date.now(),
+              throttleLevel: 0, // Reset throttle level on cleanup
             };
             await upsertScanToDatabase(updatedScan);
           }
@@ -614,9 +665,6 @@ export const cleanupStuckScans = async (): Promise<void> => {
   }
 };
 
-/**
- * Returns the number of scans currently active in the browser session.
- */
 export const getRunningScanCount = (): number => {
   return activeScans.size;
 };

@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug, StopCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug, StopCircle, Gauge } from 'lucide-react';
 import { Scan } from '@/services/scanService';
-import React, { useState, useEffect } from 'react'; // Import React and hooks
+import React, { useState, useEffect } from 'react';
 
 interface ScanStatusProps {
   scan: Scan;
@@ -16,14 +16,12 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     let interval: NodeJS.Timeout | null = null;
 
     if (scan.status === 'running') {
-      // Initialize with current elapsed time or calculate from timestamp
       setRealtimeElapsedMs(Date.now() - scan.timestamp);
 
       interval = setInterval(() => {
         setRealtimeElapsedMs(Date.now() - scan.timestamp);
-      }, 1000); // Update every second
+      }, 1000);
     } else {
-      // If not running, use the final elapsedMs from the scan object
       setRealtimeElapsedMs(scan.elapsedMs);
     }
 
@@ -32,7 +30,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
         clearInterval(interval);
       }
     };
-  }, [scan.status, scan.timestamp, scan.elapsedMs]); // Re-run effect if status or timestamp changes
+  }, [scan.status, scan.timestamp, scan.elapsedMs]);
 
   const getStatusIcon = () => {
     switch (scan.status) {
@@ -40,7 +38,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
       case 'running': return <Loader2 className="h-5 w-5 text-yellow-500 dark:text-yellow-400 animate-spin" />;
       case 'failed': return <XCircle className="h-5 w-5 text-red-500 dark:text-red-400" />;
       case 'paused': return <Timer className="h-5 w-5 text-blue-500 dark:text-blue-400" />;
-      case 'stopped': return <StopCircle className="h-5 w-5 text-orange-500 dark:text-orange-400" />; // Added 'stopped'
+      case 'stopped': return <StopCircle className="h-5 w-5 text-orange-500 dark:text-orange-400" />;
       default: return <Clock className="h-5 w-5 text-muted-foreground" />;
     }
   };
@@ -51,7 +49,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
       case 'running': return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
       case 'failed': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
       case 'paused': return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
-      case 'stopped': return 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30'; // Added 'stopped'
+      case 'stopped': return 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30';
       default: return 'bg-muted/20 text-muted-foreground border-border';
     }
   };
@@ -62,6 +60,13 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     if (grade >= 6) return 'text-yellow-500 dark:text-yellow-400';
     if (grade >= 4) return 'text-orange-500 dark:text-orange-400';
     return 'text-red-500 dark:text-red-400';
+  };
+
+  const getThrottleColor = (level: number) => {
+    if (level === 0) return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
+    if (level <= 3) return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
+    if (level <= 7) return 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30';
+    return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
   };
 
   const progressPercentage = scan.progress 
@@ -196,6 +201,15 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
               </div>
             </div>
           )}
+          {scan.status === 'running' && (
+            <div className="flex flex-col">
+              <p className="text-muted-foreground mb-1">Throttle Level</p>
+              <Badge className={`flex items-center gap-1 ${getThrottleColor(scan.throttleLevel)}`}>
+                <Gauge className="h-3 w-3" />
+                Level {scan.throttleLevel}
+              </Badge>
+            </div>
+          )}
         </div>
 
         {scan.status === 'running' && scan.progress && (
@@ -206,7 +220,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
                 {scan.progress.current} / {scan.progress.total}
               </span>
             </div>
-            <Progress value={progressPercentage} className="h-2 bg-muted" /> {/* Removed indicatorColor */}
+            <Progress value={progressPercentage} className="h-2 bg-muted" />
           </div>
         )}
 
