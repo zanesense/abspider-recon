@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle, Mail, Lock, Fingerprint, Link as LinkIcon, Bug, Brain } from 'lucide-react';
+import { Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Settings2, Loader2, PlusCircle, Zap, CheckSquare, Square, CalendarDays, Clock, Repeat, AlertCircle, Mail, Lock, Fingerprint, Link as LinkIcon, Bug, Brain, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startScan, ScanConfig } from '@/services/scanService'; // Import ScanConfig
 import { useForm } from 'react-hook-form';
