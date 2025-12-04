@@ -362,7 +362,8 @@ const ScanResults = () => {
               <LFIVulnerabilities 
                 lfi={scan.results.lfi as LFIScanResult} 
                 isTested={scan.config.lfi} 
-                moduleError={getModuleError('lfi')} 
+                moduleError={getModuleError('lfi')}
+                configLfiPayloads={scan.config.lfiPayloads} // Pass the configured payloads
               />
               <CorsMisconfigResults 
                 corsMisconfig={scan.results.corsMisconfig} 

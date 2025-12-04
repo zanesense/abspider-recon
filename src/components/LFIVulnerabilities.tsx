@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileWarning, AlertTriangle, CheckCircle2, FileText, Lightbulb } from "lucide-react";
+import { FileWarning, AlertTriangle, CheckCircle2, FileText, Lightbulb, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ModuleCardWrapper from './ModuleCardWrapper'; // Import the new wrapper
 import CORSBypassIndicator from './CORSBypassIndicator'; // Import CORSBypassIndicator
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'; // Import Tooltip components
 
 interface LFIVulnerabilitiesProps {
   lfi?: {
@@ -23,9 +24,10 @@ interface LFIVulnerabilitiesProps {
   };
   isTested: boolean; // New prop
   moduleError?: string; // New prop
+  configLfiPayloads: number; // New prop for configured payloads
 }
 
-const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesProps) => {
+const LFIVulnerabilities = ({ lfi, isTested, moduleError, configLfiPayloads }: LFIVulnerabilitiesProps) => {
   if (!isTested) return null;
 
   const getSeverityColor = (severity: string) => {
@@ -60,12 +62,25 @@ const LFIVulnerabilities = ({ lfi, isTested, moduleError }: LFIVulnerabilitiesPr
             </Badge>
           </div>
           <div className="bg-muted rounded-lg p-4">
-            <p className="text-sm text-muted-foreground mb-1">Payloads Tested</p>
-            <p className="text-2xl font-bold text-primary">{lfi?.testedPayloads}</p>
+            <p className="text-sm text-muted-foreground mb-1">Configured Payloads</p>
+            <p className="text-2xl font-bold text-primary">{configLfiPayloads}</p>
           </div>
           <div className="bg-muted rounded-lg p-4">
-            <p className="text-sm text-muted-foreground mb-1">Vulnerabilities Found</p>
-            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{lfi?.vulnerabilities.length}</p>
+            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+              Tested Payloads
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground/70 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-xs bg-card border-border">
+                    This count reflects payloads for which a response was successfully received and processed.
+                    Requests that failed due to network errors or timeouts are not included.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </p>
+            <p className="text-2xl font-bold text-primary">{lfi?.testedPayloads}</p>
           </div>
         </div>
 
