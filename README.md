@@ -197,4 +197,12 @@ Special thanks to the open-source community for empowering modern reconnaissance
 
 ---
 
+## 💜 Contributors 
+
+<a href="https://github.com/zanesense/abspider-recon/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=zanesense/abspider-recon" />
+</a>
+
+---
+
 <p align=center>© 2025 <a href="https://github.com/zanesense"><b>zanesense</b></a> · <i>Built for security professionals.</i> 🚀</p>
