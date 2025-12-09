@@ -180,26 +180,26 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans px-4">
-      <Card className="w-full max-w-md border-border shadow-xl">
+      <Card className="w-full max-w-md border-border shadow-2xl dark:shadow-slate-900/50 dark:bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-foreground flex items-center justify-center gap-2">
+          <CardTitle className="text-3xl font-extrabold flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             <Shield className="w-7 h-7 text-primary" />
             ABSpider Auth
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-muted-foreground mt-2">
             Sign in or create an account to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3"> {/* Changed to grid-cols-3 */}
-              <TabsTrigger value="login">
+            <TabsList className="grid w-full grid-cols-3 h-10 bg-muted/50 border border-border">
+              <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
                 <Mail className="mr-2 h-4 w-4" /> Login
               </TabsTrigger>
-              <TabsTrigger value="signup">
+              <TabsTrigger value="signup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
                 <UserPlus className="mr-2 h-4 w-4" /> Sign Up
               </TabsTrigger>
-              <TabsTrigger value="magic-link"> {/* New tab trigger */}
+              <TabsTrigger value="magic-link" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
                 <Link className="mr-2 h-4 w-4" /> Magic Link
               </TabsTrigger>
             </TabsList>
