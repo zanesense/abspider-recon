@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../SupabaseClient";
-import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus, Link } from "lucide-react";
+import { Mail, Loader2, AlertCircle, CheckCircle, XCircle, Shield, UserPlus, Link, Github, Linkedin } from "lucide-react"; // Added Github, Linkedin
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -348,6 +348,28 @@ export default function Login() {
               <p className="text-sm">{message}</p>
             </div>
           )}
+
+          {/* Social Links */}
+          <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="https://github.com/zanesense"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Github className="h-5 w-5" />
+              <span>zanesense</span>
+            </a>
+            <a
+              href="https://www.linkedin.com/in/saaimaly"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Linkedin className="h-5 w-5" />
+              <span>saaimaly</span>
+            </a>
+          </div>
         </CardContent>
       </Card>
     </div>
