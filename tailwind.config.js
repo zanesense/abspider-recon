@@ -82,10 +82,16 @@ export default {
             height: "0",
           },
         },
+        starfall: {
+          '0%': { transform: 'translateY(-100vh) translateX(0)', opacity: '0' },
+          '10%': { opacity: '1' },
+          '100%': { transform: 'translateY(100vh) translateX(50vw)', opacity: '0' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        starfall: "starfall linear infinite",
       },
     },
   },
