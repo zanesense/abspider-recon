@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import StarfallBackground from '@/components/StarfallBackground';
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -180,7 +179,7 @@ export default function Login() {
   };
 
   return (
-    <StarfallBackground className="flex items-center justify-center font-sans px-4">
+    <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans px-4">
       <Card className="w-full max-w-md border-border shadow-2xl dark:shadow-slate-900/50 dark:bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-extrabold flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
@@ -351,6 +350,6 @@ export default function Login() {
           )}
         </CardContent>
       </Card>
-    </StarfallBackground>
+    </div>
   );
 }
