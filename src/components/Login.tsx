@@ -63,10 +63,10 @@ export default function Login() {
       setMessage(error.message);
       setMessageType('error');
       toast({
-        title: "Login Error",
-        description: error.message,
-        variant: "destructive",
-      });
+          title: "Login Error",
+          description: error.message,
+          variant: "destructive",
+        });
     } finally {
       setLoading(false);
     }
@@ -106,10 +106,10 @@ export default function Login() {
       setMessage(error.message);
       setMessageType('error');
       toast({
-        title: "Sign Up Error",
-        description: error.message,
-        variant: "destructive",
-      });
+          title: "Sign Up Error",
+          description: error.message,
+          variant: "destructive",
+        });
     } finally {
       setLoading(false);
     }
@@ -141,10 +141,10 @@ export default function Login() {
       setMessage(error.message);
       setMessageType('error');
       toast({
-        title: "Magic Link Error",
-        description: error.message,
-        variant: "destructive",
-      });
+          title: "Magic Link Error",
+          description: error.message,
+          variant: "destructive",
+        });
     } finally {
       setLoading(false);
     }
@@ -169,10 +169,10 @@ export default function Login() {
       setMessage(error.message);
       setMessageType('error');
       toast({
-        title: "Password Reset Error",
-        description: error.message,
-        variant: "destructive",
-      });
+          title: "Password Reset Error",
+          description: error.message,
+          variant: "destructive",
+        });
     } finally {
       setLoading(false);
     }
@@ -180,7 +180,7 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans px-4">
-      <Card className="w-full max-w-md border-border shadow-2xl dark:shadow-slate-900/50 dark:bg-card/80 backdrop-blur-sm">
+      <Card className="w-full max-w-md border-border shadow-xl dark:shadow-lg dark:shadow-primary/20 dark:bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-extrabold flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             <Shield className="w-7 h-7 text-primary" />
@@ -319,7 +319,7 @@ export default function Login() {
                 <Button
                   type="submit"
                   disabled={loading || !email}
-                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-primary/30"
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
                 >
                   {loading ? (
                     <>
