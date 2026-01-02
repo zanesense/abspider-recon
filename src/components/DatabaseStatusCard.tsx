@@ -28,20 +28,23 @@ const DatabaseStatusCard = ({ isLoading, isError }: DatabaseStatusCardProps) => 
   }
 
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border border-primary/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-      <CardHeader>
-        <CardTitle className="text-primary flex items-center gap-2">
-          <Database className="h-5 w-5" />
-          Database Connection
+    <Card className="group relative overflow-hidden bg-gradient-to-br from-emerald-500/5 via-green-500/10 to-emerald-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <CardHeader className="relative z-10">
+        <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
+          <div className="p-2 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
+            <Database className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <span className="font-semibold">Database Connection</span>
         </CardTitle>
-        <CardDescription className="text-muted-foreground">
+        <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
           Supabase database connection status
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2"> {/* Changed from space-y-3 to space-y-2 */}
-        <div className="flex items-center justify-between">
-          <span className="text-foreground">Status</span>
-          <Badge className={`flex items-center gap-1 ${statusColorClass}`}>
+      <CardContent className="space-y-3 relative z-10"> {/* Changed from space-y-3 to space-y-2 */}
+        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50/50 to-slate-100/30 dark:from-slate-800/30 dark:to-slate-700/20 rounded-lg border border-slate-200/30 dark:border-slate-700/30">
+          <span className="text-slate-900 dark:text-slate-100 font-medium">Status</span>
+          <Badge className={`flex items-center gap-2 ${statusColorClass}`}>
             {statusIcon}
             {statusText}
           </Badge>

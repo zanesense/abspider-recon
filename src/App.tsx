@@ -4,7 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import LaunchAnnouncementPopup from "@/components/LaunchAnnouncementPopup";
 import Index from "@/pages/Index";
 import Login from "@/components/Login";
 import NotFound from "@/pages/NotFound";
@@ -58,11 +60,13 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <TooltipProvider>
-            <BrowserRouter>
-              <Toaster />
-              <Sonner />
-              <Routes>
+          <NotificationProvider>
+            <TooltipProvider>
+              <BrowserRouter>
+                <Toaster />
+                <Sonner />
+                <LaunchAnnouncementPopup />
+                <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 
@@ -96,9 +100,10 @@ function App() {
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+        </NotificationProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
   );
 }
 

@@ -51,6 +51,60 @@ Experience ABSpider Recon Dashboard in action right now!
 
 ---
 
+## 🔔 New: Notification Center & Launch Announcements
+
+**ABSpider** now features a comprehensive notification system to keep you informed about scan progress, system updates, and important announcements:
+
+### 📢 Notification Center
+*   **🔔 Real-time Updates:** Bell icon in the header shows unread notification count
+*   **📊 Smart Categorization:** Success, warning, error, and info notifications with color coding
+*   **⏰ Timestamp Tracking:** See when each notification was received with relative time
+*   **🎯 Actionable Notifications:** Click notifications to navigate to relevant pages or external links
+*   **✅ Mark as Read:** Individual or bulk mark-as-read functionality
+*   **🗑️ Easy Management:** Remove individual notifications or clear all at once
+
+### 🚀 Launch Announcements
+*   **🎉 Welcome Popup:** First-time users see a welcome popup with NetProbe launch announcement
+*   **📰 Product Updates:** Stay informed about new tools and features from the ABSpider team
+*   **🔗 Direct Links:** Quick access to GitHub repositories and documentation
+*   **⏰ Smart Timing:** Announcements appear after app initialization with user-friendly controls
+
+### 👤 Enhanced User Profile & Account Management
+*   **🎨 Rich Profile Cards:** Beautiful avatar support with automatic initials fallback
+*   **📊 User Statistics:** Display scan counts, member duration, and activity status
+*   **⚙️ Comprehensive Settings:** Full profile management with bio, role, and preferences
+*   **🔐 Security Features:** Password change with validation and future 2FA support
+*   **📁 Data Management:** Export personal data and account deletion options
+*   **🔔 Notification Preferences:** Granular control over email and scan notifications
+
+### 🎯 Advanced Scan Header Module
+*   **⚡ Smart Scan Modes:** Conservative, adaptive, and aggressive scanning with AI-powered payload management
+*   **📊 Real-time Module Counter:** Visual feedback on selected scan modules
+*   **🧠 Intelligent Target Analysis:** Automatic reconnaissance to assess target capabilities
+*   **⚙️ Template Management:** Save and reuse scan configurations
+*   **🎯 Adaptive Payload Control:** Dynamic payload adjustment based on target response and health
+
+### 🤖 Intelligent Scanning System
+*   **🧠 Smart Scan Manager:** AI-powered target analysis and payload optimization
+*   **📊 Response Monitoring:** Real-time tracking of target response times and error rates
+*   **⚖️ Adaptive Load Balancing:** Automatic adjustment of scan intensity based on target health
+*   **🛡️ Stealth Mode Detection:** Automatic detection of WAF, rate limiting, and security measures
+*   **🎯 Server-Specific Optimization:** Tailored scanning approaches for different server types
+*   **📈 Performance Analytics:** Comprehensive metrics and recommendations for optimal scanning
+*   **🔄 Dynamic Payload Management:** Intelligent payload count adjustment to prevent target overload
+
+### ⚙️ Comprehensive App Settings & Configuration
+*   **🎨 User Preferences:** Theme selection, language support, and personalized defaults
+*   **🔧 Scanning Configuration:** Thread management, timeout settings, and retry logic
+*   **🌐 Proxy & Network:** Advanced proxy configuration and custom user agents
+*   **🔔 Notification System:** Discord webhooks with testing and validation
+*   **📊 Data Management:** Export/import settings, scan history limits, and cleanup options
+*   **🔐 API Integration:** Enhanced API key management with real-time testing
+*   **💾 Database Persistence:** User preferences stored securely per account
+*   **🎯 Scan Profiles:** Quick, balanced, comprehensive, and stealth mode presets
+
+---
+
 ## 🧭 Core Features & Modules: Your Arsenal
 
 ABSpider employs a modular approach, offering both stealthy passive checks and comprehensive active vulnerability scans.

@@ -1,0 +1,32 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Spider body -->
+  <ellipse cx="16" cy="18" rx="6" ry="8" fill="#2563eb"/>
+  <ellipse cx="16" cy="12" rx="4" ry="5" fill="#3b82f6"/>
+  
+  <!-- Spider legs -->
+  <!-- Left legs -->
+  <path d="M10 14 L4 8" stroke="#1e40af" stroke-width="2" stroke-linecap="round"/>
+  <path d="M9 18 L2 16" stroke="#1e40af" stroke-width="2" stroke-linecap="round"/>
+  <path d="M10 22 L4 28" stroke="#1e40af" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 25 L6 30" stroke="#1e40af" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Right legs -->
+  <path d="M22 14 L28 8" stroke="#1e40af" stroke-width="2" stroke-linecap="round"/>
+  <path d="M23 18 L30 16" stroke="#1e40af" stroke-width="2" stroke-linecap="round"/>
+  <path d="M22 22 L28 28" stroke="#1e40af" stroke-width="2" stroke-linecap="round"/>
+  <path d="M20 25 L26 30" stroke="#1e40af" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Spider eyes -->
+  <circle cx="14" cy="10" r="1.5" fill="#ffffff"/>
+  <circle cx="18" cy="10" r="1.5" fill="#ffffff"/>
+  <circle cx="14" cy="10" r="0.8" fill="#000000"/>
+  <circle cx="18" cy="10" r="0.8" fill="#000000"/>
+  
+  <!-- Web pattern background -->
+  <defs>
+    <pattern id="web" patternUnits="userSpaceOnUse" width="8" height="8">
+      <path d="M0,4 L8,4 M4,0 L4,8" stroke="#e0e7ff" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+  </defs>
+  <rect width="32" height="32" fill="url(#web)" opacity="0.2"/>
+</svg>

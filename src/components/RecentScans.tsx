@@ -45,36 +45,42 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
   };
 
   return (
-    <Card className="bg-card border-border">
-      <CardHeader>
-        <CardTitle className="text-foreground">Recent Scans</CardTitle>
-        <CardDescription className="text-muted-foreground">
+    <Card className="group relative overflow-hidden bg-gradient-to-br from-indigo-500/5 via-purple-500/10 to-indigo-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <CardHeader className="relative z-10">
+        <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
+          <div className="p-2 bg-indigo-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
+            <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <span className="font-semibold">Recent Scans</span>
+        </CardTitle>
+        <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
           Latest reconnaissance activities
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative z-10">
         <div className="space-y-3">
           {scans.map((scan) => (
             <div key={scan.id} className="flex items-center justify-between group">
               <Link
                 to={`/scan/${scan.id}`}
-                className="flex-1 flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/50 transition-colors group"
+                className="flex-1 flex items-center justify-between p-4 bg-gradient-to-r from-slate-50/50 to-slate-100/30 dark:from-slate-800/30 dark:to-slate-700/20 rounded-lg border border-slate-200/30 dark:border-slate-700/30 hover:border-indigo-500/40 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 dark:hover:from-indigo-900/20 dark:hover:to-purple-900/10 transition-all duration-300 group"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
-                    <h4 className="text-foreground font-medium group-hover:text-primary transition-colors">
+                    <h4 className="text-slate-900 dark:text-slate-100 font-semibold group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {scan.target}
                     </h4>
                     <Badge className={getStatusColor(scan.status)}>
                       {scan.status}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                     <Clock className="h-3 w-3" />
                     <span>{new Date(scan.timestamp).toLocaleString()}</span>
                   </div>
                 </div>
-                <ExternalLink className="h-4 w-4 text-muted-foreground/70 group-hover:text-primary transition-colors" />
+                <ExternalLink className="h-4 w-4 text-slate-500 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
               </Link>
               <button
                 onClick={(e) => {
@@ -82,7 +88,7 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
                   e.preventDefault();
                   handleDeleteScan(scan.id, scan.target);
                 }}
-                className="ml-2 p-2 text-muted-foreground/70 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                className="ml-2 p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                 aria-label="Delete scan"
               >
                 <Trash2 className="h-4 w-4" />
@@ -91,7 +97,13 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
           ))}
           
           {scans.length === 0 && (
-            <p className="text-center text-muted-foreground/70 py-8">No scans yet</p>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="p-4 bg-indigo-500/20 rounded-full mb-4">
+                <Clock className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 font-medium">No scans yet</p>
+              <p className="text-sm text-slate-500 dark:text-slate-500 mt-1">Your recent scans will appear here</p>
+            </div>
           )}
         </div>
       </CardContent>

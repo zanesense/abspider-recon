@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   Sidebar,
   SidebarContent,
@@ -12,12 +13,13 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, Shield, FileText } from 'lucide-react';
+import { Home, Scan, Settings, Activity, Sun, Moon, History, LogIn, FileText, Bug } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/SupabaseClient';
 import { useToast } from '@/hooks/use-toast';
-import ProfileCardPopover from './ProfileCardPopover'; // Import ProfileCardPopover
+import ProfileCardPopover from './ProfileCardPopover';
+import { getScanHistory } from '@/services/scanService';
 
 export function AppSidebar() {
   const location = useLocation();
@@ -25,7 +27,13 @@ export function AppSidebar() {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const [session, setSession] = useState<any>(null);
-  // Removed userEmail state as it's no longer displayed here
+
+  // Fetch scan data for stats
+  const { data: scans = [] } = useQuery({
+    queryKey: ['scanHistory'],
+    queryFn: getScanHistory,
+    refetchInterval: 5000,
+  });
 
   useEffect(() => {
     const getSession = async () => {
@@ -60,7 +68,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-border bg-sidebar-accent">
         <div className="flex items-center gap-3 px-4 py-4">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
-            <Shield className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" size={28} />
+            <Bug className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" size={28} />
           </div>
           <div>
             <h1 className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
@@ -96,15 +104,33 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-muted-foreground">Quick Stats</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="px-4 py-2 space-y-2">
+            <div className="px-4 py-2 space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Status</span>
                 <div className="flex items-center gap-2">
                   <Activity className="h-3 w-3 text-green-500 animate-pulse" />
                   <span className="text-green-500 font-medium">Online</span>
                 </div>
-              </div >
-            </div >
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Active Scans</span>
+                <span className="text-primary font-medium">{scans.filter(s => s.status === 'running').length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total Scans</span>
+                <span className="text-foreground font-medium">{scans.length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Completed</span>
+                <span className="text-green-500 font-medium">{scans.filter(s => s.status === 'completed').length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Success Rate</span>
+                <span className="text-green-500 font-medium">
+                  {scans.length > 0 ? Math.round((scans.filter(s => s.status === 'completed').length / scans.length) * 100) : 0}%
+                </span>
+              </div>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
