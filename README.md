@@ -204,7 +204,7 @@ yarn dev
 
 ## 📸 Interface Preview
 
-<img src="https://i.postimg.cc/zfKzfkTj/localhost-5000.png" alt="ABSpider Recon Dashboard Interface" width="100%">
+<img src="https://i.postimg.cc/dsfymjY8/screencapture-localhost-5000-dashboard-2026-01-02-05-09-52.png" alt="ABSpider Recon Dashboard Interface" width="100%">
 
 ---
 
