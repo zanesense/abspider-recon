@@ -228,34 +228,56 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans px-4">
-      <Card className="w-full max-w-md border-border shadow-xl dark:shadow-lg dark:shadow-primary/20 dark:bg-card/80 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-extrabold flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            <Shield className="w-7 h-7 text-primary" />
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-sans px-4 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+      
+      {/* Main login card */}
+      <Card className="w-full max-w-md border border-slate-800/50 shadow-2xl bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl relative z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-cyan-600/5 rounded-lg"></div>
+        <CardHeader className="text-center relative z-10 pb-6">
+          <div className="flex items-center justify-center mb-4">
+            <div className="p-3 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl shadow-lg shadow-blue-600/25">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
             ABSpider Auth
           </CardTitle>
-          <CardDescription className="text-muted-foreground mt-2">
-            Sign in or create an account to continue
+          <CardDescription className="text-slate-400 mt-2 text-base">
+            Secure access to your reconnaissance platform
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative z-10">
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-10 bg-muted/50 border border-border">
-              <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+            <TabsList className="grid w-full grid-cols-3 h-12 bg-slate-800/50 border border-slate-700/50 backdrop-blur-sm">
+              <TabsTrigger 
+                value="login" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-600/25 transition-all duration-200"
+              >
                 <Mail className="mr-2 h-4 w-4" /> Login
               </TabsTrigger>
-              <TabsTrigger value="signup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <TabsTrigger 
+                value="signup" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-600/25 transition-all duration-200"
+              >
                 <UserPlus className="mr-2 h-4 w-4" /> Sign Up
               </TabsTrigger>
-              <TabsTrigger value="magic-link" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <TabsTrigger 
+                value="magic-link" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-600/25 transition-all duration-200"
+              >
                 <Link className="mr-2 h-4 w-4" /> Magic Link
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="login" className="mt-6">
+            <TabsContent value="login" className="mt-8">
               <form onSubmit={handleLogin} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email-login" className="text-foreground">Email Address</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="email-login" className="text-slate-200 font-medium">Email Address</Label>
                   <Input
                     id="email-login"
                     type="email"
@@ -263,11 +285,11 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                    className="bg-slate-800/50 border-slate-700/50 focus:border-blue-500 focus:ring-blue-500/20 text-white placeholder:text-slate-400 h-12 transition-all duration-200"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password-login" className="text-foreground">Password</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="password-login" className="text-slate-200 font-medium">Password</Label>
                   <div className="relative">
                     <Input
                       id="password-login"
@@ -276,13 +298,13 @@ export default function Login() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="bg-muted/30 border-border focus:border-primary focus:ring-primary pr-10"
+                      className="bg-slate-800/50 border-slate-700/50 focus:border-blue-500 focus:ring-blue-500/20 text-white placeholder:text-slate-400 h-12 pr-12 transition-all duration-200"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
+                      className="absolute right-0 top-0 h-full px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors duration-200"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -292,16 +314,16 @@ export default function Login() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
+                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-600/25 font-semibold transition-all duration-200 hover:shadow-xl hover:shadow-blue-600/30 hover:scale-[1.02]"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Logging In...
                     </>
                   ) : (
                     <>
-                      <Mail className="mr-2 h-4 w-4" />
+                      <Mail className="mr-2 h-5 w-5" />
                       Login
                     </>
                   )}
@@ -311,16 +333,16 @@ export default function Login() {
                   variant="link"
                   onClick={handleForgotPassword}
                   disabled={loading || !email}
-                  className="w-full text-sm text-muted-foreground hover:text-primary"
+                  className="w-full text-sm text-slate-400 hover:text-blue-400 transition-colors duration-200"
                 >
                   Forgot Password?
                 </Button>
               </form>
             </TabsContent>
-            <TabsContent value="signup" className="mt-6">
+            <TabsContent value="signup" className="mt-8">
               <form onSubmit={handleSignUp} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email-signup" className="text-foreground">Email Address</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="email-signup" className="text-slate-200 font-medium">Email Address</Label>
                   <Input
                     id="email-signup"
                     type="email"
@@ -328,11 +350,11 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                    className="bg-slate-800/50 border-slate-700/50 focus:border-blue-500 focus:ring-blue-500/20 text-white placeholder:text-slate-400 h-12 transition-all duration-200"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password-signup" className="text-foreground">Password</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="password-signup" className="text-slate-200 font-medium">Password</Label>
                   <div className="relative">
                     <Input
                       id="password-signup"
@@ -341,30 +363,43 @@ export default function Login() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="bg-muted/30 border-border focus:border-primary focus:ring-primary pr-10"
+                      className="bg-slate-800/50 border-slate-700/50 focus:border-blue-500 focus:ring-blue-500/20 text-white placeholder:text-slate-400 h-12 pr-12 transition-all duration-200"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
+                      className="absolute right-0 top-0 h-full px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors duration-200"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                   {password.length > 0 && (
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Strength: <span className={cn("font-semibold", passwordStrength.color.replace('bg-', 'text-'))}>{passwordStrength.text}</span></span>
-                        <span>{passwordStrength.value}%</span>
+                    <div className="mt-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30">
+                      <div className="flex items-center justify-between text-sm text-slate-300 mb-2">
+                        <span>Password Strength: <span className={cn("font-semibold", 
+                          passwordStrength.value >= 75 ? 'text-green-400' :
+                          passwordStrength.value >= 50 ? 'text-yellow-400' :
+                          passwordStrength.value >= 25 ? 'text-orange-400' : 'text-red-400'
+                        )}>{passwordStrength.text}</span></span>
+                        <span className="text-slate-400">{passwordStrength.value}%</span>
                       </div>
-                      <Progress value={passwordStrength.value} className="h-1 mt-1" indicatorClassName={passwordStrength.color} />
+                      <div className="w-full bg-slate-700/50 rounded-full h-2">
+                        <div 
+                          className={cn("h-2 rounded-full transition-all duration-300", 
+                            passwordStrength.value >= 75 ? 'bg-gradient-to-r from-green-500 to-green-400' :
+                            passwordStrength.value >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-400' :
+                            passwordStrength.value >= 25 ? 'bg-gradient-to-r from-orange-500 to-orange-400' : 'bg-gradient-to-r from-red-500 to-red-400'
+                          )}
+                          style={{ width: `${passwordStrength.value}%` }}
+                        ></div>
+                      </div>
                     </div>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password-signup" className="text-foreground">Confirm Password</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="confirm-password-signup" className="text-slate-200 font-medium">Confirm Password</Label>
                   <div className="relative">
                     <Input
                       id="confirm-password-signup"
@@ -373,47 +408,47 @@ export default function Login() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
-                      className="bg-muted/30 border-border focus:border-primary focus:ring-primary pr-10"
+                      className="bg-slate-800/50 border-slate-700/50 focus:border-blue-500 focus:ring-blue-500/20 text-white placeholder:text-slate-400 h-12 pr-12 transition-all duration-200"
                     />
                     {confirmPassword.length > 0 && (
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                         {passwordsMatch ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          <CheckCircle className="h-5 w-5 text-green-400" />
                         ) : (
-                          <XCircle className="h-5 w-5 text-red-500" />
+                          <XCircle className="h-5 w-5 text-red-400" />
                         )}
                       </div>
                     )}
                   </div>
                   {confirmPassword.length > 0 && !passwordsMatch && (
-                    <p className="text-xs text-red-500 flex items-center gap-1 mt-1">
-                      <AlertCircle className="h-3 w-3" /> Passwords do not match.
+                    <p className="text-sm text-red-400 flex items-center gap-2 mt-2 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
+                      <AlertCircle className="h-4 w-4" /> Passwords do not match.
                     </p>
                   )}
                 </div>
                 <Button
                   type="submit"
                   disabled={loading || !passwordsMatch || passwordStrength.value < 75}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
+                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-600/25 font-semibold transition-all duration-200 hover:shadow-xl hover:shadow-blue-600/30 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Signing Up...
                     </>
                   ) : (
                     <>
-                      <UserPlus className="mr-2 h-4 w-4" />
+                      <UserPlus className="mr-2 h-5 w-5" />
                       Sign Up
                     </>
                   )}
                 </Button>
               </form>
             </TabsContent>
-            <TabsContent value="magic-link" className="mt-6"> {/* New tab content */}
+            <TabsContent value="magic-link" className="mt-8">
               <form onSubmit={handleMagicLinkLogin} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email-magiclink" className="text-foreground">Email Address</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="email-magiclink" className="text-slate-200 font-medium">Email Address</Label>
                   <Input
                     id="email-magiclink"
                     type="email"
@@ -421,22 +456,35 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
+                    className="bg-slate-800/50 border-slate-700/50 focus:border-blue-500 focus:ring-blue-500/20 text-white placeholder:text-slate-400 h-12 transition-all duration-200"
                   />
+                </div>
+                <div className="bg-slate-800/30 border border-slate-700/30 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-blue-600/20 rounded-lg">
+                      <Mail className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-slate-200 font-medium mb-1">Magic Link Authentication</h4>
+                      <p className="text-sm text-slate-400 leading-relaxed">
+                        We'll send you a secure login link via email. Click the link to instantly access your account without entering a password.
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <Button
                   type="submit"
                   disabled={loading || !email}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
+                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-600/25 font-semibold transition-all duration-200 hover:shadow-xl hover:shadow-blue-600/30 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Sending Magic Link...
                     </>
                   ) : (
                     <>
-                      <Link className="mr-2 h-4 w-4" />
+                      <Link className="mr-2 h-5 w-5" />
                       Send Magic Link
                     </>
                   )}
@@ -445,15 +493,21 @@ export default function Login() {
             </TabsContent>
           </Tabs>
           {message && (
-            <div className={`mt-6 p-4 rounded-lg flex items-center gap-3 ${
-              messageType === 'success' ? 'bg-green-500/10 border-green-500/50 text-green-600 dark:text-green-400' :
-              messageType === 'error' ? 'bg-red-500/10 border-red-500/50 text-red-600 dark:text-red-400' :
-              'bg-blue-500/10 border-blue-500/50 text-blue-600 dark:text-blue-400'
-            } border`}>
-              {messageType === 'success' && <CheckCircle className="h-5 w-5" />}
-              {messageType === 'error' && <XCircle className="h-5 w-5" />}
-              {messageType === 'info' && <AlertCircle className="h-5 w-5" />}
-              <p className="text-sm">{message}</p>
+            <div className={`mt-6 p-4 rounded-lg flex items-center gap-3 border backdrop-blur-sm ${
+              messageType === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
+              messageType === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' :
+              'bg-blue-500/10 border-blue-500/30 text-blue-400'
+            }`}>
+              <div className={`p-1 rounded-full ${
+                messageType === 'success' ? 'bg-green-500/20' :
+                messageType === 'error' ? 'bg-red-500/20' :
+                'bg-blue-500/20'
+              }`}>
+                {messageType === 'success' && <CheckCircle className="h-4 w-4" />}
+                {messageType === 'error' && <XCircle className="h-4 w-4" />}
+                {messageType === 'info' && <AlertCircle className="h-4 w-4" />}
+              </div>
+              <p className="text-sm font-medium">{message}</p>
             </div>
           )}
         </CardContent>

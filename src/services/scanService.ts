@@ -341,7 +341,7 @@ const runScan = async (
     }
 
     const metrics = requestManager.getPerformanceMetrics();
-    if (metrics.totalRequests < requestManager.metricsBufferSize / 2) {
+    if (metrics.totalRequests < requestManager.getMetricsBufferSize() / 2) {
       // Not enough data to make informed decisions yet
       return;
     }

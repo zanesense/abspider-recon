@@ -194,6 +194,10 @@ export class RequestManager {
   getMinRequestInterval(): number {
     return this.minRequestInterval;
   }
+
+  getMetricsBufferSize(): number {
+    return this.metricsBufferSize;
+  }
 }
 
 export function createRequestManager(scanController?: AbortController): RequestManager {

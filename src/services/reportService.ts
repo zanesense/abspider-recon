@@ -429,7 +429,7 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
       ['Cloudflare', scan.results.siteInfo.cloudflare ? 'Yes' : 'No'],
       ['Status Code', scan.results.siteInfo.statusCode?.toString() || 'N/A'],
       ['Response Time', scan.results.siteInfo.responseTime ? `${scan.results.siteInfo.responseTime}ms` : 'N/A'],
-      ['Technologies', scan.results.siteInfo.technologies.join(', ') || 'None detected'],
+      ['Technologies', scan.results.techStack?.technologies?.map((tech: any) => tech.name).join(', ') || 'None detected'],
     ];
     
     autoTable(doc, {

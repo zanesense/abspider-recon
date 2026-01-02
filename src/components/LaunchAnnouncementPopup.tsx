@@ -5,22 +5,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
-const LaunchAnnouncementPopup: React.FC = () => {
+interface LaunchAnnouncementPopupProps {
+  shouldShow?: boolean;
+}
+
+const LaunchAnnouncementPopup: React.FC<LaunchAnnouncementPopupProps> = ({ shouldShow = false }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Check if user has already seen this announcement
-    const hasSeenAnnouncement = localStorage.getItem('abspider-launch-announcement-seen');
-    
-    if (!hasSeenAnnouncement) {
-      // Show popup after a short delay
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 2000);
+    // Only show if shouldShow is true and user hasn't seen the announcement
+    if (shouldShow) {
+      const hasSeenAnnouncement = localStorage.getItem('abspider-launch-announcement-seen');
       
-      return () => clearTimeout(timer);
+      if (!hasSeenAnnouncement) {
+        // Show popup after a short delay
+        const timer = setTimeout(() => {
+          setIsOpen(true);
+        }, 2000);
+        
+        return () => clearTimeout(timer);
+      }
     }
-  }, []);
+  }, [shouldShow]);
 
   const handleClose = () => {
     setIsOpen(false);

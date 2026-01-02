@@ -6,7 +6,6 @@ import { Routes, Route, BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import LaunchAnnouncementPopup from "@/components/LaunchAnnouncementPopup";
 import Index from "@/pages/Index";
 import Login from "@/components/Login";
 import NotFound from "@/pages/NotFound";
@@ -21,6 +20,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
+import PostAuthAnnouncement from "@/components/PostAuthAnnouncement";
 import RequireAuth from "@/components/RequireAuth";
 import { useEffect } from "react"; // Import useEffect
 import { cleanupStuckScans, getRunningScanCount } from "@/services/scanService"; // Import new functions
@@ -65,7 +65,6 @@ function App() {
               <BrowserRouter>
                 <Toaster />
                 <Sonner />
-                <LaunchAnnouncementPopup />
                 <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
@@ -74,6 +73,7 @@ function App() {
                 <Route path="*" element={
                   <RequireAuth>
                     <LegalDisclaimer />
+                    <PostAuthAnnouncement />
                     <SidebarProvider>
                       <div className="flex min-h-screen w-full bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
                         <AppSidebar />
