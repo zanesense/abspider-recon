@@ -25,7 +25,7 @@ const Footer: React.FC = () => {
           {/* Links */}
           <div className="flex items-center gap-6">
             <a
-              href="https://zansense.dev/abspider-recon"
+              href="https://zanesense.dev/abspider-recon"
               className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
             >
               <BookOpen className="h-4 w-4" />
