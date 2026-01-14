@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  
+  <!-- Black rounded box background -->
+  <rect x="8" y="8" width="48" height="48" rx="8" ry="8" fill="#0f172a" filter="url(#shadow)"/>
+  
+  <!-- White shield -->
+  <path d="M 32 18 L 44 22 L 44 32 Q 44 40 32 48 Q 20 40 20 32 L 20 22 Z" 
+        fill="white" 
+        stroke="white" 
+        stroke-width="0.5"/>
+</svg>

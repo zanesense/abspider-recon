@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <!-- Black rounded box -->
+  <rect x="2" y="2" width="12" height="12" rx="2" ry="2" fill="#0f172a"/>
+  
+  <!-- White shield -->
+  <path d="M 8 4.5 L 11 5.5 L 11 8 Q 11 10 8 12 Q 5 10 5 8 L 5 5.5 Z" 
+        fill="white"/>
+</svg>

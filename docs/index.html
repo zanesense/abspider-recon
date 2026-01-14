@@ -1,631 +1,1325 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>ABSpider Recon — Comprehensive Documentation Hub</title>
-
-    <link rel="icon" type="image/svg+xml" href="../public/spider-icon.svg" />
-    <link rel="icon" type="image/png" href="../src/images/favicon.png" />
-
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABSpider Recon - Documentation</title>
+    <meta name="description" content="Professional web reconnaissance and security analysis platform. Comprehensive documentation for security professionals and penetration testers.">
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../public/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../public/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../public/apple-touch-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
-      /* Professional Documentation Slate/Cyan Theme */
-      :root {
-        --base-dark: #0f172a; /* Slate 900 */
-        --content-bg: #1e293b; /* Slate 800 */
-        --accent-color: #06b6d4; /* Cyan 500 (Teal-ish) */
-        --border-light: #334155; /* Slate 700 */
-        --category-card-bg: #1a2434; /* Slightly lighter for module grouping */
-      }
-      body {
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        scroll-behavior: smooth;
-        background-color: var(--base-dark);
-        color: #e2e8f0; /* Light text */
-        line-height: 1.6;
-      }
-
-      /* Animations and effects */
-      .fade-in { opacity: 0; transform: translateY(10px); animation: fadeUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
-      @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
-
-      .hover-raise:hover { 
-        transform: translateY(-2px); 
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4); 
-        border-color: var(--accent-color); 
-        transition: all 0.3s ease;
-      }
-
-      /* Button Styles */
-      .btn-primary { 
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background-color: var(--accent-color);
-        color: #0f172a; /* Dark text for contrast */
-        font-weight: 700;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
-        transition: background-color 0.2s;
-      }
-      .btn-primary:hover { 
-        background-color: #0891b2; /* Cyan 600 */
-      }
-      .btn-secondary { 
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background-color: var(--content-bg);
-        color: #94a3b8; /* Slate 400 */
-        padding: 0.75rem 1.25rem;
-        border-radius: 0.5rem;
-        border: 1px solid var(--border-light);
-        transition: background-color 0.2s, border-color 0.2s;
-      }
-      .btn-secondary:hover { 
-        background-color: #374151; /* Slate 700 */
-        color: #e2e8f0;
-      }
-
-      /* Form Input Styles */
-      .form-input {
-        padding: 0.75rem;
-        border-radius: 0.375rem;
-        border: 1px solid var(--border-light);
-        background-color: #111827; /* Deep Charcoal */
-        color: #f3f4f6;
-        width: 100%;
-        transition: border-color 0.2s, box-shadow 0.2s;
-      }
-      .form-input:focus {
-        outline: none;
-        border-color: var(--accent-color);
-        box-shadow: 0 0 0 1px var(--accent-color);
-      }
-
-      /* Component Styles */
-      .chip { display:inline-block;padding:.15rem .5rem;border-radius:9999px;font-size:.65rem;font-weight:700;letter-spacing: 0.05em; }
-      /* New Badges for Module Status */
-      .chip-passive { background-color: rgba(52, 211, 163, 0.2); color: #5eead4; border: 1px solid #2dd4bf; } /* Teal-Green */
-      .chip-active { background-color: rgba(248, 113, 113, 0.2); color: #fecaca; border: 1px solid #f87171; } /* Red-Pink */
-      .chip-utility { background-color: rgba(129, 140, 248, 0.2); color: #a5b4fc; border: 1px solid #818cf8; } /* Indigo-Blue */
-
-      .code-block { background-color: #0b111a; padding: 1rem; border-radius: 0.5rem; font-size: 0.875rem; color: #67e8f9; overflow-x: auto; border: 1px solid #1f2937; }
-      .step-icon { width: 1.75rem; height: 1.75rem; flex-shrink: 0; color: #fff; border-radius: 0.375rem; background-color: var(--accent-color); display: flex; align-items: center; justify-content: center; font-weight: 700; margin-right: 1rem; font-size: 0.875rem; }
-      
-      /* Section Header Styling */
-      .section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-light); }
-      .section-header i { width: 1.5rem; height: 1.5rem; color: var(--accent-color); }
-      .section-header h3 { font-size: 1.75rem; font-weight: 700; color: #ffffff; }
-
-      /* Module Card Styling */
-      .module-card { padding: 1.25rem; border-radius: 0.5rem; border: 1px solid var(--border-light); background-color: var(--category-card-bg); margin-bottom: 1.5rem; }
-      .module-card-header { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;}
-      .module-card-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
-      
-      .module-item { 
-        padding: 0.75rem; 
-        border-radius: 0.375rem; 
-        background-color: var(--content-bg);
-        border: 1px solid #2f3e53;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: background-color 0.2s;
-      }
-      .module-item:hover { background-color: #273347; }
-
-      .module-item strong { 
-        font-weight: 600; 
-        color: #e2e8f0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .nav-link:hover {
+            color: #06b6d4;
+            background: rgba(6, 182, 212, 0.1);
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 6rem 0 4rem;
+            text-align: center;
+            position: relative;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: #94a3b8;
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.8;
+        }
+        
+        /* Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: #0f172a;
+            box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5);
+        }
+        
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(51, 65, 85, 0.8);
+            border-color: rgba(148, 163, 184, 0.3);
+        }
+        
+        /* Card Styles */
+        .card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-icon {
+            width: 3rem;
+            height: 3rem;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(8, 145, 178, 0.2) 100%);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 0.75rem;
+        }
+        
+        .card-description {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        /* Section Styles */
+        .section {
+            padding: 5rem 0;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #f1f5f9;
+        }
+        
+        .section-subtitle {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto 3rem;
+        }
+        
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+        
+        /* Code Block */
+        .code-block {
+            background: #0b1120;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: #67e8f9;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+        
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .badge-passive {
+            background: rgba(52, 211, 163, 0.15);
+            color: #5eead4;
+            border: 1px solid rgba(52, 211, 163, 0.3);
+        }
+        
+        .badge-active {
+            background: rgba(248, 113, 113, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(248, 113, 113, 0.3);
+        }
+        
+        .badge-utility {
+            background: rgba(129, 140, 248, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(129, 140, 248, 0.3);
+        }
+        
+        /* Footer */
+        .footer {
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+            padding: 3rem 0;
+            margin-top: 5rem;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 0 1rem;
+            }
+        }
     </style>
-  </head>
-
-  <body class="bg-base-dark">
-
-    <header class="sticky top-0 z-40 backdrop-blur-sm bg-base-dark/95 border-b border-gray-800">
-      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center shadow-lg">
-            <i data-lucide="scan-eye" class="w-5 h-5 text-white"></i>
-          </div>
-          <div>
-            <h1 class="text-lg font-bold tracking-wide text-white">ABSpider Recon <span class="text-cyan-400">Documentation</span></h1>
-          </div>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="flex items-center justify-between py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg">
+                        <i data-lucide="scan-eye" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white">ABSpider Recon</h1>
+                        <p class="text-xs text-slate-400">Documentation</p>
+                    </div>
+                </div>
+                <nav class="hidden md:flex items-center gap-2">
+                    <a href="#overview" class="nav-link">Overview</a>
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#installation" class="nav-link">Installation</a>
+                    <a href="#modules" class="nav-link">Modules</a>
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" class="nav-link flex items-center gap-1">
+                        <i data-lucide="github" class="w-4 h-4"></i>
+                        GitHub
+                    </a>
+                </nav>
+            </div>
         </div>
-        <nav class="hidden md:flex items-center gap-5 text-sm font-medium">
-          <a href="#overview" class="text-gray-400 hover:text-cyan-400 transition">Overview</a>
-          <a href="#modules" class="text-gray-400 hover:text-cyan-400 transition">Modules</a>
-          <a href="#howto" class="text-gray-400 hover:text-cyan-400 transition">Usage</a>
-          <a href="#tech" class="text-gray-400 hover:text-cyan-400 transition">Technical Details</a>
-          <a href="#troubleshooting" class="text-gray-400 hover:text-cyan-400 transition">Troubleshooting</a>
-          <a href="#best-practices" class="text-gray-400 hover:text-cyan-400 transition">Best Practices</a>
-          <a href="#legal" class="text-gray-400 hover:text-cyan-400 transition">Legal Notice</a>
-          <a href="#contact" class="text-gray-400 hover:text-cyan-400 transition">Contact</a>
-          <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener" class="ml-3 inline-flex items-center text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition">
-            <i data-lucide="github" class="w-3 h-3 mr-1"></i> GitHub
-          </a>
-        </nav>
-      </div>
     </header>
 
-    <section class="relative pt-20 pb-24 border-b border-gray-800 bg-gray-900/40">
-      <div class="max-w-4xl mx-auto px-6 text-center fade-in">
-        <i data-lucide="file-text" class="w-10 h-10 text-cyan-500 mx-auto mb-4"></i>
-        <h2 class="text-4xl font-extrabold mb-3 tracking-tight text-white md:text-5xl">ABSpider Recon Dashboard</h2>
-        <p class="text-gray-400 max-w-3xl mx-auto mb-10 text-xl">
-          A minimalist and professional guide for the <span class="text-white font-semibold">production-ready web reconnaissance tool</span>, providing comprehensive security analysis capabilities.
-        </p>
 
-        <div class="flex items-center justify-center gap-4">
-          <a href="#howto" class="btn-primary"><i data-lucide="play" class="w-4 h-4"></i> Get Started</a>
-          <button onclick="downloadInstallScript()" class="btn-secondary"><i data-lucide="download" class="w-4 h-4"></i> Download Install Script</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="overview" class="max-w-7xl mx-auto px-6 py-16 fade-in">
-      <div class="section-header">
-        <i data-lucide="info"></i>
-        <h3>Project Overview & Core Features</h3>
-      </div>
-      <p class="text-gray-400 mb-10 max-w-4xl">ABSpider is a robust, client-side web auditing solution designed for security professionals. It features modular components for <span class="text-white font-semibold">real-time passive reconnaissance</span>, security analysis, and generates comprehensive reports.</p>
-
-      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <div class="p-5 rounded-lg border border-gray-700 bg-content-bg hover-raise">
-            <i data-lucide="zap" class="w-5 h-5 text-cyan-400 mb-2"></i>
-            <h4 class="font-semibold text-md mb-1">Real-time Analysis</h4>
-            <p class="text-sm text-gray-400">Scan results update instantly on the dashboard with status and progress tracking.</p>
-        </div>
-        <div class="p-5 rounded-lg border border-gray-700 bg-content-bg hover-raise">
-            <i data-lucide="file-check" class="w-5 h-5 text-cyan-400 mb-2"></i>
-            <h4 class="font-semibold text-md mb-1">PDF Reporting</h4>
-            <p class="text-sm text-gray-400">Generate <span class="text-white">professional, exportable PDF reports</span> with all scan results.</p>
-        </div>
-        <div class="p-5 rounded-lg border border-gray-700 bg-content-bg hover-raise">
-            <i data-lucide="route" class="w-5 h-5 text-cyan-400 mb-2"></i>
-            <h4 class="font-semibold text-md mb-1">Proxy Rotation</h4>
-            <p class="text-sm text-gray-400">Configure multiple proxies in settings for <span class="text-white">automatic rotation</span> to help avoid rate limiting.</p>
-        </div>
-        <div class="p-5 rounded-lg border border-gray-700 bg-content-bg hover-raise">
-            <i data-lucide="bell-ring" class="w-5 h-5 text-cyan-400 mb-2"></i>
-            <h4 class="font-semibold text-md mb-1">Discord Alerts</h4>
-            <p class="text-sm text-gray-400">Webhook integration provides <span class="text-white">real-time notifications</span> when scans complete.</p>
-        </div>
-        <div class="p-5 rounded-lg border border-gray-700 bg-content-bg hover-raise">
-            <i data-lucide="calendar-check" class="w-5 h-5 text-cyan-400 mb-2"></i>
-            <h4 class="font-semibold text-md mb-1">Client-Side Scheduling</h4>
-            <p class="text-sm text-gray-400">Automate reconnaissance tasks with flexible daily, weekly, or monthly scheduling.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="modules" class="py-16 fade-in bg-gray-900 border-t border-b border-gray-800">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="section-header">
-          <i data-lucide="boxes"></i>
-          <h3>Available Reconnaissance Modules</h3>
-        </div>
-
-        <div class="module-card">
-            <h4 class="module-card-header text-cyan-400"><i data-lucide="archive" class="w-5 h-5"></i> Basic Reconnaissance</h4>
-            <p class="text-sm text-gray-400">Fundamental information gathering modules.</p>
-            <div class="module-card-body">
-                <div class="module-item">
-                    <strong><i data-lucide="file-text" class="w-4 h-4"></i> Site Information</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="server" class="w-4 h-4"></i> HTTP Headers Analysis</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="fingerprint" class="w-4 h-4"></i> Tech Stack Fingerprinting</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container fade-in">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
+                <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i>
+                <span class="text-sm font-semibold text-cyan-400">Professional Web Reconnaissance Platform</span>
             </div>
-        </div>
-
-        <div class="module-card">
-            <h4 class="module-card-header text-green-400"><i data-lucide="sitemap" class="w-5 h-5"></i> Network & Domain Intelligence</h4>
-            <p class="text-sm text-gray-400">DNS, domain registration, and network analysis.</p>
-            <div class="module-card-body">
-                <div class="module-item">
-                    <strong><i data-lucide="contact" class="w-4 h-4"></i> WHOIS Lookup</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="map-pin" class="w-4 h-4"></i> GeoIP Location</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="book-open" class="w-4 h-4"></i> DNS Records</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="mail" class="w-4 h-4"></i> MX Records</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="scan" class="w-4 h-4"></i> Subnet Scan</strong>
-                    <span class="chip chip-utility">UTILITY</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="activity" class="w-4 h-4"></i> Port Scanning</strong>
-                    <span class="chip chip-active">ACTIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="network" class="w-4 h-4"></i> Subdomain Enumeration</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reverse IP Lookup</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
+            <h1 class="hero-title">ABSpider Recon<br>Documentation</h1>
+            <p class="hero-subtitle">
+                Comprehensive guide for security professionals. Learn how to leverage ABSpider's powerful reconnaissance modules for web security analysis and vulnerability assessment.
+            </p>
+            
+            <!-- Badges -->
+            <div class="flex items-center justify-center gap-3 flex-wrap mb-6">
+                <img src="https://img.shields.io/badge/release-v1.0.0-blue.svg?style=flat" alt="Release Version">
+                <img src="https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat" alt="Build Status">
+                <img src="https://img.shields.io/badge/license-MIT-yellow.svg?style=flat" alt="License: MIT">
+                <img src="https://img.shields.io/github/stars/zanesense/abspider-recon?style=flat&label=Stars" alt="GitHub Stars">
             </div>
-        </div>
-
-        <div class="module-card">
-            <h4 class="module-card-header text-red-400"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Vulnerability Assessment</h4>
-            <p class="text-sm text-gray-400">Security vulnerability detection (use responsibly).</p>
-            <div class="module-card-body">
-                <div class="module-item">
-                    <strong><i data-lucide="database" class="w-4 h-4"></i> SQL Injection Test</strong>
-                    <span class="chip chip-active">ACTIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="code" class="w-4 h-4"></i> XSS Detection</strong>
-                    <span class="chip chip-active">ACTIVE</span>
-                </div>
-              <div class="module-item">
-                    <strong><i data-lucide="file" class="w-4 h-4"></i> LFI Scanning</strong>
-                    <span class="chip chip-active">ACTIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="bug" class="w-4 h-4"></i> CORS Misconfiguration</strong>
-                    <span class="chip chip-active">ACTIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="virus" class="w-4 h-4"></i> VirusTotal Scan</strong>
-                    <span class="chip chip-active">ACTIVE</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="module-card">
-            <h4 class="module-card-header text-indigo-400"><i data-lucide="layout-grid" class="w-5 h-5"></i> CMS Detection</h4>
-            <p class="text-sm text-gray-400">Content Management System identification and analysis.</p>
-            <div class="module-card-body">
-                <div class="module-item">
-                    <strong><i data-lucide="file-sliders" class="w-4 h-4"></i> WordPress Scan</strong>
-                    <span class="chip chip-utility">UTILITY</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="module-card">
-            <h4 class="module-card-header text-yellow-400"><i data-lucide="trending-up" class="w-5 h-5"></i> SEO & Analytics</h4>
-            <p class="text-sm text-gray-400">Search engine optimization and web metrics.</p>
-            <div class="module-card-body">
-                <div class="module-item">
-                    <strong><i data-lucide="bar-chart-2" class="w-4 h-4"></i> SEO Analysis</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="link-2-off" class="w-4 h-4"></i> Broken Link Checker</strong>
-                    <span class="chip chip-active">ACTIVE</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="module-card">
-            <h4 class="module-card-header text-purple-400"><i data-lucide="zap" class="w-5 h-5"></i> Security Testing</h4>
-            <p class="text-sm text-gray-400">DDoS/WAF protection detection and SSL/TLS certificate analysis.</p>
-            <div class="module-card-body">
-                <div class="module-item">
-                    <strong><i data-lucide="shield-check" class="w-4 h-4"></i> DDoS Firewall Test</strong>
-                    <span class="chip chip-active">ACTIVE</span>
-                </div>
-                <div class="module-item">
-                    <strong><i data-lucide="lock" class="w-4 h-4"></i> SSL/TLS Analysis</strong>
-                    <span class="chip chip-passive">PASSIVE</span>
-                </div>
-            </div>
-        </div>
-        
-        <p class="text-sm text-gray-500 mt-8">Note: Active modules (like Port Scanning and Vulnerability Assessment) require explicit opt-in and <span class="font-bold text-red-400">prior written permission</span> from the asset owner.</p>
-      </div>
-    </section>
-    
-    <section id="howto" class="max-w-7xl mx-auto px-6 py-16 fade-in">
-        <div class="section-header">
-            <i data-lucide="list-ordered"></i>
-            <h3>Usage Guide: Starting a Scan</h3>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-10">
-            <div>
-                <h4 class="text-xl font-semibold mb-5 text-white flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5 text-cyan-400"></i> Scan Execution Workflow</h4>
-                <ol class="space-y-5">
-                    <li class="flex items-start">
-                        <div class="step-icon">1</div>
-                        <div>
-                            <p class="font-medium text-white">Target and Modules Selection</p>
-                            <p class="text-gray-400 text-sm">Click <span class="font-bold">"New Scan"</span> in the sidebar, enter the target domain or URL (e.g., <code>example.com</code>), and select the reconnaissance modules you want to run.</p>
-                        </div>
-                    </li>
-                    <li class="flex items-start">
-                        <div class="step-icon">2</div>
-                        <div>
-                            <p class="font-medium text-white">Concurrency and Proxy Setup</p>
-                            <p class="text-gray-400 text-sm">Set <span class="font-bold">Threads</span> (1-50) for concurrency. Enable <span class="font-bold">Use Proxy Rotation</span> if you have configured proxy servers in the Settings panel.</p>
-                        </div>
-                    </li>
-                    <li class="flex items-start">
-                        <div class="step-icon">3</div>
-                        <div>
-                            <p class="font-medium text-white">Start and Monitor</p>
-                            <p class="text-gray-400 text-sm">Click <span class="font-bold">"Start Reconnaissance"</span>. Scans appear on the <span class="font-bold">Dashboard</span> immediately and update in real-time.</p>
-                        </div>
-                    </li>
-                    <li class="flex items-start">
-                        <div class="step-icon">4</div>
-                        <div>
-                            <p class="font-medium text-white">Viewing Results</p>
-                            <p class="text-gray-400 text-sm">Scans appear on the <span class="font-bold">Dashboard</span> immediately. Click any scan to view detailed results. You'll see <span class="font-bold">real-time updates</span> while the scan is running and a progress indicator showing the current stage. Results are organized by module.</p>
-                        </div>
-                    </li>
-                </ol>
-            </div>
-
-            <div>
-                <h4 class="text-xl font-semibold mb-5 text-white flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5 text-cyan-400"></i> Configuration & Reporting</h4>
-                <ul class="space-y-5">
-                    <li class="flex items-start">
-                        <div class="step-icon bg-gray-600">A</div>
-                        <div>
-                            <p class="font-medium text-white">Report Generation</p>
-                            <p class="text-gray-400 text-sm">Open the completed scan, click <span class="font-bold">"Download Report"</span>, and the PDF automatically downloads with all findings. Includes headers, WHOIS, subdomains, ports, and vulnerability assessments.</p>
-                        </div>
-                    </li>
-                    <li class="flex items-start">
-                        <div class="step-icon bg-gray-600">B</div>
-                        <div>
-                            <p class="font-medium text-white">Discord Notifications</p>
-                            <p class="text-gray-400 text-sm">Go to <span class="font-bold">Settings</span>, enter your Discord webhook URL, and click <span class="font-bold">"Test Webhook"</span> to verify. Once configured, use the <span class="font-bold">"Send to Discord"</span> button on scan results to get real-time notifications when scans complete.</p>
-                        </div>
-                    </li>
-                    <li class="flex items-start">
-                        <div class="step-icon bg-gray-600">C</div>
-                        <div>
-                            <p class="font-medium text-white">Proxy Setup</p>
-                            <p class="text-gray-400 text-sm">In <span class="font-bold">Settings</span>, enter your proxy list (one per line, e.g., <code>http://proxy1.example.com:8080</code>) and click <span class="font-bold">"Save Settings"</span>. Enable <span class="font-bold">"Use Proxy Rotation"</span> when starting scans to help avoid rate limiting.</p>
-                        </div>
-                    </li>
-                    <li class="flex items-start">
-                        <div class="step-icon bg-gray-600">D</div>
-                        <div>
-                            <p class="font-medium text-white">Client-Side Scheduling</p>
-                            <p class="text-gray-400 text-sm">When creating a new scan, enable "Schedule Scan" and configure the name, frequency, start date, and time. Remember, scheduled scans only run when the application is open in your browser.</p>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="mt-12 p-6 rounded-lg bg-red-900/10 border border-red-700">
-            <h4 class="text-xl font-semibold mb-2 flex items-center gap-2"><i data-lucide="gavel" class="w-5 h-5 text-red-500"></i> Legal Compliance</h4>
-            <p class="text-red-400 font-medium text-sm">This tool is for <span class="font-bold text-white">authorized security testing only</span>.</p>
-            <p class="text-sm text-gray-500 mt-2">Only scan domains you own, systems you have written permission to test, or public bug bounty programs. Unauthorized scanning may be illegal.</p>
-        </div>
-    </section>
-
-    <section id="tech" class="max-w-7xl mx-auto px-6 py-16 bg-gray-900 border-t border-b border-gray-800 fade-in">
-      <div class="section-header">
-        <i data-lucide="code"></i>
-        <h3>Technical Specifications</h3>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="p-6 rounded-lg border border-gray-700 bg-content-bg">
-          <h4 class="font-semibold text-lg mb-3 text-cyan-400 flex items-center gap-2"><i data-lucide="database-zap" class="w-4 h-4"></i> Data Architecture</h4>
-          <ul class="list-disc pl-5 text-gray-400 space-y-2 text-sm">
-            <li><span class="font-bold">Scan Storage:</span> All scans stored in <span class="text-white">browser localStorage</span>.</li>
-            <li><span class="font-bold">API Key Storage:</span> Optional API keys are stored in your <span class="text-white">Supabase database</span>, associated with your user account.</li>
-            <li><span class="font-bold">Serverless:</span> Persists across sessions; no server-side storage for scans.</li>
-            <li><span class="font-bold">Performance:</span> Start with <span class="text-white">5 threads</span>, but increase up to 50 for faster scans.</li>
-            <li><span class="font-bold">Clear browser data</span> to reset all stored scans and settings.</li>
-          </ul>
-        </div>
-        <div class="p-6 rounded-lg border border-gray-700 bg-content-bg">
-          <h4 class="font-semibold text-lg mb-3 text-cyan-400 flex items-center gap-2"><i data-lucide="plug" class="w-4 h-4"></i> Integrated APIs</h4>
-          <p class="text-sm text-gray-500 mb-3">ABSpider leverages multiple public APIs for data enrichment:</p>
-          <ul class="list-disc pl-5 text-gray-400 space-y-2 text-sm">
-            <li><span class="font-bold">Google DNS over HTTPS:</span> Used for subdomain enumeration and DNS lookups.</li>
-            <li><span class="font-bold">crt.sh:</span> Certificate Transparency logs for subdomain discovery.</li>
-            <li><span class="font-bold">RDAP:</span> Domain registration data (WHOIS fallback).</li>
-            <li><span class="font-bold">ipapi.co / ip-api.com:</span> IP and domain geolocation information.</li>
-            <li><span class="font-bold">Optional APIs:</span> Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit (configured in settings for enhanced data).</li>
-          </ul>
-        </div>
-        <div class="p-6 rounded-lg border border-gray-700 bg-content-bg md:col-span-2">
-          <h4 class="font-semibold text-lg mb-3 text-cyan-400 flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i> Browser Limitations & Performance</h4>
-          <ul class="list-disc pl-5 text-gray-400 space-y-2 text-sm">
-            <li><span class="font-bold">CORS restrictions</span> may limit some scans, which is mitigated by the built-in CORS bypass.</li>
-            <li><span class="font-bold">Port scanning</span> uses browser-based connectivity checks (not raw sockets), which may not be as accurate as server-side tools.</li>
-            <li><span class="font-bold">Some targets</span> may block automated requests or implement advanced bot detection.</li>
-            <li><span class="font-bold">Rate limiting</span> may occur on aggressive scans; use proxy rotation and adjust thread count.</li>
-            <li><span class="font-bold">Performance Tips:</span> Start with 5 threads (default). Increase threads for faster scans (up to 50). Use proxy rotation for large scans. Disable unused modules to speed up scans.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section id="best-practices" class="max-w-7xl mx-auto px-6 py-16 fade-in">
-        <div class="section-header">
-            <i data-lucide="award"></i>
-            <h3>Best Practices</h3>
-        </div>
-        <div class="space-y-6">
-            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
-                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i> Responsible Usage</p>
-                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    <li><span class="font-bold">Start small</span> - Test with well-known domains first.</li>
-                    <li><span class="font-bold">Respect rate limits</span> - Don't scan too aggressively.</li>
-                    <li><span class="font-bold">Use responsibly</span> - Only scan domains you own or have explicit written permission for.</li>
-                    <li><span class="font-bold">Save important scans</span> - Download PDF reports for critical findings.</li>
-                    <li><span class="font-bold">Configure Discord</span> - Get notified when long scans complete.</li>
-                    <li><span class="font-bold">Client-Side Scheduling:</span> Remember that scheduled scans only run when the application is open in your browser.</li>
-                </ul>
-            </div>
-            <div class="p-4 rounded-lg border border-gray-700 bg-content-bg">
-                <p class="font-semibold text-white mb-1 flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-blue-400"></i> Security Considerations</p>
-                <ul class="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                    <li><span class="font-bold">Client-Side API Keys:</span> Be aware that optional API keys are stored in your Supabase database but are still accessible client-side. This is insecure for sensitive keys. Use only for testing or public keys.</li>
-                    <li><span class="font-bold">Public CORS Proxies:</span> Using public proxies can expose your request details. Consider self-hosting a trusted proxy for sensitive operations.</li>
-                    <li><span class="font-bold">Regular Updates:</span> Keep your browser and the application up-to-date to benefit from the latest security patches and features.</li>
-                </ul>
+            
+            <div class="flex items-center justify-center gap-4 flex-wrap">
+                <a href="#installation" class="btn btn-primary">
+                    <i data-lucide="rocket" class="w-5 h-5"></i>
+                    Get Started
+                </a>
+                <a href="https://abspider-recon.vercel.app" target="_blank" class="btn btn-secondary">
+                    <i data-lucide="external-link" class="w-5 h-5"></i>
+                    Live Demo
+                </a>
+                <a href="https://github.com/zanesense/abspider-recon" target="_blank" class="btn btn-secondary">
+                    <i data-lucide="github" class="w-5 h-5"></i>
+                    View on GitHub
+                </a>
             </div>
         </div>
     </section>
 
-    <section id="legal" class="max-w-7xl mx-auto px-6 py-16 fade-in bg-gray-900 border-t border-b border-gray-800">
-        <div class="section-header">
-            <i data-lucide="gavel"></i>
-            <h3>Legal Notice</h3>
-        </div>
-        <div class="p-6 rounded-lg bg-red-900/10 border border-red-700">
-            <h4 class="text-xl font-semibold mb-2 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i> IMPORTANT: AUTHORIZED USE ONLY</h4>
-            <p class="text-red-400 font-medium text-sm">This tool is designed for security professionals, penetration testers, and website owners to test their OWN systems or systems they have EXPLICIT WRITTEN PERMISSION to test.</p>
-            <ul class="list-disc pl-5 text-sm text-gray-500 mt-4 space-y-1">
-                <li>You may ONLY scan websites and systems you own or have explicit written authorization to test.</li>
-                <li>Unauthorized scanning may be illegal in your jurisdiction.</li>
-                <li>You are solely responsible for ensuring you have proper authorization.</li>
-                <li>Keep documentation of authorization for all scans performed.</li>
-                <li>Comply with all applicable laws including Computer Fraud and Abuse Act (CFAA), GDPR, and local regulations.</li>
-                <li>Unauthorized access to computer systems is a criminal offense in most jurisdictions. Penalties may include fines, imprisonment, and civil liability.</li>
-                <li>This tool does not grant permission to scan any system.</li>
-            </ul>
-            <p class="text-red-400 font-medium text-sm mt-4">This tool is provided "AS IS" without warranty of any kind. The developers are not responsible for any misuse or damage caused by this tool. You assume all risks associated with using this tool. The developers are not liable for any legal consequences of your actions. Results may contain false positives or false negatives.</p>
-            <p class="text-red-400 font-medium text-sm mt-4"><strong>By using this tool, you acknowledge that:</strong></p>
-            <ul class="list-disc pl-5 text-sm text-gray-500 mt-2 space-y-1">
-                <li>You have read and understood this disclaimer.</li>
-                <li>You will only scan systems you are authorized to test.</li>
-                <li>You accept full responsibility for your actions.</li>
-                <li>You will comply with all applicable laws and regulations.</li>
-                <li>The developers are not liable for any consequences of your use.</li>
-            </ul>
-        </div>
-    </section>
-    
-    <section id="contact" class="max-w-7xl mx-auto px-6 py-16 fade-in">
-        <div class="section-header">
-            <i data-lucide="mail"></i>
-            <h3>Contact & Support</h3>
-        </div>
-        
-        <div class="max-w-4xl mx-auto p-8 rounded-lg border border-gray-700 bg-content-bg">
-            <p class="text-gray-400 mb-8">For technical support, feature requests, or business inquiries, please use the form below. We aim to respond within 48 hours. For immediate support, check the <span class="font-bold text-cyan-400">browser console</span> or review this documentation.</p>
-
-            <form class="grid gap-6" onsubmit="alert('Note: This is a static documentation page. Form submission is not active.'); return false;">
-                <div class="grid md:grid-cols-2 gap-6">
-                    <input type="text" placeholder="Your Name" class="form-input" required aria-label="Your Name">
-                    <input type="email" placeholder="Email Address" class="form-input" required aria-label="Email Address">
+    <!-- Overview Section -->
+    <section id="overview" class="section">
+        <div class="container">
+            <h2 class="section-title">What is ABSpider Recon?</h2>
+            <p class="section-subtitle">
+                A cutting-edge, browser-based reconnaissance dashboard crafted for security professionals, penetration testers, and bug bounty hunters. Built with Vite + React for unparalleled performance.
+            </p>
+            <div class="grid-3">
+                <div class="card fade-in">
+                    <div class="card-icon">
+                        <i data-lucide="shield-check" class="w-6 h-6 text-cyan-400"></i>
+                    </div>
+                    <h3 class="card-title">Security First</h3>
+                    <p class="card-description">
+                        Supabase-powered magic link authentication eliminates password management. Row-level security ensures your data stays protected.
+                    </p>
                 </div>
-                <input type="text" placeholder="Subject/Topic" class="form-input" required aria-label="Subject/Topic">
-                <textarea placeholder="Detailed Message" rows="5" class="form-input" required aria-label="Detailed Message"></textarea>
-                <button type="submit" class="btn-primary w-full justify-center mt-3"><i data-lucide="send" class="w-4 h-4"></i> Send Message</button>
-            </form>
+
+                <div class="card fade-in" style="animation-delay: 0.1s;">
+                    <div class="card-icon">
+                        <i data-lucide="spy" class="w-6 h-6 text-cyan-400"></i>
+                    </div>
+                    <h3 class="card-title">Intelligence-First Approach</h3>
+                    <p class="card-description">
+                        Prioritizes passive data collection (WHOIS, CT Logs, GeoIP) to minimize footprint, with powerful active scans available when authorized.
+                    </p>
+                </div>
+                <div class="card fade-in" style="animation-delay: 0.2s;">
+                    <div class="card-icon">
+                        <i data-lucide="layers" class="w-6 h-6 text-cyan-400"></i>
+                    </div>
+                    <h3 class="card-title">Modular Architecture</h3>
+                    <p class="card-description">
+                        20+ reconnaissance modules covering DNS, WHOIS, subdomains, ports, vulnerabilities, and more. Use what you need, when you need it.
+                    </p>
+                </div>
+                <div class="card fade-in" style="animation-delay: 0.3s;">
+                    <div class="card-icon">
+                        <i data-lucide="globe" class="w-6 h-6 text-cyan-400"></i>
+                    </div>
+                    <h3 class="card-title">CORS & Cloudflare Bypass</h3>
+                    <p class="card-description">
+                        Intelligent bypass mechanisms overcome common web protections, enabling comprehensive reconnaissance even on protected targets.
+                    </p>
+                </div>
+                <div class="card fade-in" style="animation-delay: 0.4s;">
+                    <div class="card-icon">
+                        <i data-lucide="brain" class="w-6 h-6 text-cyan-400"></i>
+                    </div>
+                    <h3 class="card-title">Smart Scan Manager</h3>
+                    <p class="card-description">
+                        AI-powered target analysis with adaptive payload management. Automatically adjusts scan intensity based on target health and response.
+                    </p>
+                </div>
+                <div class="card fade-in" style="animation-delay: 0.5s;">
+                    <div class="card-icon">
+                        <i data-lucide="users" class="w-6 h-6 text-cyan-400"></i>
+                    </div>
+                    <h3 class="card-title">User Management</h3>
+                    <p class="card-description">
+                        Rich profile cards, comprehensive settings, notification preferences, and data export capabilities for complete account control.
+                    </p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <footer class="bg-gray-900 py-8 border-t border-gray-800 mt-12">
-      <div class="max-w-7xl mx-auto px-6 text-center text-sm text-gray-500">
-        <p class="mb-2">&copy; <span id="year"></span> zanesense &middot; All Rights Reserved.</p>
-         <p>Designed with &#10084; for security professionals.</p>
-      </div>
+    <!-- Features Section -->
+    <section id="features" class="section" style="background: rgba(15, 23, 42, 0.5);">
+        <div class="container">
+            <h2 class="section-title">Core Features</h2>
+            <p class="section-subtitle">
+                Everything you need for comprehensive web reconnaissance and security analysis.
+            </p>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="file-text" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Professional PDF Reports</h3>
+                            <p class="card-description">
+                                Generate comprehensive, exportable PDF reports with all findings, severity ratings, evidence, and remediation recommendations.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="bell" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Notification Center</h3>
+                            <p class="card-description">
+                                Real-time updates with smart categorization, timestamp tracking, and actionable notifications. Discord webhook integration for instant alerts.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="route" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Proxy Rotation</h3>
+                            <p class="card-description">
+                                Configure multiple proxies for automatic rotation to avoid rate limiting and distribute scan traffic effectively.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="calendar" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Client-Side Scheduling</h3>
+                            <p class="card-description">
+                                Automate reconnaissance tasks with flexible daily, weekly, or monthly scheduling for continuous monitoring (requires browser tab open).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="user-circle" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Enhanced User Profiles</h3>
+                            <p class="card-description">
+                                Rich profile cards with avatar support, user statistics, comprehensive settings, security features, and data management options.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="target" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Advanced Scan Modes</h3>
+                            <p class="card-description">
+                                Smart scan modes (conservative, adaptive, aggressive) with AI-powered payload management and intelligent target analysis.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+            </p>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="file-text" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Professional PDF Reports</h3>
+                            <p class="card-description">
+                                Generate comprehensive, exportable PDF reports with all findings, severity ratings, evidence, and remediation recommendations.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="bell" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Real-Time Notifications</h3>
+                            <p class="card-description">
+                                Discord webhook integration provides instant alerts when scans complete or critical vulnerabilities are discovered.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="route" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Proxy Rotation</h3>
+                            <p class="card-description">
+                                Configure multiple proxies for automatic rotation to avoid rate limiting and distribute scan traffic effectively.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="card-icon" style="margin-bottom: 0;">
+                            <i data-lucide="calendar" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Scan Scheduling</h3>
+                            <p class="card-description">
+                                Automate reconnaissance tasks with flexible daily, weekly, or monthly scheduling for continuous monitoring.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What's New Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">What's New in ABSpider Recon</h2>
+            <p class="section-subtitle">
+                Latest features and enhancements to supercharge your reconnaissance workflow.
+            </p>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="bell-ring" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Notification Center</h3>
+                            <p class="card-description">
+                                Comprehensive notification system with real-time updates, smart categorization, timestamp tracking, and actionable notifications. Bell icon shows unread count with color-coded success, warning, error, and info messages.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="rocket" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Launch Announcements</h3>
+                            <p class="card-description">
+                                Welcome popup for first-time users with product updates and announcements. Stay informed about new tools and features from the ABSpider team with direct links to documentation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="user-cog" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Enhanced User Profiles</h3>
+                            <p class="card-description">
+                                Rich profile cards with avatar support, automatic initials fallback, user statistics (scan counts, member duration), comprehensive settings, password management, 2FA support, and data export options.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="gauge" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Advanced Scan Header</h3>
+                            <p class="card-description">
+                                Smart scan modes (conservative, adaptive, aggressive) with AI-powered payload management, real-time module counter, intelligent target analysis, template management, and adaptive payload control.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="brain" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Intelligent Scanning System</h3>
+                            <p class="card-description">
+                                AI-powered target analysis, response monitoring, adaptive load balancing, stealth mode detection, server-specific optimization, performance analytics, and dynamic payload management to prevent target overload.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="settings-2" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Comprehensive App Settings</h3>
+                            <p class="card-description">
+                                User preferences (theme, language), scanning configuration (threads, timeouts), proxy & network settings, notification system, data management, API integration with testing, database persistence, and scan profile presets.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Installation Section -->
+    <section id="installation" class="section">
+        <div class="container">
+            <h2 class="section-title">Quick Installation</h2>
+            <p class="section-subtitle">
+                Get up and running in minutes with our simple installation process.
+            </p>
+            <div class="max-w-3xl mx-auto">
+                <div class="card">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <i data-lucide="terminal" class="w-5 h-5 text-cyan-400"></i>
+                        Installation Steps
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-slate-300 mb-2 font-semibold">1. Clone the repository</p>
+                            <div class="code-block">git clone https://github.com/zanesense/abspider-recon.git
+cd abspider-recon</div>
+                        </div>
+                        <div>
+                            <p class="text-slate-300 mb-2 font-semibold">2. Install dependencies</p>
+                            <div class="code-block">npm install</div>
+                        </div>
+                        <div>
+                            <p class="text-slate-300 mb-2 font-semibold">3. Configure environment</p>
+                            <div class="code-block">cp .env.example .env
+# Edit .env with your Supabase credentials</div>
+                        </div>
+                        <div>
+                            <p class="text-slate-300 mb-2 font-semibold">4. Start development server</p>
+                            <div class="code-block">npm run dev</div>
+                        </div>
+                    </div>
+                    <div class="mt-6 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                        <p class="text-sm text-cyan-300 flex items-start gap-2">
+                            <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                            <span>The application will be available at <code class="px-2 py-1 bg-slate-900 rounded">http://localhost:5000</code></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Modules Section -->
+    <section id="modules" class="section" style="background: rgba(15, 23, 42, 0.5);">
+        <div class="container">
+            <h2 class="section-title">Reconnaissance Modules</h2>
+            <p class="section-subtitle">
+                Comprehensive suite of passive and active reconnaissance modules for thorough security analysis.
+            </p>
+            
+            <!-- Passive Modules -->
+            <div class="mb-12">
+                <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                    <i data-lucide="eye" class="w-6 h-6 text-green-400"></i>
+                    Passive Reconnaissance
+                    <span class="badge badge-passive">Low Risk</span>
+                </h3>
+                <div class="grid-3">
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-4 h-4 text-green-400"></i>
+                            Site Information
+                        </h4>
+                        <p class="text-sm text-slate-400">Basic website details, IP address, web server, CMS, and robots.txt analysis</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="server" class="w-4 h-4 text-green-400"></i>
+                            HTTP Headers Analysis
+                        </h4>
+                        <p class="text-sm text-slate-400">Real-time security header scoring (HSTS, CSP, XFO) and technology fingerprinting</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="fingerprint" class="w-4 h-4 text-green-400"></i>
+                            Tech Stack Fingerprinting
+                        </h4>
+                        <p class="text-sm text-slate-400">Identifies web technologies, frameworks, and analytics used by the target</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="contact" class="w-4 h-4 text-green-400"></i>
+                            WHOIS / RDAP Lookup
+                        </h4>
+                        <p class="text-sm text-slate-400">Domain registration, registrar, nameservers, and date information</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-green-400"></i>
+                            GeoIP Location
+                        </h4>
+                        <p class="text-sm text-slate-400">Pinpoints the physical location of the target server's IP address</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="book-open" class="w-4 h-4 text-green-400"></i>
+                            DNS Records
+                        </h4>
+                        <p class="text-sm text-slate-400">Enumerates A, AAAA, CNAME, TXT, MX, NS, and SOA records</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="mail" class="w-4 h-4 text-green-400"></i>
+                            MX Records
+                        </h4>
+                        <p class="text-sm text-slate-400">Analyzes mail server configurations, including SPF and DMARC</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="network" class="w-4 h-4 text-green-400"></i>
+                            Subdomain Enumeration
+                        </h4>
+                        <p class="text-sm text-slate-400">Discovers subdomains using Certificate Transparency logs and DNS lookups</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4 text-green-400"></i>
+                            Reverse IP Lookup
+                        </h4>
+                        <p class="text-sm text-slate-400">Identifies other domains hosted on the same IP address</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-green-400"></i>
+                            SEO Analysis
+                        </h4>
+                        <p class="text-sm text-slate-400">Analyzes meta tags, headings, links, and page performance for SEO insights</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="lock" class="w-4 h-4 text-green-400"></i>
+                            SSL/TLS Analysis
+                        </h4>
+                        <p class="text-sm text-slate-400">Analyzes SSL/TLS certificate details, issuer, expiry, and common names</p>
+                    </div>
+                </div>
+            </div>
+
+            
+            <!-- Active Modules -->
+            <div class="mb-12">
+                <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                    <i data-lucide="target" class="w-6 h-6 text-red-400"></i>
+                    Active Reconnaissance
+                    <span class="badge badge-active">Authorization Required</span>
+                </h3>
+                <div class="grid-3">
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-red-400"></i>
+                            Port Scanning
+                        </h4>
+                        <p class="text-sm text-slate-400">Checks connectivity and identifies services on common ports, with Shodan integration</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="database" class="w-4 h-4 text-red-400"></i>
+                            SQL Injection Test
+                        </h4>
+                        <p class="text-sm text-slate-400">Checks for potential SQL Injection (SQLi) vulnerabilities with real payloads</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="code" class="w-4 h-4 text-red-400"></i>
+                            XSS Detection
+                        </h4>
+                        <p class="text-sm text-slate-400">Detects reflected, DOM, and stored Cross-Site Scripting (XSS) vulnerabilities</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="file" class="w-4 h-4 text-red-400"></i>
+                            LFI Scanning
+                        </h4>
+                        <p class="text-sm text-slate-400">Scans for Local File Inclusion vulnerabilities using real payloads</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="bug" class="w-4 h-4 text-red-400"></i>
+                            CORS Misconfiguration
+                        </h4>
+                        <p class="text-sm text-slate-400">Identifies Cross-Origin Resource Sharing (CORS) vulnerabilities</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="virus" class="w-4 h-4 text-red-400"></i>
+                            VirusTotal Scan
+                        </h4>
+                        <p class="text-sm text-slate-400">Domain reputation, malware scanning, and threat intelligence via VirusTotal API</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="link-2-off" class="w-4 h-4 text-red-400"></i>
+                            Broken Link Checker
+                        </h4>
+                        <p class="text-sm text-slate-400">Scans for broken internal and external links on the target website</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-red-400"></i>
+                            DDoS Firewall Test
+                        </h4>
+                        <p class="text-sm text-slate-400">Detects WAF/DDoS protection mechanisms (e.g., Cloudflare, Sucuri)</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Utility Modules -->
+            <div class="mb-12">
+                <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                    <i data-lucide="wrench" class="w-6 h-6 text-indigo-400"></i>
+                    Utility Modules
+                    <span class="badge badge-utility">Helper Tools</span>
+                </h3>
+                <div class="grid-3">
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="scan" class="w-4 h-4 text-indigo-400"></i>
+                            Subnet Scan
+                        </h4>
+                        <p class="text-sm text-slate-400">Calculates network range details for a given IP and CIDR</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="file-sliders" class="w-4 h-4 text-indigo-400"></i>
+                            WordPress Scan
+                        </h4>
+                        <p class="text-sm text-slate-400">Identifies WordPress versions, plugins, themes, and common vulnerabilities</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Warning -->
+            <div class="max-w-3xl mx-auto p-6 bg-red-500/10 border border-red-500/30 rounded-xl">
+                <div class="flex items-start gap-4">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-400 flex-shrink-0 mt-1"></i>
+                    <div>
+                        <h4 class="font-bold text-red-300 mb-2">Legal Notice</h4>
+                        <p class="text-sm text-slate-300">
+                            Active scanning modules require explicit written authorization. Only scan systems you own or have permission to test. Unauthorized scanning may be illegal in your jurisdiction.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Integration Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Optional API Integrations</h2>
+            <p class="section-subtitle">
+                Enhance your reconnaissance capabilities with third-party API integrations for deeper insights.
+            </p>
+            
+            <!-- API Warning -->
+            <div class="max-w-4xl mx-auto mb-8 p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                <div class="flex items-start gap-4">
+                    <i data-lucide="alert-circle" class="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1"></i>
+                    <div>
+                        <h4 class="font-bold text-yellow-300 mb-2">⚠️ Client-Side API Key Storage Warning</h4>
+                        <p class="text-sm text-slate-300 mb-2">
+                            API keys are stored in your Supabase database but are still accessible client-side. Any XSS vulnerability or physical access to your browser could expose these keys.
+                        </p>
+                        <p class="text-sm text-yellow-200 font-semibold">
+                            DO NOT store sensitive, paid, or production API keys here. This feature is intended for testing with non-critical keys only.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="search" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Shodan</h3>
+                            <p class="card-description mb-2">
+                                Enhanced port scanning, banner grabbing, and vulnerability detection with the world's most comprehensive internet-connected device database.
+                            </p>
+                            <span class="badge badge-utility">Optional</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="shield" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">VirusTotal</h3>
+                            <p class="card-description mb-2">
+                                Domain reputation analysis, malware scanning, and comprehensive threat intelligence from 70+ antivirus engines.
+                            </p>
+                            <span class="badge badge-utility">Optional</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="history" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">SecurityTrails</h3>
+                            <p class="card-description mb-2">
+                                Historical DNS data, advanced subdomain discovery, WHOIS history, and comprehensive domain intelligence.
+                            </p>
+                            <span class="badge badge-utility">Optional</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="layers" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">BuiltWith</h3>
+                            <p class="card-description mb-2">
+                                Advanced technology stack detection, analytics identification, and framework fingerprinting for deeper insights.
+                            </p>
+                            <span class="badge badge-utility">Optional</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="map-pin" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">OpenCage</h3>
+                            <p class="card-description mb-2">
+                                Enhanced geocoding, reverse geocoding, and detailed location data with support for 50+ languages.
+                            </p>
+                            <span class="badge badge-utility">Optional</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="mail" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Hunter.io & Clearbit</h3>
+                            <p class="card-description mb-2">
+                                Email discovery, domain search, email verification, company data enrichment, and business intelligence.
+                            </p>
+                            <span class="badge badge-utility">Optional</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Tech Stack Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Built With Modern Technology</h2>
+            <p class="section-subtitle">
+                Leveraging the latest web technologies for optimal performance and developer experience.
+            </p>
+            <div class="grid-3">
+                <div class="card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                            <i data-lucide="code-2" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-white">React 18</h4>
+                    </div>
+                    <p class="text-sm text-slate-400">Modern UI library with hooks and concurrent features</p>
+                </div>
+                <div class="card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                            <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-white">Vite</h4>
+                    </div>
+                    <p class="text-sm text-slate-400">Lightning-fast build tool and dev server</p>
+                </div>
+                <div class="card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
+                            <i data-lucide="database" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-white">Supabase</h4>
+                    </div>
+                    <p class="text-sm text-slate-400">Authentication and database backend</p>
+                </div>
+                <div class="card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                            <i data-lucide="palette" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-white">Tailwind CSS</h4>
+                    </div>
+                    <p class="text-sm text-slate-400">Utility-first CSS framework for rapid UI development</p>
+                </div>
+                <div class="card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                            <i data-lucide="type" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-white">TypeScript</h4>
+                    </div>
+                    <p class="text-sm text-slate-400">Type-safe JavaScript for better code quality</p>
+                </div>
+                <div class="card">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                            <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h4 class="font-bold text-white">jsPDF</h4>
+                    </div>
+                    <p class="text-sm text-slate-400">Client-side PDF report generation</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Credits & Acknowledgements Section -->
+    <section class="section" style="background: rgba(15, 23, 42, 0.5);">
+        <div class="container">
+            <h2 class="section-title">Credits & Acknowledgements</h2>
+            <p class="section-subtitle">
+                Built with gratitude to the open-source community and powerful APIs that make modern reconnaissance possible.
+            </p>
+            <div class="max-w-4xl mx-auto">
+                <div class="grid-2 mb-8">
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-3 flex items-center gap-2">
+                            <i data-lucide="package" class="w-5 h-5 text-cyan-400"></i>
+                            Core Technologies
+                        </h4>
+                        <ul class="space-y-2 text-sm text-slate-400">
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                                React & Vite - Modern frontend framework and tooling
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                                Supabase - Authentication and database services
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                                Tailwind CSS & shadcn/ui - UI framework and components
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                                @tanstack/react-query - Server state management
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card">
+                        <h4 class="font-semibold text-white mb-3 flex items-center gap-2">
+                            <i data-lucide="cloud" class="w-5 h-5 text-cyan-400"></i>
+                            Data Sources & APIs
+                        </h4>
+                        <ul class="space-y-2 text-sm text-slate-400">
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                                Google DNS over HTTPS - DNS lookups
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                                crt.sh - Certificate Transparency logs
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                                RDAP - Domain registration data
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                                ipapi.co & ip-api.com - Geolocation services
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h4 class="font-semibold text-white mb-3 flex items-center gap-2">
+                        <i data-lucide="wrench" class="w-5 h-5 text-cyan-400"></i>
+                        Additional Libraries
+                    </h4>
+                    <div class="grid md:grid-cols-2 gap-4 text-sm text-slate-400">
+                        <ul class="space-y-2">
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="dot" class="w-3 h-3 text-cyan-400"></i>
+                                jsPDF & jspdf-autotable - PDF generation
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="dot" class="w-3 h-3 text-cyan-400"></i>
+                                Lucide React - Beautiful SVG icons
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="dot" class="w-3 h-3 text-cyan-400"></i>
+                                React Hook Form & Zod - Form handling
+                            </li>
+                        </ul>
+                        <ul class="space-y-2">
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="dot" class="w-3 h-3 text-cyan-400"></i>
+                                Sonner - Toast notifications
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="dot" class="w-3 h-3 text-cyan-400"></i>
+                                Recharts - Data visualization
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="dot" class="w-3 h-3 text-cyan-400"></i>
+                                date-fns - Date manipulation
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Resources Section -->
+    <section class="section" style="background: rgba(15, 23, 42, 0.5);">
+        <div class="container">
+            <h2 class="section-title">Documentation Resources</h2>
+            <p class="section-subtitle">
+                Explore comprehensive guides and references to master ABSpider Recon.
+            </p>
+            <div class="grid-2">
+                <a href="./getting-started.md" class="card" style="text-decoration: none;">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="book-open" class="w-8 h-8 text-cyan-400 flex-shrink-0"></i>
+                        <div>
+                            <h3 class="card-title">Getting Started Guide</h3>
+                            <p class="card-description">
+                                Complete installation, setup, and first scan walkthrough for new users.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+                <a href="./features.md" class="card" style="text-decoration: none;">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="sparkles" class="w-8 h-8 text-cyan-400 flex-shrink-0"></i>
+                        <div>
+                            <h3 class="card-title">Features Overview</h3>
+                            <p class="card-description">
+                                Detailed breakdown of all reconnaissance modules and capabilities.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+                <a href="./configuration.md" class="card" style="text-decoration: none;">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="settings" class="w-8 h-8 text-cyan-400 flex-shrink-0"></i>
+                        <div>
+                            <h3 class="card-title">Configuration Guide</h3>
+                            <p class="card-description">
+                                Environment variables, API keys, proxies, and advanced settings.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+                <a href="./api-integration.md" class="card" style="text-decoration: none;">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="plug" class="w-8 h-8 text-cyan-400 flex-shrink-0"></i>
+                        <div>
+                            <h3 class="card-title">API Integration</h3>
+                            <p class="card-description">
+                                Setup guides for Shodan, VirusTotal, SecurityTrails, and more.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
+                            <i data-lucide="scan-eye" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="font-bold text-white">ABSpider</span>
+                    </div>
+                    <p class="text-sm text-slate-400">
+                        Professional web reconnaissance platform for security professionals.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-white mb-3">Documentation</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="./getting-started.md" class="text-slate-400 hover:text-cyan-400">Getting Started</a></li>
+                        <li><a href="./features.md" class="text-slate-400 hover:text-cyan-400">Features</a></li>
+                        <li><a href="./user-guide.md" class="text-slate-400 hover:text-cyan-400">User Guide</a></li>
+                        <li><a href="./troubleshooting.md" class="text-slate-400 hover:text-cyan-400">Troubleshooting</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-white mb-3">Resources</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="./api-integration.md" class="text-slate-400 hover:text-cyan-400">API Integration</a></li>
+                        <li><a href="./architecture.md" class="text-slate-400 hover:text-cyan-400">Architecture</a></li>
+                        <li><a href="./security.md" class="text-slate-400 hover:text-cyan-400">Security</a></li>
+                        <li><a href="./contributing.md" class="text-slate-400 hover:text-cyan-400">Contributing</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-white mb-3">Community</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="https://github.com/zanesense/abspider-recon" class="text-slate-400 hover:text-cyan-400">GitHub</a></li>
+                        <li><a href="https://github.com/zanesense/abspider-recon/issues" class="text-slate-400 hover:text-cyan-400">Issues</a></li>
+                        <li><a href="https://github.com/zanesense/abspider-recon/discussions" class="text-slate-400 hover:text-cyan-400">Discussions</a></li>
+                        <li><a href="./legal.md" class="text-slate-400 hover:text-cyan-400">Legal</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-sm text-slate-400">
+                    © 2025 <a href="https://github.com/zanesense" class="text-cyan-400 hover:text-cyan-300">zanesense</a>. Built for security professionals.
+                </p>
+                <div class="flex items-center gap-4">
+                    <a href="https://github.com/zanesense/abspider-recon" class="text-slate-400 hover:text-cyan-400">
+                        <i data-lucide="github" class="w-5 h-5"></i>
+                    </a>
+                    <a href="https://abspider-recon.vercel.app" class="text-slate-400 hover:text-cyan-400">
+                        <i data-lucide="external-link" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
     </footer>
 
+    <!-- Initialize Lucide Icons -->
     <script>
-      // Initialize Lucide icons
-      if(window.lucide){lucide.createIcons();}
-      
-      // Download Bash Script Function
-      function downloadInstallScript() {
-        const scriptContent = 
-`#!/bin/bash
-# ABSpider Recon Installation Script
-
-echo "Starting ABSpider Recon setup..."
-
-# Check for git
-if ! command -v git &> /dev/null
-then
-    echo "git could not be found. Please install git first."
-    exit 1
-fi
-
-# Check for npm (Node.js/npm is required)
-if ! command -v npm &> /dev/null
-then
-    echo "npm (Node Package Manager) could not be found. Please install Node.js."
-    exit 1
-fi
-
-# Clone the repository
-echo "Cloning ABSpider Recon repository..."
-git clone https://github.com/zanesense/abspider-recon.git
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to clone repository."
-    exit 1
-fi
-
-cd abspider-recon
-
-# Install dependencies
-echo "Installing dependencies (npm install)..."
-npm install
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to install dependencies."
-    exit 1
-fi
-
-# Start the application
-echo "Installation complete. Starting the application..."
-npm run dev
-
-echo "Setup finished. The application should now be running."
-`;
-        
-        // Create a Blob containing the script content
-        const blob = new Blob([scriptContent], { type: 'text/plain' });
-        
-        // Create a temporary anchor element
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'abspider_install.sh';
-        
-        // Programmatically click the anchor to trigger the download
-        document.body.appendChild(a);
-        a.click();
-        
-        // Clean up
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-
-        alert('Installation script (abspider_install.sh) downloaded! Run it in your terminal (chmod +x abspider_install.sh && ./abspider_install.sh) to start the setup.');
-      }
-      
-      document.getElementById('year').textContent = new Date().getFullYear();
+        lucide.createIcons();
     </script>
-  </body>
+</body>
 </html>
