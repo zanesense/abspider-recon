@@ -28,12 +28,40 @@ ABSpider is a powerful browser-based reconnaissance dashboard built for security
 
 ## 🎯 Why Choose ABSpider?
 
-- **🚀 Zero Backend Required** - Fully browser-based with client-side processing
-- **🔒 Privacy-First** - Your data stays in your browser, no server-side tracking
-- **⚡ 20+ Recon Modules** - Comprehensive passive and active scanning capabilities
-- **📊 Enterprise Reporting** - Professional PDF reports with actionable insights
-- **🎨 Modern UX** - Intuitive interface built with React and Tailwind CSS
-- **🔌 Extensible** - Optional API integrations for enhanced intelligence gathering
+<table>
+  <tr>
+    <td align="center" width="16%">
+      <b>🚀</b><br/>
+      <b>Zero Backend</b><br/>
+      <sub>Fully browser-based</sub>
+    </td>
+    <td align="center" width="16%">
+      <b>🔒</b><br/>
+      <b>Privacy-First</b><br/>
+      <sub>Your data, your control</sub>
+    </td>
+    <td align="center" width="16%">
+      <b>⚡</b><br/>
+      <b>20+ Modules</b><br/>
+      <sub>Comprehensive scanning</sub>
+    </td>
+    <td align="center" width="16%">
+      <b>📊</b><br/>
+      <b>Enterprise Reports</b><br/>
+      <sub>Professional PDFs</sub>
+    </td>
+    <td align="center" width="16%">
+      <b>🎨</b><br/>
+      <b>Modern UX</b><br/>
+      <sub>React + Tailwind</sub>
+    </td>
+    <td align="center" width="16%">
+      <b>🔌</b><br/>
+      <b>Extensible</b><br/>
+      <sub>Optional API integrations</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -88,51 +116,63 @@ Access the dashboard at `http://localhost:5000`
 
 ## 🏗️ Project Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     ABSpider Recon                          │
-│                   (React + Vite Frontend)                   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-         ┌────────────────────────────────────────┐
-         │      Component Layer                   │
-         │  - Dashboard UI                        │
-         │  - Scan Modules (20+ types)            │
-         │  - Notification Center                 │
-         │  - Report Generator                    │
-         │  - Settings Management                 │
-         └────────────────────────────────────────┘
-                              │
-                              ▼
-         ┌────────────────────────────────────────┐
-         │      State Management                  │
-         │  - TanStack Query (Server State)       │
-         │  - React Context (UI State)            │
-         │  - React Hook Form (Form State)        │
-         └────────────────────────────────────────┘
-                              │
-                              ▼
-         ┌────────────────────────────────────────┐
-         │      Service Layer                     │
-         │  - Scan Engine (Smart Manager)         │
-         │  - API Integrations                    │
-         │  - Report Generation (jsPDF)           │
-         │  - Notification System                 │
-         └────────────────────────────────────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              ▼                               ▼
-    ┌──────────────────┐           ┌──────────────────┐
-    │    Supabase      │           │  External APIs   │
-    │  - Auth (Magic   │           │  - Shodan        │
-    │    Link)         │           │  - VirusTotal    │
-    │  - PostgreSQL DB │           │  - SecurityTrails│
-    │  - User Profiles │           │  - Hunter.io     │
-    │  - Scan History  │           │  - CT Logs       │
-    │  - Settings      │           │  - DNS APIs      │
-    │  - API Keys      │           │  - WHOIS/RDAP    │
-    └──────────────────┘           └──────────────────┘
+```mermaid
+graph TB
+    A[ABSpider Recon<br/>React + Vite Frontend] --> B[Component Layer]
+    
+    B --> B1[Dashboard UI]
+    B --> B2[Scan Modules<br/>20+ types]
+    B --> B3[Notification Center]
+    B --> B4[Report Generator]
+    B --> B5[Settings Management]
+    
+    B1 --> C[State Management]
+    B2 --> C
+    B3 --> C
+    B4 --> C
+    B5 --> C
+    
+    C --> C1[TanStack Query<br/>Server State]
+    C --> C2[React Context<br/>UI State]
+    C --> C3[React Hook Form<br/>Form State]
+    
+    C1 --> D[Service Layer]
+    C2 --> D
+    C3 --> D
+    
+    D --> D1[Scan Engine<br/>Smart Manager]
+    D --> D2[API Integrations]
+    D --> D3[Report Generation<br/>jsPDF]
+    D --> D4[Notification System]
+    
+    D1 --> E[Supabase Backend]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+    
+    D2 --> F[External APIs]
+    
+    E --> E1[Auth<br/>Magic Link]
+    E --> E2[PostgreSQL DB]
+    E --> E3[User Profiles]
+    E --> E4[Scan History]
+    E --> E5[Settings]
+    E --> E6[API Keys]
+    
+    F --> F1[Shodan]
+    F --> F2[VirusTotal]
+    F --> F3[SecurityTrails]
+    F --> F4[Hunter.io]
+    F --> F5[CT Logs]
+    F --> F6[DNS APIs]
+    F --> F7[WHOIS/RDAP]
+    
+    style A fill:#4F46E5,stroke:#312E81,stroke-width:3px,color:#fff
+    style B fill:#7C3AED,stroke:#5B21B6,stroke-width:2px,color:#fff
+    style C fill:#EC4899,stroke:#BE185D,stroke-width:2px,color:#fff
+    style D fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#fff
+    style E fill:#10B981,stroke:#059669,stroke-width:2px,color:#fff
+    style F fill:#06B6D4,stroke:#0891B2,stroke-width:2px,color:#fff
 ```
 
 ### Tech Stack Breakdown
@@ -197,14 +237,42 @@ Access the dashboard at `http://localhost:5000`
 
 ## 💼 Use Cases
 
-**Perfect for:**
-
-- 🎯 **Bug Bounty Hunters** - Rapid reconnaissance and vulnerability discovery
-- 🛡️ **Penetration Testers** - Comprehensive security assessments with professional reporting
-- 🔍 **Security Researchers** - Deep-dive analysis of web application architecture
-- 📊 **Security Auditors** - Compliance testing and security posture evaluation
-- 🚨 **Red Team Operations** - Initial footprinting and attack surface mapping
-- 👨‍💻 **Developers** - Security testing during development lifecycle
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <b>🎯</b><br/>
+      <b>Bug Bounty Hunters</b><br/>
+      <sub>Rapid reconnaissance and vulnerability discovery</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>🛡️</b><br/>
+      <b>Penetration Testers</b><br/>
+      <sub>Comprehensive security assessments with professional reporting</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>🔍</b><br/>
+      <b>Security Researchers</b><br/>
+      <sub>Deep-dive analysis of web application architecture</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <b>📋</b><br/>
+      <b>Security Auditors</b><br/>
+      <sub>Compliance testing and security posture evaluation</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>🚨</b><br/>
+      <b>Red Team Operations</b><br/>
+      <sub>Initial footprinting and attack surface mapping</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>👨‍💻</b><br/>
+      <b>Developers</b><br/>
+      <sub>Security testing during development lifecycle</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -235,7 +303,11 @@ Access the dashboard at `http://localhost:5000`
 
 ## 🛠️ Built With
 
-- **Frontend:** React + Vite + Tailwind CSS
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=react,vite,tailwind,typescript,supabase,postgres" alt="Tech Stack"/>
+</p>
+
+- **Frontend:** React + Vite + Tailwind CSS + TypeScript
 - **UI Components:** shadcn/ui + Lucide Icons
 - **Backend:** Supabase (Auth & Database)
 - **Reports:** jsPDF + jspdf-autotable
