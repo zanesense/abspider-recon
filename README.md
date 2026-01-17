@@ -1,257 +1,216 @@
-# 🕸️ ABSpider Recon Dashboard: Your Modern Web Security Intelligence Hub
+# 🕸️ ABSpider Recon: Web Security Made Easy!
+
+<p align="center">
+  <strong>Modern Web Security Intelligence Platform</strong>
+</p>
 
 <p align="center">
   <a href="https://github.com/zanesense/abspider-recon/releases">
-    <img src="https://img.shields.io/badge/release-v1.0.0-blue.svg?style=flat&scale=1.1" alt="Release Version">
+    <img src="https://img.shields.io/badge/release-v1.0.0-blue.svg" alt="Release">
   </a>
-  <a href="https://github.com/zanesense/abspider-recon/actions">
-    <img src="https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat&scale=1.1" alt="Build Status">
-  </a>
-  <a href="https://chatgpt.com/c/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-yellow.svg?style=flat&scale=1.1" alt="License: MIT">
+  <a href="https://github.com/zanesense/abspider-recon/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License">
   </a>
   <a href="https://github.com/zanesense/abspider-recon/stargazers">
-    <img src="https://img.shields.io/github/stars/zanesense/abspider-recon?style=flat&label=Stars&scale=1.1" alt="GitHub Stars">
+    <img src="https://img.shields.io/github/stars/zanesense/abspider-recon" alt="Stars">
   </a>
-  <a href="https://github.com/zanesense/abspider-recon/graphs/contributors">
-    <img src="https://img.shields.io/badge/contributors-welcome-orange.svg?style=flat&scale=1.1" alt="Contributors Welcome">
-  </a>
-  <img src="https://img.shields.io/github/forks/zanesense/abspider-recon?style=flat&label=Forks&scale=1.1" alt="GitHub Forks">
-  <img src="https://img.shields.io/github/last-commit/zanesense/abspider-recon?style=flat&scale=1.1" alt="Last Commit">
-  <img src="https://img.shields.io/github/languages/code-size/zanesense/abspider-recon?style=flat&scale=1.1" alt="Code Size">
 </p>
 
 ---
 
-## ✨ Uncover Hidden Threats with ABSpider Recon
+## 🎯 What is ABSpider?
 
-**ABSpider** is a cutting-edge, browser-based reconnaissance dashboard crafted for security professionals, penetration testers, and bug bounty hunters. It offers a sleek UI, blazing-fast performance, and a powerful blend of **passive-first** and optional **active modules**, all powered by **Vite + React**.
+ABSpider is a powerful browser-based reconnaissance dashboard built for security professionals, penetration testers, and bug bounty hunters. Combining **passive intelligence gathering** with **active vulnerability scanning**, it delivers actionable security insights through an intuitive modern interface.
 
-Dive deep into web targets, gather actionable intelligence, and identify vulnerabilities with unparalleled ease.
-
----
-
-## 🚀 Live Demo & Deployment
-
-Experience ABSpider Recon Dashboard in action right now!
-
-> 🌐 **[Launch ABSpider Recon Dashboard](https://abspider-recon.vercel.app)**
+**🌐 [Try Live Demo](https://abspider-recon.vercel.app)**
 
 ---
 
-## 🌟 Why ABSpider? Your Reconnaissance Superpower
+## 🎯 Why Choose ABSpider?
 
-*   **🕵️‍♂️ Intelligence-First Approach:** Prioritizes passive data collection (WHOIS, CT Logs, GeoIP) to minimize footprint, with powerful active scans (SQLi, XSS, LFI, Port Scanning) available when authorized.
-*   **📊 Professional Reporting:** Generate comprehensive, exportable **PDF reports** summarizing all findings, complete with severity, evidence, and remediation advice.
-*   **🔔 Real-time Notifications:** Stay informed with **Discord webhook notifications** for instant scan updates and critical alerts.
-*   **⚙️ Seamless Configuration:** Manage all scan parameters, proxies, and API keys directly through a secure, centralized **Dashboard Settings UI**.
-*   **🛡️ Intelligent Bypass:** Overcome common web protections with built-in **CORS & Cloudflare Bypass** mechanisms.
-*   **⚡ Blazing Fast:** Built with **Vite + React** for a lightning-fast development and user experience.
-*   **⏰ Client-Side Scheduling:** Automate your reconnaissance tasks with flexible daily, weekly, or monthly scheduling (requires the browser tab to be open).
-
----
-
-## 🔔 New: Notification Center & Launch Announcements
-
-**ABSpider** now features a comprehensive notification system to keep you informed about scan progress, system updates, and important announcements:
-
-### 📢 Notification Center
-*   **🔔 Real-time Updates:** Bell icon in the header shows unread notification count
-*   **📊 Smart Categorization:** Success, warning, error, and info notifications with color coding
-*   **⏰ Timestamp Tracking:** See when each notification was received with relative time
-*   **🎯 Actionable Notifications:** Click notifications to navigate to relevant pages or external links
-*   **✅ Mark as Read:** Individual or bulk mark-as-read functionality
-*   **🗑️ Easy Management:** Remove individual notifications or clear all at once
-
-### 🚀 Launch Announcements
-*   **🎉 Welcome Popup:** First-time users see a welcome popup with NetProbe launch announcement
-*   **📰 Product Updates:** Stay informed about new tools and features from the ABSpider team
-*   **🔗 Direct Links:** Quick access to GitHub repositories and documentation
-*   **⏰ Smart Timing:** Announcements appear after app initialization with user-friendly controls
-
-### 👤 Enhanced User Profile & Account Management
-*   **🎨 Rich Profile Cards:** Beautiful avatar support with automatic initials fallback
-*   **📊 User Statistics:** Display scan counts, member duration, and activity status
-*   **⚙️ Comprehensive Settings:** Full profile management with bio, role, and preferences
-*   **🔐 Security Features:** Password change with validation and future 2FA support
-*   **📁 Data Management:** Export personal data and account deletion options
-*   **🔔 Notification Preferences:** Granular control over email and scan notifications
-
-### 🎯 Advanced Scan Header Module
-*   **⚡ Smart Scan Modes:** Conservative, adaptive, and aggressive scanning with AI-powered payload management
-*   **📊 Real-time Module Counter:** Visual feedback on selected scan modules
-*   **🧠 Intelligent Target Analysis:** Automatic reconnaissance to assess target capabilities
-*   **⚙️ Template Management:** Save and reuse scan configurations
-*   **🎯 Adaptive Payload Control:** Dynamic payload adjustment based on target response and health
-
-### 🤖 Intelligent Scanning System
-*   **🧠 Smart Scan Manager:** AI-powered target analysis and payload optimization
-*   **📊 Response Monitoring:** Real-time tracking of target response times and error rates
-*   **⚖️ Adaptive Load Balancing:** Automatic adjustment of scan intensity based on target health
-*   **🛡️ Stealth Mode Detection:** Automatic detection of WAF, rate limiting, and security measures
-*   **🎯 Server-Specific Optimization:** Tailored scanning approaches for different server types
-*   **📈 Performance Analytics:** Comprehensive metrics and recommendations for optimal scanning
-*   **🔄 Dynamic Payload Management:** Intelligent payload count adjustment to prevent target overload
-
-### ⚙️ Comprehensive App Settings & Configuration
-*   **🎨 User Preferences:** Theme selection, language support, and personalized defaults
-*   **🔧 Scanning Configuration:** Thread management, timeout settings, and retry logic
-*   **🌐 Proxy & Network:** Advanced proxy configuration and custom user agents
-*   **🔔 Notification System:** Discord webhooks with testing and validation
-*   **📊 Data Management:** Export/import settings, scan history limits, and cleanup options
-*   **🔐 API Integration:** Enhanced API key management with real-time testing
-*   **💾 Database Persistence:** User preferences stored securely per account
-*   **🎯 Scan Profiles:** Quick, balanced, comprehensive, and stealth mode presets
+- **🚀 Zero Backend Required** - Fully browser-based with client-side processing
+- **🔒 Privacy-First** - Your data stays in your browser, no server-side tracking
+- **⚡ 20+ Recon Modules** - Comprehensive passive and active scanning capabilities
+- **📊 Enterprise Reporting** - Professional PDF reports with actionable insights
+- **🎨 Modern UX** - Intuitive interface built with React and Tailwind CSS
+- **🔌 Extensible** - Optional API integrations for enhanced intelligence gathering
 
 ---
 
-## 🧭 Core Features & Modules: Your Arsenal
+## ✨ Key Features
 
-ABSpider employs a modular approach, offering both stealthy passive checks and comprehensive active vulnerability scans.
+### 🔍 Intelligence Gathering
+- **Passive Reconnaissance:** WHOIS lookup, DNS enumeration, subdomain discovery via CT logs, GeoIP location
+- **Active Scanning:** SQL injection, XSS detection, LFI scanning, port scanning, CORS testing
+- **Technology Fingerprinting:** Identify frameworks, CMS, analytics, and server technologies
+- **Security Analysis:** HTTP header scoring, SSL/TLS certificate validation, WAF detection
 
-| Module                     | Description                                                              | Type      |
-| :------------------------- | :----------------------------------------------------------------------- | :-------- |
-| 🌐 Site Information        | Basic website details, IP, web server, CMS, and `robots.txt` analysis.   | Passive   |
-| 🛡️ HTTP Headers Analysis   | Real-time security header scoring (HSTS, CSP, XFO) and technology fingerprinting. | Passive   |
-| 💻 Tech Stack Fingerprinting | Identifies web technologies, frameworks, and analytics used by the target. | Passive   |
-| 📜 WHOIS / RDAP Lookup     | Domain registration, registrar, nameservers, and date information.       | Passive   |
-| 📍 GeoIP Location          | Pinpoints the physical location of the target server's IP address.       | Passive   |
-| 📡 DNS Records             | Enumerates A, AAAA, CNAME, TXT, MX, NS, and SOA records.                 | Passive   |
-| 📧 MX Records               | Analyzes mail server configurations, including SPF and DMARC.            | Passive   |
-| 🔍 Subdomain Enumeration    | Discovers subdomains using Certificate Transparency (CT) logs and DNS lookups. | Passive   |
-| 🔄 Reverse IP Lookup        | Identifies other domains hosted on the same IP address.                  | Passive   |
-| 📈 SEO Analysis            | Analyzes meta tags, headings, links, and page performance for SEO insights. | Passive   |
-| 🔌 Port Scanning           | Checks connectivity and identifies services on common ports, with Shodan integration. | Active    |
-| 💉 SQL Injection Test      | Checks for potential **SQL Injection (SQLi)** vulnerabilities.          | Active    |
-| ✍️ XSS Detection            | Detects reflected, DOM, and stored **XSS** vulnerabilities.              | Active    |
-| 📁 LFI Scanning            | Scans for Local File Inclusions using real payloads.                     | Active    |
-| ⚠️ CORS Misconfiguration   | Identifies Cross-Origin Resource Sharing (CORS) vulnerabilities.         | Active    |
-| 🦠 VirusTotal Scan          | Domain reputation, malware scanning, and threat intelligence via VirusTotal API. | Active    |
-| 🔗 Broken Link Checker      | Scans for broken internal and external links on the target website.      | Active    |
-| 🧱 DDoS Firewall Test      | Detects WAF/DDoS protection mechanisms (e.g., Cloudflare, Sucuri).       | Active    |
-| 🔒 SSL/TLS Analysis        | Analyzes SSL/TLS certificate details, issuer, expiry, and common names.  | Passive   |
-| 🔢 Subnet Scan             | Calculates network range details for a given IP and CIDR.                | Utility   |
-| ⚙️ WordPress Scan          | Identifies WordPress versions, plugins, themes, and common vulnerabilities. | Utility   |
+### 🛡️ Smart Scanning
+- **AI-Powered Modes:** Conservative, adaptive, and aggressive scanning with intelligent payload management
+- **Real-time Monitoring:** Target health tracking with automatic intensity adjustment
+- **Stealth Detection:** Automatic WAF and rate-limiting detection
 
----
+### 📊 Professional Reporting
+- **Comprehensive PDF Reports:** Executive summaries, detailed findings, PoC snippets, and remediation guidance
+- **Export Options:** JSON and PDF formats for easy integration with your workflow
+- **Severity Scoring:** Clear vulnerability classification with confidence ratings
 
-## 🔒 Security & Authentication
+### 🔔 Stay Informed
+- **Notification Center:** Real-time scan updates with smart categorization
+- **Discord Integration:** Instant webhook notifications for critical alerts
+- **Activity Dashboard:** Track scan history and performance metrics
 
-ABSpider leverages **Supabase** for robust and passwordless user authentication. Users gain access via a **Magic Link** sent to their email, eliminating the need to manage passwords and enhancing security. Access to the dashboard is strictly enforced, ensuring only authorized users can initiate scans and view sensitive data.
+### ⚙️ Advanced Configuration
+- **Centralized Settings:** Manage API keys, proxies, and scan parameters from one place
+- **Scan Templates:** Save and reuse configurations for repeated tasks
+- **Scheduling:** Automate reconnaissance with daily, weekly, or monthly schedules
+- **User Profiles:** Personalized preferences with role-based access
 
 ---
 
-## 📑 Detailed Reporting & Integrations
-
-### 📄 Comprehensive PDF Reports
-
-Our reports are designed for professional security analysis and include:
-
-*   **Executive Summary** and overall security grade.
-*   **Module-by-Module Findings** with raw evidence.
-*   Vulnerability severity & **confidence scores**.
-*   Reproducible steps & **Proof-of-Concept (PoC)** snippets.
-*   Actionable remediation recommendations for discovered flaws.
-
-### 🔗 Seamless Integrations
-
-*   **Discord Webhooks:** Real-time scan completion notifications and alerts.
-*   **Local Storage:** Persists scan history and settings locally within the browser for convenience.
-*   **Export Options:** Provides findings in **PDF / JSON** formats for triage and submission.
-
-### 🔑 Optional API Keys (Enhance Your Recon)
-
-> **⚠️ CRITICAL WARNING: Client-Side Accessible API Key Storage**
-> API keys are stored in your Supabase database, but are still accessible client-side. This means any Cross-Site Scripting (XSS) vulnerability or physical access to your browser could expose these keys.
-> **DO NOT store sensitive, paid, or production API keys here.** This feature is intended for testing with non-critical keys only. For production use, a secure backend for API key management is strongly recommended.
-
-| Service        | Purpose                                                              | Status   |
-| :------------- | :------------------------------------------------------------------- | :------- |
-| Shodan         | Enhanced port scanning, banner grabbing, and vulnerability detection. | Optional |
-| VirusTotal     | Domain reputation, malware scanning, and threat intelligence.        | Optional |
-| SecurityTrails | Historical DNS data, subdomain discovery, and WHOIS history.         | Optional |
-| BuiltWith      | Technology stack detection, analytics, and framework identification. | Optional |
-| OpenCage       | Enhanced geocoding, reverse geocoding, and detailed location data.   | Optional |
-| Hunter.io      | Email discovery, domain search, and email verification.              | Optional |
-| Clearbit       | Company data enrichment, logo API, and business intelligence.        | Optional |
-
----
-
-## 🚀 Quick Start: Get Running in Minutes
-
-To start your development server, follow these simple steps:
+## 🚀 Quick Start
 
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/zanesense/abspider-recon.git
 cd abspider-recon
 
-# 2. Install dependencies using npm or yarn
+# Install dependencies
 npm install
-# or
-yarn install
 
-# 3. Start the development server
+# Start development server
 npm run dev
-# or
-yarn dev
 ```
 
-> Open your browser at `http://localhost:5000`.
-> ⚙️ **Note:** All scan configurations (targets, proxies, webhooks) are managed exclusively through the **Dashboard Settings UI**.
+Access the dashboard at `http://localhost:5000`
 
 ---
 
 ## 📸 Interface Preview
 
-<img src="https://i.postimg.cc/dsfymjY8/screencapture-localhost-5000-dashboard-2026-01-02-05-09-52.png" alt="ABSpider Recon Dashboard Interface" width="100%">
+<p align="center">
+  <img src="https://i.postimg.cc/dsfymjY8/screencapture-localhost-5000-dashboard-2026-01-02-05-09-52.png" alt="ABSpider Recon Dashboard Interface" width="100%">
+</p>
 
 ---
 
-## ⚖️ Legal Notice & Ethical Use
+## 🧰 Reconnaissance Modules
 
-ABSpider is strictly for **authorized security testing only**.
-
-**Unauthorized scanning** of domains you do not own or do not have **explicit written permission** to test may be illegal. Always comply with applicable local, state, and international laws. **Use responsibly.**
-
-> ⚠️ **IMPORTANT WARNING: Authorized Use Only**
-> *   You may **ONLY** scan websites and systems you own or have explicit written authorization to test.
-> *   Unauthorized scanning may be illegal in your jurisdiction.
-> *   You are solely responsible for ensuring you have proper authorization. Keep documentation of authorization for all scans performed.
-> *   Comply with all applicable laws including Computer Fraud and Abuse Act (CFAA), GDPR, and local regulations.
-> *   Unauthorized access to computer systems is a criminal offense in most jurisdictions. Penalties may include fines, imprisonment, and civil liability.
-> *   This tool does not grant permission to scan any system.
-
-> ⚠️ **WARNING: Internal Targets**
-> Scanning internal IP addresses or `localhost` without explicit authorization is highly discouraged and may be illegal. The tool will warn you if an internal target is detected.
-
-> ⚠️ **WARNING: Public CORS Proxy Risks**
-> Using public CORS proxies can expose your target URLs, headers, and response content to the proxy operators. For sensitive operations, consider setting up a self-hosted, trusted CORS proxy or using a direct fetch only mode. The security and reliability of these third-party services are not guaranteed.
-
----
-
-## 🙏 Credits & Acknowledgements
-
-Special thanks to the open-source community for empowering modern reconnaissance workflows.
-
-| Component / Service        | Purpose                                                              |
-| :------------------------- | :------------------------------------------------------------------- |
-| **React**                  | Core UI library for the frontend.                                    |
-| **Vite**                   | Fast frontend bundling and development tooling.                      |
-| **Supabase**               | User authentication and database services.                           |
-| **crt.sh / CT logs**       | Certificate Transparency sources for passive subdomain discovery.    |
-| **Google DNS-over-HTTPS**  | High-speed, secure DNS lookups.                                      |
-| **Public WHOIS / RDAP APIs** | Domain registration and ownership information.                       |
-| **jsPDF & jspdf-autotable** | Client-side PDF report generation.                                   |
-| **Lucide React**           | Beautiful and customizable SVG icons.                                |
-| **Tailwind CSS & shadcn/ui** | Utility-first CSS framework and accessible UI components.            |
-| **@tanstack/react-query**  | Powerful server state management.                                    |
-| **React Hook Form & Zod**  | Robust form handling and validation.                                 |
-| **Sonner**                 | Modern toast notifications.                                          |
+| Module | Description | Type |
+|--------|-------------|------|
+| 🌐 Site Info | IP, server, CMS, robots.txt analysis | Passive |
+| 🛡️ Headers | Security header scoring (HSTS, CSP, XFO) | Passive |
+| 📜 WHOIS | Domain registration and ownership data | Passive |
+| 📍 GeoIP | Server location identification | Passive |
+| 📡 DNS | A, AAAA, CNAME, TXT, MX, NS records | Passive |
+| 🔍 Subdomains | CT log enumeration and DNS discovery | Passive |
+| 📈 SEO | Meta tags, headings, performance analysis | Passive |
+| 🔌 Ports | Service detection with Shodan integration | Active |
+| 💉 SQLi | SQL injection vulnerability testing | Active |
+| ✍️ XSS | Reflected, DOM, and stored XSS detection | Active |
+| 📁 LFI | Local file inclusion scanning | Active |
+| ⚠️ CORS | Cross-origin misconfiguration testing | Active |
+| 🦠 VirusTotal | Domain reputation and malware scanning | Active |
+| 🔒 SSL/TLS | Certificate validation and analysis | Passive |
 
 ---
 
-## 💜 Contributors 
+## 💼 Use Cases
+
+**Perfect for:**
+
+- 🎯 **Bug Bounty Hunters** - Rapid reconnaissance and vulnerability discovery
+- 🛡️ **Penetration Testers** - Comprehensive security assessments with professional reporting
+- 🔍 **Security Researchers** - Deep-dive analysis of web application architecture
+- 📊 **Security Auditors** - Compliance testing and security posture evaluation
+- 🚨 **Red Team Operations** - Initial footprinting and attack surface mapping
+- 👨‍💻 **Developers** - Security testing during development lifecycle
+
+---
+
+## 🔐 Security & Authentication
+
+- **Supabase Authentication:** Passwordless magic link login
+- **Role-Based Access:** Secure user management and permissions
+- **Data Encryption:** Client-side storage with secure handling
+- **API Key Management:** Optional integrations with Shodan, VirusTotal, SecurityTrails, and more
+
+> ⚠️ **Security Notice:** API keys are stored client-side. Use test keys only—never production or sensitive credentials.
+
+---
+
+## ⚖️ Legal & Ethical Use
+
+**⚠️ CRITICAL: Authorized Use Only**
+
+- Only scan systems you **own** or have **explicit written permission** to test
+- Unauthorized scanning is **illegal** in most jurisdictions
+- You are **solely responsible** for compliance with applicable laws (CFAA, GDPR, etc.)
+- Keep documentation of authorization for all scans
+- Violations may result in criminal prosecution, fines, and civil liability
+
+**This tool does not grant permission to scan any system.**
+
+---
+
+## 🛠️ Built With
+
+- **Frontend:** React + Vite + Tailwind CSS
+- **UI Components:** shadcn/ui + Lucide Icons
+- **Backend:** Supabase (Auth & Database)
+- **Reports:** jsPDF + jspdf-autotable
+- **State Management:** TanStack Query
+- **Forms:** React Hook Form + Zod
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Multi-target batch scanning
+- [ ] Custom payload libraries
+- [ ] Advanced WAF fingerprinting
+- [ ] Automated vulnerability chaining
+- [ ] Integration with popular security tools (Burp Suite, OWASP ZAP)
+- [ ] Mobile app for iOS/Android
+- [ ] Team collaboration features
+- [ ] Backend API for enterprise deployments
+
+---
+
+## ❓ FAQ
+
+**Q: Do I need API keys to use ABSpider?**  
+A: No! ABSpider works out-of-the-box with passive modules. API keys are optional for enhanced features (Shodan, VirusTotal, etc.).
+
+**Q: Is this legal to use?**  
+A: Yes, but only on systems you own or have explicit written authorization to test. Unauthorized scanning is illegal.
+
+**Q: Can I use this for commercial projects?**  
+A: Yes! ABSpider is MIT licensed. You can use it for both personal and commercial purposes.
+
+**Q: Does ABSpider store my scan data?**  
+A: Scan results are securely stored in your Supabase database and associated with your account. Your data is private and accessible only to you.
+
+**Q: How accurate are the vulnerability findings?**  
+A: Results include confidence scores. Always manually verify findings before reporting vulnerabilities.
+
+**Q: Can I contribute to the project?**  
+A: Absolutely! Check our [contribution guidelines](https://github.com/zanesense/abspider-recon/blob/main/CONTRIBUTING.md).
+
+---
+
+## 📚 Documentation & Support
+
+- 📖 [Full Documentation](https://github.com/zanesense/abspider-recon/wiki) *(Coming Soon)*
+- 🐛 [Report Bugs](https://github.com/zanesense/abspider-recon/issues/new?template=bug_report.md)
+- 💡 [Request Features](https://github.com/zanesense/abspider-recon/issues/new?template=feature_request.md)
+- 💬 [Discussions](https://github.com/zanesense/abspider-recon/discussions)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Check out our [contribution guidelines](https://github.com/zanesense/abspider-recon/blob/main/CONTRIBUTING.md) to get started.
 
 <a href="https://github.com/zanesense/abspider-recon/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=zanesense/abspider-recon" />
@@ -259,4 +218,14 @@ Special thanks to the open-source community for empowering modern reconnaissance
 
 ---
 
-<p align=center>© 2025 <a href="https://github.com/zanesense"><b>zanesense</b></a> · <i>Built for security professionals.</i> 🚀</p>
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<p align="center">
+  <sub>Built with 💜 by <a href="https://github.com/zanesense">zanesense</a></sub>
+  <br>
+  <sub>Empowering security professionals worldwide 🚀</sub>
+</p>
