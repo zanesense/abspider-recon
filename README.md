@@ -86,6 +86,86 @@ Access the dashboard at `http://localhost:5000`
 
 ---
 
+## 🏗️ Project Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     ABSpider Recon                          │
+│                   (React + Vite Frontend)                   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+         ┌────────────────────────────────────────┐
+         │      Component Layer                   │
+         │  - Dashboard UI                        │
+         │  - Scan Modules (20+ types)            │
+         │  - Notification Center                 │
+         │  - Report Generator                    │
+         │  - Settings Management                 │
+         └────────────────────────────────────────┘
+                              │
+                              ▼
+         ┌────────────────────────────────────────┐
+         │      State Management                  │
+         │  - TanStack Query (Server State)       │
+         │  - React Context (UI State)            │
+         │  - React Hook Form (Form State)        │
+         └────────────────────────────────────────┘
+                              │
+                              ▼
+         ┌────────────────────────────────────────┐
+         │      Service Layer                     │
+         │  - Scan Engine (Smart Manager)         │
+         │  - API Integrations                    │
+         │  - Report Generation (jsPDF)           │
+         │  - Notification System                 │
+         └────────────────────────────────────────┘
+                              │
+              ┌───────────────┴───────────────┐
+              ▼                               ▼
+    ┌──────────────────┐           ┌──────────────────┐
+    │    Supabase      │           │  External APIs   │
+    │  - Auth (Magic   │           │  - Shodan        │
+    │    Link)         │           │  - VirusTotal    │
+    │  - PostgreSQL DB │           │  - SecurityTrails│
+    │  - User Profiles │           │  - Hunter.io     │
+    │  - Scan History  │           │  - CT Logs       │
+    │  - Settings      │           │  - DNS APIs      │
+    │  - API Keys      │           │  - WHOIS/RDAP    │
+    └──────────────────┘           └──────────────────┘
+```
+
+### Tech Stack Breakdown
+
+**Frontend Framework**
+- React 18 with Vite for blazing-fast HMR
+- TypeScript for type safety
+- Tailwind CSS + shadcn/ui for modern UI
+
+**State & Data Flow**
+- TanStack Query for server state and caching
+- React Context for global app state
+- React Hook Form + Zod for form validation
+
+**Backend & Storage**
+- Supabase Auth (passwordless magic link)
+- Supabase PostgreSQL for user data & scan results
+- Row-level security for data isolation
+
+**Scanning Engine**
+- AI-powered payload management
+- Adaptive rate limiting
+- Multi-threaded execution
+- Real-time health monitoring
+
+**Reporting & Notifications**
+- jsPDF + jspdf-autotable for PDF generation
+- Discord webhook integration
+- In-app notification center
+- Sonner for toast notifications
+
+---
+
 ## 📸 Interface Preview
 
 <p align="center">
