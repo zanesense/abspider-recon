@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import LandingHeader from '@/components/landing/LandingHeader';
 import HeroSection from '@/components/landing/HeroSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
