@@ -9,9 +9,6 @@ export const sendDiscordWebhook = async (scan: Scan) => {
       throw new Error('Discord webhook URL not configured in Settings');
     }
 
-    console.log('[Discord Webhook] Preparing to send scan results');
-    console.log('[Discord Webhook] Webhook URL:', settings.discordWebhook.substring(0, 50) + '...');
-
     let embedColor;
     switch (scan.status) {
       case 'completed': embedColor = 0x06B6D4; break; // Cyan
@@ -125,8 +122,6 @@ export const sendDiscordWebhook = async (scan: Scan) => {
       username: 'ABSpider Recon',
     };
 
-    console.log('[Discord Webhook] Sending payload...');
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -141,15 +136,12 @@ export const sendDiscordWebhook = async (scan: Scan) => {
 
     clearTimeout(timeoutId);
 
-    console.log('[Discord Webhook] Response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
       console.error('[Discord Webhook] Error response:', errorText);
       throw new Error(`Discord webhook failed with status ${response.status}: ${errorText}`);
     }
 
-    console.log('[Discord Webhook] ✓ Successfully sent');
     return true;
   } catch (error: any) {
     console.error('[Discord Webhook] ✗ Failed:', error);

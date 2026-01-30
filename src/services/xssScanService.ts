@@ -160,7 +160,6 @@ const checkReflection = (response: string, payload: string): {
 };
 
 export const performXSSScan = async (target: string, requestManager: RequestManager, payloadLimit: number = 20): Promise<XSSScanResult> => {
-  console.log(`[XSS Scan] Starting REAL vulnerability scan for ${target} with ${payloadLimit} payloads`);
   
   const result: XSSScanResult = {
     vulnerable: false,
@@ -177,7 +176,6 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
     const paramKeys = Array.from(params.keys());
     
     if (paramKeys.length === 0) {
-      console.log('[XSS Scan] No parameters found, testing with default parameter');
       paramKeys.push('q'); // Common search parameter
       urlObj.search = '?q=test'; // Add a default parameter for testing
     }
@@ -199,8 +197,6 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
           testParams.set(paramKey, originalValue + payload);
           testUrl.search = testParams.toString();
 
-          console.log(`[XSS Scan] Testing ${type} on '${paramKey}': ${payload.substring(0, 40)}...`);
-
           const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal });
           if (!result.corsMetadata) {
             result.corsMetadata = testResult.metadata;
@@ -212,8 +208,7 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
           const reflection = checkReflection(text, payload);
 
           // Only consider reflections that are exploitable and have a minimum confidence
-          if (reflection.reflected && reflection.exploitable && reflection.confidence >= 0.7) { 
-            console.log(`[XSS Scan] ⚠️ ${severity.toUpperCase()}: XSS vulnerability detected! Confidence: ${(reflection.confidence * 100).toFixed(0)}%`);
+          if (reflection.reflected && reflection.exploitable && reflection.confidence >= 0.7) {
             
             // Check if this specific vulnerability (payload + parameter + type) has already been recorded
             const isDuplicate = result.vulnerabilities.some(v => 
@@ -233,7 +228,6 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
               });
             }
           } else if (reflection.reflected && !reflection.exploitable) {
-            console.log(`[XSS Scan] ℹ️ Payload reflected but safely encoded: ${paramKey}`);
           }
 
           await new Promise(resolve => setTimeout(resolve, 300));
@@ -248,8 +242,6 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
 
     // Filter out low confidence results (e.g., only keep those >= 0.7)
     result.vulnerabilities = result.vulnerabilities.filter(v => v.confidence >= 0.7);
-
-    console.log(`[XSS Scan] Complete: ${result.vulnerabilities.length} high-confidence vulnerabilities from ${result.testedPayloads} tests`);
     return result;
   } catch (error: any) {
     if (error.message === 'Scan aborted') {

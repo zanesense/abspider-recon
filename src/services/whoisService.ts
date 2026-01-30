@@ -24,7 +24,6 @@ export interface WhoisResult {
 export const performWhoisLookup = async (target: string, requestManager: RequestManager, apiKeys: APIKeys): Promise<WhoisResult> => {
   try {
     const domain = extractDomain(target);
-    console.log(`[WHOIS] Starting lookup for ${domain}`);
 
     const result: WhoisResult = {
       domain,
@@ -37,7 +36,6 @@ export const performWhoisLookup = async (target: string, requestManager: Request
     const securitytrailsKey = effectiveApiKeys.securitytrails;
     if (securitytrailsKey) {
       try {
-        console.log('[WHOIS] Attempting SecurityTrails API lookup...');
         const apiUrl = `https://api.securitytrails.com/v1/domain/${domain}/whois`;
         // Use fetchJSONWithBypass for SecurityTrails API, passing requestManager's signal
         const { data, metadata } = await fetchJSONWithBypass(apiUrl, {
@@ -63,7 +61,6 @@ export const performWhoisLookup = async (target: string, requestManager: Request
               email: data.registrant.email,
             };
           }
-          console.log('[WHOIS] ✓ Data from SecurityTrails API');
           return result; // If SecurityTrails provides comprehensive data, return early
         } else if (data.message) {
           console.warn(`[WHOIS] SecurityTrails API returned error: ${data.message}, falling back...`);
@@ -91,7 +88,6 @@ export const performWhoisLookup = async (target: string, requestManager: Request
         }
       }
 
-      console.log(`[WHOIS] Found ${result.nameservers.length} nameservers`);
     } catch (dnsError: any) {
       console.warn('[WHOIS] DNS lookup failed:', dnsError.message);
     }
@@ -134,7 +130,6 @@ export const performWhoisLookup = async (target: string, requestManager: Request
       console.warn('[WHOIS] RDAP lookup failed:', rdapError.message);
     }
 
-    console.log(`[WHOIS] Lookup complete for ${domain}`);
     
     return result;
   } catch (error: any) {
