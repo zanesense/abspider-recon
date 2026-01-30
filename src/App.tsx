@@ -7,7 +7,9 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
-import Login from "@/components/Login";
+import LandingPage from "@/pages/LandingPage";
+import StatusPage from "@/pages/StatusPage";
+import ModernLogin from "@/components/ModernLogin";
 import NotFound from "@/pages/NotFound";
 import NewScan from "@/pages/NewScan";
 import ScanResults from "@/pages/ScanResults";
@@ -66,8 +68,10 @@ function App() {
                 <Toaster />
                 <Sonner />
                 <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/status" element={<StatusPage />} />
+                <Route path="/app" element={<Index />} />
+                <Route path="/login" element={<ModernLogin />} />
                 
                 {/* Protected Routes */}
                 <Route path="*" element={
