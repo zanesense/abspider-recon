@@ -1,6 +1,4 @@
 import { supabase } from '@/SupabaseClient';
-import { getAPIKeys } from './apiKeyService';
-import { fetchJSONWithBypass } from './corsProxy';
 
 export interface ServiceStatus {
   name: string;
@@ -45,9 +43,9 @@ const testDatabaseConnection = async (): Promise<ServiceStatus> => {
       .from('user_scans')
       .select('scan_id')
       .limit(1);
-    
+
     const responseTime = Date.now() - startTime;
-    
+
     if (error) {
       return {
         name: 'Database',
@@ -58,7 +56,7 @@ const testDatabaseConnection = async (): Promise<ServiceStatus> => {
         details: 'Supabase PostgreSQL connection failed'
       };
     }
-    
+
     return {
       name: 'Database',
       status: 'operational',
@@ -82,9 +80,10 @@ const testDatabaseConnection = async (): Promise<ServiceStatus> => {
 const testAuthService = async (): Promise<ServiceStatus> => {
   const startTime = Date.now();
   try {
-    const { data, error } = await supabase.auth.getSession();
+    // Standard getSession check
+    const { data: { session }, error } = await (supabase.auth as any).getSession();
     const responseTime = Date.now() - startTime;
-    
+
     if (error) {
       return {
         name: 'Authentication',
@@ -95,7 +94,7 @@ const testAuthService = async (): Promise<ServiceStatus> => {
         details: 'Supabase Auth service unavailable'
       };
     }
-    
+
     return {
       name: 'Authentication',
       status: 'operational',
@@ -113,86 +112,6 @@ const testAuthService = async (): Promise<ServiceStatus> => {
       details: 'Authentication service failed'
     };
   }
-};
-
-// Test external API services
-const testExternalAPIs = async (): Promise<ServiceStatus[]> => {
-  const apiKeys = await getAPIKeys().catch(() => ({})) as any;
-  const services: ServiceStatus[] = [];
-  
-  // Test Shodan API
-  if (apiKeys.shodan) {
-    const startTime = Date.now();
-    try {
-      const response = await fetchJSONWithBypass('https://api.shodan.io/api-info', {
-        headers: { 'Authorization': `Bearer ${apiKeys.shodan}` }
-      });
-      
-      const hasError = response.data?.error || !response.data;
-      services.push({
-        name: 'Shodan API',
-        status: hasError ? 'down' : 'operational',
-        responseTime: Date.now() - startTime,
-        lastChecked: new Date(),
-        error: hasError ? 'API key invalid or service unavailable' : undefined,
-        details: hasError ? 'API key invalid or service unavailable' : 'API key valid and service operational'
-      });
-    } catch (error: any) {
-      services.push({
-        name: 'Shodan API',
-        status: 'down',
-        responseTime: Date.now() - startTime,
-        lastChecked: new Date(),
-        error: error.message,
-        details: 'Service unreachable'
-      });
-    }
-  } else {
-    services.push({
-      name: 'Shodan API',
-      status: 'unknown',
-      lastChecked: new Date(),
-      details: 'API key not configured'
-    });
-  }
-  
-  // Test VirusTotal API
-  if (apiKeys.virustotal) {
-    const startTime = Date.now();
-    try {
-      const response = await fetchJSONWithBypass('https://www.virustotal.com/api/v3/domains/google.com', {
-        headers: { 'x-apikey': apiKeys.virustotal }
-      });
-      
-      const hasError = response.data?.error || !response.data;
-      services.push({
-        name: 'VirusTotal API',
-        status: hasError ? 'down' : 'operational',
-        responseTime: Date.now() - startTime,
-        lastChecked: new Date(),
-        error: hasError ? 'API key invalid or service unavailable' : undefined,
-        details: hasError ? 'API key invalid or service unavailable' : 'API key valid and service operational'
-      });
-    } catch (error: any) {
-      services.push({
-        name: 'VirusTotal API',
-        status: 'down',
-        responseTime: Date.now() - startTime,
-        lastChecked: new Date(),
-        error: error.message,
-        details: 'Service unreachable'
-      });
-    }
-  } else {
-    services.push({
-      name: 'VirusTotal API',
-      status: 'unknown',
-      lastChecked: new Date(),
-      details: 'API key not configured'
-    });
-  }
-  
-  return services;
 };
 
 // Test core modules
@@ -248,7 +167,7 @@ const testModules = async (): Promise<ModuleStatus[]> => {
       lastTested: new Date()
     }
   ];
-  
+
   return modules;
 };
 
@@ -260,18 +179,18 @@ const getSystemMetrics = async (): Promise<SystemMetrics> => {
       .from('user_scans')
       .select('user_id', { count: 'exact', head: true })
       .not('user_id', 'is', null);
-    
+
     // Get total scans
     const { count: totalScans } = await supabase
       .from('user_scans')
       .select('*', { count: 'exact', head: true });
-    
+
     // Get active scans
     const { count: activeScans } = await supabase
       .from('user_scans')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'running');
-    
+
     // Get average response time from recent scans
     const { data: recentScans } = await supabase
       .from('user_scans')
@@ -280,28 +199,28 @@ const getSystemMetrics = async (): Promise<SystemMetrics> => {
       .not('elapsed_ms', 'is', null)
       .order('completed_at', { ascending: false })
       .limit(100);
-    
+
     let avgResponseTime = 45000; // Default 45 seconds
     if (recentScans && recentScans.length > 0) {
       const totalTime = recentScans.reduce((sum, scan) => sum + (scan.elapsed_ms || 0), 0);
       avgResponseTime = totalTime / recentScans.length;
     }
-    
+
     // Calculate error rate from recent scans
     const { count: failedScans } = await supabase
       .from('user_scans')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'failed')
       .gte('timestamp', Date.now() - (24 * 60 * 60 * 1000)); // Last 24 hours
-    
+
     const { count: completedScans } = await supabase
       .from('user_scans')
       .select('*', { count: 'exact', head: true })
       .in('status', ['completed', 'failed'])
       .gte('timestamp', Date.now() - (24 * 60 * 60 * 1000)); // Last 24 hours
-    
+
     const errorRate = completedScans ? (failedScans || 0) / completedScans * 100 : 0;
-    
+
     return {
       uptime: 99.9, // Static uptime percentage
       totalScans: totalScans || 0,
@@ -326,29 +245,28 @@ const getSystemMetrics = async (): Promise<SystemMetrics> => {
 // Main status check function
 export const getAppStatus = async (): Promise<AppStatus> => {
   try {
-    const [dbStatus, authStatus, externalAPIs, modules, metrics] = await Promise.all([
+    const [dbStatus, authStatus, modules, metrics] = await Promise.all([
       testDatabaseConnection(),
       testAuthService(),
-      testExternalAPIs(),
       testModules(),
       getSystemMetrics()
     ]);
-    
-    const services = [dbStatus, authStatus, ...externalAPIs];
-    
+
+    const services = [dbStatus, authStatus];
+
     // Determine overall status
     const hasDownServices = services.some(s => s.status === 'down');
     const hasDegradedServices = services.some(s => s.status === 'degraded');
     const hasDownModules = modules.some(m => m.status === 'down');
     const hasDegradedModules = modules.some(m => m.status === 'degraded');
-    
+
     let overall: 'operational' | 'degraded' | 'down' = 'operational';
     if (hasDownServices || hasDownModules) {
       overall = 'down';
     } else if (hasDegradedServices || hasDegradedModules) {
       overall = 'degraded';
     }
-    
+
     return {
       overall,
       services,
@@ -382,13 +300,13 @@ const CACHE_DURATION = 30 * 1000; // 30 seconds
 
 export const getCachedAppStatus = async (): Promise<AppStatus> => {
   const now = Date.now();
-  
+
   if (cachedStatus && (now - cacheTimestamp) < CACHE_DURATION) {
     return cachedStatus;
   }
-  
+
   cachedStatus = await getAppStatus();
   cacheTimestamp = now;
-  
+
   return cachedStatus;
 };
