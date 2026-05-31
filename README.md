@@ -11,9 +11,7 @@
   <a href="https://github.com/zanesense/abspider-recon/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License">
   </a>
-  <a href="https://github.com/zanesense/abspider-recon/stargazers">
-    <img src="https://img.shields.io/github/stars/zanesense/abspider-recon" alt="Stars">
-  </a>
+ <a href="https://deepwiki.com/zanesense/abspider-recon"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 ---
