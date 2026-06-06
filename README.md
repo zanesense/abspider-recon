@@ -1,4 +1,4 @@
-# ABSpider Recon
+# ABSpider Recon - Web Security Made Easy!
 
 > A web reconnaissance dashboard and CLI for **authorized** passive intelligence gathering and active vulnerability checks — built for bug bounty hunters, security engineers, and auditors.
 
