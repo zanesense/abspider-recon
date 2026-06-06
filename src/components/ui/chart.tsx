@@ -8,6 +8,23 @@ import { cn } from "@/lib/utils"
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
+// Restrict chart color values to a safe CSS color subset so that values
+// rendered via dangerouslySetInnerHTML cannot smuggle in CSS declarations
+// (e.g. `red; background: url(javascript:...)`) or break out of the
+// generated rule.
+const SAFE_CSS_COLOR = /^(#[0-9a-fA-F]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)|hsla?\(\s*\d{1,3}(?:deg)?\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\))$/
+
+const sanitizeColor = (value: unknown): string | null => {
+  if (typeof value !== "string") return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  return SAFE_CSS_COLOR.test(trimmed) ? trimmed : null
+}
+
+// CSS identifier (chart id and color key) restricted to alphanumerics,
+// dashes, and underscores to prevent breaking out of the generated rule.
+const sanitizeIdent = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, "")
+
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode
@@ -82,13 +99,14 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
         __html: Object.entries(THEMES)
           .map(
             ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+${prefix} [data-chart=${sanitizeIdent(id)}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
-    const color =
+    const raw =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    const color = sanitizeColor(raw)
+    return color ? `  --color-${sanitizeIdent(key)}: ${color};` : null
   })
   .join("\n")}
 }

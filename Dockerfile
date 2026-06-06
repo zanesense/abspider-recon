@@ -33,6 +33,14 @@ COPY --from=builder /app/dist .
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 80
+# Drop root privileges: run nginx as an unprivileged user.
+RUN addgroup -S app && adduser -S app -G app \
+    && chown -R app:app /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d \
+    && touch /var/run/nginx.pid \
+    && chown app:app /var/run/nginx.pid
+
+USER app
+
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]

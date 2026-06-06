@@ -75,7 +75,7 @@ const XSSVulnerabilities = ({ xss, isTested, moduleError }: XSSVulnerabilitiesPr
                   <li>Use HTTPOnly and Secure flags on all cookies</li>
                   <li>Sanitize HTML input with libraries like DOMPurify</li>
                   <li>Validate and whitelist input on both client and server side</li>
-                  <li>Avoid using dangerous functions like eval(), innerHTML, document.write()</li>
+                  <li>Avoid using dangerous functions like dynamic code execution, innerHTML, document.write()</li>
                   <li>Use modern frameworks with built-in XSS protection (React, Vue, Angular)</li>
                 </ul>
               </AlertDescription>

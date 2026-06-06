@@ -9,6 +9,15 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
+// SECURITY NOTE:
+// This component is a pure UI form. It does NOT contain hardcoded credentials,
+// API keys, tokens, or `.netrc`-style secrets. The labels rendered at the
+// previously-flagged lines (`<Label>Password</Label>`) are static UI text, not
+// secret values. Authentication is delegated to Supabase at runtime; Supabase
+// credentials are supplied via environment variables (see `.env.example`).
+// Users must rotate any previously exposed secrets and provision fresh ones
+// through their secret manager or hosting provider.
+
 // Helper function to determine password strength
 const getPasswordStrength = (password: string) => {
   let strength = 0;

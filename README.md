@@ -104,11 +104,36 @@ cd abspider-recon
 # Install dependencies
 npm install
 
+# Copy the example env file and fill in your own values
+cp .env.example .env
+
 # Start development server
 npm run dev
 ```
 
 Access the dashboard at `http://localhost:5000`
+
+## 🔐 Environment Variables
+
+All runtime configuration is supplied through Vite environment variables. Copy
+[`.env.example`](.env.example) to `.env` and replace the placeholders. **Do
+not commit a populated `.env` file** — `.env` is covered by `.gitignore`.
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` | Yes | Supabase project URL used for auth and storage. |
+| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon (publishable) key. Safe to ship to the browser when Row Level Security is enabled. |
+| `VITE_SHODAN_API_KEY` | No | Optional Shodan API key for port scanning. |
+| `VITE_VIRUSTOTAL_API_KEY` | No | Optional VirusTotal API key for domain reputation. |
+| `VITE_SECURITYTRAILS_API_KEY` | No | Optional SecurityTrails API key for DNS history. |
+| `VITE_HUNTER_API_KEY` | No | Optional Hunter.io API key for email enumeration. |
+| `VITE_DISCORD_WEBHOOK_URL` | No | Discord webhook used for scan notifications. Treat as a secret. |
+
+Only variables prefixed with `VITE_` are exposed to the client bundle. Rotate
+any value that may have been published, store production secrets in your
+hosting provider's secret manager, and never paste real keys into source
+control. See [SECURITY.md](SECURITY.md) for responsible-disclosure
+instructions.
 
 ---
 

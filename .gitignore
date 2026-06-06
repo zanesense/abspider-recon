@@ -7,12 +7,25 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Build output
 dist
 dist-ssr
-*.local
-*.env
+build
+client-bundle
+coverage
+.vite
+*.tsbuildinfo
+.eslintcache
+
+# Environment files (never commit real secrets)
 .env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -25,7 +38,7 @@ dist-ssr
 *.sln
 *.sw?
 
-.vite
-
-*.tsbuildinfo
-.eslintcache
+# Local overrides
+*.local
+.vercel
+.env*
