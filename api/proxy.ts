@@ -27,7 +27,13 @@ class ProxyError extends Error {
 }
 
 function isIPv4Literal(hostname: string): boolean {
-  return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(hostname);
+  const parts = hostname.split('.');
+  if (parts.length !== 4) return false;
+  return parts.every((part) => {
+    if (!/^\d{1,3}$/.test(part)) return false;
+    const value = Number(part);
+    return value >= 0 && value <= 255;
+  });
 }
 
 function isPrivateIPv4(hostname: string): boolean {
@@ -57,8 +63,10 @@ function normalizeIPv6(hostname: string): string {
 function isPrivateIPv6(hostname: string): boolean {
   if (!hostname.includes(':')) return false;
   const normalized = normalizeIPv6(hostname);
+  const hexOnly = normalized.replace(/:/g, '');
 
   if (normalized === '::1' || normalized === '::') return true;
+  if (hexOnly.length > 0 && /^[0]+$/.test(hexOnly)) return true;
   const firstHextet = normalized.split(':').find((part) => part.length > 0);
   const firstHextetValue = firstHextet ? Number.parseInt(firstHextet, 16) : Number.NaN;
   if (Number.isFinite(firstHextetValue) && firstHextetValue >= 0xfe80 && firstHextetValue <= 0xfebf) return true;
@@ -139,6 +147,10 @@ export default async function handler(req: Request) {
 
   try {
     let currentUrl = validateTargetUrl(targetUrl).toString();
+    const requestBody =
+      method === 'GET' || method === 'HEAD'
+        ? undefined
+        : await req.clone().arrayBuffer();
 
     // Prepare headers for the target request
     const headers = new Headers();
@@ -173,7 +185,7 @@ export default async function handler(req: Request) {
         response = await fetch(currentUrl, {
           method,
           headers,
-          body: method === 'GET' || method === 'HEAD' ? undefined : req.body,
+          body: requestBody,
           redirect: 'manual',
           signal: controller.signal,
         });
