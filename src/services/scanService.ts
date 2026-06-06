@@ -228,7 +228,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
   }
 
   const id = uuidv4();
-  let newScan: Scan = {
+  const newScan: Scan = {
     id,
     user_id: session.user.id,
     target: config.target,
@@ -436,9 +436,9 @@ const runScan = async (
             moduleResult = await performMXLookup(config.target, requestManager);
             currentScan.results.mx = moduleResult;
             break;
-          case 'subnet':
-            const ipForSubnet = currentScan.results.siteInfo?.ip || 
-                                  currentScan.results.geoip?.ip || 
+          case 'subnet': {
+            const ipForSubnet = currentScan.results.siteInfo?.ip ||
+                                  currentScan.results.geoip?.ip ||
                                   currentScan.results.dns?.records.A[0]?.value;
             if (ipForSubnet) {
               moduleResult = calculateSubnet(ipForSubnet, 24);
@@ -447,6 +447,7 @@ const runScan = async (
               currentScan.errors.push('Subnet scan skipped: IP address not available from SiteInfo, GeoIP, or DNS.');
             }
             break;
+          }
           case 'ports':
             moduleResult = await scanCommonPorts(config.target, config.threads, requestManager, apiKeys);
             currentScan.results.ports = moduleResult;

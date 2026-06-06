@@ -57,7 +57,7 @@ export const addScheduledScan = (name: string, config: ScanConfig, scheduleDetai
   const { startDate, startTime, frequency } = scheduleDetails;
   const [hour, minute] = startTime.split(':').map(Number);
   
-  let initialNextRunDate = new Date(startDate);
+  const initialNextRunDate = new Date(startDate);
   initialNextRunDate.setHours(hour, minute, 0, 0);
 
   // If the initialNextRunDate is in the past, calculate the next occurrence based on frequency
@@ -105,7 +105,7 @@ export const updateScheduledScan = (id: string, updates: Partial<ScheduledScan>)
     const { startDate, startTime, frequency } = updatedScan.schedule;
     const [hour, minute] = startTime.split(':').map(Number);
     
-    let newNextRunDate = new Date(startDate);
+    const newNextRunDate = new Date(startDate);
     newNextRunDate.setHours(hour, minute, 0, 0);
 
     let nextRunTimestamp = newNextRunDate.getTime();

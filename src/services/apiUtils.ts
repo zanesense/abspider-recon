@@ -46,7 +46,7 @@ export const makeRequest = async (
 };
 
 export const normalizeUrl = (target: string): string => {
-  let url = target.trim();
+  const url = target.trim();
   
   // 1. Try to parse as is (if it already has a protocol)
   try {

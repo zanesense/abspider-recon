@@ -71,7 +71,7 @@ export const performBrokenLinkCheck = async (target: string, requestManager: Req
         const linkMatches = html.matchAll(/<a[^>]*href=["']([^"']+)["']/gi);
 
         for (const match of linkMatches) {
-          let link = match[1];
+          const link = match[1];
           if (link.startsWith('#')) continue; // Skip anchor links
 
           try {

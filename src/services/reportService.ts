@@ -1005,7 +1005,7 @@ export const generateMarkdownReport = (scan: Scan, returnContent: boolean = fals
 export const generateCsvReport = (scan: Scan, returnContent: boolean = false): string | void => {
   const escapeCsv = (value: any) => {
     if (value === null || value === undefined) return '';
-    let str = String(value);
+    const str = String(value);
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
       return `"${str.replace(/"/g, '""')}"`;
     }

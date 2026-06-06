@@ -94,7 +94,7 @@ const checkReflection = (response: string, payload: string): {
   };
 
   // --- 1. Check for direct, unencoded reflection ---
-  let directIndex = lowerResponse.indexOf(lowerPayload);
+  const directIndex = lowerResponse.indexOf(lowerPayload);
   if (directIndex !== -1) {
     const matchedPayload = response.substring(directIndex, directIndex + payload.length);
     let confidence = 0.7; // Default for direct reflection
@@ -137,7 +137,7 @@ const checkReflection = (response: string, payload: string): {
   ];
 
   for (const encoded of encodedPayloads) {
-    let encodedIndex = lowerResponse.indexOf(encoded.toLowerCase());
+    const encodedIndex = lowerResponse.indexOf(encoded.toLowerCase());
     if (encodedIndex !== -1) {
       return {
         reflected: true,
@@ -228,6 +228,7 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
               });
             }
           } else if (reflection.reflected && !reflection.exploitable) {
+            // Reflected but not exploitable; nothing to record.
           }
 
           await new Promise(resolve => setTimeout(resolve, 300));
