@@ -22,7 +22,6 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
-import PostAuthAnnouncement from "@/components/PostAuthAnnouncement";
 import RequireAuth from "@/components/RequireAuth";
 import { useEffect } from "react"; // Import useEffect
 import { cleanupStuckScans, getRunningScanCount } from "@/services/scanService"; // Import new functions
@@ -77,8 +76,7 @@ function App() {
                 <Route path="*" element={
                   <RequireAuth>
                     <LegalDisclaimer />
-                    <PostAuthAnnouncement />
-                    <SidebarProvider>
+                                        <SidebarProvider>
                       <div className="flex min-h-screen w-full bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
                         <AppSidebar />
                         <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">

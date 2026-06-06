@@ -7,16 +7,6 @@ export const useInitialNotifications = () => {
   useEffect(() => {
     // Only add initial notifications if there are none
     if (notifications.length === 0) {
-      // Add NetProbe launch notification
-      addNotification({
-        title: '🚀 NetProbe Launch',
-        message: 'Check out our new open-source network reconnaissance tool on GitHub!',
-        type: 'info',
-        action: {
-          label: 'View on GitHub',
-          url: 'https://github.com/zanesense/netprobe'
-        }
-      });
 
       // Add welcome notification
       addNotification({
