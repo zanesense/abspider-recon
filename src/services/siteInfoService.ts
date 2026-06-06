@@ -155,7 +155,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       console.warn('[Site Info] Page fetch failed:', error.message);
       // Return partial results with IP if we have it
       if (!result.ip) {
-        throw new Error('Unable to fetch site information. The site may be blocking automated requests or have CORS restrictions.');
+        throw new Error('Unable to fetch site information. The site may be blocking automated requests or have CORS restrictions.', { cause: error });
       }
     }
 
@@ -163,6 +163,6 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
     return result;
   } catch (error: any) {
     console.error('[Site Info] Error:', error);
-    throw new Error(error.message || 'Site information scan failed');
+    throw new Error(error.message || 'Site information scan failed', { cause: error });
   }
 };

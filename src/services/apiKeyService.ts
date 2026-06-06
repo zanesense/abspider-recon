@@ -68,6 +68,6 @@ export const saveAPIKeys = async (keys: APIKeys) => {
     }
   } catch (error: any) {
     console.error('[API Keys] Failed to save to Supabase:', error.message);
-    throw new Error(`Failed to save API keys: ${error.message}`);
+    throw new Error(`Failed to save API keys: ${error.message}`, { cause: error });
   }
 };

@@ -112,6 +112,6 @@ export const performSEOAnalysis = async (target: string, requestManager: Request
     return result;
   } catch (error: any) {
     console.error('[SEO Analysis] Error:', error);
-    throw new Error(error.message || 'SEO analysis failed');
+    throw new Error(error.message || 'SEO analysis failed', { cause: error });
   }
 };

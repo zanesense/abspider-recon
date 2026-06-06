@@ -97,7 +97,7 @@ export class RequestManager {
 
         if (error.name === 'AbortError' || this.scanController?.signal.aborted) {
           this.activeRequests.delete(requestId);
-          throw new Error('Request aborted');
+          throw new Error('Request aborted', { cause: error });
         }
 
         metrics.endTime = Date.now();

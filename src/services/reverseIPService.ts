@@ -171,6 +171,6 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
       return result; 
     }
     console.error('[Reverse IP] Error during lookup:', error);
-    throw new Error(`Reverse IP lookup failed: ${error.message}`);
+    throw new Error(`Reverse IP lookup failed: ${error.message}`, { cause: error });
   }
 };

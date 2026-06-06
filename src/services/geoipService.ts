@@ -182,6 +182,6 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
     return result;
   } catch (error: any) {
     console.error('[GeoIP] Error:', error);
-    throw new Error(error.message || 'GeoIP lookup failed');
+    throw new Error(error.message || 'GeoIP lookup failed', { cause: error });
   }
 };

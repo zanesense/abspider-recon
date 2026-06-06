@@ -296,6 +296,6 @@ export const performFullHeaderAnalysis = async (
     };
   } catch (error: any) {
     console.error('[Headers] Error:', error);
-    throw new Error(error.message || 'Header analysis failed');
+    throw new Error(error.message || 'Header analysis failed', { cause: error });
   }
 };

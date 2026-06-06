@@ -1,5 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+const loadNotificationsFromStorage = (): Notification[] => {
+  const stored = localStorage.getItem('abspider-notifications');
+  if (!stored) return [];
+  try {
+    const parsed = JSON.parse(stored);
+    return parsed.map((n: any) => ({
+      ...n,
+      timestamp: new Date(n.timestamp),
+    }));
+  } catch (error) {
+    console.error('Failed to parse stored notifications:', error);
+    return [];
+  }
+};
+
 export interface Notification {
   id: string;
   title: string;
@@ -39,23 +54,7 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  // Load notifications from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('abspider-notifications');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setNotifications(parsed.map((n: any) => ({
-          ...n,
-          timestamp: new Date(n.timestamp)
-        })));
-      } catch (error) {
-        console.error('Failed to parse stored notifications:', error);
-      }
-    }
-  }, []);
+  const [notifications, setNotifications] = useState<Notification[]>(loadNotificationsFromStorage);
 
   // Save notifications to localStorage whenever they change
   useEffect(() => {

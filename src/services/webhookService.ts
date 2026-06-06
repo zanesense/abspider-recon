@@ -145,6 +145,6 @@ export const sendDiscordWebhook = async (scan: Scan) => {
     return true;
   } catch (error: any) {
     console.error('[Discord Webhook] ✗ Failed:', error);
-    throw new Error(`Failed to send Discord webhook: ${error.message}`);
+    throw new Error(`Failed to send Discord webhook: ${error.message}`, { cause: error });
   }
 };

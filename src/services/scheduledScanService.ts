@@ -45,7 +45,7 @@ function saveScheduledScansToStorage(scans: ScheduledScan[]) {
     localStorage.setItem(SCHEDULED_SCANS_STORAGE_KEY, JSON.stringify(scans));
   } catch (error) {
     console.error('Failed to save scheduled scans to localStorage:', error);
-    throw new Error('Failed to save scheduled scan data. Local storage might be full or inaccessible.');
+    throw new Error('Failed to save scheduled scan data. Local storage might be full or inaccessible.', { cause: error });
   }
 }
 

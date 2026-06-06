@@ -147,6 +147,6 @@ export const performWordPressScan = async (target: string, requestManager: Reque
     return result;
   } catch (error: any) {
     console.error('[WordPress] Error:', error);
-    throw new Error(error.message || 'WordPress scan failed');
+    throw new Error(error.message || 'WordPress scan failed', { cause: error });
   }
 };

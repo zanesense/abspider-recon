@@ -248,7 +248,7 @@ export const startScan = async (config: ScanConfig): Promise<string> => {
   try {
     await upsertScanToDatabase(newScan);
   } catch (error: any) {
-    throw new Error(`Failed to initialize scan: ${error.message}`);
+    throw new Error(`Failed to initialize scan: ${error.message}`, { cause: error });
   }
 
   const scanController = new AbortController();

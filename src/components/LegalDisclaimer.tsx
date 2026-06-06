@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,15 +13,8 @@ import { AlertTriangle, Shield, Scale } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const LegalDisclaimer = () => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => !localStorage.getItem('abspider-legal-agreed'));
   const [agreed, setAgreed] = useState(false);
-
-  useEffect(() => {
-    const hasAgreed = localStorage.getItem('abspider-legal-agreed');
-    if (!hasAgreed) {
-      setOpen(true);
-    }
-  }, []);
 
   const handleAgree = () => {
     if (agreed) {

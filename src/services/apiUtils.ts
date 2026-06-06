@@ -69,7 +69,7 @@ export const normalizeUrl = (target: string): string => {
       
       // If all attempts fail, it's genuinely an invalid URL string.
       // Throwing here is acceptable because extractHostname will catch it.
-      throw new Error(`Cannot normalize invalid URL string: ${target}`);
+      throw new Error(`Cannot normalize invalid URL string: ${target}`, { cause: e2 });
     }
   }
 };

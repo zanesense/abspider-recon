@@ -90,23 +90,11 @@ const AppSettings = () => {
   });
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Get current user
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        await loadUserPreferences(user.id);
-      }
-    };
-    getCurrentUser();
-  }, []);
-
   // Load user preferences from database
   const loadUserPreferences = async (userId: string) => {
     try {
       const data = await getUserPreferences(userId);
-      
+
       if (data) {
         setUserPreferences(prev => ({
           ...prev,
@@ -127,6 +115,18 @@ const AppSettings = () => {
       console.error('Failed to load user preferences:', error);
     }
   };
+
+  // Get current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        await loadUserPreferences(user.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
 
   // Save user preferences to database
   const saveUserPreferencesHandler = async () => {

@@ -36,9 +36,9 @@ const AccountSettings = () => {
   const [loadingProfileUpdate, setLoadingProfileUpdate] = useState(false);
   const [loadingPasswordChange, setLoadingPasswordChange] = useState(false);
   const [loadingAvatarUpload, setLoadingAvatarUpload] = useState(false);
-  const [passwordsMatch, setPasswordsMatch] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [scanNotifications, setScanNotifications] = useState(true);
+  const passwordsMatch = newPassword === confirmPassword && newPassword.length > 0;
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -78,11 +78,6 @@ const AccountSettings = () => {
     };
     fetchUser();
   }, []);
-
-  // Effect to update password match status in real-time
-  useEffect(() => {
-    setPasswordsMatch(newPassword === confirmPassword && newPassword.length > 0);
-  }, [newPassword, confirmPassword]);
 
   const handleProfileUpdate = async () => {
     setLoadingProfileUpdate(true);

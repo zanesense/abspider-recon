@@ -142,12 +142,12 @@ const testBooleanBlind = async (
   const truePayload = " AND 1=1--"; // Example payload for true condition
   const falsePayload = " AND 1=0--"; // Example payload for false condition
 
-  let trueResponseText = '';
-  let falseResponseText = '';
-  let trueResponseStatus = 0;
-  let falseResponseStatus = 0;
-  let trueResponseLength = 0;
-  let falseResponseLength = 0;
+  let trueResponseText: string;
+  let falseResponseText: string;
+  let trueResponseStatus: number;
+  let falseResponseStatus: number;
+  let trueResponseLength: number;
+  let falseResponseLength: number;
 
   try {
     // Test with true condition

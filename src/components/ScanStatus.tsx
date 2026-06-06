@@ -3,34 +3,39 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug, StopCircle, Gauge, Brain } from 'lucide-react';
 import { Scan } from '@/services/scanService';
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useSyncExternalStore } from 'react';
 
 interface ScanStatusProps {
   scan: Scan;
 }
 
 const ScanStatus = ({ scan }: ScanStatusProps) => {
-  const [realtimeElapsedMs, setRealtimeElapsedMs] = useState<number | undefined>(scan.elapsedMs);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (scan.status === 'running') {
-      setRealtimeElapsedMs(Date.now() - scan.timestamp);
-
-      interval = setInterval(() => {
-        setRealtimeElapsedMs(Date.now() - scan.timestamp);
-      }, 1000);
-    } else {
-      setRealtimeElapsedMs(scan.elapsedMs);
-    }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (scan.status !== 'running') {
+        return () => {};
       }
-    };
-  }, [scan.status, scan.timestamp, scan.elapsedMs]);
+      const interval = setInterval(onStoreChange, 1000);
+      return () => clearInterval(interval);
+    },
+    [scan.status],
+  );
+
+  const getSnapshot = useCallback(
+    () => Date.now() - scan.timestamp,
+    [scan.timestamp],
+  );
+
+  const getServerSnapshot = useCallback(
+    () => scan.elapsedMs ?? 0,
+    [scan.elapsedMs],
+  );
+
+  const realtimeElapsedMs = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   const getStatusIcon = () => {
     switch (scan.status) {

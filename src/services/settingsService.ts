@@ -65,7 +65,7 @@ export const saveSettings = async (settings: Settings) => {
     console.log('[Settings] Saved successfully to Supabase');
   } catch (error: any) {
     console.error('[Settings] Failed to save to Supabase:', error.message);
-    throw new Error(`Failed to save settings: ${error.message}`);
+    throw new Error(`Failed to save settings: ${error.message}`, { cause: error });
   }
 };
 
