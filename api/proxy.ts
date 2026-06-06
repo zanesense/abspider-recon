@@ -59,7 +59,9 @@ function isPrivateIPv6(hostname: string): boolean {
   const normalized = normalizeIPv6(hostname);
 
   if (normalized === '::1' || normalized === '::') return true;
-  if (normalized.startsWith('fe8') || normalized.startsWith('fe9') || normalized.startsWith('fea') || normalized.startsWith('feb')) return true;
+  const firstHextet = normalized.split(':').find((part) => part.length > 0);
+  const firstHextetValue = firstHextet ? Number.parseInt(firstHextet, 16) : Number.NaN;
+  if (Number.isFinite(firstHextetValue) && firstHextetValue >= 0xfe80 && firstHextetValue <= 0xfebf) return true;
   if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
   if (normalized.startsWith('ff')) return true;
   if (normalized.startsWith('::ffff:')) {
@@ -145,9 +147,14 @@ export default async function handler(req: Request) {
     // We strictly filter what we pass to avoid issues
     // Do not forward Authorization/Cookie headers to avoid leaking caller credentials.
     const allowedHeaders = ['accept', 'accept-encoding', 'accept-language', 'cache-control', 'content-type', 'user-agent'];
+    const blockedForwardHeaders = new Set(['authorization', 'cookie']);
     
     req.headers.forEach((value, key) => {
-      if (allowedHeaders.includes(key.toLowerCase())) {
+      const lowerKey = key.toLowerCase();
+      if (blockedForwardHeaders.has(lowerKey)) {
+        return;
+      }
+      if (allowedHeaders.includes(lowerKey)) {
         headers.set(key, value);
       }
     });
