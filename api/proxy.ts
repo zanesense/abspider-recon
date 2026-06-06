@@ -16,6 +16,16 @@ const BLOCKED_HOSTNAMES = new Set([
 
 const BLOCKED_HOSTNAME_SUFFIXES = ['.localhost', '.local', '.internal'];
 
+class ProxyError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.name = 'ProxyError';
+    this.status = status;
+  }
+}
+
 function isIPv4Literal(hostname: string): boolean {
   return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(hostname);
 }
@@ -73,15 +83,15 @@ function validateTargetUrl(rawUrl: string): URL {
   const parsed = new URL(rawUrl);
 
   if (!['http:', 'https:'].includes(parsed.protocol)) {
-    throw new Error('Only HTTP(S) target URLs are allowed');
+    throw new ProxyError('Only HTTP(S) target URLs are allowed');
   }
 
   if (parsed.username || parsed.password) {
-    throw new Error('Target URL must not include credentials');
+    throw new ProxyError('Target URL must not include credentials');
   }
 
   if (isBlockedHostname(parsed.hostname)) {
-    throw new Error('Target URL points to a disallowed host');
+    throw new ProxyError('Target URL points to a disallowed host');
   }
 
   return parsed;
@@ -107,7 +117,6 @@ export default async function handler(req: Request) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Vary': 'Origin',
   };
 
   // Handle OPTIONS request for CORS preflight
@@ -134,6 +143,7 @@ export default async function handler(req: Request) {
     
     // Copy relevant headers from the original request
     // We strictly filter what we pass to avoid issues
+    // Do not forward Authorization/Cookie headers to avoid leaking caller credentials.
     const allowedHeaders = ['accept', 'accept-encoding', 'accept-language', 'cache-control', 'content-type', 'user-agent'];
     
     req.headers.forEach((value, key) => {
@@ -166,12 +176,12 @@ export default async function handler(req: Request) {
         }
 
         if (redirectCount >= MAX_REDIRECTS) {
-          throw new Error('Too many redirects');
+          throw new ProxyError('Too many redirects', 502);
         }
 
         const location = response.headers.get('location');
         if (!location) {
-          throw new Error('Received redirect without a Location header');
+          throw new ProxyError('Received redirect without a Location header', 502);
         }
 
         const nextUrl = new URL(location, currentUrl).toString();
@@ -201,9 +211,16 @@ export default async function handler(req: Request) {
       headers: responseHeaders,
     });
   } catch (error: any) {
+    const status =
+      error?.name === 'AbortError'
+        ? 504
+        : error instanceof ProxyError
+          ? error.status
+          : 502;
+
     return jsonResponse(
       { error: 'Failed to fetch target URL', details: error.message ?? 'Unknown error' },
-      400,
+      status,
       corsHeaders
     );
   }
