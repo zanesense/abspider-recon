@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security & Legal — ABSpider Recon</title>
+    <meta name="description" content="Legal framework, authorized use, vulnerability disclosure, and security best practices for ABSpider Recon.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="security">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <nav class="breadcrumb" id="breadcrumb" data-page="Security & Legal"></nav>
+            </div>
+            <div class="topbar-actions">
+                <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
+            </div>
+        </div>
+
+        <div class="content">
+            <article class="article">
+                <header class="page-hero">
+                    <div class="crumb">Policy · Responsible use</div>
+                    <h1>Security &amp; Legal</h1>
+                    <p class="lede">ABSpider Recon is a powerful reconnaissance platform. This page covers the legal framework, rules for authorized use, and how to report a vulnerability in the project itself.</p>
+                </header>
+
+                <aside class="callout callout-warning" style="margin-bottom: 2rem;">
+                    <h4 style="margin-top:0;">Authorised testing only</h4>
+                    <p style="margin: 0;">ABSpider Recon is intended for security professionals operating on systems they own or have explicit, written permission to test. Running scans against systems you do not authorise is unlawful in most jurisdictions and may violate the Computer Fraud and Abuse Act (CFAA), the UK Computer Misuse Act, the EU NIS2 directive, and equivalent legislation worldwide.</p>
+                </aside>
+
+                <h2 id="legal-framework">Legal framework</h2>
+                <p>Reconnaissance is regulated by a patchwork of computer-misuse, data-protection, and telecommunications laws. The rules that matter most are:</p>
+
+                <h3>United States — Computer Fraud and Abuse Act (CFAA)</h3>
+                <p>18 U.S.C. § 1030 prohibits "intentional access" to a protected computer without authorisation or exceeding authorised access. Sending even a single unauthorised probe can be a federal offence. Penalties range from misdemeanours (≤ 1 year) to 20+ years for repeat or aggravated cases.</p>
+
+                <h3>United Kingdom — Computer Misuse Act 1990</h3>
+                <p>Sections 1–3 criminalise unauthorised access, unauthorised modification, and the supply of tools intended for unauthorised access. Section 17A, effective from 2025, adds a statutory defence for legitimate security research conducted on systems where the researcher has a reasonable belief of authorisation.</p>
+
+                <h3>European Union — NIS2 Directive</h3>
+                <p>Effective from October 2024, NIS2 expands the scope of cybersecurity obligations across the EU. While it focuses on critical-infrastructure operators, security researchers are expected to follow coordinated vulnerability disclosure norms.</p>
+
+                <h3>GDPR (General Data Protection Regulation)</h3>
+                <p>Reconnaissance frequently returns personal data: WHOIS records, leaked credentials, and exposed internal documents. Storing or processing that data without a lawful basis (Art. 6) is a GDPR violation. ABSpider Recon does not exfiltrate personal data by default — the operator is responsible for the data they choose to retain.</p>
+
+                <h3>Other jurisdictions</h3>
+                <p>Equivalent laws exist in Canada (Criminal Code § 342.1), Australia (Criminal Code Act 1995 Part 10.7), Germany (§ 202a–c StGB), Singapore (Computer Misuse Act), and Japan (Act on Prohibition of Unauthorized Computer Access). Check local counsel before running scans across borders.</p>
+
+                <h2 id="authorised-use">Authorised use</h2>
+                <p>You must have <strong>explicit, written permission</strong> before scanning any system that is not yours. Acceptable forms of authorisation include:</p>
+                <ul>
+                    <li><strong>Bug bounty programs</strong> — HackerOne, Bugcrowd, Intigriti, and the program's scope &amp; rules take precedence over this documentation.</li>
+                    <li><strong>Penetration-test contracts</strong> — a signed Statement of Work (SoW) or Master Service Agreement (MSA) that names the targets in scope.</li>
+                    <li><strong>Internal security teams</strong> — a written directive from the asset owner (e.g. CISO) for a specified engagement period.</li>
+                    <li><strong>CTF events</strong> — explicit rules from the CTF organisers.</li>
+                    <li><strong>Lab environments</strong> — your own infrastructure, explicitly set up for testing.</li>
+                </ul>
+
+                <p>Verbal permission, the absence of an explicit deny, or a default-open cloud bucket is not authorisation. When in doubt, ask first.</p>
+
+                <h3>What "authorised" means in practice</h3>
+                <ol>
+                    <li>The target is <strong>explicitly named</strong> in the authorisation. "All assets owned by Acme Corp" is acceptable; "the Acme Corp website" may not cover subdomains you do not own.</li>
+                    <li>You stay within the <strong>scope</strong> — production vs. staging, US vs. EU regions, business-hours vs. 24/7.</li>
+                    <li>You respect <strong>rules of engagement</strong> — no destructive tests, no social engineering, no DDoS-style loads, no exfiltration of customer data.</li>
+                    <li>You have a <strong>point of contact</strong> at the asset owner in case something goes wrong.</li>
+                </ol>
+
+                <h2 id="prohibited-use">Prohibited use</h2>
+                <p>You agree not to use ABSpider Recon for:</p>
+                <ul>
+                    <li>Unauthorised reconnaissance of any kind.</li>
+                    <li>Denial-of-service, load testing, or any activity that destabilises the target.</li>
+                    <li>Probing critical infrastructure (healthcare, energy, water, transport, financial-market infrastructure) without express written authorisation.</li>
+                    <li>Targeting government, military, or election-infrastructure systems.</li>
+                    <li>Stalking, harassment, doxxing, or tracking individuals.</li>
+                    <li>Scraping personal data in violation of GDPR, CCPA, or equivalent laws.</li>
+                    <li>Any activity that violates applicable law.</li>
+                </ul>
+
+                <h2 id="data-handling">Data handling</h2>
+                <p>ABSpider Recon stores results in Supabase and (if you enable the option) synchronises to a Discord webhook. You are responsible for:</p>
+                <ul>
+                    <li><strong>Retention</strong> — delete scans once the engagement closes. Use the <em>Auto-delete after</em> setting in <em>Settings → Data Management</em>.</li>
+                    <li><strong>Access</strong> — the RLS policies in <code>0002_rls_policies.sql</code> mean a user can only see their own scans. Don't share account credentials.</li>
+                    <li><strong>Encryption</strong> — TLS 1.2+ is enforced. Use a passphrase-protected export if you need to share a report.</li>
+                    <li><strong>Disclosure</strong> — never publish a report that includes real customer data, even if it is technically in scope of a bug bounty. Use redaction.</li>
+                </ul>
+
+                <h2 id="logging">Logging &amp; audit</h2>
+                <p>Every scan, report, and configuration change is timestamped. For internal engagements, we recommend:</p>
+                <ul>
+                    <li>Export the scan log as JSON and store it in your evidence locker.</li>
+                    <li>Set a unique engagement ID in the scan notes field.</li>
+                    <li>Require MFA on your Supabase account.</li>
+                    <li>Revoke API keys on a recurring basis (30–90 days).</li>
+                </ul>
+
+                <h2 id="ai-assistants">AI assistants</h2>
+                <p>ABSpider Recon does not send scan data to third-party LLMs. The Gemini integration (when configured) processes data under Google's enterprise terms, with no data retention or model training. Disable the AI module in <em>Settings → AI Assistant</em> if you need an even tighter control.</p>
+
+                <h2 id="disclosure">Vulnerability disclosure</h2>
+
+                <h3>Reporting a vulnerability in ABSpider Recon itself</h3>
+                <p>We follow <strong>coordinated disclosure</strong>. If you find a security issue in ABSpider Recon, please email <code>security@zanesense.dev</code> with:</p>
+                <ol>
+                    <li>A clear description of the vulnerability.</li>
+                    <li>Steps to reproduce.</li>
+                    <li>The impact (data exposure, RCE, etc.).</li>
+                    <li>Any mitigation you can suggest.</li>
+                </ol>
+                <p>PGP key fingerprint is published in the GitHub <code>SECURITY.md</code> file. We will:</p>
+                <ul>
+                    <li>Acknowledge within <strong>48 hours</strong>.</li>
+                    <li>Provide a triage update within <strong>7 days</strong>.</li>
+                    <li>Coordinate a fix timeline with the reporter.</li>
+                    <li>Credit the reporter (if they wish) in the release notes.</li>
+                </ul>
+
+                <h3>Responsible disclosure expectations</h3>
+                <p>We ask reporters to:</p>
+                <ul>
+                    <li>Give us a reasonable amount of time to fix the issue before public disclosure (typically 90 days, or sooner if a fix is available).</li>
+                    <li>Access only what is necessary to demonstrate the vulnerability.</li>
+                    <li>Not use the vulnerability to compromise user data.</li>
+                    <li>Not perform any social engineering, phishing, or DDoS against our infrastructure.</li>
+                </ul>
+
+                <h2 id="proactive-controls">Built-in controls</h2>
+                <p>ABSpider Recon ships with several safety controls to reduce accidental misuse:</p>
+                <ul>
+                    <li><strong>Hard caps</strong> — thread count ≤ 100, payload count ≤ 1000, DDoS-request limit ≤ 250, regardless of <code>--mode</code>.</li>
+                    <li><strong>Authorization acknowledgment</strong> — the dashboard and CLI print a confirmation step before every scan.</li>
+                    <li><strong>Internal-IP &amp; metadata filter</strong> — the CLI and dashboard refuse to scan internal targets by default. Override only with an explicit environment variable.</li>
+                    <li><strong>Audit log</strong> — every scan writes a row to <code>scans</code> with operator, target, mode, and timestamp.</li>
+                </ul>
+
+                <h2 id="bounty-clauses">Bug-bounty clauses</h2>
+                <p>ABSpider Recon's CLI injects a contact-friendly <code>User-Agent</code> string (e.g. <code>ABSpider/2.0.1 (security-research; +https://abspider.zanesense.dev)</code>). When targeting a public bug-bounty program:</p>
+                <ul>
+                    <li>Read the program's scope <em>before</em> you start.</li>
+                    <li>Respect rate limits — many programs publish a "max requests per second" rule.</li>
+                    <li>Do not automate across multiple targets that share infrastructure — you may trigger WAF rules that affect third parties.</li>
+                    <li>Stop and report if you find a critical vulnerability. Do not exfiltrate data, even to "prove" the impact.</li>
+                </ul>
+
+                <h2 id="third-party">Third-party services</h2>
+                <p>The platform integrates with Shodan, VirusTotal, SecurityTrails, Censys, IPInfo, and others. You agree to follow each provider's acceptable-use policy. Paid keys are <em>your</em> credentials — do not share them. Many providers publish rate limits and TOS that override the platform's defaults.</p>
+
+                <h2 id="liability">Liability</h2>
+                <p>ABSpider Recon is provided "as is" under the MIT License. The maintainers are not liable for damages arising from your use of the platform. You are solely responsible for the legality of your scans in your jurisdiction and for the consequences of your actions.</p>
+
+                <h2 id="changes">Policy changes</h2>
+                <p>We may update this policy to reflect new features, regulatory changes, or security best practices. Substantive changes are announced in the GitHub release notes and in the dashboard's <em>What's new</em> panel. Continued use of the platform after a change indicates acceptance of the new terms.</p>
+
+                <h2 id="contact">Contact</h2>
+                <ul>
+                    <li><strong>Security issues</strong>: <code>security@zanesense.dev</code> (PGP preferred).</li>
+                    <li><strong>General support</strong>: <a href="troubleshooting.html">Troubleshooting &amp; support</a>.</li>
+                    <li><strong>Abuse reports</strong>: <code>abuse@zanesense.dev</code> for misuse of the public demo deployment.</li>
+                    <li><strong>Maintainer</strong>: <a href="https://github.com/zanesense" target="_blank" rel="noopener">github.com/zanesense</a></li>
+                </ul>
+
+                <p>By using ABSpider Recon, you confirm that you have read, understood, and agree to this policy and to all applicable laws.</p>
+            </article>
+
+            <aside class="toc" id="toc"></aside>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-grid">
+                <div>
+                    <h4>ABSpider Recon</h4>
+                    <p>Professional web reconnaissance platform for security professionals.</p>
+                </div>
+                <div>
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="modules.html">Recon Modules</a></li>
+                        <li><a href="architecture.html">Architecture</a></li>
+                        <li><a href="cli.html">CLI Reference</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Operations</h4>
+                    <ul>
+                        <li><a href="configuration.html">Configuration</a></li>
+                        <li><a href="reports.html">Reports</a></li>
+                        <li><a href="deployment.html">Deployment</a></li>
+                        <li><a href="api-reference.html">API Reference</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Project</h4>
+                    <ul>
+                        <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                        <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                        <li><a href="security.html">Security Policy</a></li>
+                        <li><a href="troubleshooting.html">Support</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-meta">
+                <p>© 2026 zanesense. Released under the MIT License.</p>
+                <p>v2.0.1</p>
+            </div>
+        </footer>
+    </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>

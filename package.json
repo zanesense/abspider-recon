@@ -11,9 +11,9 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "start": "vite preview --port 5000",
-    "audit": "npm audit --omit=dev",
+    "start": "serve dist -p ${PORT:-5000} -s --no-clipboard",
     "preview": "vite preview",
+    "audit": "npm audit --omit=dev",
     "generate-favicons": "node scripts/generate-favicons.js"
   },
   "dependencies": {
@@ -69,6 +69,7 @@
     "react-resizable-panels": "^3.0.1",
     "react-router-dom": "^7.6.0",
     "recharts": "^2.15.3",
+    "serve": "^14.2.4",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.3.0",
     "tailwindcss-animate": "^1.0.7",

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture — ABSpider Recon</title>
+    <meta name="description" content="Understand the ABSpider Recon provider tree, scan lifecycle, request infrastructure, and security-grading algorithm.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="architecture">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="breadcrumb" id="breadcrumb" data-page="Architecture"></nav>
+                </div>
+                <div class="topbar-actions">
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <article class="article">
+                    <header class="page-hero">
+                        <div class="crumb">Reference · System design</div>
+                        <h1>Application Architecture</h1>
+                        <p class="lede">ABSpider Recon is a Vite SPA backed by Supabase. The browser is the only client; the scanner modules run inside the browser for the dashboard and inside Node.js for the CLI. Both surfaces share the same module contracts.</p>
+                    </header>
+
+                    <h2 id="topology">System topology</h2>
+                    <p>The high-level data flow from a user-entered target to a finished report.</p>
+                    <div class="diagram"><span class="lvl-0">User (Browser or Terminal)</span>
+  <span class="lvl-2">│</span>
+  <span class="lvl-2">▼</span>
+<span class="lvl-0">Surface</span>
+  <span class="lvl-1">├─ Dashboard (Vite + React SPA)</span>
+  <span class="lvl-1">└─ CLI (Node.js ESM, abspider-cli.mjs)</span>
+  <span class="lvl-2">│</span>
+  <span class="lvl-2">▼</span>
+<span class="lvl-0">Scan Engine</span>
+  <span class="lvl-1">├─ ScanService (orchestration, state, lifecycle)</span>
+  <span class="lvl-1">├─ SmartScanManager (adaptive intensity)</span>
+  <span class="lvl-1">└─ RequestManager + CORSProxy (network layer)</span>
+  <span class="lvl-2">│</span>
+  <span class="lvl-2">▼</span>
+<span class="lvl-0">Recon Modules (src/services)</span>
+  <span class="lvl-1">siteInfo · headers · whois · geoip · dns · mx · subnet ·</span>
+  <span class="lvl-1">subdomains · reverseip · virustotal · sslTls · techStack · seo</span>
+  <span class="lvl-1">ports · sqlinjection · xss · lfi · wordpress · brokenLinks ·</span>
+  <span class="lvl-1">corsMisconfig · ddosFirewall</span>
+  <span class="lvl-2">│</span>
+  <span class="lvl-2">▼</span>
+<span class="lvl-0">External</span>
+  <span class="lvl-1">├─ Targets and intel sources (DNS, RDAP, CT logs, …)</span>
+  <span class="lvl-1">├─ Supabase (auth, RLS-scoped storage, settings)</span>
+  <span class="lvl-1">├─ Vercel Edge proxy (api/proxy.ts — CORS bypass)</span>
+  <span class="lvl-1">└─ Third-party APIs (Shodan, VirusTotal, …) — optional</span>
+  <span class="lvl-2">│</span>
+  <span class="lvl-2">▼</span>
+<span class="lvl-0">Reports</span>
+  <span class="lvl-1">PDF (jsPDF) · DOCX · Markdown · CSV · JSON</span></div>
+
+                    <h2 id="provider-tree">Provider tree</h2>
+                    <p>The application entry point wraps the entire component tree in several essential providers. The order matters: <em>ErrorBoundary</em> is the outermost wrapper so uncaught errors don't crash the app.</p>
+                    <div class="diagram"><span class="lvl-0">ErrorBoundary</span>            <span class="lvl-3">// catches uncaught React errors</span>
+  <span class="lvl-1">└─ QueryClientProvider</span>    <span class="lvl-3">// TanStack Query — default retry 1, no refetch on focus</span>
+      <span class="lvl-1">└─ ThemeProvider</span>        <span class="lvl-3">// light / dark mode toggle</span>
+          <span class="lvl-1">└─ NotificationProvider</span> <span class="lvl-3">// global toasts + persistent alert center</span>
+              <span class="lvl-1">└─ TooltipProvider</span>    <span class="lvl-3">// accessible tooltips</span>
+                  <span class="lvl-1">└─ BrowserRouter</span>    <span class="lvl-3">// React Router 7 context</span>
+                      <span class="lvl-1">└─ &lt;App /&gt;</span>      <span class="lvl-3">// route table below</span></div>
+
+                    <h3>Lifecycle hooks in <code>App.tsx</code></h3>
+                    <ul>
+                        <li><code>cleanupStuckScans()</code> runs on mount to reconcile local state with the database, marking interrupted scans appropriately.</li>
+                        <li>A <code>beforeunload</code> listener warns the user if they try to close the browser while scans are running.</li>
+                        <li><code>startScheduledScanChecker()</code> boots the client-side scheduler for recurring scans.</li>
+                    </ul>
+
+                    <h2 id="routing">Routing &amp; navigation</h2>
+                    <p>Routes are split into two categories: <strong>public</strong> (marketing &amp; status) and <strong>protected</strong> (any feature that requires an active Supabase session).</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Path</th><th>Component</th><th>Access</th><th>Purpose</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>/</code></td><td><code>LandingPage</code></td><td>Public</td><td>Marketing site and project overview</td></tr>
+                                <tr><td><code>/status</code></td><td><code>StatusPage</code></td><td>Public</td><td>System health and API availability</td></tr>
+                                <tr><td><code>/login</code></td><td><code>ModernLogin</code></td><td>Public</td><td>Magic-link authentication entry</td></tr>
+                                <tr><td><code>/app</code></td><td><code>Index</code></td><td>Public*</td><td>Redirect logic based on session</td></tr>
+                                <tr><td><code>/dashboard</code></td><td><code>DashboardPage</code></td><td>Protected</td><td>Primary authenticated overview</td></tr>
+                                <tr><td><code>/new-scan</code></td><td><code>NewScan</code></td><td>Protected</td><td>Scan configuration and initiation</td></tr>
+                                <tr><td><code>/scan/:id</code></td><td><code>ScanResults</code></td><td>Protected</td><td>Real-time progress and findings</td></tr>
+                                <tr><td><code>/all-scans</code></td><td><code>AllScans</code></td><td>Protected</td><td>Complete scan history</td></tr>
+                                <tr><td><code>/reports</code></td><td><code>ReportsPage</code></td><td>Protected</td><td>Generated report exports</td></tr>
+                                <tr><td><code>/settings</code></td><td><code>AppSettings</code></td><td>Protected</td><td>API keys and global configuration</td></tr>
+                                <tr><td><code>/account</code></td><td><code>AccountSettings</code></td><td>Protected</td><td>User profile and account management</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3><code>RequireAuth</code> guard</h3>
+                    <p>The <code>RequireAuth</code> HOC wraps every protected route. It performs two critical functions:</p>
+                    <ol>
+                        <li>On mount, it calls <code>supabase.auth.getSession()</code> to verify an existing session.</li>
+                        <li>It subscribes to <code>onAuthStateChange</code> so a sign-out in another tab (or an expired session) immediately redirects to <code>/login</code>.</li>
+                    </ol>
+                    <p>While checking, the component renders a <code>Loader2</code> spinner to prevent content flicker. Protected pages are nested inside a single catch-all <code>*</code> route that mounts the persistent layout, so the sidebar and footer do not re-mount when navigating between protected views.</p>
+
+                    <h2 id="sidebar-layout">Sidebar layout &amp; composition</h2>
+                    <p>Once authenticated, every page renders inside the same layout shell: <code>AppSidebar</code> + <code>SidebarInset</code> + <code>Footer</code>. The sidebar is wired to TanStack Query to surface live stats from scan history.</p>
+                    <ul>
+                        <li><strong>Navigation menu</strong> — Dashboard, New Scan, All Scans, Reports, Settings, Account.</li>
+                        <li><strong>Quick Stats</strong> — Active and completed scan counts, fetched via <code>useQuery</code>.</li>
+                        <li><strong>Theme toggle</strong> — Drives the global <code>ThemeContext</code>.</li>
+                        <li><strong>Profile popover</strong> — Houses the <code>ProfileCardPopover</code> with avatar, role, and sign-out.</li>
+                    </ul>
+
+                    <h2 id="scan-engine">Scan engine</h2>
+                    <p>The scan engine is the core orchestration layer. It manages the transition from a user-defined <code>ScanConfig</code> to an active, stateful <code>Scan</code> entity.</p>
+
+                    <h3>Core flow</h3>
+                    <p>Scans are initiated via <code>startScan</code>, which initializes a <code>Scan</code> object with a unique UUID, maps the configuration, and registers an <code>AbortController</code> in an in-memory <code>activeScans</code> Map. The engine uses a modular execution pattern where each enabled service runs in a <code>runScan</code> loop that updates the scan's progress and state in real time.</p>
+
+                    <h3>Key data models</h3>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Interface</th><th>Purpose</th><th>Key fields</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>ScanConfig</code></td>
+                                    <td>Defines scan parameters</td>
+                                    <td><code>target</code>, <code>threads</code>, <code>useProxy</code>, <code>smartScanEnabled</code>, module toggles</td>
+                                </tr>
+                                <tr>
+                                    <td><code>ScanResults</code></td>
+                                    <td>Container for all module outputs</td>
+                                    <td><code>siteInfo</code>, <code>dns</code>, <code>sqlinjection</code>, <code>sslTls</code>, …</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Scan</code></td>
+                                    <td>The primary state object</td>
+                                    <td><code>id</code>, <code>status</code>, <code>progress</code>, <code>config</code>, <code>results</code>, <code>securityGrade</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>ScanDbRow</code></td>
+                                    <td>Database-mapped structure</td>
+                                    <td><code>scan_id</code>, <code>user_id</code>, <code>elapsed_ms</code>, <code>smart_scan_level</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 id="lifecycle">Lifecycle states</h3>
+                    <p>A scan moves through these states. <code>scanService.ts</code> is the single source of truth for transitions.</p>
+                    <div class="diagram"><span class="lvl-3">start</span>   →   <span class="lvl-1">running</span>   →   <span class="lvl-1">completed</span>
+   <span class="lvl-3">│</span>             <span class="lvl-3">│</span>
+   <span class="lvl-3">│</span>             <span class="lvl-3">├─→ paused  →  running</span>
+   <span class="lvl-3">│</span>             <span class="lvl-3">├─→ stopped</span>
+   <span class="lvl-3">│</span>             <span class="lvl-3">└─→ failed</span>
+   <span class="lvl-3">└─ cleanupStuckScans() on mount marks orphan running scans as failed</span></div>
+
+                    <p><code>toScanDbRow</code> and <code>fromScanDbRow</code> map between the camelCase <code>Scan</code> object and the snake_case <code>scan_db</code> rows in Supabase.</p>
+
+                    <h2 id="smart-scan">Smart scan manager</h2>
+                    <p>The <code>SmartScanManager</code> provides adaptive scanning. It analyzes a target before launching and adjusts payload counts and rate limits based on the selected mode: <code>conservative</code>, <code>adaptive</code>, or <code>aggressive</code>.</p>
+                    <ul>
+                        <li><strong>Conservative</strong> — low payload cap, high delay, single-thread. Minimal footprint.</li>
+                        <li><strong>Adaptive</strong> (default) — baseline-aware; reduces intensity after a target returns 5xx or 429.</li>
+                        <li><strong>Aggressive</strong> — full payload set, high concurrency, minimal delays. Still bounded.</li>
+                    </ul>
+                    <p>The manager is integrated into the <em>New Scan</em> UI to simplify configuration — you pick the mode, not the numeric parameters.</p>
+
+                    <h2 id="request-infra">Request infrastructure</h2>
+                    <p>All network traffic generated by the engine passes through the <code>RequestManager</code>. It centralizes rate limiting, retries, and metrics, and it interfaces with the CORS proxy pipeline.</p>
+
+                    <h3>Tiered request pipeline</h3>
+                    <p>Browser-side CORS limits are bypassed with a tiered approach:</p>
+                    <ol>
+                        <li><strong>Direct fetch</strong> — attempt a standard <code>fetch</code> with browser-like headers.</li>
+                        <li><strong>Vercel Edge proxy</strong> — if direct fetch fails (CORS or Cloudflare), route through <code>api/proxy.ts</code>.</li>
+                        <li><strong>Cloudflare bypass helpers</strong> — small set of <code>cloudflareBypass.ts</code> heuristics that may unblock a target without actually evading controls.</li>
+                    </ol>
+
+                    <h3>The Vercel Edge proxy</h3>
+                    <p>The handler at <code>api/proxy.ts:1</code> is a 92-line Vercel Edge Function that:</p>
+                    <ol>
+                        <li>Reads <code>?url=</code> from the query string and validates it with <code>new URL()</code>.</li>
+                        <li>Forwards a curated set of request headers (the <code>allowedHeaders</code> allowlist) to avoid issues.</li>
+                        <li>Sets a Chrome User-Agent if one was not provided.</li>
+                        <li>Returns the response body with permissive CORS headers and the upstream status code.</li>
+                    </ol>
+                    <p>The proxy itself responds to <code>OPTIONS</code> preflight with <code>Allow: GET, POST, OPTIONS</code>. Use it only for hosts you are authorized to test — it is not a generic web proxy.</p>
+
+                    <h2 id="config-templates">Scan configuration &amp; templates</h2>
+                    <p>The <em>New Scan</em> page uses <code>react-hook-form</code> and <code>zod</code> to validate user input before a scan starts. Users can save their configurations as templates in <code>localStorage</code> for quick reuse.</p>
+                    <ul>
+                        <li>Each <code>ScanConfig</code> includes per-mode payload counts and per-module toggles.</li>
+                        <li>Recurring scans are stored in <code>scheduledScans</code> with an interval and a <code>localStorage</code>-backed scheduler that runs while the tab is open.</li>
+                        <li>Validation rules live next to the form schema in <code>src/pages/NewScan.tsx</code>.</li>
+                    </ul>
+
+                    <h2 id="grading">Security grading</h2>
+                    <p>The <code>calculateSecurityGrade</code> function processes the aggregated <code>ScanResults</code> to produce a numerical score (0–10) and a letter grade (A–F). The score is derived from:</p>
+                    <ol>
+                        <li><strong>Critical vulnerabilities</strong> — high deductions for confirmed SQLi, XSS, or LFI.</li>
+                        <li><strong>Configuration issues</strong> — deductions for missing security headers or expired SSL certificates.</li>
+                        <li><strong>Information leakage</strong> — deductions for exposed server signatures or sensitive DNS records.</li>
+                    </ol>
+                    <p>The final grade is displayed in the <code>ScanStatus</code> component using a color-coded <code>Badge</code>:</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Grade</th><th>Range</th><th>Color</th></tr></thead>
+                            <tbody>
+                                <tr><td>A</td><td>9.0 – 10.0</td><td><span class="badge badge-success">Excellent</span></td></tr>
+                                <tr><td>B</td><td>8.0 – 8.9</td><td><span class="badge badge-success">Good</span></td></tr>
+                                <tr><td>C</td><td>7.0 – 7.9</td><td><span class="badge badge-warn">Adequate</span></td></tr>
+                                <tr><td>D</td><td>5.0 – 6.9</td><td><span class="badge badge-warn">Poor</span></td></tr>
+                                <tr><td>F</td><td>&lt; 5.0</td><td><span class="badge badge-active">Critical</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2 id="data-model">Data model (Supabase)</h2>
+                    <p>Row-Level Security is enabled on every user-scoped table. The migrations in <code>supabase/migrations/</code> provision the schema, policies, and the avatar storage bucket.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Table</th><th>Purpose</th><th>RLS</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>scans</code></td><td>Per-user scan history with config and results</td><td>✅</td></tr>
+                                <tr><td><code>user_settings</code></td><td>Theme, scan defaults, proxy config</td><td>✅</td></tr>
+                                <tr><td><code>user_profiles</code></td><td>Display name, bio, role, avatar URL</td><td>✅</td></tr>
+                                <tr><td><code>api_keys</code></td><td>Per-user keys for Shodan, VirusTotal, etc.</td><td>✅</td></tr>
+                                <tr><td><code>scheduled_scans</code></td><td>Recurring scan definitions</td><td>✅</td></tr>
+                                <tr><td><code>notification_prefs</code></td><td>Per-channel notification preferences</td><td>✅</td></tr>
+                                <tr><td><code>scan_templates</code></td><td>Saved module + parameter bundles</td><td>✅</td></tr>
+                                <tr><td><code>storage.avatars</code></td><td>User-uploaded avatars (private bucket)</td><td>✅</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2 id="auth">Authentication flow</h2>
+                    <p>Authentication is handled entirely by Supabase Auth via <strong>magic links</strong> — there are no passwords.</p>
+                    <ol>
+                        <li>User enters their email on <code>/login</code>.</li>
+                        <li>Supabase sends a single-use link to that address.</li>
+                        <li>The user clicks the link, which lands on the SPA with a recovery code in the URL.</li>
+                        <li>The <code>RequireAuth</code> guard picks up the session via <code>onAuthStateChange</code> and grants access to protected routes.</li>
+                    </ol>
+                    <p>Sessions are JWTs managed by Supabase. The default expiry is 7 days; the SPA listens for <code>SIGNED_OUT</code> events and forces a redirect if a session is lost in another tab.</p>
+
+                    <h2 id="build-infra">Build &amp; infrastructure</h2>
+                    <p>The project ships with three deployment surfaces, all of which serve the production bundle in <code>dist/</code> — never the Vite dev server.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Path</th><th>Front-end served from</th><th><code>api/proxy</code> supported?</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>Vercel</strong> (recommended)</td><td><code>dist/</code> built by Vite</td><td>✅ — Vercel Edge Function</td></tr>
+                                <tr><td><strong>Docker production</strong></td><td><code>dist/</code> served by Nginx</td><td>❌ — proxy not bundled in the image</td></tr>
+                                <tr><td><strong>Self-hosted Node</strong></td><td><code>dist/</code> served by <code>serve</code></td><td>❌ — host the proxy separately</td></tr>
+                                <tr><td><strong>Static host</strong> (S3, Caddy, Netlify, …)</td><td><code>dist/</code> uploaded as-is</td><td>❌ — bring your own runtime</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p>See <a href="deployment.html">Deployment</a> for the per-platform walkthroughs.</p>
+
+                    <h2 id="repo">Repository layout</h2>
+                    <p>The high-level directory map. The dashboard code lives under <code>src/</code>; the published CLI lives under <code>packages/cli/</code>.</p>
+                    <div class="diagram">abspider-recon/
+├── api/                  <span class="lvl-3"># Vercel Edge Runtime proxy</span>
+├── docs/                 <span class="lvl-3"># User-facing documentation site</span>
+├── packages/
+│   └── cli/              <span class="lvl-3"># Published npm package "abspider"</span>
+├── public/               <span class="lvl-3"># Favicons, manifest, robots.txt</span>
+├── scripts/              <span class="lvl-3"># Local CLI runner, favicon helper</span>
+├── src/
+│   ├── components/       <span class="lvl-3"># Dashboard UI (landing, ui primitives, features)</span>
+│   ├── contexts/         <span class="lvl-3"># Theme + notification React contexts</span>
+│   ├── hooks/            <span class="lvl-3"># Custom React hooks</span>
+│   ├── lib/              <span class="lvl-3"># Shared utilities</span>
+│   ├── pages/            <span class="lvl-3"># React Router pages</span>
+│   ├── payloads/         <span class="lvl-3"># SQLi, XSS, and LFI payload JSON files</span>
+│   ├── services/         <span class="lvl-3"># 21 recon modules + scan orchestrator + reports</span>
+│   ├── shims/            <span class="lvl-3"># Type shims</span>
+│   ├── utils/            <span class="lvl-3"># cn(), formatters, small helpers</span>
+│   ├── App.tsx           <span class="lvl-3"># Providers, router, app shell</span>
+│   ├── main.tsx          <span class="lvl-3"># Vite entry point</span>
+│   └── SupabaseClient.ts <span class="lvl-3"># Typed Supabase client</span>
+├── supabase/migrations/  <span class="lvl-3"># 0001 init schema, 0002 RLS, 0003 storage</span>
+├── .env.example          <span class="lvl-3"># Template for VITE_* env vars</span>
+├── docker-compose.yml    <span class="lvl-3"># "app" and "dev" profiles</span>
+├── Dockerfile            <span class="lvl-3"># Production Vite build served by Nginx</span>
+├── Dockerfile.dev        <span class="lvl-3"># Vite dev server on :5000</span>
+├── eslint.config.js      <span class="lvl-3"># ESLint 9 + typescript-eslint</span>
+├── nginx.conf            <span class="lvl-3"># Nginx config for the production image</span>
+├── tailwind.config.js    <span class="lvl-3"># Tailwind v3 design tokens</span>
+└── vite.config.ts        <span class="lvl-3"># Vite config and path aliases</span></div>
+
+                    <h2 id="next">What to read next</h2>
+                    <div class="grid-2">
+                        <a href="modules.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">Recon Modules</h3>
+                            <p class="text-mute" style="margin:0;">The full list of modules that the scan engine orchestrates.</p>
+                        </a>
+                        <a href="api-reference.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">API Reference</h3>
+                            <p class="text-mute" style="margin:0;">The Vercel Edge proxy contract and the CLI JSON output shape.</p>
+                        </a>
+                        <a href="cli.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">CLI Reference</h3>
+                            <p class="text-mute" style="margin:0;">Every flag, mode, and port profile the published CLI supports.</p>
+                        </a>
+                        <a href="deployment.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">Deployment</h3>
+                            <p class="text-mute" style="margin:0;">Vercel, Docker production, Docker dev, and self-hosted Node.</p>
+                        </a>
+                    </div>
+                </article>
+
+                <aside class="toc" id="toc"></aside>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-grid">
+                    <div>
+                        <h4>ABSpider Recon</h4>
+                        <p>Professional web reconnaissance platform for security professionals.</p>
+                    </div>
+                    <div>
+                        <h4>Documentation</h4>
+                        <ul>
+                            <li><a href="getting-started.html">Getting Started</a></li>
+                            <li><a href="modules.html">Recon Modules</a></li>
+                            <li><a href="architecture.html">Architecture</a></li>
+                            <li><a href="cli.html">CLI Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations</h4>
+                        <ul>
+                            <li><a href="configuration.html">Configuration</a></li>
+                            <li><a href="reports.html">Reports</a></li>
+                            <li><a href="deployment.html">Deployment</a></li>
+                            <li><a href="api-reference.html">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Project</h4>
+                        <ul>
+                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                            <li><a href="security.html">Security Policy</a></li>
+                            <li><a href="troubleshooting.html">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2026 zanesense. Released under the MIT License.</p>
+                    <p>v2.0.1</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting — ABSpider Recon</title>
+    <meta name="description" content="Common ABSpider Recon issues and how to fix them — installation, authentication, scanning, performance, API integrations, and CORS.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="troubleshooting">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="breadcrumb" id="breadcrumb" data-page="Troubleshooting"></nav>
+                </div>
+                <div class="topbar-actions">
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <article class="article">
+                    <header class="page-hero">
+                        <div class="crumb">Help · Common issues</div>
+                        <h1>Troubleshooting</h1>
+                        <p class="lede">The most common ABSpider Recon issues, with the exact command or check that resolves them. If you do not see your issue here, open a ticket on <a href="https://github.com/zanesense/abspider-recon/issues" target="_blank" rel="noopener">GitHub Issues</a>.</p>
+                    </header>
+
+                    <h2 id="installation">Installation</h2>
+
+                    <h3>Node.js version error</h3>
+                    <p><strong>Symptom:</strong> <code>Error: The engine "node" is incompatible with this module</code></p>
+                    <p><strong>Fix:</strong></p>
+                    <div class="code-block" data-lang="bash">node --version    <span class="c-com"># should print v20.x or higher</span></div>
+                    <p>If you have an older Node, install Node 20 LTS from <a href="https://nodejs.org/" target="_blank" rel="noopener">nodejs.org</a> or via <code>nvm</code>:</p>
+                    <div class="code-block" data-lang="bash">nvm install 20
+nvm use 20</div>
+
+                    <h3><code>npm install</code> fails</h3>
+                    <p><strong>Symptom:</strong> peer-dependency errors, lockfile mismatch, or network timeouts.</p>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Clean install</span>
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+
+<span class="c-com"># Or use the committed lockfile exactly</span>
+npm ci</div>
+
+                    <h3>Port 5000 already in use</h3>
+                    <p><strong>Symptom:</strong> <code>Error: listen EADDRINUSE: address already in use :::5000</code></p>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Windows</span>
+netstat -ano | findstr :5000
+taskkill /PID &lt;PID&gt; /F
+
+<span class="c-com"># macOS / Linux</span>
+lsof -ti:5000 | xargs kill -9</div>
+                    <p>Or change the port in <code>vite.config.ts</code>.</p>
+
+                    <h3>Stale TypeScript build cache</h3>
+                    <p><strong>Symptom:</strong> <code>tsc -b</code> reports errors that don't match the source.</p>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Windows PowerShell</span>
+Remove-Item tsconfig.app.tsbuildinfo, tsconfig.node.tsbuildinfo -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
+npm run typecheck</div>
+
+                    <h2 id="auth">Authentication</h2>
+
+                    <h3>Magic link not received</h3>
+                    <ol>
+                        <li>Check your spam / junk folder.</li>
+                        <li>Verify the email address is correct.</li>
+                        <li>Wait 2–3 minutes — Supabase emails can be delayed during peak hours.</li>
+                        <li>Confirm the project is active in the Supabase dashboard.</li>
+                        <li>Try a different email address.</li>
+                    </ol>
+
+                    <h3>Magic link expired</h3>
+                    <p>Links expire after 1 hour. Request a new one and click it immediately. If you clicked an old link, request a fresh one — old links are invalidated as soon as a new one is sent.</p>
+
+                    <h3>Session keeps expiring</h3>
+                    <p>JWTs default to a 7-day expiry. To change it, edit <em>Supabase → Authentication → Settings → JWT expiry</em>. The dashboard listens for <code>SIGNED_OUT</code> events and force-redirects to <code>/login</code> if a session is lost in another tab.</p>
+
+                    <h3>Sign-in works but no rows are visible</h3>
+                    <p>The RLS policies from <code>0002_rls_policies.sql</code> were not applied. Re-apply the migration in the Supabase SQL Editor, or run:</p>
+                    <div class="code-block" data-lang="sql"><span class="c-key">SELECT</span> * <span class="c-key">FROM</span> pg_policies <span class="c-key">WHERE</span> tablename <span class="c-key">IN</span> (<span class="c-str">'scans'</span>, <span class="c-str">'user_settings'</span>, <span class="c-str">'user_profiles'</span>, <span class="c-str">'api_keys'</span>);</div>
+
+                    <h2 id="scanning">Scanning</h2>
+
+                    <h3>Scan stuck at 0%</h3>
+                    <ol>
+                        <li>Open the browser console (F12) and look for network errors.</li>
+                        <li>Verify the target is reachable from your network (try <code>curl -I &lt;target&gt;</code>).</li>
+                        <li>Check that the Supabase session is still valid.</li>
+                        <li>Disable browser extensions — ad blockers and privacy extensions are common culprits.</li>
+                        <li>Reduce the thread count or switch to <code>conservative</code> mode.</li>
+                    </ol>
+
+                    <h3>Target is not reachable</h3>
+                    <p>Confirm the target accepts incoming requests from your network. If you are behind a corporate proxy or VPN, the dashboard's fetch may be blocked. The CLI is unaffected because it runs in Node.js, not the browser.</p>
+
+                    <h3>CORS errors in the browser</h3>
+                    <p>Some targets reject cross-origin requests. The dashboard falls back to the <a href="api-reference.html#cors-pipeline">Vercel Edge proxy</a> automatically. If the proxy is also blocked (or you are self-hosting without it), use the CLI for that target.</p>
+
+                    <h3>Scan times out before completing</h3>
+                    <ul>
+                        <li>Increase the timeout in <em>Settings → Scanning defaults</em>.</li>
+                        <li>Reduce the number of enabled modules.</li>
+                        <li>Lower the thread count.</li>
+                        <li>Try during off-peak hours if the target is rate-limited.</li>
+                    </ul>
+
+                    <h3>Rate limiting (HTTP 429)</h3>
+                    <ul>
+                        <li>Reduce threads; raise the request delay.</li>
+                        <li>Enable proxy rotation in <em>Settings → Proxy &amp; Network</em>.</li>
+                        <li>Wait 5–10 minutes and retry.</li>
+                        <li>Use <code>--mode conservative</code> on the CLI.</li>
+                    </ul>
+
+                    <h3>Incomplete results (some modules return no data)</h3>
+                    <ul>
+                        <li>The target may not support the feature (e.g. no <code>robots.txt</code> for the SEO module).</li>
+                        <li>Verify the relevant API key is configured (Shodan, VirusTotal, etc.).</li>
+                        <li>Some modules need an IP — if the target is behind a CDN, GeoIP and Subnet may not return useful data.</li>
+                    </ul>
+
+                    <h2 id="performance">Performance</h2>
+
+                    <h3>Scans are slow</h3>
+                    <ul>
+                        <li>Increase thread count (up to 50 in <code>adaptive</code> mode, 100 in <code>aggressive</code>).</li>
+                        <li>Reduce per-request timeout.</li>
+                        <li>Disable modules you don't need for this engagement.</li>
+                        <li>Check your internet speed — the dashboard's bottleneck is often upstream bandwidth.</li>
+                    </ul>
+
+                    <h3>Browser is freezing</h3>
+                    <ul>
+                        <li>Reduce thread count.</li>
+                        <li>Close other tabs to free memory.</li>
+                        <li>Disable browser extensions (especially ad blockers and translation tools).</li>
+                        <li>Run the scan in Chrome or Edge for best performance.</li>
+                    </ul>
+
+                    <h3>High memory usage</h3>
+                    <ul>
+                        <li>Reduce the scan history limit in <em>Settings → Data Management</em>.</li>
+                        <li>Clear old scans from <em>All Scans</em>.</li>
+                        <li>Lower the thread count.</li>
+                        <li>Restart the browser periodically.</li>
+                    </ul>
+
+                    <h2 id="api-keys">API integrations</h2>
+
+                    <h3>Shodan module returns no enhanced data</h3>
+                    <ol>
+                        <li>Verify the API key is correct in <em>Settings → API Integration → Shodan</em>.</li>
+                        <li>Check you have API credits remaining (Shodan shows usage at <a href="https://account.shodan.io/" target="_blank" rel="noopener">account.shodan.io</a>).</li>
+                        <li>Test the key directly with curl:
+                            <div class="code-block" data-lang="bash">curl https://api.shodan.io/api-info?key=YOUR_API_KEY</div>
+                        </li>
+                    </ol>
+
+                    <h3>VirusTotal times out or 429s</h3>
+                    <p>The free tier is rate-limited to 4 requests / minute and 500 / day. If you hit the limit:</p>
+                    <ul>
+                        <li>Wait a minute between requests.</li>
+                        <li>Disable the VirusTotal module for the rest of the day.</li>
+                        <li>Upgrade to a paid plan if you need higher throughput.</li>
+                    </ul>
+
+                    <h3>SecurityTrails returns no historical data</h3>
+                    <p>The target may not have a public history on SecurityTrails. Verify the key works:</p>
+                    <div class="code-block" data-lang="bash">curl -H <span class="c-str">"APIKEY: YOUR_API_KEY"</span> \
+  https://api.securitytrails.com/v1/ping</div>
+
+                    <h3>"Invalid API key" error</h3>
+                    <ol>
+                        <li>Copy the key carefully — no extra spaces, no missing characters.</li>
+                        <li>Regenerate the key in the service's dashboard and try again.</li>
+                        <li>Check the key hasn't been revoked or expired.</li>
+                        <li>Confirm the right service is selected in the dashboard.</li>
+                    </ol>
+
+                    <h2 id="cors">CORS &amp; the Edge proxy</h2>
+
+                    <h3>Proxy returns 500</h3>
+                    <p>The upstream fetch failed. Verify the URL is reachable from the Vercel Edge network (try <code>curl</code> on a different network). The proxy is not a generic web proxy — it does not bypass provider challenges.</p>
+
+                    <h3>Proxy returns 400</h3>
+                    <p>The <code>url</code> query parameter is missing or did not parse with <code>new URL()</code>. Make sure the URL is fully qualified (e.g. <code>https://example.com/</code>) and URL-encoded when passed in the query string.</p>
+
+                    <h3>Proxy is not bundled in my Docker image</h3>
+                    <p>By design — the production Docker image is a static Nginx server. To get the proxy on Docker, run the Vercel deployment in parallel, or port the 92-line <code>api/proxy.ts</code> handler to a sidecar container.</p>
+
+                    <h2 id="errors">Error messages</h2>
+
+                    <h3>"Failed to fetch"</h3>
+                    <p>Network connectivity issue. Check the target URL, your firewall, and your network. Try disabling your VPN temporarily.</p>
+
+                    <h3>"Supabase connection failed"</h3>
+                    <ol>
+                        <li>Verify <code>.env</code> exists and contains the URL + anon key.</li>
+                        <li>Confirm the Supabase project is not paused.</li>
+                        <li>Check the Supabase status page.</li>
+                        <li>Try a different network.</li>
+                    </ol>
+
+                    <h3>"Module execution failed"</h3>
+                    <p>A specific module hit an unrecoverable error. The other modules still complete. Check the browser console for the underlying error and verify the relevant API key if the module needs one.</p>
+
+                    <h3>"Storage quota exceeded"</h3>
+                    <p>The browser's <code>localStorage</code> is full. Reduce the scan history limit in <em>Settings → Data Management</em> and clear old scans.</p>
+
+                    <h3>"Invalid target format"</h3>
+                    <p>The dashboard accepts base domains (<code>example.com</code>), full URLs (<code>https://example.com</code>), and IPs (<code>192.168.1.1</code>). It does not accept paths — use the base domain only.</p>
+
+                    <h3>"Unauthorized access"</h3>
+                    <ol>
+                        <li>Sign out and sign in again.</li>
+                        <li>Clear browser cookies and cache.</li>
+                        <li>Check the session hasn't expired.</li>
+                        <li>Verify the RLS policies are in place.</li>
+                    </ol>
+
+                    <h2 id="database">Database</h2>
+
+                    <h3>RLS policy error</h3>
+                    <p><strong>Symptom:</strong> <code>new row violates row-level security policy</code></p>
+                    <p><strong>Fix:</strong> verify the policies exist and re-apply migration <code>0002_rls_policies.sql</code> if any are missing.</p>
+
+                    <h3>Data not persisting</h3>
+                    <ol>
+                        <li>Confirm the Supabase session is active.</li>
+                        <li>Open the browser dev tools and check for network errors to <code>*.supabase.co</code>.</li>
+                        <li>Verify the RLS policies allow the operation for the current user.</li>
+                        <li>Try a different browser profile.</li>
+                    </ol>
+
+                    <h2 id="proxy-issues">Proxy</h2>
+
+                    <h3>Proxy connection failed</h3>
+                    <ol>
+                        <li>Verify the proxy URL format (<code>scheme://host:port</code>).</li>
+                        <li>Test the proxy with curl from a terminal.</li>
+                        <li>Check proxy authentication credentials.</li>
+                        <li>Ensure the proxy supports HTTPS if you are scanning HTTPS targets.</li>
+                    </ol>
+
+                    <h3>Proxy rotation not working</h3>
+                    <ol>
+                        <li>Verify multiple proxies are configured.</li>
+                        <li>Check the rotation strategy (<code>round-robin</code> or <code>random</code>).</li>
+                        <li>Test each proxy individually with the <em>Test Proxies</em> button.</li>
+                        <li>Confirm "fallback to direct" is enabled if all proxies fail.</li>
+                    </ol>
+
+                    <h2 id="discord">Discord webhooks</h2>
+
+                    <h3>No notifications received</h3>
+                    <ol>
+                        <li>Verify the webhook URL is complete (starts with <code>https://discord.com/api/webhooks/</code>).</li>
+                        <li>Test the webhook directly in Discord to confirm it works.</li>
+                        <li>Check the channel permissions.</li>
+                        <li>Confirm the webhook hasn't been deleted from the Discord server.</li>
+                    </ol>
+
+                    <h3>"Invalid webhook format"</h3>
+                    <p>The URL must be in the form <code>https://discord.com/api/webhooks/ID/TOKEN</code>. Common mistakes: missing the protocol, incomplete token, extra whitespace, or the wrong domain.</p>
+
+                    <h2 id="debug">Collecting debug information</h2>
+                    <p>Before opening a GitHub issue, collect the following:</p>
+                    <ol>
+                        <li><strong>Browser console</strong> — press F12, go to Console, copy the errors.</li>
+                        <li><strong>Network tab</strong> — reproduce the issue, then look for failed requests.</li>
+                        <li><strong>System information</strong>:
+                            <div class="code-block" data-lang="bash">node --version
+npm --version
+abspider --version
+<span class="c-com"># Browser: Chrome 120, Firefox 121, Safari 17, …</span></div>
+                        </li>
+                        <li><strong>Environment</strong> — local / Vercel / Docker / self-hosted.</li>
+                    </ol>
+
+                    <h2 id="emergency">Emergency fixes</h2>
+
+                    <h3>Complete local reset</h3>
+                    <div class="code-block" data-lang="js"><span class="c-com">// ⚠️ Use with caution — this clears all local data</span>
+localStorage.clear();
+sessionStorage.clear();
+<span class="c-com">// Refresh the page</span></div>
+
+                    <h3>Factory reset from the UI</h3>
+                    <ol>
+                        <li>Open <em>Settings → Data Management</em>.</li>
+                        <li>Click <em>Reset to Defaults</em> and confirm.</li>
+                        <li>Sign out and sign in again.</li>
+                    </ol>
+
+                    <h2 id="support">Where to get more help</h2>
+                    <div class="grid-2">
+                        <a href="https://github.com/zanesense/abspider-recon/issues" target="_blank" rel="noopener" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">GitHub Issues</h3>
+                            <p class="text-mute" style="margin:0;">Search for known bugs, file new ones, and follow the project's roadmap.</p>
+                        </a>
+                        <a href="https://github.com/zanesense/abspider-recon/discussions" target="_blank" rel="noopener" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">GitHub Discussions</h3>
+                            <p class="text-mute" style="margin:0;">Ask the community — payload design, module contributions, deployment patterns.</p>
+                        </a>
+                        <a href="https://deepwiki.com/zanesense/abspider-recon" target="_blank" rel="noopener" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">DeepWiki</h3>
+                            <p class="text-mute" style="margin:0;">AI-generated repository documentation — architecture, modules, deployment.</p>
+                        </a>
+                        <a href="security.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">Security issues</h3>
+                            <p class="text-mute" style="margin:0;">Vulnerabilities in ABSpider Recon itself go to <code>security@zanesense.dev</code>, never to public issues.</p>
+                        </a>
+                    </div>
+                </article>
+
+                <aside class="toc" id="toc"></aside>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-grid">
+                    <div>
+                        <h4>ABSpider Recon</h4>
+                        <p>Professional web reconnaissance platform for security professionals.</p>
+                    </div>
+                    <div>
+                        <h4>Documentation</h4>
+                        <ul>
+                            <li><a href="getting-started.html">Getting Started</a></li>
+                            <li><a href="modules.html">Recon Modules</a></li>
+                            <li><a href="architecture.html">Architecture</a></li>
+                            <li><a href="cli.html">CLI Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations</h4>
+                        <ul>
+                            <li><a href="configuration.html">Configuration</a></li>
+                            <li><a href="reports.html">Reports</a></li>
+                            <li><a href="deployment.html">Deployment</a></li>
+                            <li><a href="api-reference.html">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Project</h4>
+                        <ul>
+                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                            <li><a href="security.html">Security Policy</a></li>
+                            <li><a href="troubleshooting.html">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2026 zanesense. Released under the MIT License.</p>
+                    <p>v2.0.1</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>

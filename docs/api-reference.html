@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference — ABSpider Recon</title>
+    <meta name="description" content="The Vercel Edge proxy contract at api/proxy.ts, the Supabase schema, and the CLI JSON output shape.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="api-reference">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="breadcrumb" id="breadcrumb" data-page="API Reference"></nav>
+                </div>
+                <div class="topbar-actions">
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <article class="article">
+                    <header class="page-hero">
+                        <div class="crumb">Reference · Programmatic</div>
+                        <h1>API Reference</h1>
+                        <p class="lede">Two surfaces expose ABSpider Recon programmatically: the Vercel Edge proxy at <code>api/proxy.ts</code> (for browser-side CORS bypass) and the CLI JSON output (for everything else). The Supabase schema is documented at the bottom of this page.</p>
+                    </header>
+
+                    <h2 id="proxy">Vercel Edge proxy</h2>
+                    <p>The handler in <a href="https://github.com/zanesense/abspider-recon/blob/main/api/proxy.ts" target="_blank" rel="noopener"><code>api/proxy.ts:1</code></a> is a 92-line Vercel Edge Function that forwards browser requests to a target URL with permissive CORS headers. Use it to bypass browser CORS for targets that reject cross-origin requests.</p>
+
+                    <h3>Endpoint</h3>
+                    <div class="code-block" data-lang="http">GET /api/proxy?url=&lt;encoded-target-url&gt;</div>
+
+                    <h3>Request</h3>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Query param</th><th style="text-align:center;">Required</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>url</code></td>
+                                    <td style="text-align:center;">✅</td>
+                                    <td>Absolute, fully qualified URL to fetch. Must parse with <code>new URL()</code>.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Forwarded request headers</h3>
+                    <p>The proxy forwards a curated allowlist of headers from the original request. Anything outside the list is dropped to avoid leaking browser or auth metadata.</p>
+                    <div class="code-block" data-lang="js"><span class="c-key">const</span> allowedHeaders = [
+  <span class="c-str">'accept'</span>,
+  <span class="c-str">'accept-encoding'</span>,
+  <span class="c-str">'accept-language'</span>,
+  <span class="c-str">'user-agent'</span>,
+  <span class="c-str">'authorization'</span>,
+  <span class="c-str">'content-type'</span>
+];</div>
+                    <p>If the upstream request has no <code>User-Agent</code>, the proxy sets:</p>
+                    <div class="code-block" data-lang="text">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36</div>
+
+                    <h3>Response</h3>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Status</th><th>When</th><th>Body</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>200 OK</code></td>
+                                    <td>Upstream returned successfully (any 2xx/3xx/4xx/5xx is passed through transparently)</td>
+                                    <td>Proxied body, status mirrored from the upstream, CORS headers added.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>200 OK</code> (preflight)</td>
+                                    <td>Request is <code>OPTIONS</code></td>
+                                    <td>Empty body; <code>Allow: GET, POST, OPTIONS</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>400 Bad Request</code></td>
+                                    <td><code>url</code> query parameter is missing</td>
+                                    <td><code>{ "error": "Missing \"url\" query parameter" }</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>500 Internal Server Error</code></td>
+                                    <td>Upstream fetch failed or <code>new URL()</code> threw</td>
+                                    <td><code>{ "error": "Failed to fetch target URL", "details": "..." }</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Response headers</h3>
+                    <p>Every successful response includes:</p>
+                    <div class="code-block" data-lang="http">Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+<span class="c-com"># All upstream response headers are also passed through</span></div>
+
+                    <h3>Example</h3>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Fetch the robots.txt of an authorized target</span>
+curl 'https://abspider-recon.vercel.app/api/proxy?url=https%3A%2F%2Fexample.com%2Frobots.txt'</div>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># From the browser dashboard, the same call routes through the proxy when direct fetch fails</span>
+fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
+  .then(r =&gt; r.text())
+  .then(console.log);</div>
+
+                    <div class="callout callout-warn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+                        <div>
+                            <div class="callout-title">Use only for authorized targets</div>
+                            <p>The proxy is not a generic web proxy. It exists to support authorized reconnaissance. Do not use it to bypass provider challenges, evade rate limits, or access content you are not entitled to read.</p>
+                        </div>
+                    </div>
+
+                    <h2 id="cors-pipeline">CORS pipeline (client)</h2>
+                    <p>The dashboard's <code>corsProxy.ts</code> module implements a three-tier fallback. Each tier is tried in order, with bounded retries.</p>
+                    <ol>
+                        <li><strong>Direct fetch</strong> — attempts a standard <code>fetch()</code> with browser-like headers. Works for the majority of targets that return permissive CORS headers.</li>
+                        <li><strong>Vercel Edge proxy</strong> — if direct fetch fails (CORS error or Cloudflare challenge), the request is routed through <code>api/proxy</code>.</li>
+                        <li><strong>Cloudflare bypass helpers</strong> — small set of <code>cloudflareBypass.ts</code> heuristics that may unblock a target. <em>Detection only</em> — the module never evades controls.</li>
+                    </ol>
+
+                    <h2 id="cli-json">CLI JSON output</h2>
+                    <p>Pass <code>--json</code> to print the full result tree to stdout, or <code>--output &lt;file&gt;</code> to write a pretty-formatted copy to disk. The shape is the same whether you run a single module or every module. See <a href="cli.html#json-output">the CLI reference</a> for the full schema and a worked example.</p>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"target"</span>: <span class="c-str">"example.com"</span>,
+  <span class="c-key">"startedAt"</span>: <span class="c-str">"2026-06-07T10:00:00.000Z"</span>,
+  <span class="c-key">"finishedAt"</span>: <span class="c-str">"2026-06-07T10:00:14.000Z"</span>,
+  <span class="c-key">"durationMs"</span>: <span class="c-num">14000</span>,
+  <span class="c-key">"mode"</span>: <span class="c-str">"adaptive"</span>,
+  <span class="c-key">"profile"</span>: <span class="c-str">"custom"</span>,
+  <span class="c-key">"modules"</span>: { <span class="c-com">/* per-module results */</span> },
+  <span class="c-key">"summary"</span>: {
+    <span class="c-key">"modulesRun"</span>: <span class="c-num">21</span>,
+    <span class="c-key">"modulesOk"</span>: <span class="c-num">20</span>,
+    <span class="c-key">"modulesFailed"</span>: <span class="c-num">1</span>,
+    <span class="c-key">"findings"</span>: <span class="c-num">4</span>
+  }
+}</div>
+                    <p>Each entry in <code>modules</code> follows the <code>ModuleResult</code> contract: <code>ok</code>, <code>data</code> (module-specific), and optional <code>error</code> / <code>durationMs</code>.</p>
+
+                    <h2 id="supabase">Supabase schema (overview)</h2>
+                    <p>Row-Level Security is enabled on every user-scoped table. The migrations in <code>supabase/migrations/</code> provision the schema, policies, and storage buckets.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Table</th><th>Key columns</th><th>RLS</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>scans</code></td>
+                                    <td><code>id</code> (uuid), <code>user_id</code>, <code>target</code>, <code>status</code>, <code>config</code> (jsonb), <code>results</code> (jsonb), <code>security_grade</code>, <code>elapsed_ms</code>, <code>created_at</code></td>
+                                    <td>✅</td>
+                                </tr>
+                                <tr>
+                                    <td><code>user_settings</code></td>
+                                    <td><code>user_id</code>, <code>theme</code>, <code>scan_defaults</code> (jsonb), <code>proxy_list</code> (jsonb), <code>webhook_url</code></td>
+                                    <td>✅</td>
+                                </tr>
+                                <tr>
+                                    <td><code>user_profiles</code></td>
+                                    <td><code>user_id</code>, <code>display_name</code>, <code>avatar_url</code>, <code>bio</code>, <code>role</code></td>
+                                    <td>✅</td>
+                                </tr>
+                                <tr>
+                                    <td><code>api_keys</code></td>
+                                    <td><code>user_id</code>, <code>service_name</code>, <code>api_key</code>, <code>is_active</code></td>
+                                    <td>✅</td>
+                                </tr>
+                                <tr>
+                                    <td><code>scheduled_scans</code></td>
+                                    <td><code>user_id</code>, <code>name</code>, <code>target</code>, <code>cron</code>, <code>config</code> (jsonb), <code>enabled</code></td>
+                                    <td>✅</td>
+                                </tr>
+                                <tr>
+                                    <td><code>scan_templates</code></td>
+                                    <td><code>user_id</code>, <code>name</code>, <code>config</code> (jsonb)</td>
+                                    <td>✅</td>
+                                </tr>
+                                <tr>
+                                    <td><code>notification_prefs</code></td>
+                                    <td><code>user_id</code>, <code>channel</code>, <code>enabled</code>, <code>minimum_severity</code></td>
+                                    <td>✅</td>
+                                </tr>
+                                <tr>
+                                    <td><code>storage.avatars</code></td>
+                                    <td>Private bucket keyed by <code>user_id</code></td>
+                                    <td>✅</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Example RLS policy</h3>
+                    <p>Every user-scoped table enforces the same pattern: a row is visible only when <code>auth.uid() = user_id</code>.</p>
+                    <div class="code-block" data-lang="sql"><span class="c-key">CREATE POLICY</span> <span class="c-str">"Users can view own scans"</span> <span class="c-key">ON</span> scans
+  <span class="c-key">FOR SELECT USING</span> (auth.uid() = user_id);
+
+<span class="c-key">CREATE POLICY</span> <span class="c-str">"Users can manage own scans"</span> <span class="c-key">ON</span> scans
+  <span class="c-key">FOR ALL USING</span> (auth.uid() = user_id);</div>
+
+                    <h2 id="test-proxy">Testing the proxy</h2>
+                    <p>A <code>scripts/test-proxy.js</code> helper is included for verifying deployments. It checks the OPTIONS preflight, a known 2xx upstream, and a 4xx upstream.</p>
+                    <div class="code-block" data-lang="bash">node scripts/test-proxy.js https://abspider-recon.vercel.app
+
+<span class="c-com"># Sample output</span>
+<span class="c-key">✓</span> OPTIONS preflight returns 200
+<span class="c-key">✓</span> GET example.com returns 200
+<span class="c-key">✓</span> GET https://httpbin.org/status/418 returns 418</div>
+
+                    <h2 id="rate-limits">Rate limits</h2>
+                    <p>There are no ABSpider-imposed rate limits on the proxy. The Vercel Edge function shares the platform's free-tier limits (100 GB-hours / month on the Hobby plan). For production deployments with sustained traffic, upgrade to Vercel Pro or run the function on a Cloudflare Worker.</p>
+
+                    <h2 id="errors">Error reference</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Code</th><th>Source</th><th>Meaning</th><th>Resolution</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>400</code></td><td>proxy</td><td>Missing <code>url</code> query parameter</td><td>Add <code>?url=&lt;encoded&gt;</code> to the request.</td></tr>
+                                <tr><td><code>500</code></td><td>proxy</td><td>Upstream fetch failed or invalid URL</td><td>Verify the URL parses with <code>new URL()</code> and the target is reachable.</td></tr>
+                                <tr><td><code>429</code></td><td>upstream</td><td>Rate-limited by the target</td><td>Reduce scan frequency, enable proxy rotation.</td></tr>
+                                <tr><td><code>401 / 403</code></td><td>upstream</td><td>Target requires auth or blocks automated clients</td><td>Use a different request profile or obtain authorization.</td></tr>
+                                <tr><td>Network error</td><td>client</td><td>Cloudflare or WAF challenge</td><td>The dashboard's <code>cloudflareBypass</code> heuristics may help; otherwise use the CLI.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <aside class="toc" id="toc"></aside>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-grid">
+                    <div>
+                        <h4>ABSpider Recon</h4>
+                        <p>Professional web reconnaissance platform for security professionals.</p>
+                    </div>
+                    <div>
+                        <h4>Documentation</h4>
+                        <ul>
+                            <li><a href="getting-started.html">Getting Started</a></li>
+                            <li><a href="modules.html">Recon Modules</a></li>
+                            <li><a href="architecture.html">Architecture</a></li>
+                            <li><a href="cli.html">CLI Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations</h4>
+                        <ul>
+                            <li><a href="configuration.html">Configuration</a></li>
+                            <li><a href="reports.html">Reports</a></li>
+                            <li><a href="deployment.html">Deployment</a></li>
+                            <li><a href="api-reference.html">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Project</h4>
+                        <ul>
+                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                            <li><a href="security.html">Security Policy</a></li>
+                            <li><a href="troubleshooting.html">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2026 zanesense. Released under the MIT License.</p>
+                    <p>v2.0.1</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>

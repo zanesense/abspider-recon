@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment — ABSpider Recon</title>
+    <meta name="description" content="Deploy ABSpider Recon to Vercel, Docker production, Docker development, or self-hosted Node. Every path serves the production dist bundle.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="deployment">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="breadcrumb" id="breadcrumb" data-page="Deployment"></nav>
+                </div>
+                <div class="topbar-actions">
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <article class="article">
+                    <header class="page-hero">
+                        <div class="crumb">Operations · Production</div>
+                        <h1>Deployment</h1>
+                        <p class="lede">ABSpider Recon is a static Vite SPA plus a Vercel Edge function at <code>api/proxy.ts</code>. <strong>Every supported deployment path serves the production bundle in <code>dist/</code> — never the Vite dev server.</strong> The Vite dev server (<code>npm run dev</code>, port <code>5000</code>) is for local development only and is not exposed by any of the recipes below.</p>
+                    </header>
+
+                    <h2 id="at-a-glance">Paths at a glance</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Path</th><th>Front-end served from</th><th><code>api/proxy</code> supported?</th><th>Best for</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Vercel</strong> (recommended)</td>
+                                    <td><code>dist/</code> built by Vite</td>
+                                    <td>✅ — Vercel Edge Function</td>
+                                    <td>Production, zero-config, automatic previews</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Docker production</strong></td>
+                                    <td><code>dist/</code> served by Nginx</td>
+                                    <td>❌ — proxy not bundled in the image</td>
+                                    <td>Self-hosted behind your own infra</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Docker development</strong></td>
+                                    <td>Vite dev server on :5000</td>
+                                    <td>n/a</td>
+                                    <td>Local containerized dev only</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Self-hosted Node</strong></td>
+                                    <td><code>dist/</code> served by <code>serve</code></td>
+                                    <td>❌ — host the proxy separately</td>
+                                    <td>Plain VM / VPS without Docker</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Static host</strong> (S3, Caddy, Netlify, …)</td>
+                                    <td><code>dist/</code> uploaded as-is</td>
+                                    <td>❌ — bring your own runtime</td>
+                                    <td>CDN-first deployments</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2 id="vercel">Vercel (recommended)</h2>
+                    <p>Vercel reads <a href="https://github.com/zanesense/abspider-recon/blob/main/vercel.json" target="_blank" rel="noopener"><code>vercel.json</code></a> and runs the production pipeline:</p>
+                    <ul>
+                        <li><strong>installCommand:</strong> <code>npm ci</code></li>
+                        <li><strong>buildCommand:</strong> <code>npm run build</code> (which is <code>tsc -b &amp;&amp; vite build</code>)</li>
+                        <li><strong>outputDirectory:</strong> <code>dist/</code></li>
+                        <li><strong>SPA rewrites:</strong> every path that does not match a static asset falls through to <code>/index.html</code> (so deep links like <code>/dashboard</code> and <code>/scan/:id</code> work after a refresh).</li>
+                        <li><strong>Edge function:</strong> <code>api/proxy.ts</code> is auto-deployed as a Vercel Edge Function.</li>
+                    </ul>
+
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Install the Vercel CLI if you do not have it</span>
+npm i -g vercel
+
+<span class="c-com"># Deploy from the project root</span>
+vercel</div>
+
+                    <h3>Required environment variables</h3>
+                    <p>Add these in the Vercel project settings (Settings → Environment Variables):</p>
+                    <ul>
+                        <li><code>VITE_SUPABASE_URL</code></li>
+                        <li><code>VITE_SUPABASE_ANON_KEY</code></li>
+                        <li>Optional <code>VITE_*</code> integration keys (Shodan, VirusTotal, SecurityTrails, Hunter.io, Discord webhook)</li>
+                    </ul>
+
+                    <div class="callout callout-info">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <div class="callout-title">No <code>vercel dev</code> for production</div>
+                            <p>The platform always runs the production build, never the Vite dev server. Use <code>npm run dev</code> locally for development, and ship the resulting <code>dist/</code> artifact via Vercel.</p>
+                        </div>
+                    </div>
+
+                    <h2 id="docker-prod">Docker production</h2>
+                    <p>The production image is a <strong>multi-stage build</strong>:</p>
+                    <ol>
+                        <li><strong>deps</strong> — installs production dependencies (<code>npm ci --omit=dev</code>).</li>
+                        <li><strong>builder</strong> — runs the strict TS build (<code>tsc -b</code>) and then <code>vite build</code>, producing <code>dist/</code>.</li>
+                        <li><strong>runner</strong> — a lightweight <code>nginx:alpine</code> image that serves <code>dist/</code> on container port <code>8080</code>.</li>
+                    </ol>
+                    <p>The Vite dev server is never started inside the image.</p>
+
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Build and run the production image (profile: app)</span>
+docker compose up --build app</div>
+
+                    <p>Open <a href="http://localhost:3000" target="_blank" rel="noopener">http://localhost:3000</a>. Verify you're actually serving the production build:</p>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Should print "nginx" in the Server header</span>
+curl -sI http://localhost:3000 | grep -i server</div>
+
+                    <h3>Nginx config</h3>
+                    <p><code>nginx.conf</code> ensures SPA routing works by falling back to <code>index.html</code> for unknown paths.</p>
+                    <div class="code-block" data-lang="nginx"><span class="c-key">location</span> / {
+  <span class="c-key">try_files</span> $uri $uri/ /index.html;
+}</div>
+
+                    <h2 id="docker-dev">Docker development</h2>
+                    <p>This is the only path that runs the Vite dev server, and it is <strong>opt-in</strong> via a Compose profile.</p>
+                    <div class="code-block" data-lang="bash">docker compose --profile dev up --build dev</div>
+                    <p>Open <a href="http://localhost:5000" target="_blank" rel="noopener">http://localhost:5000</a>. Hot module replacement and full source maps are enabled inside the container.</p>
+
+                    <div class="callout callout-warn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+                        <div>
+                            <div class="callout-title">Do not expose the dev container publicly</div>
+                            <p>The dev image runs the Vite dev server with full source maps and no rate limiting. It is intended for local development only. Always ship <code>app</code> for any internet-facing deployment.</p>
+                        </div>
+                    </div>
+
+                    <h2 id="self-hosted">Self-hosted Node</h2>
+                    <p><code>npm start</code> runs <a href="https://www.npmjs.com/package/serve" target="_blank" rel="noopener"><code>serve</code></a> (Vercel's reference static file server) against <code>dist/</code>, with the SPA fallback flag (<code>-s</code>) so deep links resolve to <code>index.html</code>. The Vite preview server is <strong>not</strong> used.</p>
+                    <div class="code-block" data-lang="bash">npm ci
+npm run build
+
+VITE_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co \
+VITE_SUPABASE_ANON_KEY=replace-with-your-supabase-anon-key \
+PORT=5000 \
+npm start</div>
+                    <p><code>PORT</code> defaults to <code>5000</code> if unset. The <code>api/proxy.ts</code> function is not bundled — host it separately (Vercel, Cloudflare Workers, Netlify Edge, or a small Node wrapper) or drop the proxy feature from your deployment.</p>
+
+                    <h2 id="static">Static host (S3, Caddy, Netlify, Cloudflare Pages, …)</h2>
+                    <p>Any host that can serve static files works. The only caveat is the proxy: if your static host does not have edge functions, run the dashboard without the proxy and rely on direct CORS-friendly targets or the CLI.</p>
+                    <div class="code-block" data-lang="bash">npm run build
+<span class="c-com"># Upload the contents of dist/ to your static host</span></div>
+
+                    <h3>Porting the proxy</h3>
+                    <p>If your host supports edge functions (Cloudflare Workers, Netlify Edge Functions, Deno Deploy, Lambda@Edge), you can port the 92-line <code>api/proxy.ts</code> handler verbatim. The handler:</p>
+                    <ol>
+                        <li>Reads <code>?url=</code> from the query string and validates it with <code>new URL()</code>.</li>
+                        <li>Forwards a curated set of <code>allowedHeaders</code> from the original request.</li>
+                        <li>Sets a default Chrome User-Agent if none was provided.</li>
+                        <li>Returns the response body with permissive CORS headers and the upstream status code.</li>
+                    </ol>
+
+                    <h2 id="production-checklist">Pre-deployment checklist</h2>
+                    <div class="callout callout-success">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        <div>
+                            <div class="callout-title">Run before you ship</div>
+                            <ul style="margin: 0; padding-left: 1.25rem;">
+                                <li><code>npm run lint</code> — ESLint 9 with the <code>typescript-eslint</code> rules</li>
+                                <li><code>npm run typecheck</code> — strict <code>tsc -b --noEmit</code></li>
+                                <li><code>npm run build</code> — strict TS build + Vite build</li>
+                                <li><code>npm test</code> — Vitest unit suite</li>
+                                <li><code>npm run audit</code> — <code>npm audit --omit=dev</code> (local pre-release only)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p>The GitHub Actions workflow runs <code>lint</code>, <code>typecheck</code>, <code>build</code>, and <code>test</code> on every push and pull request to <code>main</code>.</p>
+
+                    <h2 id="custom-domain">Custom domains</h2>
+                    <p>None of the deployment paths have ABSpider-specific domain rules. Point your DNS at the host:</p>
+                    <ul>
+                        <li><strong>Vercel</strong> — add the domain in the Vercel project, follow the DNS instructions, Vercel provisions a Let's Encrypt certificate.</li>
+                        <li><strong>Docker production</strong> — front the Nginx container with your reverse proxy (Caddy, Traefik, Cloudflare, or a managed load balancer).</li>
+                        <li><strong>Static host</strong> — follow the host's documentation. Most providers handle HTTPS automatically.</li>
+                    </ul>
+
+                    <h2 id="observability">Observability</h2>
+                    <p>ABSpider Recon has no built-in telemetry. Recommended external observability for production:</p>
+                    <ul>
+                        <li><strong>Error tracking</strong> — Sentry, Bugsnag, or a self-hosted GlitchTip instance</li>
+                        <li><strong>Uptime monitoring</strong> — UptimeRobot, Better Stack, or Pingdom for the dashboard URL and the <code>api/proxy</code> endpoint</li>
+                        <li><strong>Logs</strong> — your platform's log drain (Vercel, CloudWatch, Stackdriver, etc.)</li>
+                    </ul>
+
+                    <h2 id="rollback">Rollback strategy</h2>
+                    <p>For Vercel, every deployment is immutable. Use the Vercel dashboard or CLI to roll back to any previous deployment.</p>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Roll back to the previous deployment</span>
+vercel rollback
+
+<span class="c-com"># Roll back to a specific deployment</span>
+vercel rollback &lt;deployment-url&gt;</div>
+                    <p>For Docker, retag the previous image and re-deploy:</p>
+                    <div class="code-block" data-lang="bash">docker tag abspider-recon:previous abspider-recon:latest
+docker compose up -d app</div>
+                </article>
+
+                <aside class="toc" id="toc"></aside>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-grid">
+                    <div>
+                        <h4>ABSpider Recon</h4>
+                        <p>Professional web reconnaissance platform for security professionals.</p>
+                    </div>
+                    <div>
+                        <h4>Documentation</h4>
+                        <ul>
+                            <li><a href="getting-started.html">Getting Started</a></li>
+                            <li><a href="modules.html">Recon Modules</a></li>
+                            <li><a href="architecture.html">Architecture</a></li>
+                            <li><a href="cli.html">CLI Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations</h4>
+                        <ul>
+                            <li><a href="configuration.html">Configuration</a></li>
+                            <li><a href="reports.html">Reports</a></li>
+                            <li><a href="deployment.html">Deployment</a></li>
+                            <li><a href="api-reference.html">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Project</h4>
+                        <ul>
+                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                            <li><a href="security.html">Security Policy</a></li>
+                            <li><a href="troubleshooting.html">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2026 zanesense. Released under the MIT License.</p>
+                    <p>v2.0.1</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started — ABSpider Recon</title>
+    <meta name="description" content="Install the ABSpider Recon dashboard and CLI, configure Supabase, and complete your first scan in under 10 minutes.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="getting-started">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="breadcrumb" id="breadcrumb" data-page="Getting Started"></nav>
+                </div>
+                <div class="topbar-actions">
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <article class="article">
+                    <header class="page-hero">
+                        <div class="crumb">Quickstart · ~10 minutes</div>
+                        <h1>Getting Started</h1>
+                        <p class="lede">Install the dashboard, configure Supabase, and complete your first reconnaissance scan. The CLI works without a Supabase project; the dashboard requires one for authentication and history.</p>
+                        <div class="meta">
+                            <span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> Node.js ≥ 20</span>
+                            <span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg> npm ≥ 9</span>
+                            <span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/></svg> Supabase project (free tier OK)</span>
+                        </div>
+                    </header>
+
+                    <h2 id="choose">Choose your workflow</h2>
+                    <p>ABSpider Recon ships two surfaces backed by the same scanner engine. Pick the path that matches your goal — you can run both side by side.</p>
+                    <div class="grid-2">
+                        <div class="card-static">
+                            <h3 style="margin-top:0;">🖥️ Dashboard (web app)</h3>
+                            <p>The full GUI with magic-link auth, persistent scan history, and multi-format reports. Requires a Supabase project. Best for interactive assessments and team use.</p>
+                            <p class="text-mute" style="margin-bottom:0;"><a href="#dashboard-install">Jump to dashboard setup →</a></p>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-top:0;">💻 CLI (npm package)</h3>
+                            <p>Run the scanner from your terminal with no Supabase session. Core modules (DNS, WHOIS, headers, SSL, ports) work out of the box. Best for automation, CI, and quick one-off scans.</p>
+                            <p class="text-mute" style="margin-bottom:0;"><a href="#cli-install">Jump to CLI setup →</a></p>
+                        </div>
+                    </div>
+
+                    <h2 id="requirements">Requirements</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Tool</th><th>Version</th><th>Why</th></tr></thead>
+                            <tbody>
+                                <tr><td>Node.js</td><td>≥ 20</td><td>CI runs on Node 20; the published CLI requires Node 20+.</td></tr>
+                                <tr><td>npm</td><td>≥ 9</td><td>Committed <code>package-lock.json</code>; a <code>bun.lock</code> is also present for Bun users.</td></tr>
+                                <tr><td>Supabase</td><td>Free tier OK</td><td>Required only for the dashboard (auth + history + per-user settings).</td></tr>
+                                <tr><td>Docker</td><td>24+</td><td>Optional. Only needed for containerized deployment.</td></tr>
+                                <tr><td>API keys</td><td>Various</td><td>Optional. Shodan, VirusTotal, SecurityTrails, Hunter.io, Discord — bring your own.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="callout callout-tip">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <div class="callout-title">The CLI can run with zero configuration</div>
+                            <p>Core passive modules (DNS, WHOIS, headers, SSL, ports) work on a fresh clone with no Supabase and no API keys. The dashboard's Supabase is only needed for authentication and per-user data.</p>
+                        </div>
+                    </div>
+
+                    <h2 id="dashboard-install">Dashboard Installation</h2>
+                    <p>The dashboard is a Vite SPA that runs the scanner engine in your browser and persists results to Supabase.</p>
+
+                    <ol class="steps">
+                        <li>
+                            <strong>Clone the repository</strong>
+                            <p>Grab the source from GitHub and enter the project directory.</p>
+                            <div class="code-block" data-lang="bash">git clone https://github.com/zanesense/abspider-recon.git
+cd abspider-recon</div>
+                        </li>
+                        <li>
+                            <strong>Install dependencies</strong>
+                            <p>Use the committed lockfile for a reproducible install.</p>
+                            <div class="code-block" data-lang="bash">npm ci
+<span class="c-com"># or, if you prefer</span>
+npm install</div>
+                        </li>
+                        <li>
+                            <strong>Create a Supabase project</strong>
+                            <p>Sign in at <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>, create a new project, then copy your <strong>Project URL</strong> and <strong>anon public key</strong> from <em>Settings → API</em>.</p>
+                        </li>
+                        <li>
+                            <strong>Configure environment variables</strong>
+                            <p>Copy the template and fill in the two required variables. Anything prefixed <code>VITE_</code> is exposed to the browser bundle.</p>
+                            <div class="code-block" data-lang=".env">cp .env.example .env
+<span class="c-com"># .env is already in .gitignore</span>
+
+<span class="c-key">VITE_SUPABASE_URL</span>=https://your-project-ref.supabase.co
+<span class="c-key">VITE_SUPABASE_ANON_KEY</span>=your-anon-key-here
+
+<span class="c-com"># Optional — see Configuration → Environment Variables</span>
+<span class="c-key">VITE_SHODAN_API_KEY</span>=
+<span class="c-key">VITE_VIRUSTOTAL_API_KEY</span>=
+<span class="c-key">VITE_DISCORD_WEBHOOK_URL</span>=</div>
+                            <div class="callout callout-warn">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+                                <div>
+                                    <div class="callout-title">PowerShell users</div>
+                                    <p><code>cp</code> is not a native PowerShell cmdlet. Use <code>Copy-Item .env.example .env</code> on Windows PowerShell.</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <strong>Apply Supabase migrations</strong>
+                            <p>The SQL files in <code>supabase/migrations/</code> create the schema, row-level security policies, and storage buckets.</p>
+                            <div class="code-block" data-lang="bash"><span class="c-com"># With the Supabase CLI</span>
+supabase link --project-ref &lt;YOUR_PROJECT_REF&gt;
+supabase db push
+
+<span class="c-com"># Or run the files in order in the Supabase SQL Editor:</span>
+<span class="c-com">#   1. supabase/migrations/0001_init_schema.sql</span>
+<span class="c-com">#   2. supabase/migrations/0002_rls_policies.sql</span>
+<span class="c-com">#   3. supabase/migrations/0003_storage_avatars.sql</span></div>
+                        </li>
+                        <li>
+                            <strong>Start the dev server</strong>
+                            <p>Vite listens on port <code>5000</code> by default. Open the URL it prints in your browser.</p>
+                            <div class="code-block" data-lang="bash">npm run dev
+
+<span class="c-com"># → http://localhost:5000</span></div>
+                        </li>
+                        <li>
+                            <strong>Sign in and start a scan</strong>
+                            <p>Click <em>Login</em>, enter your email, and click the magic link Supabase sends. Once authenticated, navigate to <em>New Scan</em>, enter a target you own, pick a mode, and click <em>Start Reconnaissance</em>.</p>
+                        </li>
+                    </ol>
+
+                    <h2 id="cli-install">CLI Installation</h2>
+                    <p>The CLI is published as <a href="https://www.npmjs.com/package/abspider" target="_blank" rel="noopener"><code>abspider</code> on npm</a>. It bundles the runner and the payload JSON files into a single tarball that works with no Supabase session and no third-party keys for the core modules.</p>
+
+                    <div class="tabs">
+                        <input type="radio" name="cli-install" id="tab-npm" class="tabs-input" checked>
+                        <input type="radio" name="cli-install" id="tab-bun" class="tabs-input">
+                        <input type="radio" name="cli-install" id="tab-source" class="tabs-input">
+
+                        <div class="tabs-labels">
+                            <label for="tab-npm">npm / npx</label>
+                            <label for="tab-bun">bun</label>
+                            <label for="tab-source">From source</label>
+                        </div>
+                        <div class="tabs-panels">
+                            <div class="panel panel-npm">
+                                <div class="code-block" data-lang="bash"><span class="c-com"># One-off scan — no install required</span>
+npx abspider example.com
+
+<span class="c-com"># Or install globally for repeated use</span>
+npm install -g abspider
+abspider example.com</div>
+                            </div>
+                            <div class="panel panel-bun">
+                                <div class="code-block" data-lang="bash">bunx abspider example.com
+
+<span class="c-com"># or install globally</span>
+bun add -g abspider
+abspider example.com</div>
+                            </div>
+                            <div class="panel panel-source">
+                                <div class="code-block" data-lang="bash">git clone https://github.com/zanesense/abspider-recon.git
+cd abspider-recon
+npm install
+npm run cli -- example.com</div>
+                                <p class="text-mute">Local development uses the source tree under <code>packages/cli</code>. The published <code>abspider</code> package bundles a frozen copy of the same modules.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>CLI environment variables</h3>
+                    <p>The CLI only reads the VirusTotal key from your shell environment. It does <em>not</em> load <code>.env</code>.</p>
+                    <div class="code-block" data-lang="bash"><span class="c-key">export</span> VIRUSTOTAL_API_KEY=&lt;your-key&gt;
+abspider example.com --modules virustotal</div>
+                    <p>All other CLI modules run without configuration.</p>
+
+                    <h2 id="first-scan">Your first scan</h2>
+                    <p>Pick a target you own or have written permission to test. IANA-owned <code>example.com</code> is a safe choice for the very first run — the Nmap project also offers <code>scanme.nmap.org</code> for port-scanner testing.</p>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Target</th><th>Modules to run</th><th>Notes</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>example.com</code></td><td>siteInfo, headers, whois, dns, sslTls, seo</td><td>IANA-owned; safe for full passive recon.</td></tr>
+                                <tr><td><code>httpbin.org</code></td><td>siteInfo, headers, corsMisconfig, brokenLinks</td><td>Returns whatever you ask for; great for verifying CLI behavior.</td></tr>
+                                <tr><td><code>scanme.nmap.org</code></td><td>ports (mode <code>conservative</code>)</td><td>Maintained by the Nmap project for port-scanner testing.</td></tr>
+                                <tr><td>Your own staging host</td><td><code>--all</code></td><td>The recommended way to use the active modules.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Dashboard walkthrough</h3>
+                    <ol class="steps">
+                        <li><strong>Sign in</strong><p>Click the magic-link login, enter your email, and click the link Supabase sends you.</p></li>
+                        <li><strong>Open New Scan</strong><p>From the sidebar, click <em>New Scan</em>.</p></li>
+                        <li><strong>Enter the target</strong><p>Use a base domain like <code>example.com</code> or a full URL like <code>https://staging.example.com</code>. Subdomains are also accepted.</p></li>
+                        <li><strong>Pick a mode</strong><p>Choose <em>Conservative</em> for low-noise recon, <em>Adaptive</em> (default) for a balance, or <em>Aggressive</em> for the full module set.</p></li>
+                        <li><strong>Select modules</strong><p>Tick the recon modules you want. Active modules are tagged with a red badge — only run them on authorized targets.</p></li>
+                        <li><strong>Start the scan</strong><p>Click <em>Start Reconnaissance</em>. The dashboard polls progress in real time and renders findings as they complete.</p></li>
+                        <li><strong>Export</strong><p>From the <em>Reports</em> page, export the result as PDF, DOCX, Markdown, or JSON.</p></li>
+                    </ol>
+
+                    <h3>CLI walkthrough</h3>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Default: passive recon only</span>
+abspider example.com
+
+<span class="c-com"># Every passive and active CLI module</span>
+abspider https://example.com --all
+
+<span class="c-com"># Selected modules, save JSON for a downstream tool</span>
+abspider example.com --modules whois,dns,sslTls,ports,cors --output scan.json
+
+<span class="c-com"># Machine-readable JSON to stdout</span>
+abspider example.com --modules dns,sslTls --json --pretty</div>
+                    <p>Press <code>Ctrl+C</code> to stop gracefully. The CLI aborts in-flight work, skips remaining modules, and preserves any partial JSON written via <code>--output</code>.</p>
+
+                    <h2 id="next">What to read next</h2>
+                    <div class="grid-2">
+                        <a href="modules.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">Recon Modules</h3>
+                            <p class="text-mute" style="margin:0;">Browse the 21+ modules, their CLI flags, and what data they return.</p>
+                        </a>
+                        <a href="configuration.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">Configuration</h3>
+                            <p class="text-mute" style="margin:0;">All environment variables, the schema migrations, and per-user settings.</p>
+                        </a>
+                        <a href="cli.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">CLI Reference</h3>
+                            <p class="text-mute" style="margin:0;">Every flag, scan mode, port profile, and JSON output field.</p>
+                        </a>
+                        <a href="architecture.html" class="card" style="text-decoration:none;">
+                            <h3 style="margin-top:0; color: var(--text-1);">Architecture</h3>
+                            <p class="text-mute" style="margin:0;">Understand the provider tree, scan lifecycle, and the security-grade algorithm.</p>
+                        </a>
+                    </div>
+                </article>
+
+                <aside class="toc" id="toc"></aside>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-grid">
+                    <div>
+                        <h4>ABSpider Recon</h4>
+                        <p>Professional web reconnaissance platform for security professionals.</p>
+                    </div>
+                    <div>
+                        <h4>Documentation</h4>
+                        <ul>
+                            <li><a href="getting-started.html">Getting Started</a></li>
+                            <li><a href="modules.html">Recon Modules</a></li>
+                            <li><a href="architecture.html">Architecture</a></li>
+                            <li><a href="cli.html">CLI Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations</h4>
+                        <ul>
+                            <li><a href="configuration.html">Configuration</a></li>
+                            <li><a href="reports.html">Reports</a></li>
+                            <li><a href="deployment.html">Deployment</a></li>
+                            <li><a href="api-reference.html">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Project</h4>
+                        <ul>
+                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                            <li><a href="security.html">Security Policy</a></li>
+                            <li><a href="troubleshooting.html">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2026 zanesense. Released under the MIT License.</p>
+                    <p>v2.0.1</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>

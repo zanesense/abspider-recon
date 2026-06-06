@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration — ABSpider Recon</title>
+    <meta name="description" content="All ABSpider Recon environment variables, Supabase migrations, application settings, proxy config, Discord webhooks, and API integrations.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="configuration">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="breadcrumb" id="breadcrumb" data-page="Configuration"></nav>
+                </div>
+                <div class="topbar-actions">
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <article class="article">
+                    <header class="page-hero">
+                        <div class="crumb">Reference · Settings &amp; env</div>
+                        <h1>Configuration</h1>
+                        <p class="lede">ABSpider Recon is configured through environment variables, Supabase migrations, and per-user settings stored in the database. This page lists every knob and how it interacts with the dashboard and the CLI.</p>
+                    </header>
+
+                    <h2 id="env">Environment variables</h2>
+                    <p>All variables are namespaced with <code>VITE_</code> so Vite exposes them to the browser bundle. Anything unprefixed stays server-side. The CLI only reads <code>VIRUSTOTAL_API_KEY</code> from your shell environment.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Variable</th><th style="text-align:center;">Required</th><th>Default</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>VITE_SUPABASE_URL</code></td>
+                                    <td style="text-align:center;">✅</td>
+                                    <td>none</td>
+                                    <td>Supabase project URL, e.g. <code>https://YOUR-PROJECT-REF.supabase.co</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>VITE_SUPABASE_ANON_KEY</code></td>
+                                    <td style="text-align:center;">✅</td>
+                                    <td>none</td>
+                                    <td>Supabase anon publishable key. Protect your data with Row Level Security.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>VITE_SHODAN_API_KEY</code></td>
+                                    <td style="text-align:center;">⛔</td>
+                                    <td>none</td>
+                                    <td>Enables Shodan-backed lookups where supported.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>VITE_VIRUSTOTAL_API_KEY</code></td>
+                                    <td style="text-align:center;">⛔</td>
+                                    <td>none</td>
+                                    <td>Enables VirusTotal domain reputation checks in the dashboard.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>VITE_SECURITYTRAILS_API_KEY</code></td>
+                                    <td style="text-align:center;">⛔</td>
+                                    <td>none</td>
+                                    <td>Enables SecurityTrails-backed DNS intelligence where supported.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>VITE_HUNTER_API_KEY</code></td>
+                                    <td style="text-align:center;">⛔</td>
+                                    <td>none</td>
+                                    <td>Enables Hunter.io-backed email intelligence where supported.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>VITE_DISCORD_WEBHOOK_URL</code></td>
+                                    <td style="text-align:center;">⛔</td>
+                                    <td>none</td>
+                                    <td>Sends scan notifications to a Discord webhook. <strong>Treat this as a secret.</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><code>VITE_DEV_MODE</code></td>
+                                    <td style="text-align:center;">⛔</td>
+                                    <td><code>false</code></td>
+                                    <td>Enables verbose dev tooling and HMR overlays.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>VITE_LOG_LEVEL</code></td>
+                                    <td style="text-align:center;">⛔</td>
+                                    <td><code>info</code></td>
+                                    <td>One of <code>debug</code>, <code>info</code>, <code>warn</code>, <code>error</code>.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Start from the template</h3>
+                    <div class="code-block" data-lang=".env">cp .env.example .env
+<span class="c-com"># .env is already in .gitignore</span></div>
+
+                    <div class="callout callout-warn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+                        <div>
+                            <div class="callout-title">PowerShell users</div>
+                            <p><code>cp</code> is not a native PowerShell cmdlet. Use <code>Copy-Item .env.example .env</code> on Windows PowerShell.</p>
+                        </div>
+                    </div>
+
+                    <h2 id="supabase">Supabase setup</h2>
+                    <p>Apply the migrations in <code>supabase/migrations/</code> before using the dashboard end to end. Each file is idempotent and can be re-run.</p>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># With the Supabase CLI</span>
+supabase link --project-ref &lt;YOUR_PROJECT_REF&gt;
+supabase db push
+
+<span class="c-com"># Or run the files in order in the Supabase SQL Editor:</span>
+<span class="c-com">#   1. supabase/migrations/0001_init_schema.sql</span>
+<span class="c-com">#   2. supabase/migrations/0002_rls_policies.sql</span>
+<span class="c-com">#   3. supabase/migrations/0003_storage_avatars.sql</span></div>
+
+                    <h3>Provisioned tables (RLS on every user-scoped table)</h3>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Table</th><th>Used for</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>scans</code></td><td>Per-user scan history with config, results, and grade</td></tr>
+                                <tr><td><code>user_settings</code></td><td>Theme, scan defaults, proxy list, language</td></tr>
+                                <tr><td><code>user_profiles</code></td><td>Display name, bio, role, avatar URL</td></tr>
+                                <tr><td><code>api_keys</code></td><td>Per-user keys for Shodan, VirusTotal, SecurityTrails, Hunter.io</td></tr>
+                                <tr><td><code>scheduled_scans</code></td><td>Recurring scan definitions</td></tr>
+                                <tr><td><code>scan_templates</code></td><td>Saved module + parameter bundles</td></tr>
+                                <tr><td><code>notification_prefs</code></td><td>Per-channel notification preferences</td></tr>
+                                <tr><td><code>storage.avatars</code></td><td>Private bucket for user-uploaded avatars</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Magic-link email template</h3>
+                    <p>Customize the email in <em>Supabase → Authentication → Email Templates</em>. A minimal HTML version:</p>
+                    <div class="code-block" data-lang="html"><span class="c-key">&lt;h2&gt;</span>Welcome to ABSpider Recon<span class="c-key">&lt;/h2&gt;</span>
+<span class="c-key">&lt;p&gt;</span>Click the link below to sign in:<span class="c-key">&lt;/p&gt;</span>
+<span class="c-key">&lt;p&gt;&lt;a</span> <span class="c-key">href=</span><span class="c-str">"{{ .ConfirmationURL }}"</span><span class="c-key">&gt;</span>Sign In to ABSpider<span class="c-key">&lt;/a&gt;&lt;/p&gt;</span>
+<span class="c-key">&lt;p&gt;&lt;small&gt;</span>This link expires in 1 hour.<span class="c-key">&lt;/small&gt;&lt;/p&gt;</span></div>
+
+                    <h2 id="user-prefs">User preferences</h2>
+                    <p>Stored per-user in the <code>user_settings</code> table and surfaced in <em>Settings</em> in the sidebar.</p>
+
+                    <h3>Theme &amp; appearance</h3>
+                    <ul>
+                        <li>Theme: <code>light</code> or <code>dark</code></li>
+                        <li>Default landing route after sign-in</li>
+                        <li>Animation intensity (full / reduced — respects <code>prefers-reduced-motion</code>)</li>
+                    </ul>
+
+                    <h3>Scanning defaults</h3>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"threads"</span>: <span class="c-num">5</span>,
+  <span class="c-key">"requestDelay"</span>: <span class="c-num">250</span>,
+  <span class="c-key">"retryAttempts"</span>: <span class="c-num">3</span>,
+  <span class="c-key">"retryDelay"</span>: <span class="c-num">1000</span>,
+  <span class="c-key">"connectionTimeout"</span>: <span class="c-num">10000</span>,
+  <span class="c-key">"requestTimeout"</span>: <span class="c-num">30000</span>,
+  <span class="c-key">"scanTimeout"</span>: <span class="c-num">300000</span>,
+  <span class="c-key">"followRedirects"</span>: <span class="c-num">true</span>,
+  <span class="c-key">"maxRedirects"</span>: <span class="c-num">5</span>,
+  <span class="c-key">"validateSSL"</span>: <span class="c-num">true</span>,
+  <span class="c-key">"userAgent"</span>: <span class="c-str">"abspider/2.0.1"</span>
+}</div>
+
+                    <h3>Scan history</h3>
+                    <ul>
+                        <li><strong>Auto-save scans</strong> — persist completed scans to Supabase (default: on)</li>
+                        <li><strong>Scan history limit</strong> — cap local storage from 10 to 1000 scans</li>
+                    </ul>
+
+                    <h2 id="proxy">Proxy configuration</h2>
+                    <p>Configure multiple proxies for automatic rotation. The dashboard uses them in a round-robin or random strategy to avoid rate limiting.</p>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"proxies"</span>: [
+    <span class="c-str">"http://proxy1.example.com:8080"</span>,
+    <span class="c-str">"http://user:pass@proxy2.example.com:3128"</span>,
+    <span class="c-str">"socks5://proxy3.example.com:1080"</span>
+  ],
+  <span class="c-key">"rotationStrategy"</span>: <span class="c-str">"round-robin"</span>,
+  <span class="c-key">"proxyTimeout"</span>: <span class="c-num">5000</span>,
+  <span class="c-key">"validateProxies"</span>: <span class="c-num">true</span>,
+  <span class="c-key">"fallbackToDirect"</span>: <span class="c-num">true</span>
+}</div>
+
+                    <p>Supported schemes: <code>http</code>, <code>https</code>, <code>socks5</code>. Authentication is supported via the <code>user:pass@</code> URL syntax.</p>
+
+                    <h3>Custom headers &amp; user agents</h3>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"userAgents"</span>: [
+    <span class="c-str">"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"</span>,
+    <span class="c-str">"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"</span>,
+    <span class="c-str">"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"</span>
+  ],
+  <span class="c-key">"rotateUserAgents"</span>: <span class="c-num">true</span>,
+  <span class="c-key">"customHeaders"</span>: {
+    <span class="c-key">"Accept-Language"</span>: <span class="c-str">"en-US,en;q=0.9"</span>,
+    <span class="c-key">"Accept-Encoding"</span>: <span class="c-str">"gzip, deflate, br"</span>
+  }
+}</div>
+
+                    <h2 id="discord">Discord webhooks</h2>
+                    <p>Send scan-completion alerts to a Discord channel. The webhook URL is stored in <code>user_settings</code> and treated as a secret.</p>
+                    <ol>
+                        <li>Open Discord → <em>Server Settings → Integrations</em> → <em>Create Webhook</em>.</li>
+                        <li>Name it (e.g. "ABSpider Notifications") and pick the channel.</li>
+                        <li>Copy the URL — it must start with <code>https://discord.com/api/webhooks/</code>.</li>
+                        <li>In the dashboard, go to <em>Settings → Notifications</em>, paste the URL, and click <em>Test Webhook</em>.</li>
+                    </ol>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"webhookUrl"</span>: <span class="c-str">"https://discord.com/api/webhooks/..."</span>,
+  <span class="c-key">"enableNotifications"</span>: <span class="c-num">true</span>,
+  <span class="c-key">"notifyOnComplete"</span>: <span class="c-num">true</span>,
+  <span class="c-key">"notifyOnError"</span>: <span class="c-num">true</span>,
+  <span class="c-key">"notifyOnVulnerability"</span>: <span class="c-num">true</span>,
+  <span class="c-key">"minimumSeverity"</span>: <span class="c-str">"medium"</span>
+}</div>
+                    <p>Webhook payloads include a rich embed: target, duration, modules executed, vulnerabilities found (with severity), and a deep link to the dashboard report.</p>
+
+                    <h2 id="api-keys">API integrations</h2>
+                    <p>Optional third-party services. Add keys in <em>Settings → API Integration</em>; the dashboard tests the key before saving.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Service</th><th>Purpose</th><th>Free tier</th><th>Sign-up</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td>Shodan</td>
+                                    <td>Enhanced port scanning, banner grabbing, CVE hints</td>
+                                    <td>100 queries / month</td>
+                                    <td><a href="https://account.shodan.io/" target="_blank" rel="noopener">account.shodan.io</a></td>
+                                </tr>
+                                <tr>
+                                    <td>VirusTotal</td>
+                                    <td>Domain reputation from 70+ antivirus engines</td>
+                                    <td>4 req / min, 500 / day</td>
+                                    <td><a href="https://www.virustotal.com/" target="_blank" rel="noopener">virustotal.com</a></td>
+                                </tr>
+                                <tr>
+                                    <td>SecurityTrails</td>
+                                    <td>Historical DNS, subdomain discovery, WHOIS history</td>
+                                    <td>50 API calls / month</td>
+                                    <td><a href="https://securitytrails.com/" target="_blank" rel="noopener">securitytrails.com</a></td>
+                                </tr>
+                                <tr>
+                                    <td>Hunter.io</td>
+                                    <td>Email discovery and verification</td>
+                                    <td>25 searches / month</td>
+                                    <td><a href="https://hunter.io/api" target="_blank" rel="noopener">hunter.io</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="callout callout-danger">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <div>
+                            <div class="callout-title">Client-side API key storage</div>
+                            <p>API keys are stored in your Supabase database but are still accessible client-side. Any XSS vulnerability or physical access to your browser could expose these keys. <strong>Do not</strong> store sensitive, paid, or production API keys here. Use test / free-tier keys only.</p>
+                        </div>
+                    </div>
+
+                    <h2 id="scan-profiles">Scan profiles</h2>
+                    <p>Save frequently used configurations as templates. Profiles are stored in <code>scan_templates</code> and can be loaded from the <em>New Scan</em> page.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Profile</th><th>Threads</th><th>Timeout</th><th>Modules</th><th>Use case</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td>Quick</td>
+                                    <td>10</td>
+                                    <td>10 s</td>
+                                    <td>siteInfo, headers, techStack, dns</td>
+                                    <td>Fast header &amp; DNS spot-check</td>
+                                </tr>
+                                <tr>
+                                    <td>Balanced</td>
+                                    <td>5</td>
+                                    <td>30 s</td>
+                                    <td>siteInfo, headers, techStack, whois, dns, subdomains, ports</td>
+                                    <td>General first-pass assessment</td>
+                                </tr>
+                                <tr>
+                                    <td>Comprehensive</td>
+                                    <td>3</td>
+                                    <td>60 s</td>
+                                    <td>all</td>
+                                    <td>Authorized pre-audit pass</td>
+                                </tr>
+                                <tr>
+                                    <td>Stealth</td>
+                                    <td>1</td>
+                                    <td>45 s</td>
+                                    <td>siteInfo, headers, dns, whois (request delay 2 s, proxy on)</td>
+                                    <td>Noisy production targets</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2 id="cors">CORS bypass configuration</h2>
+                    <p>The dashboard uses a tiered request pipeline. Configure fallback proxies in case the Vercel Edge proxy is unavailable.</p>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"primaryProxy"</span>: <span class="c-str">"https://abspider-recon.vercel.app/api/proxy?url="</span>,
+  <span class="c-key">"fallbackProxies"</span>: [
+    <span class="c-str">"https://api.allorigins.win/raw?url="</span>,
+    <span class="c-str">"https://corsproxy.io/?"</span>
+  ],
+  <span class="c-key">"enableCorsWorkaround"</span>: <span class="c-num">true</span>
+}</div>
+                    <p>Use the proxy only for hosts you are authorized to test. It is not a generic web proxy.</p>
+                </article>
+
+                <aside class="toc" id="toc"></aside>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-grid">
+                    <div>
+                        <h4>ABSpider Recon</h4>
+                        <p>Professional web reconnaissance platform for security professionals.</p>
+                    </div>
+                    <div>
+                        <h4>Documentation</h4>
+                        <ul>
+                            <li><a href="getting-started.html">Getting Started</a></li>
+                            <li><a href="modules.html">Recon Modules</a></li>
+                            <li><a href="architecture.html">Architecture</a></li>
+                            <li><a href="cli.html">CLI Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations</h4>
+                        <ul>
+                            <li><a href="configuration.html">Configuration</a></li>
+                            <li><a href="reports.html">Reports</a></li>
+                            <li><a href="deployment.html">Deployment</a></li>
+                            <li><a href="api-reference.html">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Project</h4>
+                        <ul>
+                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                            <li><a href="security.html">Security Policy</a></li>
+                            <li><a href="troubleshooting.html">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2026 zanesense. Released under the MIT License.</p>
+                    <p>v2.0.1</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>

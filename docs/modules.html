@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recon Modules — ABSpider Recon</title>
+    <meta name="description" content="Complete reference for all 21+ ABSpider Recon reconnaissance modules — passive, active, and utility — with CLI flags and authorization profile.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="modules">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="breadcrumb" id="breadcrumb" data-page="Recon Modules"></nav>
+                </div>
+                <div class="topbar-actions">
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <article class="article">
+                    <header class="page-hero">
+                        <div class="crumb">Reference · 21 modules</div>
+                        <h1>Reconnaissance Modules</h1>
+                        <p class="lede">Every recon module in ABSpider Recon follows a standardized interface: <code>isTested</code>, <code>moduleError</code>, and (for active modules) a <code>vulnerable</code> flag. The <code>ScanResults</code> object aggregates all module outputs into a single typed container.</p>
+                    </header>
+
+                    <div class="callout callout-info">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <div class="callout-title">Module categorization</div>
+                            <p><strong>Passive</strong> modules gather data without directly probing the target or use third-party aggregators. <strong>Active</strong> modules perform direct, heuristic-based testing — only run them on authorized systems. <strong>Utility</strong> modules are helper tools for analysis.</p>
+                        </div>
+                    </div>
+
+                    <h2 id="at-a-glance">Modules at a glance</h2>
+                    <p>The full module table, with their dashboard availability, CLI flag, and category.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Module</th><th style="text-align:center;">Dashboard</th><th>CLI flag</th><th>Type</th><th>Purpose</th></tr></thead>
+                            <tbody>
+                                <tr><td>Site Info</td><td style="text-align:center;">✅</td><td><code>siteInfo</code></td><td><span class="badge badge-passive">Passive</span></td><td>Status, title, server, IP, and response metadata.</td></tr>
+                                <tr><td>Headers</td><td style="text-align:center;">✅</td><td><code>headers</code></td><td><span class="badge badge-passive">Passive</span></td><td>Scores common security headers (CSP, HSTS, XFO, Referrer-Policy, Permissions-Policy).</td></tr>
+                                <tr><td>WHOIS / RDAP</td><td style="text-align:center;">✅</td><td><code>whois</code></td><td><span class="badge badge-passive">Passive</span></td><td>Domain registration, registrar, nameservers, and creation/expiry dates.</td></tr>
+                                <tr><td>GeoIP</td><td style="text-align:center;">✅</td><td><code>geoip</code></td><td><span class="badge badge-passive">Passive</span></td><td>IP ownership and approximate geolocation.</td></tr>
+                                <tr><td>DNS</td><td style="text-align:center;">✅</td><td><code>dns</code></td><td><span class="badge badge-passive">Passive</span></td><td>A, AAAA, MX, NS, TXT, CNAME, and SOA records.</td></tr>
+                                <tr><td>MX</td><td style="text-align:center;">✅</td><td><code>mx</code></td><td><span class="badge badge-passive">Passive</span></td><td>Mail exchange records and preference order.</td></tr>
+                                <tr><td>Subnet</td><td style="text-align:center;">✅</td><td><code>subnet</code></td><td><span class="badge badge-passive">Passive</span></td><td>Basic IPv4 <code>/24</code> network summary when an IP is available.</td></tr>
+                                <tr><td>Subdomains</td><td style="text-align:center;">✅</td><td><code>subdomains</code></td><td><span class="badge badge-passive">Passive</span></td><td>DNS wordlist, crt.sh certificate transparency, optional SecurityTrails results.</td></tr>
+                                <tr><td>Reverse IP</td><td style="text-align:center;">✅</td><td><code>reverseip</code></td><td><span class="badge badge-passive">Passive</span></td><td>Other domains on the same IP.</td></tr>
+                                <tr><td>VirusTotal</td><td style="text-align:center;">✅</td><td><code>virustotal</code></td><td><span class="badge badge-passive">Passive</span></td><td>Domain reputation when an API key is configured.</td></tr>
+                                <tr><td>SSL / TLS</td><td style="text-align:center;">✅</td><td><code>sslTls</code></td><td><span class="badge badge-passive">Passive</span></td><td>Certificate subject, issuer, SANs, fingerprint, and expiry.</td></tr>
+                                <tr><td>Tech Stack</td><td style="text-align:center;">✅</td><td><code>techStack</code></td><td><span class="badge badge-passive">Passive</span></td><td>Frontend, CMS, analytics, CDN, and server fingerprinting.</td></tr>
+                                <tr><td>SEO</td><td style="text-align:center;">✅</td><td><code>seo</code></td><td><span class="badge badge-passive">Passive</span></td><td>Title, meta description, canonical URL, headings, and link counts.</td></tr>
+                                <tr><td>Ports</td><td style="text-align:center;">✅</td><td><code>ports</code></td><td><span class="badge badge-active">Active</span></td><td>Web, common, or full TCP port profiles with bounded concurrency.</td></tr>
+                                <tr><td>SQL Injection</td><td style="text-align:center;">✅</td><td><code>sqlinjection</code></td><td><span class="badge badge-active">Active</span></td><td>Loads <code>src/payloads/sqli.json</code> and uses baseline-aware SQL error heuristics.</td></tr>
+                                <tr><td>XSS</td><td style="text-align:center;">✅</td><td><code>xss</code></td><td><span class="badge badge-active">Active</span></td><td>Loads <code>src/payloads/xss.json</code> and reports unencoded payload reflection.</td></tr>
+                                <tr><td>LFI</td><td style="text-align:center;">✅</td><td><code>lfi</code></td><td><span class="badge badge-active">Active</span></td><td>Loads <code>src/payloads/lfi.json</code> and matches known file-content markers.</td></tr>
+                                <tr><td>WordPress</td><td style="text-align:center;">✅</td><td><code>wordpress</code></td><td><span class="badge badge-active">Active</span></td><td>Checks common WordPress paths (<code>/wp-login.php</code>, <code>/wp-json/</code>, <code>/xmlrpc.php</code>).</td></tr>
+                                <tr><td>Broken Links</td><td style="text-align:center;">✅</td><td><code>brokenLinks</code></td><td><span class="badge badge-active">Active</span></td><td>Walks discovered links and reports unreachable ones.</td></tr>
+                                <tr><td>CORS</td><td style="text-align:center;">✅</td><td><code>corsMisconfig</code></td><td><span class="badge badge-active">Active</span></td><td>Tests wildcard or reflected arbitrary-origin CORS responses.</td></tr>
+                                <tr><td>DDoS / WAF</td><td style="text-align:center;">✅</td><td><code>ddosFirewall</code></td><td><span class="badge badge-active">Active</span></td><td>Sends a bounded sequence of HEAD requests and records rate-limit signals.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2 id="passive">Passive Reconnaissance</h2>
+                    <p>Passive modules gather information without directly probing the target, or by using third-party aggregators. These form the <em>Basic Recon</em> and <em>Network Intelligence</em> categories in the UI.</p>
+
+                    <h3 id="site-info">Site Information</h3>
+                    <p>Basic site metadata captured from the initial HTTP response. Always the first module to run.</p>
+                    <ul>
+                        <li>Status code, response time, redirect chain</li>
+                        <li>Page title, server banner, IP address</li>
+                        <li>CMS identification and <code>robots.txt</code> analysis</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: siteInfo</span></p>
+
+                    <h3 id="headers">HTTP Headers Analysis</h3>
+                    <p>Evaluates security-relevant response headers and produces a 0–100 score plus a list of recommendations.</p>
+                    <ul>
+                        <li>Scores <code>Content-Security-Policy</code>, <code>Strict-Transport-Security</code>, <code>X-Frame-Options</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code></li>
+                        <li>Detects missing or misconfigured headers</li>
+                        <li>Identifies technology hints (server, framework, CDN)</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: headers</span></p>
+
+                    <h3 id="whois">WHOIS / RDAP Lookup</h3>
+                    <p>Domain registration intelligence via RDAP, with WHOIS as a fallback.</p>
+                    <ul>
+                        <li>Registrar, registrant, and admin contacts (when redacted, marks the field accordingly)</li>
+                        <li>Nameserver list, creation and expiry dates</li>
+                        <li>Domain status codes (clientTransferProhibited, etc.)</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: whois</span></p>
+
+                    <h3 id="geoip">GeoIP Location</h3>
+                    <p>Pinpoints the physical (or logical) location of the target's resolved IP.</p>
+                    <ul>
+                        <li>Country, region, city, postal code, latitude / longitude</li>
+                        <li>ASN, ISP, and organization</li>
+                        <li>Timezone and connection type</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: geoip</span></p>
+
+                    <h3 id="dns">DNS Records</h3>
+                    <p>Full DNS enumeration using Google DNS-over-HTTPS to avoid resolver-side filtering.</p>
+                    <ul>
+                        <li><code>A</code> and <code>AAAA</code> records</li>
+                        <li><code>CNAME</code>, <code>MX</code>, <code>NS</code>, <code>TXT</code> (SPF / DKIM / DMARC hints), <code>SOA</code></li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: dns</span></p>
+
+                    <h3 id="mx">MX Records</h3>
+                    <p>Dedicated mail-server analysis.</p>
+                    <ul>
+                        <li>Mail-exchange preference order and reachability</li>
+                        <li>SPF record validation</li>
+                        <li>DMARC policy analysis (<code>p=none</code> / <code>quarantine</code> / <code>reject</code>)</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: mx</span></p>
+
+                    <h3 id="subnet">Subnet</h3>
+                    <p>Calculates IPv4 network parameters when an IP is available from another module.</p>
+                    <ul>
+                        <li>Network address, broadcast address, usable host range</li>
+                        <li>Wildcard mask, total / usable host count</li>
+                        <li>CIDR notation summary</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: subnet</span></p>
+
+                    <h3 id="subdomains">Subdomain Enumeration</h3>
+                    <p>Combines a curated wordlist with Certificate Transparency log mining via <code>crt.sh</code> to surface subdomains that may not be in your wordlist.</p>
+                    <ul>
+                        <li>DNS wordlist brute-force with bounded concurrency</li>
+                        <li><code>crt.sh</code> certificate transparency mining</li>
+                        <li>Optional SecurityTrails results when an API key is configured</li>
+                        <li>Wildcard detection and active resolution verification</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: subdomains</span></p>
+
+                    <h3 id="reverse-ip">Reverse IP Lookup</h3>
+                    <p>Identifies other domains hosted on the same IP — useful for shared-hosting audits and adjacent-asset discovery.</p>
+                    <ul>
+                        <li>Shared-hosting detection</li>
+                        <li>Virtual host enumeration</li>
+                        <li>Related domain discovery</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: reverseip</span></p>
+
+                    <h3 id="virustotal">VirusTotal</h3>
+                    <p>Domain reputation analysis backed by 70+ detection engines. Only runs when a <code>VITE_VIRUSTOTAL_API_KEY</code> is set.</p>
+                    <ul>
+                        <li>Malicious / suspicious / clean detection ratio</li>
+                        <li>Categories (phishing, malware, C2, etc.)</li>
+                        <li>Last-analysis timestamp and historical reputation</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: virustotal</span> <span class="badge badge-info">API key required</span></p>
+
+                    <h3 id="ssl-tls">SSL / TLS Analysis</h3>
+                    <p>TLS handshake and certificate inspection. The CLI uses Node's built-in <code>tls</code> module to reach the origin even when the dashboard's browser CORS pipeline is blocked.</p>
+                    <ul>
+                        <li>Certificate subject, issuer, validity window, and SANs</li>
+                        <li>SHA-256 fingerprint and serial number</li>
+                        <li>Signature algorithm and key size</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: sslTls</span></p>
+
+                    <h3 id="tech-stack">Tech Stack Fingerprinting</h3>
+                    <p>Identifies the frontend, CMS, analytics, CDN, and server software used by the target. The dashboard combines header hints, body patterns, and known <code>&lt;meta&gt;</code> markers.</p>
+                    <ul>
+                        <li>Framework and library detection (React, Vue, Angular, jQuery, etc.)</li>
+                        <li>Analytics and marketing tools (GA, GTM, Mixpanel, Hotjar)</li>
+                        <li>CDN and reverse-proxy identification</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: techStack</span></p>
+
+                    <h3 id="seo">SEO Analysis</h3>
+                    <p>Search-engine signals extracted from the rendered page.</p>
+                    <ul>
+                        <li>Title, meta description, canonical URL, OpenGraph tags</li>
+                        <li>Heading structure (H1–H6) and hierarchy checks</li>
+                        <li>Internal / external link counts, image alt-text coverage</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: seo</span></p>
+
+                    <h2 id="active">Active Reconnaissance</h2>
+                    <p>Active modules perform direct, heuristic-based testing. Every active module loads its payloads from a version-controlled JSON file (<code>src/payloads/*.json</code>) and respects the per-mode cap, delay, and concurrency settings.</p>
+
+                    <div class="callout callout-danger">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <div>
+                            <div class="callout-title">Authorization required</div>
+                            <p>Active scanning modules require explicit written authorization. Only scan systems you own or have permission to test. Unauthorized scanning may be illegal in your jurisdiction. See <a href="security.html">Security &amp; Legal</a>.</p>
+                        </div>
+                    </div>
+
+                    <h3 id="ports">Port Scanning</h3>
+                    <p>Checks connectivity on common TCP ports with bounded concurrency. The dashboard can be extended with Shodan for richer service data.</p>
+                    <ul>
+                        <li>Port profiles: <code>web</code> (80/443), <code>common</code> (~100), or <code>full</code> (~6500)</li>
+                        <li>Service detection and basic banner grabbing</li>
+                        <li>Open / closed / filtered / unknown classification</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: ports</span></p>
+
+                    <h3 id="sqli">SQL Injection Testing</h3>
+                    <p>Loads <code>src/payloads/sqli.json</code> and applies baseline-aware error heuristics. Detects error-based, boolean-based, and time-based blind SQLi patterns.</p>
+                    <ul>
+                        <li>Baseline-aware comparison (avoids false positives from existing error pages)</li>
+                        <li>Multiple payload families and quote styles</li>
+                        <li>DB fingerprint hints (MySQL, PostgreSQL, MSSQL, Oracle, SQLite)</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: sqlinjection</span></p>
+
+                    <h3 id="xss">XSS Detection</h3>
+                    <p>Loads <code>src/payloads/xss.json</code> and reports unencoded reflection of probe payloads in the response body or DOM sink.</p>
+                    <ul>
+                        <li>Reflected, DOM-based, and stored XSS coverage</li>
+                        <li>Context-aware testing (HTML body, attribute, script, URL)</li>
+                        <li>Filter bypass techniques for common WAFs</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: xss</span></p>
+
+                    <h3 id="lfi">LFI Scanning</h3>
+                    <p>Loads <code>src/payloads/lfi.json</code> and matches known file-content markers (e.g. <code>/etc/passwd</code> root line) in the response body.</p>
+                    <ul>
+                        <li>Path traversal patterns and null-byte injection</li>
+                        <li>Common file markers for confirmation</li>
+                        <li>Filter-evasion variants</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: lfi</span></p>
+
+                    <h3 id="wordpress">WordPress</h3>
+                    <p>Identifies WordPress installations and surfaces common misconfigurations.</p>
+                    <ul>
+                        <li>Version detection from <code>meta generator</code> and asset fingerprints</li>
+                        <li>Common path checks: <code>/wp-login.php</code>, <code>/wp-json/</code>, <code>/xmlrpc.php</code>, <code>/wp-config.php.bak</code></li>
+                        <li>Plugin and theme enumeration when discoverable</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: wordpress</span></p>
+
+                    <h3 id="broken-links">Broken Link Checker</h3>
+                    <p>Crawls the discovered links and reports unreachable destinations.</p>
+                    <ul>
+                        <li>Internal and external link validation</li>
+                        <li>HTTP status code and redirect chain analysis</li>
+                        <li>Per-link response time</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: brokenLinks</span></p>
+
+                    <h3 id="cors">CORS Misconfiguration</h3>
+                    <p>Sends a curated set of <code>Origin</code> headers and inspects the response for dangerous combinations.</p>
+                    <ul>
+                        <li>Wildcard origin detection</li>
+                        <li>Reflected arbitrary-origin with <code>Access-Control-Allow-Credentials: true</code></li>
+                        <li>Null-origin and subdomain trust issues</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: corsMisconfig</span></p>
+
+                    <h3 id="ddos-waf">DDoS / WAF Detection</h3>
+                    <p>Sends a bounded sequence of HEAD requests and records rate-limit signals without performing a real flood.</p>
+                    <ul>
+                        <li>Identifies Cloudflare, Sucuri, Akamai, AWS WAF, and generic challenge pages</li>
+                        <li>Reports observed rate-limiting behavior (HTTP 429, Retry-After)</li>
+                        <li>Distinguishes between <em>detection</em> and <em>bypass</em> — the module never evades controls</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: ddosFirewall</span></p>
+
+                    <h2 id="utility">Utility Modules</h2>
+                    <p>Helper tools that operate on data gathered by other modules.</p>
+
+                    <h3 id="subnet-calc">Subnet Calculator</h3>
+                    <p>Standalone network-range calculation given an IP and CIDR.</p>
+                    <ul>
+                        <li>Network, broadcast, and usable host range</li>
+                        <li>Wildcard mask, total / usable host count</li>
+                    </ul>
+                    <p class="text-mute"><span class="badge badge-utility">Utility</span> <span class="badge badge-muted">CLI: subnet</span></p>
+
+                    <h3 id="wordpress-scanner">WordPress Scanner (detailed)</h3>
+                    <p>Already described in the active section. Listed here for completeness as it is also used as a utility pass on known WordPress targets.</p>
+
+                    <h2 id="scan-modes">Scan modes</h2>
+                    <p>Every scan picks one of three modes that tune payload counts, request delays, and concurrency. The same mode is honored by the dashboard and the CLI.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Mode</th><th>Behavior</th><th>Best for</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge badge-passive">Conservative</span></td>
+                                    <td>Minimal footprint, low concurrency, longest delays. Passives always run; actives run with the smallest payload set.</td>
+                                    <td>Initial recon, noisy production environments, and any target that has tripped WAFs in the past.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-info">Adaptive</span> (default)</td>
+                                    <td>Balanced payload counts and delays. <code>SmartScanManager</code> adjusts intensity if it sees rate-limiting or 5xx errors.</td>
+                                    <td>General assessments on assets you own.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-active">Aggressive</span></td>
+                                    <td>Full payload set, higher concurrency, and minimal delays. Still bounded — never infinite.</td>
+                                    <td>Authorized penetration testing on dedicated staging environments.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2 id="module-shape">Module result shape</h2>
+                    <p>Every active module's result includes a <code>vulnerable</code> flag and a baseline <code>isTested</code> flag. The <code>moduleError</code> field captures per-module failure without aborting the rest of the scan.</p>
+                    <div class="code-block" data-lang="ts"><span class="c-key">interface</span> <span class="c-typ">ModuleResult</span> {
+  <span class="c-key">isTested</span>: <span class="c-typ">boolean</span>;          <span class="c-com">// did this module attempt to run?</span>
+  <span class="c-key">moduleError</span>?: <span class="c-typ">string</span>;       <span class="c-com">// per-module error, not fatal</span>
+  <span class="c-key">vulnerable</span>?: <span class="c-typ">boolean</span>;      <span class="c-com">// active modules only</span>
+  <span class="c-com">// ...module-specific fields</span>
+}</div>
+
+                    <h2 id="extending">Extending with custom modules</h2>
+                    <p>The payload files under <code>src/payloads/*.json</code> are version-controlled. You can audit, extend, or replace them without touching the runner.</p>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"id"</span>: <span class="c-str">"sqli-error-001"</span>,
+  <span class="c-key">"category"</span>: <span class="c-str">"sqli"</span>,
+  <span class="c-key">"vector"</span>: <span class="c-str">"query"</span>,
+  <span class="c-key">"param"</span>: <span class="c-str">"q"</span>,
+  <span class="c-key">"payload"</span>: <span class="c-str">"' OR '1'='1"</span>,
+  <span class="c-key">"match"</span>: <span class="c-str">"sql syntax|mysql_fetch|ORA-|pg_query"</span>,
+  <span class="c-key">"severity"</span>: <span class="c-str">"high"</span>
+}</div>
+                    <p>When adding a new module:</p>
+                    <ol>
+                        <li>Create a service under <code>src/services/</code> that follows the existing shape.</li>
+                        <li>Wire it into the <code>ScanConfig</code> / <code>ScanResults</code> interfaces in <code>src/services/scanService.ts</code>.</li>
+                        <li>Add the corresponding card in the <em>New Scan</em> module selector.</li>
+                        <li>Document each new payload pattern in your PR.</li>
+                    </ol>
+                </article>
+
+                <aside class="toc" id="toc"></aside>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-grid">
+                    <div>
+                        <h4>ABSpider Recon</h4>
+                        <p>Professional web reconnaissance platform for security professionals.</p>
+                    </div>
+                    <div>
+                        <h4>Documentation</h4>
+                        <ul>
+                            <li><a href="getting-started.html">Getting Started</a></li>
+                            <li><a href="modules.html">Recon Modules</a></li>
+                            <li><a href="architecture.html">Architecture</a></li>
+                            <li><a href="cli.html">CLI Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations</h4>
+                        <ul>
+                            <li><a href="configuration.html">Configuration</a></li>
+                            <li><a href="reports.html">Reports</a></li>
+                            <li><a href="deployment.html">Deployment</a></li>
+                            <li><a href="api-reference.html">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Project</h4>
+                        <ul>
+                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                            <li><a href="security.html">Security Policy</a></li>
+                            <li><a href="troubleshooting.html">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2026 zanesense. Released under the MIT License.</p>
+                    <p>v2.0.1</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>

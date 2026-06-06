@@ -1,15 +1,17 @@
-# Use Node.js 18 Alpine as base image (pinned to digest for reproducibility)
-FROM node:18.20-alpine3.20@sha256:9c7f6a4333a26e3e2a9bf2aedb3d81fde65a02d9b1d58f6197cd87c5fae06bbd AS base
+# syntax=docker/dockerfile:1.7
+# Builder: Node 20 LTS to match the engines field in package.json and CI.
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+# libc6-compat is required by some native deps (e.g. esbuild) on Alpine.
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better layer caching
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+# Install all deps (including devDeps) — `npm run build` needs them.
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -17,11 +19,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the production bundle into dist/
+ENV NODE_ENV=production
+RUN npm run build \
+    && echo "Build OK — dist/ contents:" \
+    && ls -la dist
 
-# Production image, copy all the files and run the app
-FROM nginx:1.25-alpine@sha256:b70da50a0f1b60534c6f276d6b887424c51533981eed2900b2d1c9b1e2993cbc AS runner
+# Production image: static assets served by Nginx
+FROM nginx:1.27-alpine AS runner
 WORKDIR /usr/share/nginx/html
 
 # Remove default nginx static assets
@@ -42,5 +47,8 @@ RUN addgroup -S app && adduser -S app -G app \
 USER app
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

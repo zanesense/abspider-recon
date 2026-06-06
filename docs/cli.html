@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI Reference — ABSpider Recon</title>
+    <meta name="description" content="Complete reference for the abspider npm CLI: every flag, scan mode, port profile, payload cap, and the JSON output schema.">
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body data-page="cli">
+    <div class="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <nav class="breadcrumb" id="breadcrumb" data-page="CLI Reference"></nav>
+                </div>
+                <div class="topbar-actions">
+                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://www.npmjs.com/package/abspider" target="_blank" rel="noopener">npm</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <article class="article">
+                    <header class="page-hero">
+                        <div class="crumb">Reference · Command line</div>
+                        <h1>CLI Reference</h1>
+                        <p class="lede">The <a href="https://www.npmjs.com/package/abspider" target="_blank" rel="noopener"><code>abspider</code></a> npm package ships the same scanner engine as the dashboard, packaged for the terminal. It runs without a Supabase session, supports graceful <code>Ctrl+C</code>, and emits structured JSON for downstream tooling.</p>
+                    </header>
+
+                    <h2 id="synopsis">Synopsis</h2>
+                    <div class="code-block" data-lang="bash">abspider &lt;target&gt; [options]
+
+<span class="c-com"># Examples</span>
+npx abspider example.com --all --mode aggressive
+abspider https://staging.example.com --modules dns,sslTls,ports --output scan.json
+abspider example.com --json --pretty | jq .</div>
+
+                    <p>The target accepts a domain (<code>example.com</code>), a hostname (<code>api.example.com</code>), or a full URL (<code>https://example.com:8443/path</code>). The URL form is used to derive scheme, port, and base path.</p>
+
+                    <h2 id="install">Installation</h2>
+                    <div class="tabs">
+                        <input type="radio" name="cli-install2" id="tab-npm2" class="tabs-input" checked>
+                        <input type="radio" name="cli-install2" id="tab-bun2" class="tabs-input">
+                        <input type="radio" name="cli-install2" id="tab-source2" class="tabs-input">
+
+                        <div class="tabs-labels">
+                            <label for="tab-npm2">npm</label>
+                            <label for="tab-bun2">bun</label>
+                            <label for="tab-source2">From source</label>
+                        </div>
+                        <div class="tabs-panels">
+                            <div class="panel panel-npm">
+                                <div class="code-block" data-lang="bash"><span class="c-com"># One-off</span>
+npx abspider example.com
+
+<span class="c-com"># Global install</span>
+npm install -g abspider
+abspider example.com</div>
+                            </div>
+                            <div class="panel panel-bun">
+                                <div class="code-block" data-lang="bash">bunx abspider example.com
+
+<span class="c-com"># Global install</span>
+bun add -g abspider
+abspider example.com</div>
+                            </div>
+                            <div class="panel panel-source">
+                                <div class="code-block" data-lang="bash">git clone https://github.com/zanesense/abspider-recon.git
+cd abspider-recon
+npm install
+npm run cli -- example.com</div>
+                                <p class="text-mute">Local dev uses the source tree under <code>packages/cli</code>. The published <code>abspider</code> tarball bundles a frozen copy of the same modules.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 id="options">All options</h2>
+                    <p>The full flag list. Every numeric flag is auto-clamped to a safe upper bound — <code>--threads</code> ≤ 100, <code>--payloads</code> ≤ 1000, <code>--ddos-requests</code> ≤ 250, <code>--subdomain-limit</code> ≤ wordlist length.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Flag</th><th>Short</th><th>Description</th><th>Default</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>--help</code></td><td><code>-h</code></td><td>Print the help banner and exit.</td><td>—</td></tr>
+                                <tr><td><code>--version</code></td><td><code>-v</code></td><td>Print the CLI version and exit.</td><td>—</td></tr>
+                                <tr><td><code>--passive</code></td><td></td><td>Run only passive modules (13 modules).</td><td>default</td></tr>
+                                <tr><td><code>--active</code></td><td></td><td>Run only active modules (8 modules).</td><td>—</td></tr>
+                                <tr><td><code>--all</code></td><td></td><td>Run every CLI module (21 modules).</td><td>—</td></tr>
+                                <tr><td><code>--modules</code></td><td><code>-m</code></td><td>Comma-separated module list. See <a href="modules.html">Modules</a>.</td><td>passive set</td></tr>
+                                <tr><td><code>--mode</code></td><td></td><td>One of <code>conservative</code>, <code>adaptive</code>, <code>aggressive</code>.</td><td><code>adaptive</code></td></tr>
+                                <tr><td><code>--conservative</code></td><td></td><td>Shorthand for <code>--mode conservative</code>.</td><td>—</td></tr>
+                                <tr><td><code>--adaptive</code></td><td></td><td>Shorthand for <code>--mode adaptive</code>.</td><td>—</td></tr>
+                                <tr><td><code>--aggressive</code></td><td></td><td>Shorthand for <code>--mode aggressive</code>.</td><td>—</td></tr>
+                                <tr><td><code>--payloads</code></td><td></td><td>Max payloads per active module (SQLi / XSS / LFI).</td><td>5 / 20 / 75</td></tr>
+                                <tr><td><code>--delay</code></td><td></td><td>Delay between requests, in milliseconds.</td><td>750 / 250 / 75</td></tr>
+                                <tr><td><code>--threads</code></td><td></td><td>Concurrent workers. Clamped to ≤ 100.</td><td>6 / 20 / 50</td></tr>
+                                <tr><td><code>--timeout</code></td><td></td><td>Per-request timeout, in milliseconds.</td><td><code>10000</code></td></tr>
+                                <tr><td><code>--ports</code></td><td><code>-p</code></td><td>Comma-separated custom port list.</td><td>per mode</td></tr>
+                                <tr><td><code>--port-profile</code></td><td></td><td>One of <code>web</code>, <code>common</code>, <code>full</code>.</td><td>per mode</td></tr>
+                                <tr><td><code>--ddos-requests</code></td><td></td><td>Number of HEAD probes for the WAF / rate-limit module.</td><td>5 / 20 / 60</td></tr>
+                                <tr><td><code>--subdomain-limit</code></td><td></td><td>Cap on the wordlist-driven subdomain scan.</td><td>50 / 140 / all</td></tr>
+                                <tr><td><code>--no-ct</code></td><td></td><td>Disable the <code>crt.sh</code> certificate-transparency lookup.</td><td><code>ct</code> on</td></tr>
+                                <tr><td><code>--json</code></td><td></td><td>Print the full result tree as JSON to stdout.</td><td>off</td></tr>
+                                <tr><td><code>--pretty</code></td><td></td><td>Pretty-print the JSON output (use with <code>--json</code>).</td><td>off</td></tr>
+                                <tr><td><code>--output</code></td><td><code>-o</code></td><td>Always-on pretty JSON written to a file. Preserved on <code>Ctrl+C</code>.</td><td>—</td></tr>
+                                <tr><td><code>--no-color</code></td><td></td><td>Disable ANSI color in the terminal UI.</td><td>auto</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2 id="modules-flag">Module selection</h2>
+                    <p>Use <code>--modules</code> (or <code>-m</code>) to run an explicit set. Module names are case-insensitive and a few common aliases are accepted (<code>site</code> → <code>siteInfo</code>, <code>ssl</code> → <code>sslTls</code>, <code>header</code> → <code>headers</code>, <code>tech</code> → <code>techStack</code>).</p>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Passive + a few active</span>
+abspider example.com --modules siteInfo,headers,whois,dns,sslTls,ports,corsMisconfig
+
+<span class="c-com"># Just infrastructure</span>
+abspider example.com -m dns,mx,subdomains,reverseip
+
+<span class="c-com"># Everything (equivalent to --all)</span>
+abspider example.com -m siteInfo,headers,whois,geoip,dns,mx,subnet,subdomains,reverseip,virustotal,sslTls,techStack,seo,ports,sqlinjection,xss,lfi,wordpress,brokenLinks,corsMisconfig,ddosFirewall</div>
+
+                    <h2 id="modes">Scan modes</h2>
+                    <p>Each mode tunes the per-module defaults. You can override any value with the corresponding flag — the override is sticky for the rest of the run.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Mode</th><th>Payloads</th><th>Delay (ms)</th><th>Threads</th><th>DDoS probes</th><th>Port profile</th><th>Subdomain limit</th><th>CT logs</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge badge-passive">Conservative</span></td>
+                                    <td>5</td><td>750</td><td>6</td><td>5</td><td><code>web</code></td><td>50</td><td>on</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-info">Adaptive</span> (default)</td>
+                                    <td>20</td><td>250</td><td>20</td><td>20</td><td><code>common</code></td><td>140</td><td>on</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge badge-active">Aggressive</span></td>
+                                    <td>75</td><td>75</td><td>50</td><td>60</td><td><code>full</code></td><td>all</td><td>on</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2 id="adaptive-mode">Adaptive mode behavior</h2>
+                    <p>In <code>adaptive</code> mode (the default) the CLI watches the timing of each module. If a module takes longer than 75% of the timeout (with a 2.5s floor), the runner treats the target as overloaded and eases off:</p>
+                    <ul>
+                        <li>Delay is multiplied by 1.4 (capped at 2,000 ms)</li>
+                        <li>Payloads are reduced to 85% (floor 5)</li>
+                        <li>Threads are reduced to 80% (floor 4)</li>
+                    </ul>
+                    <p>Conversely, if the target responds fast across consecutive modules, the delay is multiplied by 0.9 (floor 100 ms) and threads may grow by 1 (cap 50). Other modes ignore this feedback loop.</p>
+
+                    <h2 id="port-profiles">Port profiles</h2>
+                    <p>The <code>--port-profile</code> flag sets the default port list. The <code>--ports</code> flag accepts a comma-separated list and always wins.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Profile</th><th>Ports</th><th>Count</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>web</code></td><td>80, 81, 443, 8000, 8008, 8080, 8081, 8088, 8090, 8181, 8443, 8888, 9000, 9090, 9443</td><td>15</td></tr>
+                                <tr><td><code>common</code></td><td>Default curated list (DB, mail, RPC, container, monitoring, …)</td><td>~115</td></tr>
+                                <tr><td><code>full</code></td><td>1–1024</td><td>1024</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># Conservative port set, conservative mode</span>
+abspider https://example.com --active --mode conservative --port-profile web
+
+<span class="c-com"># Custom list</span>
+abspider example.com --ports 22,80,443,3389,8080</div>
+
+                    <h2 id="json-output">JSON output</h2>
+                    <p>Pass <code>--json</code> to print the full result tree to stdout, or <code>--json --pretty</code> for human-readable JSON. Use <code>--output &lt;file&gt;</code> (or <code>-o &lt;file&gt;</code>) to also write a pretty-formatted copy to disk — this file is written even on <code>Ctrl+C</code> with the partial result tree.</p>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># To stdout, pretty</span>
+abspider example.com --modules dns,sslTls --json --pretty
+
+<span class="c-com"># To a file (always pretty)</span>
+abspider example.com --modules dns,sslTls,ports,cors --output scan.json</div>
+                    <p>The result tree shape:</p>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"target"</span>: <span class="c-str">"example.com"</span>,
+  <span class="c-key">"startedAt"</span>: <span class="c-str">"2026-06-07T10:00:00.000Z"</span>,
+  <span class="c-key">"finishedAt"</span>: <span class="c-str">"2026-06-07T10:00:14.000Z"</span>,
+  <span class="c-key">"durationMs"</span>: <span class="c-num">14000</span>,
+  <span class="c-key">"mode"</span>: <span class="c-str">"adaptive"</span>,
+  <span class="c-key">"profile"</span>: <span class="c-str">"custom"</span>,
+  <span class="c-key">"modules"</span>: {
+    <span class="c-key">"siteInfo"</span>:       { <span class="c-key">"ok"</span>: <span class="c-num">true</span>, <span class="c-key">"data"</span>: { <span class="c-str">"status"</span>: <span class="c-num">200</span>, <span class="c-str">"title"</span>: <span class="c-str">"Example Domain"</span> }, <span class="c-key">"durationMs"</span>: <span class="c-num">420</span> },
+    <span class="c-key">"dns"</span>:            { <span class="c-key">"ok"</span>: <span class="c-num">true</span>, <span class="c-key">"data"</span>: { <span class="c-str">"A"</span>: [<span class="c-str">"23.215.0.136"</span>], <span class="c-str">"AAAA"</span>: [<span class="c-str">"2600:1408:..."</span>] }, <span class="c-key">"durationMs"</span>: <span class="c-num">180</span> },
+    <span class="c-key">"whois"</span>:          { <span class="c-key">"ok"</span>: <span class="c-num">true</span>, <span class="c-key">"data"</span>: { <span class="c-str">"registrar"</span>: <span class="c-str">"..."</span>, <span class="c-str">"createdAt"</span>: <span class="c-str">"..."</span> }, <span class="c-key">"durationMs"</span>: <span class="c-num">820</span> },
+    <span class="c-key">"sslTls"</span>:         { <span class="c-key">"ok"</span>: <span class="c-num">true</span>, <span class="c-key">"data"</span>: { <span class="c-str">"subject"</span>: <span class="c-str">"CN=example.com"</span>, <span class="c-str">"expiresAt"</span>: <span class="c-str">"..."</span> }, <span class="c-key">"durationMs"</span>: <span class="c-num">600</span> }
+  },
+  <span class="c-key">"summary"</span>: {
+    <span class="c-key">"modulesRun"</span>: <span class="c-num">4</span>,
+    <span class="c-key">"modulesOk"</span>: <span class="c-num">4</span>,
+    <span class="c-key">"modulesFailed"</span>: <span class="c-num">0</span>,
+    <span class="c-key">"findings"</span>: <span class="c-num">0</span>
+  }
+}</div>
+                    <p class="text-mute">Field shape varies per module. The JSON is treated as additive — new fields may appear in future releases without a major version bump.</p>
+
+                    <h2 id="example-finding">Example: a CORS finding</h2>
+                    <p>A real <code>corsMisconfig</code> finding emitted by the CLI in <code>--json</code> mode:</p>
+                    <div class="code-block" data-lang="json">{
+  <span class="c-key">"module"</span>: <span class="c-str">"corsMisconfig"</span>,
+  <span class="c-key">"severity"</span>: <span class="c-str">"high"</span>,
+  <span class="c-key">"title"</span>: <span class="c-str">"CORS reflects arbitrary Origin"</span>,
+  <span class="c-key">"description"</span>: <span class="c-str">"The response includes Access-Control-Allow-Origin: &lt;request-origin&gt; with Access-Control-Allow-Credentials: true. This is a classic CORS misconfiguration."</span>,
+  <span class="c-key">"target"</span>: <span class="c-str">"https://staging.example.com"</span>,
+  <span class="c-key">"evidence"</span>: {
+    <span class="c-key">"requestOrigin"</span>: <span class="c-str">"https://evil.example"</span>,
+    <span class="c-key">"responseHeaders"</span>: {
+      <span class="c-key">"access-control-allow-origin"</span>: <span class="c-str">"https://evil.example"</span>,
+      <span class="c-key">"access-control-allow-credentials"</span>: <span class="c-str">"true"</span>
+    },
+    <span class="c-key">"status"</span>: <span class="c-num">200</span>
+  },
+  <span class="c-key">"remediation"</span>: <span class="c-str">"Reflect only a known allowlist of origins, or set Access-Control-Allow-Origin to a static value and never combine it with Access-Control-Allow-Credentials: true for dynamic origins."</span>
+}</div>
+
+                    <h2 id="signal">Graceful shutdown</h2>
+                    <p>Press <code>Ctrl+C</code> to stop. The runner:</p>
+                    <ol>
+                        <li>Cancels the in-flight module with the registered <code>AbortController</code>.</li>
+                        <li>Skips any remaining modules.</li>
+                        <li>Writes a partial result tree to <code>--output</code> if one was provided.</li>
+                        <li>Exits with a non-zero status so CI pipelines can react.</li>
+                    </ol>
+
+                    <h2 id="env">Environment variables</h2>
+                    <p>The CLI does <strong>not</strong> load <code>.env</code>. Only the VirusTotal key is read from the environment.</p>
+                    <div class="code-block" data-lang="bash"><span class="c-key">export</span> VIRUSTOTAL_API_KEY=&lt;your-key&gt;
+abspider example.com --modules virustotal</div>
+
+                    <h2 id="examples">Common recipes</h2>
+                    <div class="code-block" data-lang="bash"><span class="c-com"># 1. Safe passive-only recon against a public domain</span>
+abspider example.com
+
+<span class="c-com"># 2. Full coverage on a staging host you own</span>
+abspider https://staging.example.com --all
+
+<span class="c-com"># 3. Active-only, conservative, JSON to file</span>
+abspider https://staging.example.com --active --mode conservative --output active.json
+
+<span class="c-com"># 4. Pipe the result into jq for triage</span>
+abspider example.com --json --pretty | jq '.modules | to_entries | map({module: .key, ok: .value.ok, findings: (.value.findings // 0)})'
+
+<span class="c-com"># 5. Cap a noisy WAF target</span>
+abspider https://example.com --mode conservative --threads 4 --delay 1500 --payloads 3
+
+<span class="c-com"># 6. Web port profile only</span>
+abspider https://example.com --modules ports --port-profile web</div>
+
+                    <h2 id="limits">Built-in limits</h2>
+                    <p>The CLI enforces hard upper bounds on the numeric flags so a malformed script cannot accidentally DOS a target or the runner itself.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Flag</th><th>Cap</th><th>Floor</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>--threads</code></td><td>100</td><td>1</td></tr>
+                                <tr><td><code>--payloads</code></td><td>1000</td><td>1</td></tr>
+                                <tr><td><code>--ddos-requests</code></td><td>250</td><td>1</td></tr>
+                                <tr><td><code>--subdomain-limit</code></td><td>wordlist length</td><td>1</td></tr>
+                                <tr><td><code>--timeout</code></td><td>(unbounded)</td><td>1</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <aside class="toc" id="toc"></aside>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-grid">
+                    <div>
+                        <h4>ABSpider Recon</h4>
+                        <p>Professional web reconnaissance platform for security professionals.</p>
+                    </div>
+                    <div>
+                        <h4>Documentation</h4>
+                        <ul>
+                            <li><a href="getting-started.html">Getting Started</a></li>
+                            <li><a href="modules.html">Recon Modules</a></li>
+                            <li><a href="architecture.html">Architecture</a></li>
+                            <li><a href="cli.html">CLI Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations</h4>
+                        <ul>
+                            <li><a href="configuration.html">Configuration</a></li>
+                            <li><a href="reports.html">Reports</a></li>
+                            <li><a href="deployment.html">Deployment</a></li>
+                            <li><a href="api-reference.html">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Project</h4>
+                        <ul>
+                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
+                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
+                            <li><a href="security.html">Security Policy</a></li>
+                            <li><a href="troubleshooting.html">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-meta">
+                    <p>© 2026 zanesense. Released under the MIT License.</p>
+                    <p>v2.0.1</p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="assets/nav.js"></script>
+</body>
+</html>
