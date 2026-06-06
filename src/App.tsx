@@ -25,6 +25,7 @@ import LegalDisclaimer from "@/components/LegalDisclaimer";
 import RequireAuth from "@/components/RequireAuth";
 import { useEffect } from "react"; // Import useEffect
 import { cleanupStuckScans, getRunningScanCount } from "@/services/scanService"; // Import new functions
+import { supabase } from "@/SupabaseClient"; // For auth state listening
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,8 +38,15 @@ const queryClient = new QueryClient({
 
 function App() {
   useEffect(() => {
-    // Run cleanup for stuck scans when the app loads
-    cleanupStuckScans();
+    // Wait for Supabase to restore the session before running cleanup.
+    // INITIAL_SESSION fires once the client has loaded the persisted session
+    // (or determined there is none), avoiding 400 errors from unauthenticated calls.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+        cleanupStuckScans();
+        subscription.unsubscribe(); // Only need this once
+      }
+    });
 
     // Add event listener for beforeunload
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, History, Zap, AlertTriangle, CheckCircle, CalendarDays, Pause, Play, Trash2, Clock as ClockIcon, Repeat, Bug, TrendingUp, Clock, AlertCircle, Activity, FileText } from 'lucide-react';
+import { PlusCircle, History, Zap, AlertTriangle, CheckCircle, Bug, TrendingUp, Clock, AlertCircle, Activity, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
@@ -12,8 +12,6 @@ import DatabaseStatusCard from '@/components/DatabaseStatusCard';
 import APIKeyStatusCard from '@/components/APIKeyStatusCard';
 import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard';
 import AppHeader from '@/components/AppHeader';
-import { getScheduledScans, updateScheduledScan, deleteScheduledScan, ScheduledScan } from '@/services/scheduledScanService';
-import { format } from 'date-fns';
 import { useInitialNotifications } from '@/hooks/useInitialNotifications';
 
 const DashboardPage = () => {
@@ -28,12 +26,6 @@ const DashboardPage = () => {
     refetchInterval: 3000,
   });
 
-  const { data: scheduledScans = [], refetch: refetchScheduledScans } = useQuery({
-    queryKey: ['scheduledScans'],
-    queryFn: getScheduledScans,
-    refetchInterval: 5000,
-  });
-
   const { data: apiKeys = {}, isLoading: isLoadingApiKeys, isError: isErrorApiKeys } = useQuery({
     queryKey: ['apiKeys'],
     queryFn: getAPIKeys,
@@ -41,45 +33,6 @@ const DashboardPage = () => {
 
   const totalApiKeys = 7; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit
   const configuredApiKeys = Object.values(apiKeys).filter(key => typeof key === 'string' && key.trim().length > 0).length;
-
-  const handleToggleScheduledScanStatus = (scan: ScheduledScan) => {
-    const newStatus = scan.status === 'active' ? 'paused' : 'active';
-    updateScheduledScan(scan.id, { status: newStatus });
-    refetchScheduledScans();
-    toast({
-      title: `${newStatus === 'active' ? 'Resumed' : 'Paused'} Scheduled Scan`,
-      description: `Scan '${scan.name}' is now ${newStatus}.`,
-    });
-  };
-
-  const handleDeleteScheduledScan = (scanId: string, scanName: string) => {
-    deleteScheduledScan(scanId);
-    refetchScheduledScans();
-    toast({
-      title: "Deleted Scheduled Scan",
-      description: `Scheduled scan '${scanName}' has been deleted.`,
-    });
-  };
-
-  const getScheduledStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30';
-      case 'paused': return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
-      case 'completed': return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
-      case 'failed': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
-      default: return 'bg-muted/20 text-muted-foreground border-border';
-    }
-  };
-
-  const getFrequencyLabel = (frequency: string) => {
-    switch (frequency) {
-      case 'once': return 'Once';
-      case 'daily': return 'Daily';
-      case 'weekly': return 'Weekly';
-      case 'monthly': return 'Monthly';
-      default: return 'N/A';
-    }
-  };
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -249,87 +202,7 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Scheduled Scans */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Scheduled Scans</h2>
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-700 ml-6" />
-            </div>
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-purple-500/5 via-violet-500/10 to-indigo-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="relative z-10">
-                <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-                  <div className="p-2 bg-purple-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                    <CalendarDays className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <span className="font-semibold">Your Scheduled Scans</span>
-                </CardTitle>
-                <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
-                  Automated reconnaissance tasks
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="relative z-10">
-                <div className="space-y-3">
-                  {scheduledScans.length > 0 ? (
-                    scheduledScans.map((scan) => (
-                      <div key={scan.id} className="flex items-center justify-between p-4 bg-muted rounded-lg border border-border">
-                        <div className="flex-1 space-y-1">
-                          <h4 className="text-foreground font-medium">{scan.name}</h4>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Bug className="h-3 w-3" />
-                            {scan.config.target}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Repeat className="h-3 w-3" />
-                            <span>Frequency: {getFrequencyLabel(scan.schedule.frequency)}</span>
-                            {scan.status === 'active' && scan.schedule.nextRun && (
-                              <>
-                                <span className="text-border">•</span>
-                                <ClockIcon className="h-3 w-3" />
-                                <span>Next Run: {format(new Date(scan.schedule.nextRun), 'MMM dd, yyyy HH:mm')}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getScheduledStatusColor(scan.status)}>
-                            {scan.status.toUpperCase()}
-                          </Badge>
-                          {scan.status !== 'completed' && scan.status !== 'failed' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleScheduledScanStatus(scan)}
-                              className="border-border text-foreground hover:bg-muted/50"
-                            >
-                              {scan.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                            </Button>
-                          )}
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteScheduledScan(scan.id, scan.name)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="p-4 bg-purple-500/20 rounded-full mb-4">
-                        <CalendarDays className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <p className="text-slate-600 dark:text-slate-400 font-medium">No scheduled scans yet</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-500 mt-1">Create one from "New Scan" to automate your reconnaissance</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Vulnerability Summary & Recent Scans */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <VulnerabilitySummaryCard scans={scans} />
             <RecentScans scans={scans.slice(0, 7)} onScanDeleted={refetch} />

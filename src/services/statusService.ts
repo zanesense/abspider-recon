@@ -158,13 +158,6 @@ const testModules = async (): Promise<ModuleStatus[]> => {
       status: 'operational',
       dependencies: ['jsPDF Library', 'Chart Generation'],
       lastTested: new Date()
-    },
-    {
-      name: 'Scheduled Scanning',
-      description: 'Automated recurring scan execution',
-      status: 'operational',
-      dependencies: ['Database', 'Background Processing'],
-      lastTested: new Date()
     }
   ];
 

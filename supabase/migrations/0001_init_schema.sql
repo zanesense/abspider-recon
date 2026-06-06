@@ -56,7 +56,7 @@ create table if not exists public.user_preferences (
 );
 
 -- -----------------------------------------------------------------------------
--- user_api_keys: per-user 3rd-party API keys as JSONB (for public/test keys only!)
+-- user_api_keys: per-user 3rd-party API keys as JSONB (for public/test keys only)
 -- -----------------------------------------------------------------------------
 create table if not exists public.user_api_keys (
   user_id    uuid        primary key references auth.users (id) on delete cascade,

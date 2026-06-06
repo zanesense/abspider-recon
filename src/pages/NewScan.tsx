@@ -14,7 +14,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { isInternalIP, extractHostname } from '@/services/apiUtils';
-import { addScheduledScan } from '@/services/scheduledScanService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import SQL_PAYLOADS_JSON from '@/payloads/sqli.json';
@@ -70,43 +69,6 @@ const scanFormSchema = z.object({
   threads: z.number().min(1).max(50),
   smartScanEnabled: z.boolean().default(false),
   smartScanMode: z.enum(['conservative', 'adaptive', 'aggressive']).default('adaptive'),
-  
-  // Scheduling fields
-  scheduleScan: z.boolean().default(false),
-  scheduleFrequency: z.enum(['once', 'daily', 'weekly', 'monthly']).optional(),
-  scheduleStartDate: z.string().optional(),
-  scheduleStartTime: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (data.scheduleScan) {
-    if (!data.scanName || data.scanName.trim() === '') {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Scheduled scan requires a name.",
-        path: ['scanName'],
-      });
-    }
-    if (!data.scheduleFrequency) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Frequency is required for scheduled scans.",
-        path: ['scheduleFrequency'],
-      });
-    }
-    if (!data.scheduleStartDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Start date is required for scheduled scans.",
-        path: ['scheduleStartDate'],
-      });
-    }
-    if (!data.scheduleStartTime) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Start time is required for scheduled scans.",
-        path: ['scheduleStartTime'],
-      });
-    }
-  }
 });
 
 type ScanFormValues = z.infer<typeof scanFormSchema>;
@@ -150,10 +112,6 @@ const NewScan = () => {
       threads: 20,
       smartScanEnabled: false,
       smartScanMode: 'adaptive',
-      scheduleScan: false,
-      scheduleFrequency: 'daily',
-      scheduleStartDate: format(new Date(), 'yyyy-MM-dd'),
-      scheduleStartTime: format(new Date(), 'HH:mm'),
     },
   });
 
@@ -166,7 +124,7 @@ const NewScan = () => {
   ).length;
   const totalModules = Object.keys(formData).filter(key => 
     typeof formData[key as keyof typeof formData] === 'boolean'
-  ).length - 1; // Subtract 1 for scheduleScan
+  ).length;
 
   const handleSaveTemplate = () => {
     const template = {
@@ -308,31 +266,13 @@ const NewScan = () => {
   const onSubmit = async (data: ScanFormValues) => {
     setIsScanning(true);
     try {
-      if (data.scheduleScan) {
-        if (!data.scanName || !data.scheduleFrequency || !data.scheduleStartDate || !data.scheduleStartTime) {
-          throw new Error("Missing scheduling details.");
-        }
-        const { scanName, scheduleFrequency, scheduleStartDate, scheduleStartTime, scheduleScan, smartScanMode, ...scanConfig } = data;
-        
-        addScheduledScan(scanName, scanConfig as ScanConfig, {
-          frequency: scheduleFrequency,
-          startDate: scheduleStartDate,
-          startTime: scheduleStartTime,
-        });
-        toast({
-          title: "Scan Scheduled",
-          description: `Scan '${scanName}' has been scheduled to run ${scheduleFrequency}.`,
-        });
-        navigate('/dashboard');
-      } else {
-        const { smartScanMode, ...scanConfig } = data;
-        const scanId = await startScan(scanConfig as ScanConfig);
-        toast({
-          title: "Scan Started",
-          description: `Scanning ${data.target}...`,
-        });
-        navigate(`/scan/${scanId}`);
-      }
+      const { smartScanMode, ...scanConfig } = data;
+      const scanId = await startScan(scanConfig as ScanConfig);
+      toast({
+        title: "Scan Started",
+        description: `Scanning ${data.target}...`,
+      });
+      navigate(`/scan/${scanId}`);
     } catch (error: any) {
       toast({
         title: "Failed to Process Scan",
@@ -472,118 +412,6 @@ const NewScan = () => {
               </CardContent>
             </Card>
 
-            {/* Schedule Scan Feature */}
-            <Card className={cn(
-              "group relative overflow-hidden backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1",
-              formData.scheduleScan 
-                ? "bg-gradient-to-br from-purple-500/10 via-violet-500/15 to-purple-500/10" 
-                : "bg-gradient-to-br from-purple-500/5 via-violet-500/10 to-purple-500/5"
-            )}>
-              <div className={cn(
-                "absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent transition-opacity duration-500",
-                formData.scheduleScan ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-              )} />
-              <CardHeader className="flex flex-row items-center justify-between relative z-10">
-                <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-                  <div className="p-2 bg-purple-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                    <CalendarDays className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <span className="font-semibold">Schedule Scan</span>
-                </CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="scheduleScan" className="text-sm text-muted-foreground">Enable Scheduling</Label>
-                  <Checkbox
-                    id="scheduleScan"
-                    checked={formData.scheduleScan}
-                    onCheckedChange={(checked) => setValue('scheduleScan', checked as boolean)}
-                  />
-                </div>
-              </CardHeader>
-              {formData.scheduleScan && (
-                <CardContent className="space-y-4 relative z-10">
-                  <Alert className="border-blue-500/50 bg-blue-500/10">
-                    <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-500" />
-                    <AlertTitle className="text-blue-600 dark:text-blue-400 font-bold">
-                      Client-Side Scheduling
-                    </AlertTitle>
-                    <AlertDescription className="text-sm mt-2 text-blue-600 dark:text-blue-300">
-                      Scheduled scans will only run when this application is open in your browser.
-                      Ensure the tab remains active for scans to execute as planned.
-                    </AlertDescription>
-                  </Alert>
-                  <div className="space-y-2">
-                    <Label htmlFor="scanName">Scheduled Scan Name</Label>
-                    <Input
-                      id="scanName"
-                      type="text"
-                      placeholder="My Daily Website Check"
-                      value={formData.scanName || ''}
-                      onChange={(e) => setValue('scanName', e.target.value)}
-                      className={cn("bg-muted/30 border-border focus:border-primary focus:ring-primary", errors.scanName && "border-destructive focus:border-destructive focus:ring-destructive")}
-                    />
-                    {errors.scanName && (
-                      <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertTriangle className="h-4 w-4" /> {errors.scanName.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="scheduleFrequency">Frequency</Label>
-                      <Select
-                        onValueChange={(value) => setValue('scheduleFrequency', value as 'once' | 'daily' | 'weekly' | 'monthly')}
-                        value={formData.scheduleFrequency}
-                      >
-                        <SelectTrigger className={cn("bg-muted/30 border-border focus:ring-primary", errors.scheduleFrequency && "border-destructive focus:border-destructive focus:ring-destructive")}>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="once">Once</SelectItem>
-                          <SelectItem value="daily">Daily</SelectItem>
-                          <SelectItem value="weekly">Weekly</SelectItem>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {errors.scheduleFrequency && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
-                          <AlertTriangle className="h-4 w-4" /> {errors.scheduleFrequency.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="scheduleStartDate">Start Date</Label>
-                      <Input
-                        id="scheduleStartDate"
-                        type="date"
-                        value={formData.scheduleStartDate || ''}
-                        onChange={(e) => setValue('scheduleStartDate', e.target.value)}
-                        className={cn("bg-muted/30 border-border focus:border-primary focus:ring-primary", errors.scheduleStartDate && "border-destructive focus:border-destructive focus:ring-destructive")}
-                      />
-                      {errors.scheduleStartDate && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
-                          <AlertTriangle className="h-4 w-4" /> {errors.scheduleStartDate.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="scheduleStartTime">Start Time</Label>
-                      <Input
-                        id="scheduleStartTime"
-                        type="time"
-                        value={formData.scheduleStartTime || ''}
-                        onChange={(e) => setValue('scheduleStartTime', e.target.value)}
-                        className={cn("bg-muted/30 border-border focus:border-primary focus:ring-primary", errors.scheduleStartTime && "border-destructive focus:border-destructive focus:ring-destructive")}
-                      />
-                      {errors.scheduleStartTime && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
-                          <AlertTriangle className="h-4 w-4" /> {errors.scheduleStartTime.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              )}
-            </Card>
 
             {/* Basic Scans */}
             <Card className={cn(
@@ -1043,12 +871,12 @@ const NewScan = () => {
                 {isScanning ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {formData.scheduleScan ? 'Scheduling...' : 'Starting Scan...'}
+                    Starting Scan...
                   </>
                 ) : (
                   <>
-                    {formData.scheduleScan ? <CalendarDays className="mr-2 h-4 w-4" /> : <Shield className="mr-2 h-4 w-4" />}
-                    {formData.scheduleScan ? 'Schedule Scan' : 'Launch Scan'}
+                    <Shield className="mr-2 h-4 w-4" />
+                    Launch Scan
                   </>
                 )}
               </Button>

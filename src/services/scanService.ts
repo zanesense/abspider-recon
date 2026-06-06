@@ -26,7 +26,6 @@ import { sendDiscordWebhook } from './webhookService';
 import { createRequestManager, RequestManager } from './requestManager';
 import { getAPIKeys, APIKeys } from './apiKeyService';
 import { calculateSecurityGrade } from './securityGradingService';
-import { startScheduledScanChecker } from './scheduledScanService';
 import { supabase } from '@/SupabaseClient';
 
 export interface ScanConfig {
@@ -701,5 +700,3 @@ export const cleanupStuckScans = async (): Promise<void> => {
 export const getRunningScanCount = (): number => {
   return activeScans.size;
 };
-
-startScheduledScanChecker();

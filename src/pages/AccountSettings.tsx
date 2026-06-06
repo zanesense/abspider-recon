@@ -58,10 +58,10 @@ const AccountSettings = () => {
           setEmailNotifications(user.user_metadata.email_notifications !== false);
           setScanNotifications(user.user_metadata.scan_notifications !== false);
 
-          // Get scan count
+          // Get scan count — PK is scan_id, not id
           const { data: scans } = await supabase
             .from('user_scans')
-            .select('id')
+            .select('scan_id')
             .eq('user_id', user.id);
           setScanCount(scans?.length || 0);
         }

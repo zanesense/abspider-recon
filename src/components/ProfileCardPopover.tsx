@@ -46,13 +46,11 @@ const ProfileCardPopover = () => {
           const lastName = user.user_metadata.last_name || '';
           const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U';
 
-          // Get scan count from user_scans table
-          const { data: scans, error: scanError } = await supabase
+          // Get scan count — PK is scan_id, not id; use count for efficiency
+          const { count: scanCount } = await supabase
             .from('user_scans')
-            .select('id')
+            .select('scan_id', { count: 'exact', head: true })
             .eq('user_id', user.id);
-
-          const scanCount = scans?.length || 0;
 
           setUserProfile({
             id: user.id,
@@ -64,7 +62,7 @@ const ProfileCardPopover = () => {
             createdAt: user.created_at ? format(new Date(user.created_at), 'PPP') : 'N/A',
             lastSignInAt: user.last_sign_in_at ? formatDistanceToNow(new Date(user.last_sign_in_at), { addSuffix: true }) : 'Never',
             role: user.user_metadata.role || 'Security Analyst',
-            scanCount,
+            scanCount: scanCount ?? 0,
           });
         }
       } catch (error) {

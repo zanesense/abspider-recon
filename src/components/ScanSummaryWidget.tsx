@@ -26,10 +26,10 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
   const ddosFirewallDetected = scan.results.ddosFirewall?.firewallDetected;
 
   const totalModules = Object.keys(scan.config).filter(key => 
-    !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests', 'scanName', 'scheduleScan', 'scheduleFrequency', 'scheduleStartDate', 'scheduleStartTime'].includes(key)
+    !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests', 'scanName'].includes(key)
   ).length;
   const activeModules = Object.keys(scan.config).filter(key => 
-    (scan.config as any)[key] === true && !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests', 'scanName', 'scheduleScan', 'scheduleFrequency', 'scheduleStartDate', 'scheduleStartTime'].includes(key)
+    (scan.config as any)[key] === true && !['target', 'useProxy', 'threads', 'xssPayloads', 'sqliPayloads', 'lfiPayloads', 'ddosRequests', 'scanName'].includes(key)
   ).length;
 
   const getGradeColorClass = (grade?: number | null) => {
