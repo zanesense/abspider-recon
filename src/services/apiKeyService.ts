@@ -29,9 +29,9 @@ export const getAPIKeys = async (): Promise<APIKeys> => {
       .from('user_api_keys')
       .select('api_keys')
       .eq('user_id', session.user.id)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means 'no rows found', which is fine
+    if (error) {
       throw error;
     }
 

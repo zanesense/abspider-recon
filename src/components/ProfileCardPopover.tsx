@@ -46,9 +46,9 @@ const ProfileCardPopover = () => {
           const lastName = user.user_metadata.last_name || '';
           const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U';
 
-          // Get scan count from scans table
+          // Get scan count from user_scans table
           const { data: scans, error: scanError } = await supabase
-            .from('scans')
+            .from('user_scans')
             .select('id')
             .eq('user_id', user.id);
 

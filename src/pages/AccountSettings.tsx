@@ -60,7 +60,7 @@ const AccountSettings = () => {
 
           // Get scan count
           const { data: scans } = await supabase
-            .from('scans')
+            .from('user_scans')
             .select('id')
             .eq('user_id', user.id);
           setScanCount(scans?.length || 0);
@@ -170,7 +170,7 @@ const AccountSettings = () => {
     try {
       // Delete user scans first
       const { error: scanError } = await supabase
-        .from('scans')
+        .from('user_scans')
         .delete()
         .eq('user_id', userId);
 
@@ -195,7 +195,7 @@ const AccountSettings = () => {
   const handleExportData = async () => {
     try {
       const { data: scans } = await supabase
-        .from('scans')
+        .from('user_scans')
         .select('*')
         .eq('user_id', userId);
 
