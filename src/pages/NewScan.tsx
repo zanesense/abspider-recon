@@ -367,7 +367,7 @@ const NewScan = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Target Input */}
             <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-cyan-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <CardHeader className="relative z-10">
                 <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                   <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
@@ -795,7 +795,7 @@ const NewScan = () => {
 
             {/* Advanced Settings */}
             <Card className="group relative overflow-hidden bg-gradient-to-br from-slate-500/5 via-slate-500/10 to-gray-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <CardHeader className="relative z-10">
                 <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                   <div className="p-2 bg-slate-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">

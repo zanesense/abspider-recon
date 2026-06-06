@@ -20,7 +20,7 @@ const APIKeyStatusCard = ({ configuredKeys, totalKeys, isLoading }: APIKeyStatus
 
   return (
     <Card className="group relative overflow-hidden bg-gradient-to-br from-amber-500/5 via-orange-500/10 to-amber-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       <CardHeader className="relative z-10">
         <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
           <div className="p-2 bg-amber-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">

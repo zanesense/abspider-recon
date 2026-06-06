@@ -506,7 +506,7 @@ const AppSettings = () => {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* User Preferences */}
           <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-cyan-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <CardHeader className="relative z-10">
               <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                 <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
@@ -740,7 +740,7 @@ const AppSettings = () => {
 
           {/* General Settings */}
           <Card className="group relative overflow-hidden bg-gradient-to-br from-emerald-500/5 via-green-500/10 to-emerald-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <CardHeader className="relative z-10">
               <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                 <div className="p-2 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
@@ -792,7 +792,7 @@ const AppSettings = () => {
 
           {/* Discord Webhook */}
           <Card className="group relative overflow-hidden bg-gradient-to-br from-violet-500/5 via-purple-500/10 to-indigo-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <CardHeader className="relative z-10">
               <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                 <div className="p-2 bg-violet-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
@@ -847,7 +847,7 @@ const AppSettings = () => {
 
           {/* Proxy Settings */}
           <Card className="group relative overflow-hidden bg-gradient-to-br from-amber-500/5 via-yellow-500/10 to-orange-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <CardHeader className="relative z-10">
               <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                 <div className="p-2 bg-amber-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
@@ -878,7 +878,7 @@ const AppSettings = () => {
 
           {/* API Keys */}
           <Card className="group relative overflow-hidden bg-gradient-to-br from-rose-500/5 via-red-500/10 to-pink-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <CardHeader className="relative z-10">
               <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                 <div className="p-2 bg-rose-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
