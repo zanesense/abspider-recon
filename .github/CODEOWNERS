@@ -1,0 +1,19 @@
+# Default owners for the entire repository
+* @zanesense
+
+# Security-related files
+SECURITY.md @zanesense
+
+# CI/CD configuration
+.github/ @zanesense
+
+# Docker configuration
+Dockerfile @zanesense
+Dockerfile.dev @zanesense
+docker-compose.yml @zanesense
+
+# Database migrations
+supabase/migrations/ @zanesense
+
+# Application source
+src/ @zanesense

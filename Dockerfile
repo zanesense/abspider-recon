@@ -1,5 +1,5 @@
-# Use Node.js 18 Alpine as base image
-FROM node:18-alpine AS base
+# Use Node.js 18 Alpine as base image (pinned to digest for reproducibility)
+FROM node:18.20-alpine3.20@sha256:9c7f6a4333a26e3e2a9bf2aedb3d81fde65a02d9b1d58f6197cd87c5fae06bbd AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -21,7 +21,7 @@ COPY . .
 RUN npm run build
 
 # Production image, copy all the files and run the app
-FROM nginx:alpine AS runner
+FROM nginx:1.25-alpine@sha256:b70da50a0f1b60534c6f276d6b887424c51533981eed2900b2d1c9b1e2993cbc AS runner
 WORKDIR /usr/share/nginx/html
 
 # Remove default nginx static assets
