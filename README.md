@@ -248,26 +248,6 @@ abspider-recon/
 | Testing | [Vitest 2](https://vitest.dev/) |
 | CI | GitHub Actions: lint, typecheck, build, test, and `npm audit --omit=dev` |
 
-<p align="center">
-  <a href="https://vitejs.dev/" title="Vite"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vitejs/vitejs-original.svg" width="44" /></a>
-  <a href="https://react.dev/" title="React"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="44" /></a>
-  <a href="https://www.typescriptlang.org/" title="TypeScript"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" width="44" /></a>
-  <a href="https://tailwindcss.com/" title="Tailwind CSS"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" width="44" /></a>
-  <a href="https://www.radix-ui.com/" title="Radix UI"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/radixui/radixui-original.svg" width="44" /></a>
-  <a href="https://lucide.dev/" title="Lucide"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/lucide/lucide-original.svg" width="44" /></a>
-  <a href="https://tanstack.com/" title="TanStack Query"><img src="https://cdn.simpleicons.org/tanstack/FF4154" width="44" height="44" style="background:#000;padding:6px;border-radius:8px" /></a>
-  <a href="https://zod.dev/" title="Zod"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/zod/zod-original.svg" width="44" /></a>
-  <a href="https://supabase.com/" title="Supabase"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/supabase/supabase-original.svg" width="44" /></a>
-  <a href="https://www.postgresql.org/" title="PostgreSQL"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" width="44" /></a>
-  <a href="https://nodejs.org/" title="Node.js"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" width="44" /></a>
-  <a href="https://vercel.com/" title="Vercel"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vercel/vercel-original.svg" width="44" /></a>
-  <a href="https://www.docker.com/" title="Docker"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" width="44" /></a>
-  <a href="https://nginx.org/" title="Nginx"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nginx/nginx-original.svg" width="44" /></a>
-  <a href="https://eslint.org/" title="ESLint"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/eslint/eslint-original.svg" width="44" /></a>
-  <a href="https://vitest.dev/" title="Vitest"><img src="https://cdn.simpleicons.org/vitest/6E9F18" width="44" /></a>
-  <a href="https://github.com/features/actions" title="GitHub Actions"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/githubactions/githubactions-original.svg" width="44" /></a>
-</p>
-
 ---
 
 ## ✅ Requirements
