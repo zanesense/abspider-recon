@@ -1,0 +1,34 @@
+# Supabase project configuration for ABSpider Recon.
+# This file is consumed by the Supabase CLI: `supabase start`, `supabase db push`,
+# `supabase link`, etc. It is intentionally minimal — everything specific to the
+# schema lives in `migrations/`.
+
+project_id = "abspider"
+
+[api]
+enabled = true
+port    = 54321
+schemas = ["public"]
+
+[db]
+port     = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port    = 54323
+
+[auth]
+enabled       = true
+site_url      = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations  = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"

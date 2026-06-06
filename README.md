@@ -113,6 +113,24 @@ npm run dev
 
 Access the dashboard at `http://localhost:5000`
 
+## 🗄️ Database Setup (Supabase, one-time)
+
+ABSpider stores scans, preferences, settings and API keys in Supabase. First
+time you run the app you must apply the migrations in
+[`supabase/migrations/`](supabase/migrations/). Two options:
+
+**A — Supabase CLI (recommended):**
+
+```bash
+supabase link --project-ref <YOUR_PROJECT_REF>
+supabase db push
+```
+
+**B — Supabase Dashboard:** open *SQL Editor → New query* and run the three
+files in numeric order (`0001_init_schema.sql`, `0002_rls_policies.sql`,
+`0003_storage_avatars.sql`). See [`supabase/README.md`](supabase/README.md)
+for full steps and verification.
+
 ## 🔐 Environment Variables
 
 All runtime configuration is supplied through Vite environment variables. Copy
