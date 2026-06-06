@@ -41,4 +41,3 @@ coverage
 # Local overrides
 *.local
 .vercel
-.env*
