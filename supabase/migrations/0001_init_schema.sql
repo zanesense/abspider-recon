@@ -8,6 +8,9 @@ set check_function_bodies = off;
 -- Required extension for gen_random_uuid().
 create extension if not exists "pgcrypto";
 
+-- Enables the trigram GIN operator used by the target search index below.
+create extension if not exists "pg_trgm";
+
 -- ---------------------------------------------------------------------------
 -- user_scans
 -- Stores the full record of every recon scan a user runs. `config`, `results`
