@@ -64,7 +64,7 @@ const AllScans = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex flex-col sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl">
+      <header className="flex flex-col sticky top-0 z-10 gap-4 surface-header px-6 py-4 shadow-2xl">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <SidebarTrigger />
@@ -147,7 +147,7 @@ const AllScans = () => {
         </div>
       </header>
       
-      <main className="flex-1 overflow-auto p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <main className="flex-1 overflow-auto p-6 surface-main">
         <div className="max-w-7xl mx-auto space-y-8">
           <ScanOverviewCards scans={filteredScans} />
           <VulnerabilitySummaryCard scans={filteredScans} />

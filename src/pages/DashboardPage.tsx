@@ -48,7 +48,7 @@ const DashboardPage = () => {
         </Button>
       </AppHeader>
       
-      <main className="flex-1 overflow-auto p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <main className="flex-1 overflow-auto p-6 surface-main">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Hero Section */}
           <div className="text-center space-y-4 mb-12">

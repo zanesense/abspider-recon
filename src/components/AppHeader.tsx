@@ -12,7 +12,7 @@ interface AppHeaderProps {
 
 const AppHeader: React.FC<AppHeaderProps> = ({ title, subtitle, children }) => {
   return (
-    <header className="flex items-center sticky top-0 z-10 gap-4 border-b border-border bg-background/95 backdrop-blur-md px-6 py-4 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl">
+    <header className="flex items-center sticky top-0 z-10 gap-4 surface-header px-6 py-4 shadow-2xl">
       <SidebarTrigger />
       <div className="flex-1">
         <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-3">

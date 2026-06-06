@@ -37,7 +37,7 @@
   .dark {
     --background: 222.2 84% 4.9%; /* Dark Slate */
     --foreground: 210 40% 98%; /* Off-white */
-    --card: 217.2 32.6% 17.5%; /* Darker Slate */
+    --card: 222 32% 12%; /* Slightly darker than muted so cards lift off the bg */
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
@@ -85,14 +85,33 @@
 }
 
 @layer utilities {
+  /* Page-level surface: light uses the theme background, dark uses a subtle
+     slate gradient so the dashboard doesn't read as a flat black rectangle. */
+  .surface-main {
+    @apply bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
+  }
+
+  /* Sticky header surface: same dark gradient but horizontal and with a
+     translucent fallback for light mode. */
+  .surface-header {
+    @apply bg-background/95 backdrop-blur-md border-b border-border dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
+  }
+
+  /* Hover-glow overlay: a sibling of CardHeader/CardContent that paints a
+     diagonal gradient on hover. pointer-events-none is mandatory so it
+     doesn't intercept clicks on the form controls beneath. */
+  .surface-card-glow {
+    @apply pointer-events-none absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500;
+  }
+
   .glass-effect {
     @apply bg-white/10 backdrop-blur-lg border border-white/20;
   }
-  
+
   .dark .glass-effect {
     @apply bg-slate-900/50 backdrop-blur-lg border border-slate-700/50;
   }
-  
+
   .gradient-border {
     @apply relative before:absolute before:inset-0 before:rounded-lg before:p-[1px] before:bg-gradient-to-r before:from-cyan-500 before:to-blue-500 before:-z-10;
   }

@@ -39,7 +39,7 @@ export default function RequireAuth({ children }: Props) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="flex items-center justify-center min-h-screen surface-main">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="ml-4 text-muted-foreground">Checking authentication...</p>
       </div>

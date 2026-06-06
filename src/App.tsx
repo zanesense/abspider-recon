@@ -85,7 +85,7 @@ function App() {
                   <RequireAuth>
                     <LegalDisclaimer />
                                         <SidebarProvider>
-                      <div className="flex min-h-screen w-full bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+                      <div className="flex min-h-screen w-full surface-main">
                         <AppSidebar />
                         <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
                           {/* Removed global header. Individual pages will now manage their own headers. */}

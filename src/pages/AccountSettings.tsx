@@ -347,7 +347,7 @@ const AccountSettings = () => {
         </Button>
       </AppHeader>
       
-      <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <main className="flex-1 overflow-auto p-6 surface-main">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Profile Overview */}
           <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-cyan-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">

@@ -362,7 +362,7 @@ const NewScan = () => {
         onSmartScanModeChange={(mode) => setValue('smartScanMode', mode)}
       />
       
-      <main className="flex-1 overflow-auto p-6 bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <main className="flex-1 overflow-auto p-6 surface-main">
         <div className="max-w-5xl mx-auto space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Target Input */}
