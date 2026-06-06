@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+*.log.*
 
 # Dependencies
 node_modules
@@ -21,6 +22,14 @@ coverage
 .vite
 *.tsbuildinfo
 .eslintcache
+.turbo
+.next
+.nuxt
+.svelte-kit
+playwright-report
+test-results
+blob-report
+.nyc_output
 
 # Environment files (never commit real secrets)
 .env
@@ -32,12 +41,33 @@ coverage
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.tmp
+*.temp
 
 # Local overrides
 *.local
 .vercel
+
+# Package manager and publish artifacts
+.npm-cache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnpm-store
+*.tgz
+
+# Local Supabase CLI state
+supabase/.temp
+
+# Docker/runtime scratch files
+*.pid
+tmp
+temp

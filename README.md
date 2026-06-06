@@ -1,424 +1,425 @@
-# 🕸️ ABSpider Recon: Web Security Made Easy!
+# ABSpider Recon
 
-<p align="center">
-  <strong>Modern Web Security Intelligence Platform</strong>
-</p>
+> A web reconnaissance dashboard and CLI for authorized passive intelligence gathering and active vulnerability checks.
 
-<p align="center">
-  <a href="https://github.com/zanesense/abspider-recon/releases">
-    <img src="https://img.shields.io/badge/release-v1.0.0-blue.svg" alt="Release">
-  </a>
-  <a href="https://github.com/zanesense/abspider-recon/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License">
-  </a>
- <a href="https://deepwiki.com/zanesense/abspider-recon"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+<p align="left">
+  <a href="https://abspider-recon.vercel.app"><img alt="Live Demo" src="https://img.shields.io/badge/demo-online-22c55e?style=for-the-badge" /></a>
+  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/zanesense/abspider-recon?style=for-the-badge" /></a>
+  <a href="https://github.com/zanesense/abspider-recon/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/zanesense/abspider-recon/ci.yml?style=for-the-badge" /></a>
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.x-3178c6?style=for-the-badge&logo=typescript&logoColor=white" />
 </p>
 
 ---
 
-## 🎯 What is ABSpider?
+## Table of Contents
 
-ABSpider is a powerful browser-based reconnaissance dashboard built for security professionals, penetration testers, and bug bounty hunters. Combining **passive intelligence gathering** with **active vulnerability scanning**, it delivers actionable security insights through an intuitive modern interface.
-
-**🌐 [Try Live Demo](https://abspider-recon.vercel.app)**
-
----
-
-## 🎯 Why Choose ABSpider?
-
-<table>
-  <tr>
-    <td align="center" width="16%">
-      <b>🚀</b><br/>
-      <b>Zero Backend</b><br/>
-      <sub>Fully browser-based</sub>
-    </td>
-    <td align="center" width="16%">
-      <b>🔒</b><br/>
-      <b>Privacy-First</b><br/>
-      <sub>Your data, your control</sub>
-    </td>
-    <td align="center" width="16%">
-      <b>⚡</b><br/>
-      <b>20+ Modules</b><br/>
-      <sub>Comprehensive scanning</sub>
-    </td>
-    <td align="center" width="16%">
-      <b>📊</b><br/>
-      <b>Enterprise Reports</b><br/>
-      <sub>Professional PDFs</sub>
-    </td>
-    <td align="center" width="16%">
-      <b>🎨</b><br/>
-      <b>Modern UX</b><br/>
-      <sub>React + Tailwind</sub>
-    </td>
-    <td align="center" width="16%">
-      <b>🔌</b><br/>
-      <b>Extensible</b><br/>
-      <sub>Optional API integrations</sub>
-    </td>
-  </tr>
-</table>
+- [Overview](#overview)
+- [Features](#features)
+- [Reconnaissance Modules](#reconnaissance-modules)
+- [How It Works](#how-it-works)
+- [Repository Structure](#repository-structure)
+- [Tech Stack](#tech-stack)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [CLI Reference](#cli-reference)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
+- [Security and Legal Use](#security-and-legal-use)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## ✨ Key Features
+## Overview
 
-### 🔍 Intelligence Gathering
-- **Passive Reconnaissance:** WHOIS lookup, DNS enumeration, subdomain discovery via CT logs, GeoIP location
-- **Active Scanning:** SQL injection, XSS detection, LFI scanning, port scanning, CORS testing
-- **Technology Fingerprinting:** Identify frameworks, CMS, analytics, and server technologies
-- **Security Analysis:** HTTP header scoring, SSL/TLS certificate validation, WAF detection
+ABSpider Recon helps security professionals, bug bounty hunters, developers, and auditors map a web target's public attack surface. The React dashboard stores authenticated scan history in Supabase, while the Node CLI runs directly from the terminal without a Supabase session. It combines passive lookups such as DNS, WHOIS/RDAP, GeoIP, SSL/TLS, and technology fingerprinting with active checks such as ports, CORS, SQL injection, XSS, LFI, WordPress indicators, broken links, and WAF/rate-limit probing.
 
-### 🛡️ Smart Scanning
-- **AI-Powered Modes:** Conservative, adaptive, and aggressive scanning with intelligent payload management
-- **Real-time Monitoring:** Target health tracking with automatic intensity adjustment
-- **Stealth Detection:** Automatic WAF and rate-limiting detection
-
-### 📊 Professional Reporting
-- **Comprehensive PDF Reports:** Executive summaries, detailed findings, PoC snippets, and remediation guidance
-- **Export Options:** JSON and PDF formats for easy integration with your workflow
-- **Severity Scoring:** Clear vulnerability classification with confidence ratings
-
-### 🔔 Stay Informed
-- **Notification Center:** Real-time scan updates with smart categorization
-- **Discord Integration:** Instant webhook notifications for critical alerts
-- **Activity Dashboard:** Track scan history and performance metrics
-
-### ⚙️ Advanced Configuration
-- **Centralized Settings:** Manage API keys, proxies, and scan parameters from one place
-- **Scan Templates:** Save and reuse configurations for repeated tasks
-- **Scheduling:** Automate reconnaissance with daily, weekly, or monthly schedules
-- **User Profiles:** Personalized preferences with role-based access
+Use it only on systems you own or have explicit written authorization to test.
 
 ---
 
-## 🚀 Quick Start
+## Features
+
+- Runs passive reconnaissance from the browser dashboard or terminal CLI.
+- Performs active checks with bounded payload counts, request delays, and thread controls.
+- Provides conservative, adaptive, and aggressive scan styles for dashboard and CLI workflows.
+- Streams CLI progress with per-module progress bars and immediate detailed results.
+- Stores dashboard scan history, settings, preferences, and API keys in Supabase with row-level security.
+- Generates JSON and PDF reports from dashboard scans.
+- Integrates optional Shodan, VirusTotal, SecurityTrails, Hunter.io, and Discord webhook configuration.
+- Supports passwordless Supabase authentication and per-user settings.
+- Ships with Docker and Nginx configuration for static production hosting.
+
+---
+
+## Reconnaissance Modules
+
+| Module | Dashboard | CLI | Type | Purpose |
+| --- | --- | --- | --- | --- |
+| Site Info | Yes | `siteInfo` | Passive | Fetches status, title, IP, server, and response metadata. |
+| Headers | Yes | `headers` | Passive | Scores common security headers such as CSP, HSTS, XFO, and referrer policy. |
+| WHOIS/RDAP | Yes | `whois` | Passive | Retrieves domain registration and nameserver information. |
+| GeoIP | Yes | `geoip` | Passive | Resolves IP ownership and approximate location. |
+| DNS | Yes | `dns` | Passive | Looks up A, AAAA, MX, NS, TXT, CNAME, and SOA records. |
+| MX | Yes | `mx` | Passive | Lists mail exchange records. |
+| Subnet | Yes | `subnet` | Passive | Calculates a basic IPv4 `/24` network summary when an IP is available. |
+| Subdomains | Yes | `subdomains` | Passive | Checks a dashboard-style DNS wordlist, crt.sh certificate transparency logs, and optional SecurityTrails results. |
+| Reverse IP | Yes | `reverseip` | Passive | Looks for domains associated with the same IP. |
+| VirusTotal | Yes | `virustotal` | Passive | Reads VirusTotal domain reputation when an API key is configured. |
+| SSL/TLS | Yes | `sslTls` | Passive | Inspects certificate subject, issuer, SANs, fingerprint, and expiry. |
+| Tech Stack | Yes | `techStack` | Passive | Detects common frontend, CMS, analytics, CDN, and server indicators. |
+| SEO | Yes | `seo` | Passive | Extracts title, meta description, canonical URL, headings, and link counts. |
+| Ports | Yes | `ports` | Active | Checks web, common, or full TCP port profiles with bounded concurrency. |
+| SQL Injection | Yes | `sqlinjection` | Active | Uses `src/payloads/sqli.json` and baseline-aware SQL error heuristics. |
+| XSS | Yes | `xss` | Active | Uses `src/payloads/xss.json` and reports unencoded payload reflection. |
+| LFI | Yes | `lfi` | Active | Uses `src/payloads/lfi.json` and reports known file-content markers. |
+| WordPress | Yes | `wordpress` | Active | Checks WordPress paths such as `/wp-login.php`, `/wp-json/`, and `/xmlrpc.php`. |
+| Broken Links | Yes | `brokenLinks` | Active | Checks discovered links and reports unreachable links. |
+| CORS | Yes | `corsMisconfig` | Active | Tests wildcard or reflected arbitrary-origin CORS behavior. |
+| DDoS/WAF | Yes | `ddosFirewall` | Active | Sends a bounded sequence of HEAD requests and records rate limiting indicators. |
+
+---
+
+## How It Works
+
+```mermaid
+flowchart TD
+    U[User] --> D[React Dashboard]
+    U --> C[Node CLI]
+    D --> S[Scan Services]
+    C --> M[CLI Module Runner]
+    S --> X[External Recon Sources]
+    M --> X
+    D --> DB[Supabase Auth and PostgreSQL]
+    D --> R[PDF and JSON Reports]
+    C --> J[Terminal Report and JSON Export]
+```
+
+The dashboard and CLI share the same product model, but they run differently. The dashboard is a Vite React app backed by Supabase for authentication, persisted scans, settings, and user preferences. The CLI is a standalone Node script in `scripts/abspider-cli.mjs` that runs modules sequentially, prints each result as soon as it finishes, and can export the full result as JSON.
+
+---
+
+## Repository Structure
+
+```text
+abspider/
+├── api/                    # Vercel edge proxy endpoint
+├── docs/wiki/              # Supplemental user and configuration docs
+├── public/                 # Favicons, manifest, robots.txt, static assets
+├── scripts/                # CLI and utility scripts
+├── src/components/         # Dashboard UI components
+├── src/pages/              # React Router pages
+├── src/payloads/           # SQLi, XSS, and LFI payload definitions
+├── src/services/           # Scan modules, report generation, settings, APIs
+├── supabase/migrations/    # Database, RLS, and storage migrations
+├── Dockerfile              # Production static build served by Nginx
+├── Dockerfile.dev          # Development container
+└── vite.config.ts          # Vite config and path aliases
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, Vite 6, TypeScript 5 |
+| Styling | Tailwind CSS, shadcn/ui, Radix UI, Lucide Icons |
+| State and forms | TanStack Query, React Context, React Hook Form, Zod |
+| Backend services | Supabase Auth, PostgreSQL, Storage, Row Level Security |
+| Reports | jsPDF, jspdf-autotable, docx |
+| CLI | Node.js ESM script with built-in `fetch`, DNS, TCP, and TLS APIs |
+| Deployment | Vercel edge function support, Docker, Nginx |
+| CI | GitHub Actions with lint, typecheck, build, and Vitest |
+
+---
+
+## Requirements
+
+- Node.js 20 recommended. CI runs on Node 20.
+- npm, using the committed `package-lock.json`.
+- Supabase project for the dashboard auth and persisted scan history.
+- Optional API keys for enhanced modules.
+- Docker, only if you want containerized deployment.
+
+The CLI can run without Supabase credentials for modules that do not require third-party API keys.
+
+---
+
+## Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/zanesense/abspider-recon.git
 cd abspider-recon
-
-# Install dependencies
 npm install
-
-# Copy the example env file and fill in your own values
 cp .env.example .env
+```
 
-# Start development server
+Edit `.env` with your Supabase project URL and anon key before running the dashboard.
+
+```bash
 npm run dev
 ```
 
-Access the dashboard at `http://localhost:5000`
+The Vite dev server is configured for port `5000`. Open:
 
-## 🗄️ Database Setup (Supabase, one-time)
+```text
+http://localhost:5000
+```
 
-ABSpider stores scans, preferences, settings and API keys in Supabase. First
-time you run the app you must apply the migrations in
-[`supabase/migrations/`](supabase/migrations/). Two options:
+---
 
-**A — Supabase CLI (recommended):**
+## Configuration
+
+Configuration comes from `.env.example`. Vite exposes only variables prefixed with `VITE_` to the browser bundle.
+
+| Variable | Required | Default | Description |
+| --- | --- | --- | --- |
+| `VITE_SUPABASE_URL` | Yes | none | Supabase project URL, for example `https://YOUR-PROJECT-REF.supabase.co`. |
+| `VITE_SUPABASE_ANON_KEY` | Yes | none | Supabase anon publishable key. Use Row Level Security to protect data. |
+| `VITE_SHODAN_API_KEY` | No | none | Enables Shodan-backed lookups where supported. |
+| `VITE_VIRUSTOTAL_API_KEY` | No | none | Enables VirusTotal domain reputation checks in the dashboard. |
+| `VITE_SECURITYTRAILS_API_KEY` | No | none | Enables SecurityTrails-backed DNS intelligence where supported. |
+| `VITE_HUNTER_API_KEY` | No | none | Enables Hunter.io-backed email intelligence where supported. |
+| `VITE_DISCORD_WEBHOOK_URL` | No | none | Sends scan notifications to a Discord webhook. Treat this as a secret. |
+
+For CLI VirusTotal scans, set either `VIRUSTOTAL_API_KEY` or `VITE_VIRUSTOTAL_API_KEY` in your shell environment.
+
+### Supabase setup
+
+Apply the migrations in `supabase/migrations/` before using the dashboard end to end.
 
 ```bash
 supabase link --project-ref <YOUR_PROJECT_REF>
 supabase db push
 ```
 
-**B — Supabase Dashboard:** open *SQL Editor → New query* and run the three
-files in numeric order (`0001_init_schema.sql`, `0002_rls_policies.sql`,
-`0003_storage_avatars.sql`). See [`supabase/README.md`](supabase/README.md)
-for full steps and verification.
+If you do not use the Supabase CLI, run these files in the Supabase SQL Editor in order:
 
-## 🔐 Environment Variables
+1. `supabase/migrations/0001_init_schema.sql`
+2. `supabase/migrations/0002_rls_policies.sql`
+3. `supabase/migrations/0003_storage_avatars.sql`
 
-All runtime configuration is supplied through Vite environment variables. Copy
-[`.env.example`](.env.example) to `.env` and replace the placeholders. **Do
-not commit a populated `.env` file** — `.env` is covered by `.gitignore`.
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | Yes | Supabase project URL used for auth and storage. |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon (publishable) key. Safe to ship to the browser when Row Level Security is enabled. |
-| `VITE_SHODAN_API_KEY` | No | Optional Shodan API key for port scanning. |
-| `VITE_VIRUSTOTAL_API_KEY` | No | Optional VirusTotal API key for domain reputation. |
-| `VITE_SECURITYTRAILS_API_KEY` | No | Optional SecurityTrails API key for DNS history. |
-| `VITE_HUNTER_API_KEY` | No | Optional Hunter.io API key for email enumeration. |
-| `VITE_DISCORD_WEBHOOK_URL` | No | Discord webhook used for scan notifications. Treat as a secret. |
-
-Only variables prefixed with `VITE_` are exposed to the client bundle. Rotate
-any value that may have been published, store production secrets in your
-hosting provider's secret manager, and never paste real keys into source
-control. See [SECURITY.md](SECURITY.md) for responsible-disclosure
-instructions.
+See [supabase/README.md](supabase/README.md) for verification steps.
 
 ---
 
-## 🏗️ Project Architecture
+## Usage
 
-```mermaid
-graph TB
-    A[ABSpider Recon<br/>React + Vite Frontend] --> B[Component Layer]
-    
-    B --> B1[Dashboard UI]
-    B --> B2[Scan Modules<br/>20+ types]
-    B --> B3[Notification Center]
-    B --> B4[Report Generator]
-    B --> B5[Settings Management]
-    
-    B1 --> C[State Management]
-    B2 --> C
-    B3 --> C
-    B4 --> C
-    B5 --> C
-    
-    C --> C1[TanStack Query<br/>Server State]
-    C --> C2[React Context<br/>UI State]
-    C --> C3[React Hook Form<br/>Form State]
-    
-    C1 --> D[Service Layer]
-    C2 --> D
-    C3 --> D
-    
-    D --> D1[Scan Engine<br/>Smart Manager]
-    D --> D2[API Integrations]
-    D --> D3[Report Generation<br/>jsPDF]
-    D --> D4[Notification System]
-    
-    D1 --> E[Supabase Backend]
-    D2 --> E
-    D3 --> E
-    D4 --> E
-    
-    D2 --> F[External APIs]
-    
-    E --> E1[Auth<br/>Magic Link]
-    E --> E2[PostgreSQL DB]
-    E --> E3[User Profiles]
-    E --> E4[Scan History]
-    E --> E5[Settings]
-    E --> E6[API Keys]
-    
-    F --> F1[Shodan]
-    F --> F2[VirusTotal]
-    F --> F3[SecurityTrails]
-    F --> F4[Hunter.io]
-    F --> F5[CT Logs]
-    F --> F6[DNS APIs]
-    F --> F7[WHOIS/RDAP]
-    
-    style A fill:#4F46E5,stroke:#312E81,stroke-width:3px,color:#fff
-    style B fill:#7C3AED,stroke:#5B21B6,stroke-width:2px,color:#fff
-    style C fill:#EC4899,stroke:#BE185D,stroke-width:2px,color:#fff
-    style D fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#fff
-    style E fill:#10B981,stroke:#059669,stroke-width:2px,color:#fff
-    style F fill:#06B6D4,stroke:#0891B2,stroke-width:2px,color:#fff
+### Dashboard
+
+```bash
+npm run dev
 ```
 
-### Tech Stack Breakdown
+Use the dashboard to:
 
-**Frontend Framework**
-- React 18 with Vite for blazing-fast HMR
-- TypeScript for type safety
-- Tailwind CSS + shadcn/ui for modern UI
+1. Sign in with Supabase magic link authentication.
+2. Configure optional API keys, proxy settings, webhooks, and scan preferences.
+3. Start a scan from the New Scan page.
+4. Watch progress and review module results.
+5. Export reports as JSON or PDF.
 
-**State & Data Flow**
-- TanStack Query for server state and caching
-- React Context for global app state
-- React Hook Form + Zod for form validation
+### CLI
 
-**Backend & Storage**
-- Supabase Auth (passwordless magic link)
-- Supabase PostgreSQL for user data & scan results
-- Row-level security for data isolation
+Install the published CLI:
 
-**Scanning Engine**
-- AI-powered payload management
-- Adaptive rate limiting
-- Multi-threaded execution
-- Real-time health monitoring
+```bash
+npm install -g abspider
+abspider example.com
+```
 
-**Reporting & Notifications**
-- jsPDF + jspdf-autotable for PDF generation
-- Discord webhook integration
-- In-app notification center
-- Sonner for toast notifications
+The default CLI profile runs passive modules. It prints the ABSpider banner, shows a live progress bar for each module, prints detailed results immediately after that module finishes, and ends with a compact summary.
 
----
+```bash
+# Run passive reconnaissance
+abspider example.com
 
-## 📸 Interface Preview
+# Run every passive and active CLI module
+abspider https://example.com --all
 
-<p align="center">
-  <img src="https://i.postimg.cc/dsfymjY8/screencapture-localhost-5000-dashboard-2026-01-02-05-09-52.png" alt="ABSpider Recon Dashboard Interface" width="100%">
-</p>
+# Run only active checks with conservative settings
+abspider https://example.com --active --mode conservative
 
----
+# Run selected modules and save full JSON
+abspider example.com --modules whois,dns,sslTls,ports,cors --output scan.json
 
-## 🧰 Reconnaissance Modules
+# Run a broader scan while keeping the common port profile
+abspider https://example.com --all --mode aggressive --port-profile common
 
-| Module | Description | Type |
-|--------|-------------|------|
-| 🌐 Site Info | IP, server, CMS, robots.txt analysis | Passive |
-| 🛡️ Headers | Security header scoring (HSTS, CSP, XFO) | Passive |
-| 📜 WHOIS | Domain registration and ownership data | Passive |
-| 📍 GeoIP | Server location identification | Passive |
-| 📡 DNS | A, AAAA, CNAME, TXT, MX, NS records | Passive |
-| 🔍 Subdomains | CT log enumeration and DNS discovery | Passive |
-| 📈 SEO | Meta tags, headings, performance analysis | Passive |
-| 🔌 Ports | Service detection with Shodan integration | Active |
-| 💉 SQLi | SQL injection vulnerability testing | Active |
-| ✍️ XSS | Reflected, DOM, and stored XSS detection | Active |
-| 📁 LFI | Local file inclusion scanning | Active |
-| ⚠️ CORS | Cross-origin misconfiguration testing | Active |
-| 🦠 VirusTotal | Domain reputation and malware scanning | Active |
-| 🔒 SSL/TLS | Certificate validation and analysis | Passive |
+# Generate machine-readable output
+abspider example.com --modules dns,sslTls --json --pretty
+```
+
+For local development from this repository, use:
+
+```bash
+npm run cli -- example.com
+```
+
+Operational notes:
+
+- Press `Ctrl+C` to stop gracefully. The CLI aborts in-flight work, skips remaining modules, and preserves partial results and JSON output.
+- The CLI runs in Node.js, so browser CORS restrictions do not apply to CLI requests.
+- CDN and WAF protections such as Cloudflare are detected and reported when visible in headers, status codes, or challenge pages. The CLI does not evade access controls or bypass provider challenges.
 
 ---
 
-## 💼 Use Cases
+## CLI Reference
 
-<table>
-  <tr>
-    <td align="center" width="33%">
-      <b>🎯</b><br/>
-      <b>Bug Bounty Hunters</b><br/>
-      <sub>Rapid reconnaissance and vulnerability discovery</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>🛡️</b><br/>
-      <b>Penetration Testers</b><br/>
-      <sub>Comprehensive security assessments with professional reporting</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>🔍</b><br/>
-      <b>Security Researchers</b><br/>
-      <sub>Deep-dive analysis of web application architecture</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="33%">
-      <b>📋</b><br/>
-      <b>Security Auditors</b><br/>
-      <sub>Compliance testing and security posture evaluation</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>🚨</b><br/>
-      <b>Red Team Operations</b><br/>
-      <sub>Initial footprinting and attack surface mapping</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>👨‍💻</b><br/>
-      <b>Developers</b><br/>
-      <sub>Security testing during development lifecycle</sub>
-    </td>
-  </tr>
-</table>
+```text
+abspider <target> [options]
+abspider-recon <target> [options]
+```
+
+| Option | Description |
+| --- | --- |
+| `--passive` | Run passive modules only. This is the default. |
+| `--active` | Run active modules only. |
+| `--all` | Run passive and active modules. |
+| `--modules <list>` | Run a comma-separated module list or aliases. |
+| `--mode <name>` | Scan style: `conservative`, `adaptive`, or `aggressive`. Default: `adaptive`. |
+| `--ports <list>` | Comma-separated ports for the `ports` module. Overrides the mode/profile port set. |
+| `--port-profile <name>` | Port set for the `ports` module: `web`, `common`, or `full`. The mode chooses a default profile. |
+| `--threads <number>` | Max concurrent port and subdomain checks. The mode chooses the default. |
+| `--timeout <ms>` | HTTP, socket, and module timeout value. Default: `10000`. |
+| `--payloads <number>` | Max payloads per SQLi, XSS, and LFI check. Payloads are read from `src/payloads`. |
+| `--ddos-requests <n>` | Bounded WAF/rate-limit probe request count. The mode chooses the default. |
+| `--delay <ms>` | Delay between active payload requests. The mode chooses the default. |
+| `--subdomain-limit <n>` | Max DNS wordlist entries to check before CT/API sources. |
+| `--no-ct` | Disable crt.sh certificate transparency lookup. |
+| `--json` | Print full JSON instead of terminal UI output. |
+| `--pretty` | Pretty-print JSON output. |
+| `--output <file>` | Write full JSON results to a file. |
+| `--no-color` | Disable ANSI colors and gradients. |
+| `--help` | Show CLI help. |
+| `--version` | Show CLI version. |
 
 ---
 
-## 🔐 Security & Authentication
+## Testing
 
-- **Supabase Authentication:** Passwordless magic link login
-- **Role-Based Access:** Secure user management and permissions
-- **Data Encryption:** Client-side storage with secure handling
-- **API Key Management:** Optional integrations with Shodan, VirusTotal, SecurityTrails, and more
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run audit
+```
 
-> ⚠️ **Security Notice:** API keys are stored client-side. Use test keys only—never production or sensitive credentials.
-
----
-
-## ⚖️ Legal & Ethical Use
-
-**⚠️ CRITICAL: Authorized Use Only**
-
-- Only scan systems you **own** or have **explicit written permission** to test
-- Unauthorized scanning is **illegal** in most jurisdictions
-- You are **solely responsible** for compliance with applicable laws (CFAA, GDPR, etc.)
-- Keep documentation of authorization for all scans
-- Violations may result in criminal prosecution, fines, and civil liability
-
-**This tool does not grant permission to scan any system.**
+The GitHub Actions workflow runs lint, typecheck, build, and tests on pushes and pull requests to `main`.
 
 ---
 
-## 🛠️ Built With
+## Deployment
 
-<p align="center">
-  <img src="https://skillicons.dev/icons?i=react,vite,tailwind,typescript,supabase,postgres" alt="Tech Stack"/>
-</p>
+### Vercel
 
-- **Frontend:** React + Vite + Tailwind CSS + TypeScript
-- **UI Components:** shadcn/ui + Lucide Icons
-- **Backend:** Supabase (Auth & Database)
-- **Reports:** jsPDF + jspdf-autotable
-- **State Management:** TanStack Query
-- **Forms:** React Hook Form + Zod
+The repository includes `api/proxy.ts`, an Edge Runtime proxy endpoint intended for Vercel deployments.
 
----
+1. Create a Vercel project from this repository.
+2. Add the required `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` environment variables.
+3. Add optional `VITE_*` integration keys as needed.
+4. Deploy with the default Vite build command.
 
-## 🗺️ Roadmap
+### Docker production
 
-- [ ] Multi-target batch scanning
-- [ ] Custom payload libraries
-- [ ] Advanced WAF fingerprinting
-- [ ] Automated vulnerability chaining
-- [ ] Integration with popular security tools (Burp Suite, OWASP ZAP)
-- [ ] Mobile app for iOS/Android
-- [ ] Team collaboration features
-- [ ] Backend API for enterprise deployments
+The production Docker image builds the Vite app and serves `dist/` through Nginx on container port `8080`.
 
----
+```bash
+docker compose up --build app
+```
 
-## ❓ FAQ
+Open:
 
-**Q: Do I need API keys to use ABSpider?**  
-A: No! ABSpider works out-of-the-box with passive modules. API keys are optional for enhanced features (Shodan, VirusTotal, etc.).
+```text
+http://localhost:3000
+```
 
-**Q: Is this legal to use?**  
-A: Yes, but only on systems you own or have explicit written authorization to test. Unauthorized scanning is illegal.
+### Docker development
 
-**Q: Can I use this for commercial projects?**  
-A: Yes! ABSpider is MIT licensed. You can use it for both personal and commercial purposes.
+```bash
+docker compose --profile dev up --build dev
+```
 
-**Q: Does ABSpider store my scan data?**  
-A: Scan results are securely stored in your Supabase database and associated with your account. Your data is private and accessible only to you.
+Open:
 
-**Q: How accurate are the vulnerability findings?**  
-A: Results include confidence scores. Always manually verify findings before reporting vulnerabilities.
-
-**Q: Can I contribute to the project?**  
-A: Absolutely! Check our [contribution guidelines](https://github.com/zanesense/abspider-recon/blob/main/CONTRIBUTING.md).
+```text
+http://localhost:5000
+```
 
 ---
 
-## 📚 Documentation & Support
+## Troubleshooting
 
-- 📖 [Full Documentation](https://github.com/zanesense/abspider-recon/wiki) *(Coming Soon)*
-- 🐛 [Report Bugs](https://github.com/zanesense/abspider-recon/issues/new?template=bug_report.md)
-- 💡 [Request Features](https://github.com/zanesense/abspider-recon/issues/new?template=feature_request.md)
-- 💬 [Discussions](https://github.com/zanesense/abspider-recon/discussions)
+| Problem | Fix |
+| --- | --- |
+| Dashboard cannot load scans | Confirm Supabase migrations have been applied and `.env` contains the correct URL and anon key. |
+| Sign-in works but no rows are visible | Check that Row Level Security policies from `0002_rls_policies.sql` were applied. |
+| VirusTotal module is skipped in the CLI | Set `VIRUSTOTAL_API_KEY` or `VITE_VIRUSTOTAL_API_KEY` in your shell. |
+| CLI active modules are too noisy | Lower `--payloads`, increase `--delay`, or run selected modules only. |
+| CLI scan is too slow | Use `--mode conservative`, lower `--threads`, choose `--port-profile web`, or disable CT lookup with `--no-ct`. |
+| CLI reports Cloudflare or WAF challenge | Results may describe the edge challenge instead of the origin app. Use an authorized allowlist, staging host, or provider-approved testing path. |
+| Browser scan hits CORS limitations | Use the CLI for server-side requests, or deploy/configure an authorized proxy for browser workflows. |
+| Port checks fail with permission or network errors | Run from a network that allows outbound TCP checks and verify local firewall rules. |
+| Docker production serves a blank page | Rebuild the image and confirm required environment values were provided at build time for the Vite bundle. |
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Check out our [contribution guidelines](https://github.com/zanesense/abspider-recon/blob/main/CONTRIBUTING.md) to get started.
-
-<a href="https://github.com/zanesense/abspider-recon/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=zanesense/abspider-recon" />
-</a>
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+More guides are available in [docs/wiki](docs/wiki).
 
 ---
 
-<p align="center">
-  <sub>Built with 💜 by <a href="https://github.com/zanesense">zanesense</a></sub>
-  <br>
-  <sub>Empowering security professionals worldwide 🚀</sub>
-</p>
+## Security and Legal Use
+
+ABSpider Recon is a security testing tool. It does not grant permission to scan any system.
+
+- Scan only assets you own or have explicit written permission to test.
+- Keep authorization records for professional assessments.
+- Use conservative payload counts and delays against production systems.
+- Treat webhook URLs and third-party API keys as secrets.
+- Review [SECURITY.md](SECURITY.md) before reporting vulnerabilities in this project.
+
+To report a security vulnerability in ABSpider Recon, use the [GitHub Security Advisory flow](https://github.com/zanesense/abspider-recon/security/advisories/new) or email `security@zanesense.dev`. Do not open a public issue for suspected vulnerabilities.
+
+---
+
+## Roadmap
+
+- [ ] Multi-target batch scanning.
+- [ ] Custom payload libraries.
+- [ ] Advanced WAF fingerprinting.
+- [ ] Report templates for common assessment types.
+- [ ] Integrations with Burp Suite and OWASP ZAP.
+- [ ] Team collaboration features.
+- [ ] Backend API mode for enterprise deployments.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+```bash
+git checkout -b feature/short-description
+npm install
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+Open a pull request with:
+
+- A short description of the change.
+- Screenshots or terminal output for UI and CLI changes.
+- Notes about any new environment variables or migrations.
+- Test results for the commands above.
+
+---
+
+## License
+
+ABSpider Recon is licensed under the [MIT License](LICENSE).

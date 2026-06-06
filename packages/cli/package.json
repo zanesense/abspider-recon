@@ -1,0 +1,45 @@
+{
+  "name": "abspider",
+  "version": "2.0.1",
+  "description": "ABSpider Recon CLI for authorized passive and active web security reconnaissance.",
+  "type": "module",
+  "bin": {
+    "abspider": "scripts/abspider-cli.mjs",
+    "abspider-recon": "scripts/abspider-cli.mjs"
+  },
+  "files": [
+    "scripts/abspider-cli.mjs",
+    "src/payloads/*.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "security",
+    "recon",
+    "reconnaissance",
+    "cli",
+    "scanner",
+    "dns",
+    "whois",
+    "xss",
+    "sqli",
+    "lfi"
+  ],
+  "author": "zanesense",
+  "license": "MIT",
+  "homepage": "https://github.com/zanesense/abspider-recon#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zanesense/abspider-recon.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/zanesense/abspider-recon/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
