@@ -24,6 +24,13 @@ const LegalDisclaimer = () => {
     }
   }, []);
 
+  // Radix UI Dialog workaround: ensure pointer-events are restored on close
+  useEffect(() => {
+    if (!open) {
+      document.body.style.pointerEvents = 'auto';
+    }
+  }, [open]);
+
   const handleAgree = () => {
     if (agreed) {
       localStorage.setItem('abspider-legal-agreed', 'true');
@@ -36,7 +43,7 @@ const LegalDisclaimer = () => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card border-border" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl text-foreground">

@@ -209,7 +209,7 @@ export const getScanById = async (id: string): Promise<Scan | undefined> => {
     .select('*')
     .eq('scan_id', id)
     .eq('user_id', session.user.id)
-    .single();
+    .maybeSingle();
 
   if (error && error.code !== 'PGRST116') {
     console.error('[ScanService] Failed to fetch scan by ID from Supabase:', error);

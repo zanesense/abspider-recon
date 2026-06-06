@@ -24,7 +24,7 @@ export const getUserPreferences = async (userId: string): Promise<UserPreference
       .from('user_preferences')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
       throw error;

@@ -33,7 +33,7 @@ export const getSettings = async (): Promise<Settings> => {
       .from('user_settings')
       .select('settings')
       .eq('user_id', session.user.id)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 means 'no rows found', which is fine
       throw error;
