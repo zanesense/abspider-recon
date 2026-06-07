@@ -451,6 +451,10 @@ See [🔌 API Reference](#-api-reference) for full details.
 
 ![ABSpider Recon running scan](public/screenshots/runningscan.png)
 
+**CLI**
+
+![ABSpider Recon CLI](public/screenshots/cli.png)
+
 ---
 
 ## 🧪 Testing
