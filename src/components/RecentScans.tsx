@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SurfaceCard } from '@/components/ui/surface-card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, ExternalLink, Trash2 } from 'lucide-react';
 import { Scan } from '@/services/scanService';
@@ -45,9 +46,8 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
   };
 
   return (
-    <Card className="group relative overflow-hidden bg-gradient-to-br from-indigo-500/5 via-purple-500/10 to-indigo-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <CardHeader className="relative z-10">
+    <SurfaceCard color="purple">
+      <CardHeader>
         <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
           <div className="p-2 bg-indigo-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
             <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
@@ -58,7 +58,7 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
           Latest reconnaissance activities
         </CardDescription>
       </CardHeader>
-      <CardContent className="relative z-10">
+      <CardContent>
         <div className="space-y-3">
           {scans.map((scan) => (
             <div key={scan.id} className="flex items-center justify-between group">
@@ -107,7 +107,7 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
           )}
         </div>
       </CardContent>
-    </Card>
+    </SurfaceCard>
   );
 };
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SurfaceCard } from '@/components/ui/surface-card';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -366,9 +367,8 @@ const NewScan = () => {
         <div className="max-w-5xl mx-auto space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Target Input */}
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-cyan-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="relative z-10">
+            <SurfaceCard color="blue">
+              <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                   <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
                     <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -379,7 +379,7 @@ const NewScan = () => {
                   Enter the URL or IP address to scan
                 </CardDescription>
               </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent>
                 <div className="space-y-2">
                   <Label htmlFor="target">Target URL or IP Address</Label>
                   <Input
@@ -410,7 +410,7 @@ const NewScan = () => {
                   )}
                 </div>
               </CardContent>
-            </Card>
+            </SurfaceCard>
 
 
             {/* Basic Scans */}
@@ -794,9 +794,8 @@ const NewScan = () => {
             </Card>
 
             {/* Advanced Settings */}
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-slate-500/5 via-slate-500/10 to-gray-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="relative z-10">
+            <SurfaceCard color="slate">
+              <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
                   <div className="p-2 bg-slate-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
                     <Settings2 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
@@ -807,7 +806,7 @@ const NewScan = () => {
                   Scan configuration and performance options
                 </CardDescription>
               </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent>
                 {formData.useProxy && (
                   <Alert className="border-yellow-500/50 bg-yellow-500/10 mb-4">
                     <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
@@ -850,7 +849,7 @@ const NewScan = () => {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </SurfaceCard>
 
             {/* Submit Button */}
             <div className="flex justify-end gap-4">

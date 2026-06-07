@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SurfaceCard } from '@/components/ui/surface-card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Shield, ArrowLeft, UserCircle, Zap, Save, KeyRound, CheckCircle, XCircle, Mail, Calendar, Activity, Trash2, Download, Upload, Camera } from 'lucide-react';
@@ -350,8 +351,7 @@ const AccountSettings = () => {
       <main className="flex-1 overflow-auto p-6 surface-main">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Profile Overview */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-cyan-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <SurfaceCard color="blue">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-6">
                 <div className="relative">
@@ -425,11 +425,10 @@ const AccountSettings = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </SurfaceCard>
 
           {/* Profile Information */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-emerald-500/5 via-green-500/10 to-emerald-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <SurfaceCard color="emerald">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserCircle className="h-5 w-5 text-primary" />
@@ -534,11 +533,10 @@ const AccountSettings = () => {
                 )}
               </Button>
             </CardContent>
-          </Card>
+          </SurfaceCard>
 
           {/* Change Password */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-orange-500/5 via-orange-500/10 to-amber-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <SurfaceCard color="orange">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
                 <KeyRound className="h-5 w-5" />
@@ -611,11 +609,10 @@ const AccountSettings = () => {
                 )}
               </Button>
             </CardContent>
-          </Card>
+          </SurfaceCard>
 
           {/* Data Management */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-green-500/5 via-emerald-500/10 to-green-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <SurfaceCard color="green">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <Download className="h-5 w-5" />
@@ -656,11 +653,10 @@ const AccountSettings = () => {
                 </Button>
               </div>
             </CardContent>
-          </Card>
+          </SurfaceCard>
 
           {/* 2FA Coming Soon */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-indigo-500/10 to-blue-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <SurfaceCard color="indigo">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                 <Shield className="h-5 w-5" />
@@ -679,7 +675,7 @@ const AccountSettings = () => {
                 </AlertDescription>
               </Alert>
             </CardContent>
-          </Card>
+          </SurfaceCard>
         </div>
       </main>
     </div>

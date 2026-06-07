@@ -1,4 +1,5 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SurfaceCard } from '@/components/ui/surface-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Key, Settings, Loader2 } from 'lucide-react';
@@ -19,9 +20,8 @@ const APIKeyStatusCard = ({ configuredKeys, totalKeys, isLoading }: APIKeyStatus
     : 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
 
   return (
-    <Card className="group relative overflow-hidden bg-gradient-to-br from-amber-500/5 via-orange-500/10 to-amber-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <CardHeader className="relative z-10">
+    <SurfaceCard color="amber">
+      <CardHeader>
         <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
           <div className="p-2 bg-amber-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
             <Key className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -32,7 +32,7 @@ const APIKeyStatusCard = ({ configuredKeys, totalKeys, isLoading }: APIKeyStatus
           Overview of your integrated API keys
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 relative z-10">
+      <CardContent className="space-y-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-6">
             <Loader2 className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400" />
@@ -52,7 +52,7 @@ const APIKeyStatusCard = ({ configuredKeys, totalKeys, isLoading }: APIKeyStatus
           </Link>
         </Button>
       </CardContent>
-    </Card>
+    </SurfaceCard>
   );
 };
 

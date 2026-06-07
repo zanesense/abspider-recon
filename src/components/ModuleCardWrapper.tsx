@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { SurfaceCard } from '@/components/ui/surface-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,9 +33,8 @@ const ModuleCardWrapper: React.FC<ModuleCardWrapperProps> = ({
   headerActions,
 }) => {
   return (
-    <Card className={cn("group relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-cyan-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1", className)}>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <CardHeader className="relative z-10">
+    <SurfaceCard color="blue" className={className}>
+      <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
             <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
@@ -46,7 +46,7 @@ const ModuleCardWrapper: React.FC<ModuleCardWrapperProps> = ({
         </div>
         {description && <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">{description}</CardDescription>}
       </CardHeader>
-      <CardContent className="relative z-10">
+      <CardContent>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
@@ -72,7 +72,7 @@ const ModuleCardWrapper: React.FC<ModuleCardWrapperProps> = ({
           children
         )}
       </CardContent>
-    </Card>
+    </SurfaceCard>
   );
 };
 

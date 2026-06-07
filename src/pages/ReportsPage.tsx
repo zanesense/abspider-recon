@@ -1,10 +1,10 @@
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, FileText, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getScanHistory } from '@/services/scanService';
 import { generatePdfReport } from '@/services/reportService'; // Corrected import name
+import AppHeader from '@/components/AppHeader';
 
 const Reports = () => {
   const { data: scans = [] } = useQuery({
@@ -16,14 +16,11 @@ const Reports = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 surface-header px-6 py-4 shadow-2xl">
-        <SidebarTrigger className="text-muted-foreground" />
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Reports</h1>
-          <p className="text-sm text-muted-foreground">Download and manage scan reports</p>
-        </div>
-      </header>
-      
+      <AppHeader
+        title="Reports"
+        subtitle="Download and manage scan reports"
+      />
+
       <main className="flex-1 overflow-auto p-6 surface-main">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 gap-4">

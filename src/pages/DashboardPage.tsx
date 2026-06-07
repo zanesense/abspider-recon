@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SurfaceCard } from '@/components/ui/surface-card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, History, Zap, AlertTriangle, CheckCircle, Bug, TrendingUp, Clock, AlertCircle, Activity, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -65,73 +66,69 @@ const DashboardPage = () => {
 
           {/* Scan Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-cyan-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+            <SurfaceCard color="blue">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Total Scans</CardTitle>
                 <div className="p-3 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <History className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent>
                 <div className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">{scans.length}</div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
                   {scans.length > 0 ? 'All time total' : 'No scans yet'}
                 </p>
               </CardContent>
-            </Card>
-            
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-emerald-500/5 via-green-500/10 to-emerald-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+            </SurfaceCard>
+
+            <SurfaceCard color="emerald">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Completed</CardTitle>
                 <div className="p-3 bg-emerald-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent>
                 <div className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">{scans.filter(s => s.status === 'completed').length}</div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <Bug className="h-3 w-3" />
                   {scans.length > 0 ? `${Math.round((scans.filter(s => s.status === 'completed').length / scans.length) * 100)}% success rate` : 'No data yet'}
                 </p>
               </CardContent>
-            </Card>
-            
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-amber-500/5 via-yellow-500/10 to-orange-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+            </SurfaceCard>
+
+            <SurfaceCard color="amber">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Active Scans</CardTitle>
                 <div className="p-3 bg-amber-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <Zap className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse" />
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent>
                 <div className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">{scans.filter(s => s.status === 'running').length}</div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {scans.filter(s => s.status === 'running').length > 0 ? 'Currently scanning' : 'Ready to scan'}
                 </p>
               </CardContent>
-            </Card>
-            
-            <Card className="group relative overflow-hidden bg-gradient-to-br from-rose-500/5 via-red-500/10 to-pink-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+            </SurfaceCard>
+
+            <SurfaceCard color="rose">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Failed Scans</CardTitle>
                 <div className="p-3 bg-rose-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent>
                 <div className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">{scans.filter(s => s.status === 'failed').length}</div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {scans.filter(s => s.status === 'failed').length > 0 ? 'Needs attention' : 'All systems good'}
                 </p>
               </CardContent>
-            </Card>
+            </SurfaceCard>
           </div>
 
           {/* Quick Actions */}
