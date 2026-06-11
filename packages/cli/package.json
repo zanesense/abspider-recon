@@ -21,6 +21,7 @@
   "files": [
     "scripts/abspider-cli.mjs",
     "src/payloads/*.json",
+    "src/services/*.js",
     "README.md",
     "LICENSE"
   ],

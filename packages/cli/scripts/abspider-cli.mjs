@@ -7,6 +7,8 @@ import net from 'node:net';
 import path from 'node:path';
 import tls from 'node:tls';
 import { performance } from 'node:perf_hooks';
+import { performWhoisLookup } from '../src/services/whoisService.js';
+import { performGeoIPLookup } from '../src/services/geoipService.js';
 
 const VERSION = '2.1.1';
 const USER_AGENT = `ABSpider-CLI/${VERSION} (Authorized Security Scanner)`;
@@ -479,27 +481,19 @@ const runHeaders = async (target, options) => {
 };
 
 const runWhois = async (target, options) => {
-  const response = await request(`https://rdap.org/domain/${encodeURIComponent(target.domain)}`, { method: 'GET' }, options.timeout);
-  if (!response.ok) return { source: 'rdap.org', status: response.status, found: false };
-  const data = await response.json();
-  return {
-    source: 'rdap.org',
-    found: true,
-    handle: data.handle,
-    ldhName: data.ldhName,
-    status: data.status || [],
-    registrar: data.entities?.find((entity) => entity.roles?.includes('registrar'))?.vcardArray?.[1]?.find((item) => item[0] === 'fn')?.[3] || null,
-    events: data.events || [],
-    nameservers: data.nameservers?.map((server) => server.ldhName) || [],
-  };
+  const data = await performWhoisLookup(target.domain, {
+    timeout: options.timeout,
+    securitytrailsKey: process.env.SECURITYTRAILS_API_KEY || process.env.VITE_SECURITYTRAILS_API_KEY,
+  });
+  return data;
 };
 
 const runGeoIp = async (target, options) => {
-  const ip = (await resolveSafe(target.hostname, 'A'))[0] || target.hostname;
-  const response = await request(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, { method: 'GET' }, options.timeout);
-  if (!response.ok) return { ip, found: false, status: response.status };
-  const data = await response.json();
-  return { ip, city: data.city, region: data.region, country: data.country_name, org: data.org, asn: data.asn, latitude: data.latitude, longitude: data.longitude };
+  const data = await performGeoIPLookup(target.domain, {
+    timeout: options.timeout,
+    opencageKey: process.env.OPENCAGE_API_KEY || process.env.VITE_OPENCAGE_API_KEY,
+  });
+  return data;
 };
 
 const runDns = async (target) => {
@@ -978,9 +972,11 @@ const runScan = async (target, options) => {
       if (progress) progress.stop(true, results.modules[moduleName].durationMs);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      const errorCode = (error instanceof Error && error.code) ? String(error.code) : null;
       if (isInterruptedError(error)) results.interrupted = true;
-      results.modules[moduleName] = { ok: false, type: ACTIVE_MODULES.includes(moduleName) ? 'active' : 'passive', durationMs: Math.round(performance.now() - started), error: message };
-      results.errors.push(`${moduleName}: ${message}`);
+      results.modules[moduleName] = { ok: false, type: ACTIVE_MODULES.includes(moduleName) ? 'active' : 'passive', durationMs: Math.round(performance.now() - started), error: message, errorCode };
+      const codeSuffix = errorCode ? ` [${errorCode}]` : '';
+      results.errors.push(`${moduleName}: ${message}${codeSuffix}`);
       if (progress) progress.stop(false, results.modules[moduleName].durationMs);
     }
 
@@ -1076,7 +1072,8 @@ const startModuleProgress = (moduleName, current, total) => {
 const printModuleResult = (moduleName, result) => {
   const marker = result.ok ? color('blue', '■') : color('red', '■');
   const status = result.ok ? color('green', 'ok') : color('red', 'failed');
-  console.log(`│  ${marker} ${color('bold', moduleName)} ${muted(`${result.type} | ${result.durationMs}ms`)} ${status} ${summarize(moduleName, result)}`);
+  const codeTag = result.errorCode ? ` ${color('yellow', `[${result.errorCode}]`)}` : '';
+  console.log(`│  ${marker} ${color('bold', moduleName)} ${muted(`${result.type} | ${result.durationMs}ms`)} ${status}${codeTag} ${summarize(moduleName, result)}`);
   for (const line of renderDetails(moduleName, result)) {
     console.log(`│    ${muted('□')} ${line}`);
   }
@@ -1107,13 +1104,19 @@ const printResults = (results) => {
     }
   }
   if (results.errors.length) {
-    console.log(`│  ${color('red', '□')} ${kv('Errors', results.errors.join(' | '))}`);
+    for (const err of results.errors) {
+      const withCode = err.replace(/\[(\w+)\]$/, (_, c) => color('yellow', `[${c}]`));
+      console.log(`│  ${color('red', '□')} ${withCode}`);
+    }
   }
   writeRail('└');
 };
 
 const renderDetails = (moduleName, result) => {
-  if (!result.ok) return [color('red', result.error)];
+  if (!result.ok) {
+    const codePart = result.errorCode ? ` ${color('yellow', `[${result.errorCode}]`)}` : '';
+    return [color('red', result.error) + codePart];
+  }
   const data = result.data;
   if (data.skipped) return [color('yellow', data.reason)];
 
@@ -1143,33 +1146,41 @@ const renderDetails = (moduleName, result) => {
 
   if (moduleName === 'whois') {
     if (!data.found) {
-      return compactLines([
-        kv('Source', data.source),
-        kv('Found', 'false'),
-        kv('HTTP status', data.status),
-      ]);
+      const lines = [kv('Domain', data.domain)];
+      if (data.source) lines.push(kv('Source', data.source));
+      if (data.nameservers?.length) lines.push(kv('Nameservers', list(data.nameservers, 6)));
+      if (!lines.length) lines.push(kv('Found', 'false'));
+      return compactLines(lines);
     }
 
-    return compactLines([
-      kv('Source', data.source),
-      kv('Found', String(Boolean(data.found))),
-      kv('Handle', data.handle),
-      kv('Domain', data.ldhName),
-      kv('Registrar', data.registrar),
-      kv('Status', list(data.status)),
-      kv('Nameservers', list(data.nameservers, 8)),
-      ...formatEvents(data.events),
-    ]);
+    const lines = [];
+    if (data.source) lines.push(kv('Source', data.source));
+    if (data.registrar) lines.push(kv('Registrar', data.registrar));
+    if (data.created) lines.push(kv('Created', data.created));
+    if (data.expires) lines.push(kv('Expires', data.expires));
+    if (data.updated) lines.push(kv('Updated', data.updated));
+    if (data.status) lines.push(kv('Status', Array.isArray(data.status) ? list(data.status) : data.status));
+    if (data.nameservers?.length) lines.push(kv('Nameservers', list(data.nameservers, 8)));
+    if (data.dnssec) lines.push(kv('DNSSEC', data.dnssec));
+    if (data.registrant) {
+      if (data.registrant.organization) lines.push(kv('Org', data.registrant.organization));
+      if (data.registrant.country) lines.push(kv('Reg Country', data.registrant.country));
+    }
+    return compactLines(lines);
   }
 
   if (moduleName === 'geoip') {
-    return compactLines([
+    const lines = [
       kv('IP', data.ip),
-      kv('ASN', data.asn),
-      kv('Organization', data.org),
-      kv('Location', [data.city, data.region, data.country].filter(Boolean).join(', ')),
-      kv('Coordinates', data.latitude && data.longitude ? `${data.latitude}, ${data.longitude}` : null),
-    ]);
+    ];
+    if (data.asn) lines.push(kv('ASN', data.asn));
+    if (data.org || data.isp) lines.push(kv('Organization', data.org || data.isp));
+    const location = [data.city, data.region, data.country].filter(Boolean).join(', ');
+    if (location) lines.push(kv('Location', location));
+    if (data.latitude != null && data.longitude != null) lines.push(kv('Coordinates', `${data.latitude}, ${data.longitude}`));
+    if (data.timezone) lines.push(kv('Timezone', data.timezone));
+    if (data.source) lines.push(kv('Source', data.source));
+    return compactLines(lines);
   }
 
   if (moduleName === 'dns') {
@@ -1389,8 +1400,8 @@ const summarize = (moduleName, result) => {
   if (data.skipped) return color('yellow', `skipped: ${data.reason}`);
   if (moduleName === 'siteInfo') return `${data.status} ${data.title || 'no title'}`;
   if (moduleName === 'headers') return `security ${data.security.score}/100 missing ${data.security.missing.length}`;
-  if (moduleName === 'whois') return data.found ? `${data.registrar || 'registrar unknown'}` : 'not found';
-  if (moduleName === 'geoip') return [data.city, data.country, data.org].filter(Boolean).join(', ') || 'no geo data';
+  if (moduleName === 'whois') return data.found ? `${data.registrar || data.status || 'found'}` : 'not found';
+  if (moduleName === 'geoip') return [data.city, data.country, data.org || data.isp].filter(Boolean).join(', ') || 'no geo data';
   if (moduleName === 'dns') return `A ${data.A.length} MX ${data.MX.length} NS ${data.NS.length}`;
   if (moduleName === 'mx') return `${data.records.length} MX records`;
   if (moduleName === 'subnet') return data.cidr || 'no subnet';
