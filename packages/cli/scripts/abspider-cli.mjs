@@ -5,7 +5,7 @@ import net from 'node:net';
 import tls from 'node:tls';
 import { performance } from 'node:perf_hooks';
 
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 const USER_AGENT = `ABSpider-CLI/${VERSION} (Authorized Security Scanner)`;
 const WEB_PORTS = [80, 443, 8000, 8080, 8443, 8888, 3000, 5000, 9000, 2082, 2083];
 const COMMON_PORTS = [
@@ -53,17 +53,37 @@ const SQL_ERRORS = [
   /postgresql.*error/i, /pg_query/i, /unterminated quoted string/i, /syntax error at or near/i,
   /microsoft sql server/i, /odbc sql server driver/i, /unclosed quotation mark/i, /incorrect syntax near/i,
   /ora-\d{5}/i, /oracle error/i, /quoted string not properly terminated/i, /sqlite.*error/i,
-  /unrecognized token/i, /database error/i, /query failed/i,
+  /unrecognized token/i, /database error/i, /query failed/i, /valid mysql result/i, /mysqlclient\./i,
+  /mysql_connect/i, /mysql_query/i, /pg_exec/i, /pg_connect/i, /sqlserver jdbc driver/i,
+  /microsoft ole db provider for sql server/i, /unclosed quotation mark after the character string/i,
+  /missing expression/i, /sqlite3::/i, /syntax error near/i, /sql syntax.*error/i, /syntax error.*sql/i,
+  /quoted identifier/i, /driver error/i,
 ];
 const LFI_MARKERS = [
   /root:x:0:0:/i, /daemon:x:1:1:/i, /bin:x:2:2:/i, /nobody:x:/i, /\[boot loader\]/i, /\[extensions\]/i,
   /\[fonts\]/i, /DOCUMENT_ROOT/i, /LoadModule/i, /allow_url_include/i, /failed to open stream/i,
   /No such file or directory/i, /Permission denied/i, /include_path/i, /Warning.*include/i,
+  /[a-z_][a-z0-9_-]*:[x*]:\d+:\d+:/i, /[a-z_][a-z0-9_-]*:\$[a-z0-9.$]+\$[a-z0-9.$]+\$[a-z0-9.$]+/i,
+  /extension=/i, /disable_functions/i, /ServerRoot/i, /Listen \d+/i, /User-Agent: /i, /GET \//i,
+  /failed opening/i, /require\(\): failed opening required/i, /Fatal error.*include/i, /file_get_contents/i,
+  /fopen\(/i, /php:\/\/filter/i, /php:\/\/input/i, /data:\/\/text/i, /expect:\/\//i,
 ];
-const MODE_DEFAULTS = {
-  conservative: { payloads: 5, delay: 750, threads: 6, ddosRequests: 5, ports: WEB_PORT_PROFILE, subdomainLimit: 50, ct: true },
-  adaptive: { payloads: 20, delay: 250, threads: 20, ddosRequests: 20, ports: COMMON_PORTS, subdomainLimit: 140, ct: true },
-  aggressive: { payloads: 75, delay: 75, threads: 50, ddosRequests: 60, ports: FULL_PORT_PROFILE, subdomainLimit: COMMON_SUBDOMAINS.length, ct: true },
+const MODE_PROFILES = {
+  conservative: {
+    start: { payloads: 5, delay: 750, threads: 6, ddosRequests: 5, ports: WEB_PORT_PROFILE, subdomainLimit: 50, ct: true },
+    min: { payloads: 2, delay: 500, threads: 2, ddosRequests: 2, subdomainLimit: 20 },
+    max: { payloads: 12, delay: 2500, threads: 8, ddosRequests: 8, subdomainLimit: 80 },
+  },
+  adaptive: {
+    start: { payloads: 20, delay: 250, threads: 20, ddosRequests: 20, ports: COMMON_PORTS, subdomainLimit: 140, ct: true },
+    min: { payloads: 5, delay: 150, threads: 4, ddosRequests: 5, subdomainLimit: 50 },
+    max: { payloads: 45, delay: 3000, threads: 30, ddosRequests: 30, subdomainLimit: COMMON_SUBDOMAINS.length },
+  },
+  aggressive: {
+    start: { payloads: 75, delay: 75, threads: 50, ddosRequests: 60, ports: FULL_PORT_PROFILE, subdomainLimit: COMMON_SUBDOMAINS.length, ct: true },
+    min: { payloads: 10, delay: 100, threads: 6, ddosRequests: 8, subdomainLimit: 80 },
+    max: { payloads: 120, delay: 4000, threads: 60, ddosRequests: 80, subdomainLimit: COMMON_SUBDOMAINS.length },
+  },
 };
 
 const PASSIVE_MODULES = ['siteInfo', 'headers', 'whois', 'geoip', 'dns', 'mx', 'subnet', 'subdomains', 'reverseip', 'virustotal', 'sslTls', 'techStack', 'seo'];
@@ -106,7 +126,9 @@ const MODULE_ALIASES = {
 const palette = {
   reset: '\x1b[0m',
   dim: '\x1b[2m',
+  gray: '\x1b[90m',
   cyan: '\x1b[36m',
+  blue: '\x1b[34m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   red: '\x1b[31m',
@@ -117,15 +139,27 @@ const palette = {
 let colorEnabled = process.stdout.isTTY;
 let activeShutdownSignal = null;
 const color = (name, value) => colorEnabled ? `${palette[name]}${value}${palette.reset}` : value;
+const ansi = (code, value) => colorEnabled ? `\x1b[${code}m${value}${palette.reset}` : value;
+const labelPill = (value) => colorEnabled ? ansi('30;44', ` ${value} `) : value;
+const rail = (name, symbol) => color(name, symbol);
+const muted = (value) => color('gray', value);
+const writeRail = (symbol, text = '', symbolColor = 'gray') => console.log(`${rail(symbolColor, symbol)}  ${text}`.trimEnd());
+const clearTerminal = () => {
+  if (process.stdout.isTTY) process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
+};
 
 const BANNER_LINES = [
-  ' █████╗ ██████╗ ███████╗██████╗ ██╗██████╗ ███████╗██████╗ ',
-  '██╔══██╗██╔══██╗██╔════╝██╔══██╗██║██╔══██╗██╔════╝██╔══██╗',
-  '███████║██████╔╝███████╗██████╔╝██║██║  ██║█████╗  ██████╔╝',
-  '██╔══██║██╔══██╗╚════██║██╔═══╝ ██║██║  ██║██╔══╝  ██╔══██╗',
-  '██║  ██║██████╔╝███████║██║     ██║██████╔╝███████╗██║  ██║',
-  '╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝',
-  '                                                            ',
+  '          █████                        ███      █████                   ',
+  '         ▒▒███                        ▒▒▒      ▒▒███                    ',
+  '  ██████   ▒███████   █████  ████████  ████   ███████   ██████  ████████ ',
+  ' ▒▒▒▒▒███  ▒███▒▒███ ███▒▒  ▒▒███▒▒███▒▒███  ███▒▒███  ███▒▒███▒▒███▒▒███',
+  '  ███████  ▒███ ▒███▒▒█████  ▒███ ▒███ ▒███ ▒███ ▒███ ▒███████  ▒███ ▒▒▒ ',
+  ' ███▒▒███  ▒███ ▒███ ▒▒▒▒███ ▒███ ▒███ ▒███ ▒███ ▒███ ▒███▒▒▒   ▒███     ',
+  '▒▒████████ ████████  ██████  ▒███████  █████▒▒████████▒▒██████  █████    ',
+  ' ▒▒▒▒▒▒▒▒ ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒   ▒███▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒  ▒▒▒▒▒     ',
+  '                             ▒███                                        ',
+  '                             █████                                       ',
+  '                            ▒▒▒▒▒                                        \n',
 ];
 
 const gradient = (value, start = [0, 220, 255], end = [157, 78, 221]) => {
@@ -144,12 +178,29 @@ const gradient = (value, start = [0, 220, 255], end = [157, 78, 221]) => {
 
 const banner = () => `${BANNER_LINES.map((line, index) => gradient(
   line,
-  index % 2 === 0 ? [0, 220, 255] : [81, 162, 255],
-  index % 2 === 0 ? [157, 78, 221] : [255, 78, 205],
+  index % 2 === 0 ? [66, 153, 225] : [56, 189, 248],
+  index % 2 === 0 ? [34, 197, 94] : [148, 163, 184],
 )).join('\n')}
-${color('bold', '  ABSpider Recon CLI')} ${color('dim', `v${VERSION}`)}  ${color('magenta', 'Modern Web Security Intelligence Platform')}
-${color('dim', '  Passive intelligence gathering + active vulnerability scanning for authorized targets.')}
+${color('bold', '  ABSpider Recon CLI')} ${muted(`v${VERSION}`)}  ${color('blue', 'Authorized Security Recon')}
+${muted('  Passive intelligence gathering + active vulnerability scanning for authorized targets.')}
 `;
+
+const cliSchemeBanner = () => {
+  const lines = BANNER_LINES.map((line, index) => gradient(
+    line,
+    index % 2 === 0 ? [66, 153, 225] : [56, 189, 248],
+    index % 2 === 0 ? [34, 197, 94] : [148, 163, 184],
+  )).join('\n');
+  return `${lines}
+${color('bold', '  ABSpider Recon CLI')} ${muted(`v${VERSION}`)}  ${color('blue', 'Authorized Security Recon')}
+${muted('  Passive intelligence gathering + active vulnerability scanning.')}
+`;
+};
+
+const compactBanner = () => {
+  writeRail('┌', labelPill('abspider'));
+  writeRail('│');
+};
 
 const getHelp = () => `${banner()}
 Usage:
@@ -286,7 +337,7 @@ const readPositiveInt = (value, name) => {
 
 const readMode = (value) => {
   const mode = requireValue(value, '--mode').toLowerCase();
-  if (!MODE_DEFAULTS[mode]) throw new Error(`Unknown mode: ${value}. Use conservative, adaptive, or aggressive.`);
+  if (!MODE_PROFILES[mode]) throw new Error(`Unknown mode: ${value}. Use conservative, adaptive, or aggressive.`);
   return mode;
 };
 
@@ -299,12 +350,31 @@ const readPortProfile = (value) => {
 };
 
 const applyModeDefaults = (options) => {
-  const defaults = MODE_DEFAULTS[options.mode];
+  const profile = MODE_PROFILES[options.mode];
+  const defaults = profile.start;
   for (const key of ['payloads', 'delay', 'threads', 'ddosRequests', 'subdomainLimit']) {
     if (!options.explicit.has(key)) options[key] = defaults[key];
   }
   if (!options.explicit.has('ports')) options.ports = [...defaults.ports];
   if (options.ct === true) options.ct = defaults.ct;
+  options.safety = buildSafetyLimits(options, profile);
+};
+
+const buildSafetyLimits = (options, profile) => {
+  const explicit = options.explicit;
+  return {
+    profile: options.mode,
+    minDelay: explicit.has('delay') ? options.delay : profile.min.delay,
+    maxDelay: profile.max.delay,
+    minThreads: explicit.has('threads') ? Math.min(options.threads, profile.min.threads) : profile.min.threads,
+    maxThreads: explicit.has('threads') ? options.threads : profile.max.threads,
+    minPayloads: explicit.has('payloads') ? Math.min(options.payloads, profile.min.payloads) : profile.min.payloads,
+    maxPayloads: explicit.has('payloads') ? options.payloads : profile.max.payloads,
+    minDdosRequests: explicit.has('ddosRequests') ? Math.min(options.ddosRequests, profile.min.ddosRequests) : profile.min.ddosRequests,
+    maxDdosRequests: explicit.has('ddosRequests') ? options.ddosRequests : profile.max.ddosRequests,
+    stressEvents: 0,
+    reliefEvents: 0,
+  };
 };
 
 const readList = (value, name) => requireValue(value, name).split(',').map((item) => item.trim()).filter(Boolean);
@@ -579,6 +649,16 @@ const runSslTls = async (target, options) => {
 const runTechStack = async (target, options, cache) => {
   const { response, text, protection } = await getHtml(target, options, cache);
   const headers = Object.fromEntries(response.headers.entries());
+  const detected = detectTechStack(text, headers);
+  return {
+    detected,
+    generator: firstMatch(text, /<meta[^>]+name=["']generator["'][^>]+content=["']([^"']+)["']/i),
+    protection,
+  };
+};
+
+const detectTechStack = (text, headers) => {
+  const headerText = JSON.stringify(headers);
   const checks = [
     ['WordPress', /wp-content|wp-includes|wordpress/i],
     ['React', /react|data-reactroot|__REACT_DEVTOOLS_GLOBAL_HOOK__/i],
@@ -588,12 +668,15 @@ const runTechStack = async (target, options, cache) => {
     ['Bootstrap', /bootstrap/i],
     ['Tailwind CSS', /tailwind/i],
     ['Google Analytics', /google-analytics|gtag\(|G-[A-Z0-9]+/i],
-    ['Cloudflare', /cloudflare/i],
+    ['Cloudflare', /cloudflare|cf-ray|cf-cache-status/i],
   ];
-  const detected = checks.filter(([, pattern]) => pattern.test(text) || pattern.test(JSON.stringify(headers))).map(([name]) => name);
+
+  const detected = checks
+    .filter(([, pattern]) => pattern.test(text) || pattern.test(headerText))
+    .map(([name]) => name);
   if (headers.server) detected.push(`Server: ${headers.server}`);
   if (headers['x-powered-by']) detected.push(`Powered by: ${headers['x-powered-by']}`);
-  return { detected: [...new Set(detected)], generator: firstMatch(text, /<meta[^>]+name=["']generator["'][^>]+content=["']([^"']+)["']/i), protection };
+  return [...new Set(detected)];
 };
 
 const runSeo = async (target, options, cache) => {
@@ -612,20 +695,43 @@ const runSeo = async (target, options, cache) => {
 const runPorts = async (target, options) => {
   const queue = [...options.ports];
   const results = [];
+  const workerCount = Math.min(options.threads, queue.length);
+  options.log?.(`port scan queued ${queue.length} ports with ${workerCount} workers`);
   const workers = Array.from({ length: Math.min(options.threads, queue.length) }, async () => {
-    while (queue.length && !isInterrupted()) results.push(await checkPort(target.hostname, queue.shift(), options.timeout));
+    while (queue.length && !isInterrupted()) {
+      const port = queue.shift();
+      const result = await checkPort(target.hostname, port, options.timeout);
+      results.push(result);
+      if (result.open) options.log?.(`open port ${result.port}/${result.service || 'Unknown'} in ${result.responseTimeMs}ms`);
+    }
   });
   await Promise.all(workers);
+  const open = results.filter((port) => port.open).length;
+  options.log?.(`port scan complete: ${open} open, ${results.length - open} closed or filtered`);
   return results.sort((a, b) => a.port - b.port);
 };
 
 const runSqlInjection = async (target, options) => {
   const payloads = await loadPayloads('sqli.json', options.payloads);
-  return runPayloadProbe(target, options, payloads, (body, payload, response, baseline) => {
+  return runPayloadProbe(target, options, payloads, (body, payload, response, baseline, context) => {
     const matched = SQL_ERRORS.find((pattern) => pattern.test(body));
-    if (matched) return { found: true, indicator: String(matched), confidence: 0.9 };
+    if (matched) return { found: true, indicator: firstRegexMatch(body, matched) || String(matched), confidence: 0.9 };
+    if (payload.type?.includes('Time-based Blind') && context.durationMs >= 4500) {
+      return { found: true, indicator: `Response delayed by ${context.durationMs}ms`, confidence: 1 };
+    }
     if (baseline?.status && response.status >= 500 && response.status !== baseline.status) {
-      return { found: true, indicator: `HTTP ${response.status} differs from baseline ${baseline.status}`, confidence: 0.75 };
+      return { found: true, indicator: `HTTP ${response.status} differs from baseline ${baseline.status}`, confidence: 0.85 };
+    }
+    if (baseline?.length && body !== baseline.body) {
+      const sizeDiff = Math.abs(body.length - baseline.length);
+      const percentDiff = (sizeDiff / Math.max(1, baseline.length)) * 100;
+      if (percentDiff > 20 || sizeDiff > 500) {
+        return {
+          found: true,
+          indicator: `Content length changed significantly (${percentDiff.toFixed(1)}%, ${sizeDiff} bytes)`,
+          confidence: 0.75,
+        };
+      }
     }
     return { found: false };
   }, 'sqlinjection');
@@ -634,53 +740,82 @@ const runSqlInjection = async (target, options) => {
 const runXss = async (target, options) => {
   const payloads = await loadPayloads('xss.json', options.payloads);
   return runPayloadProbe(target, options, payloads, (body, payload) => {
-    if (!body.includes(payload.payload)) return { found: false };
-    const encoded = body.includes(escapeHtml(payload.payload)) || body.includes(encodeURIComponent(payload.payload));
-    return encoded
-      ? { found: false }
-      : { found: true, indicator: 'Unencoded payload reflection', confidence: 0.8 };
+    const reflection = checkXssReflection(body, payload.payload);
+    return reflection.reflected && reflection.exploitable && reflection.confidence >= 0.7
+      ? { found: true, indicator: reflection.context, confidence: reflection.confidence }
+      : { found: false };
   }, 'xss');
 };
 
 const runLfi = async (target, options) => {
   const payloads = await loadPayloads('lfi.json', options.payloads);
   return runPayloadProbe(target, options, payloads, (body, payload, response, baseline) => {
-    const matched = LFI_MARKERS.find((pattern) => pattern.test(body));
-    if (matched) return { found: true, indicator: String(matched), confidence: 0.85 };
-    if (baseline?.length && body.length > baseline.length * 1.5 && response.status >= 500) {
-      return { found: true, indicator: `Large response change with HTTP ${response.status}`, confidence: 0.7 };
+    const signature = checkLfiSignature(body);
+    if (signature.found) return { found: true, indicator: signature.pattern, confidence: signature.confidence };
+    if (baseline?.length) {
+      const sizeDiff = Math.abs(body.length - baseline.length);
+      const percentDiff = (sizeDiff / Math.max(1, baseline.length)) * 100;
+      if (percentDiff > 50 && body.length > baseline.length && body.length < 100000) {
+        return { found: true, indicator: `Significant response size increase (${percentDiff.toFixed(1)}%)`, confidence: 0.75 };
+      }
+    }
+    if (baseline?.status && response.status !== baseline.status && response.status >= 500) {
+      return { found: true, indicator: `HTTP ${response.status} differs from baseline ${baseline.status}`, confidence: 0.75 };
     }
     return { found: false };
   }, 'lfi');
 };
 
 const runPayloadProbe = async (target, options, payloads, isFinding, moduleName) => {
-  const params = discoverParams(target);
+  const injectionPoints = discoverInjectionPoints(target, moduleName);
   const findings = [];
   const errors = [];
   let tested = 0;
   let baseline = null;
+  options.log?.(`loaded ${payloads.length} payloads from ${moduleNamePayloadFile(moduleName)}`);
+  options.log?.(`using ${injectionPoints.length} query injection point${injectionPoints.length === 1 ? '' : 's'}`);
   try {
+    options.log?.('capturing baseline response');
     const baselineResponse = await request(target.url.href, { method: 'GET' }, options.timeout);
     const baselineBody = await baselineResponse.text();
     baseline = { status: baselineResponse.status, length: baselineBody.length, body: baselineBody };
+    options.log?.(`baseline captured: HTTP ${baseline.status}, ${baseline.length} bytes`);
   } catch {
     baseline = null;
+    options.log?.('baseline request failed; continuing without comparison');
   }
-  for (const param of params) {
-    for (const payload of payloads) {
+  for (const injectionPoint of injectionPoints) {
+    options.log?.(`testing ${formatInjectionPoint(injectionPoint)} with base value "${injectionPoint.baseValue}"`);
+    for (let payloadIndex = 0; payloadIndex < payloads.length; payloadIndex += 1) {
+      if (payloadIndex >= options.payloads) {
+        options.log?.(`payload budget reduced to ${options.payloads}; skipping remaining payloads for ${formatInjectionPoint(injectionPoint)}`);
+        break;
+      }
+      const payload = payloads[payloadIndex];
       throwIfInterrupted();
-      const url = new URL(target.url.href);
-      const original = url.searchParams.get(param) || defaultParamValue(moduleName, param);
-      url.searchParams.set(param, `${original}${payload.payload}`);
+      const url = buildPayloadUrl(target, injectionPoint, payload.payload);
+      options.log?.(`sending ${payload.type || 'payload'} to ${formatInjectionPoint(injectionPoint)}: ${formatPayloadForLog(payload.payload)}`);
       try {
+        const requestStarted = performance.now();
         const response = await request(url.href, { method: 'GET' }, options.timeout);
         const body = await response.text();
         tested += 1;
-        const detection = isFinding(body, payload, response, baseline);
+        tunePacingFromSample(options, {
+          status: response.status,
+          durationMs: Math.round(performance.now() - requestStarted),
+          moduleName,
+        });
+        const detection = isFinding(body, payload, response, baseline, {
+          durationMs: Math.round(performance.now() - requestStarted),
+          url,
+          injectionPoint,
+        });
         if (detection.found && detection.confidence >= 0.7) {
+          options.log?.(`finding candidate at ${formatInjectionPoint(injectionPoint)} with ${payload.type || 'payload'} (${Math.round(detection.confidence * 100)}% confidence)`);
           findings.push({
-            param,
+            param: injectionPoint.name,
+            injectionPoint: injectionPoint.type,
+            url: url.href,
             payload: payload.payload,
             type: payload.type,
             severity: payload.severity,
@@ -691,63 +826,88 @@ const runPayloadProbe = async (target, options, payloads, isFinding, moduleName)
           });
         }
       } catch (error) {
-        errors.push({ param, payload: payload.payload, error: error.message });
+        errors.push({ param: injectionPoint.name, injectionPoint: injectionPoint.type, payload: payload.payload, error: error.message });
+        options.log?.(`request error at ${formatInjectionPoint(injectionPoint)}: ${error.message}`);
+        tunePacingFromSample(options, { error: error.message, moduleName });
       }
       await sleep(options.delay);
     }
+    options.log?.(`finished ${formatInjectionPoint(injectionPoint)} (${tested} requests tested so far)`);
   }
-  return { module: moduleName, tested, params, findings, errors };
+  options.log?.(`${moduleName} probe complete: ${tested} requests, ${findings.length} findings, ${errors.length} errors`);
+  return { module: moduleName, tested, params: injectionPoints.map((point) => point.name), injectionPoints, findings, errors };
 };
 
 const runWordPress = async (target, options) => {
   const paths = ['/wp-login.php', '/wp-admin/', '/wp-json/', '/xmlrpc.php', '/wp-content/'];
   const checks = [];
+  options.log?.(`checking ${paths.length} WordPress indicator paths`);
   for (const path of paths) {
+    options.log?.(`requesting ${path}`);
     const response = await request(new URL(path, target.origin).href, { method: 'GET' }, options.timeout).catch((error) => ({ error }));
     checks.push(response.error ? { path, ok: false, error: response.error.message } : { path, ok: response.ok, status: response.status });
+    const latest = checks.at(-1);
+    options.log?.(latest.error ? `${path} error: ${latest.error}` : `${path} returned HTTP ${latest.status}`);
   }
   const isWordPress = checks.some((check) => check.ok) || checks.some((check) => [401, 403].includes(check.status));
+  options.log?.(isWordPress ? 'WordPress indicators found' : 'no WordPress indicators found');
   return { isWordPress, checks };
 };
 
 const runBrokenLinks = async (target, options, cache) => {
   const { text } = await getHtml(target, options, cache);
   const links = [...new Set(extractLinks(text, target.origin))].slice(0, 75);
+  options.log?.(`extracted ${links.length} links to validate`);
+  let completed = 0;
   const checked = await Promise.all(links.map(async (url) => {
     try {
       const response = await request(url, { method: 'HEAD' }, options.timeout);
+      completed += 1;
+      if (!response.ok) options.log?.(`broken candidate ${response.status}: ${truncate(url, 80)}`);
+      else if (completed % 10 === 0 || completed === links.length) options.log?.(`checked ${completed}/${links.length} links`);
       return { url, status: response.status, ok: response.ok };
     } catch (error) {
+      completed += 1;
+      options.log?.(`link error: ${truncate(url, 80)} (${error.message})`);
       return { url, status: null, ok: false, error: error.message };
     }
   }));
+  options.log?.(`link validation complete: ${checked.filter((link) => !link.ok).length} broken`);
   return { checked: checked.length, broken: checked.filter((link) => !link.ok) };
 };
 
 const runCorsMisconfig = async (target, options) => {
   const testOrigin = 'https://attacker.example';
+  options.log?.(`sending CORS probe with Origin: ${testOrigin}`);
   const response = await request(target.origin, { method: 'GET', headers: { origin: testOrigin } }, options.timeout);
   const allowOrigin = response.headers.get('access-control-allow-origin');
   const allowCredentials = response.headers.get('access-control-allow-credentials');
   const vulnerable = allowOrigin === '*' || allowOrigin === testOrigin;
+  options.log?.(`CORS response: allow-origin=${allowOrigin || 'none'}, credentials=${allowCredentials || 'none'}`);
   return { allowOrigin, allowCredentials, vulnerable, finding: vulnerable ? 'Arbitrary-origin or wildcard CORS behavior detected.' : 'No obvious arbitrary-origin CORS behavior detected.' };
 };
 
 const runDdosFirewall = async (target, options) => {
   const responses = [];
+  options.log?.(`starting bounded WAF/rate-limit probe with ${options.ddosRequests} HEAD requests`);
   for (let i = 0; i < options.ddosRequests; i += 1) {
     throwIfInterrupted();
     const started = performance.now();
     try {
       const response = await request(target.origin, { method: 'HEAD' }, options.timeout);
       responses.push({ status: response.status, responseTimeMs: Math.round(performance.now() - started), rateLimited: [403, 429, 503].includes(response.status) });
+      options.log?.(`probe ${i + 1}/${options.ddosRequests}: HTTP ${response.status} in ${responses.at(-1).responseTimeMs}ms`);
+      tunePacingFromSample(options, { status: response.status, durationMs: responses.at(-1).responseTimeMs, moduleName: 'ddosFirewall' });
     } catch (error) {
       responses.push({ error: error.message, rateLimited: true });
+      options.log?.(`probe ${i + 1}/${options.ddosRequests}: ${error.message}`);
+      tunePacingFromSample(options, { error: error.message, moduleName: 'ddosFirewall' });
     }
     await sleep(options.delay);
   }
   const rateLimited = responses.filter((item) => item.rateLimited).length;
   const avgResponseTimeMs = Math.round(responses.filter((item) => item.responseTimeMs).reduce((sum, item) => sum + item.responseTimeMs, 0) / Math.max(1, responses.filter((item) => item.responseTimeMs).length));
+  options.log?.(`WAF/rate-limit probe complete: ${rateLimited}/${responses.length} protected responses`);
   return { requests: responses.length, rateLimited, avgResponseTimeMs, likelyProtected: rateLimited > 0, responses };
 };
 
@@ -791,6 +951,7 @@ const runScan = async (target, options) => {
     interrupted: false,
   };
 
+  results.safety = await calibrateTargetSafety(target, options);
   if (!options.json) printRunHeader(target, options);
 
   for (let index = 0; index < options.modules.length; index += 1) {
@@ -802,8 +963,11 @@ const runScan = async (target, options) => {
     const moduleName = options.modules[index];
     const started = performance.now();
     const progress = options.json ? null : startModuleProgress(moduleName, index + 1, options.modules.length);
+    const moduleOptions = progress && ACTIVE_MODULES.includes(moduleName)
+      ? { ...options, log: progress.log }
+      : options;
     try {
-      const data = await MODULE_RUNNERS[moduleName](target, options, cache);
+      const data = await MODULE_RUNNERS[moduleName](target, moduleOptions, cache);
       results.modules[moduleName] = { ok: true, type: ACTIVE_MODULES.includes(moduleName) ? 'active' : 'passive', durationMs: Math.round(performance.now() - started), data };
       if (progress) progress.stop(true, results.modules[moduleName].durationMs);
     } catch (error) {
@@ -824,38 +988,48 @@ const runScan = async (target, options) => {
       }
     }
 
-    applyAdaptiveAdjustments(options, results.modules[moduleName]);
+    applyAdaptiveAdjustments(options, results.modules[moduleName], progress);
     if (results.interrupted) break;
   }
 
   results.completedAt = new Date().toISOString();
+  const securityAssessment = calculateSecurityAssessment(results);
+  results.securityGrade = securityAssessment.grade;
+  results.securityGradeDetails = securityAssessment.details;
+  results.recommendations = securityAssessment.recommendations;
   return results;
 };
 
 const printRunHeader = (target, options) => {
-  console.log(banner());
-  console.log(`${color('bold', 'target')}   ${target.origin}`);
-  console.log(`${color('bold', 'profile')}  ${profileFor(options.modules)} (${options.modules.length} modules)`);
-  console.log(`${color('bold', 'mode')}     ${options.mode} (${options.payloads} payloads, ${options.threads} threads, ${options.delay}ms delay)`);
-  console.log(`${color('bold', 'active')}   ${options.modules.filter((moduleName) => ACTIVE_MODULES.includes(moduleName)).join(', ') || 'none'}`);
-  console.log(`${color('dim', 'Only scan systems you own or have explicit authorization to test.')}`);
-  console.log('');
+  const activeModules = options.modules.filter((moduleName) => ACTIVE_MODULES.includes(moduleName));
+  console.log(cliSchemeBanner());
+  compactBanner();
+  writeRail('◇', `${color('bold', 'Target:')} ${target.origin}`, 'green');
+  writeRail('│');
+  writeRail('◇', `${color('bold', 'Found')} ${color('green', options.modules.length)} modules`, 'green');
+  writeRail('│');
+  writeRail('◇', `${color('bold', 'Profile:')} ${profileFor(options.modules)} ${muted(`(${activeModules.length ? `${activeModules.length} active` : 'passive only'})`)}`, 'green');
+  writeRail('│');
+  writeRail('◆', `${color('bold', 'Scan mode')} ${options.mode} ${muted(`auto-tuned current ${options.payloads} payloads, ${options.threads} threads, ${options.delay}ms delay`)}`, 'blue');
+  if (options.calibration) {
+    writeRail('◇', `${color('bold', 'Calibration:')} ${options.calibration.summary} ${muted(safetySnapshot(options))}`, options.calibration.stressed ? 'yellow' : 'green');
+  }
+  for (const moduleName of options.modules) {
+    const marker = ACTIVE_MODULES.includes(moduleName) ? color('yellow', '□') : muted('□');
+    const description = ACTIVE_MODULES.includes(moduleName) ? muted('active') : muted('passive');
+    console.log(`│  ${marker} ${moduleName} ${description}`);
+  }
+  writeRail('│');
 };
 
 const startModuleProgress = (moduleName, current, total) => {
-  const label = `${String(current).padStart(2, '0')}/${total} ${moduleName}`;
+  const label = `${moduleName} ${muted(`(${current}/${total})`)}`;
   let tick = 0;
   let stopped = false;
   const render = () => {
-    const width = 24;
-    const activeWidth = 7;
-    const offset = tick % (width + activeWidth);
-    const cells = Array.from({ length: width }, (_, index) => {
-      const distance = Math.abs(index - offset);
-      return distance < activeWidth ? '█' : '░';
-    }).join('');
     const elapsed = `${Math.floor(tick / 10)}s`;
-    const line = `${color('cyan', '>>')} ${label.padEnd(20)} ${gradient(cells)} ${color('dim', elapsed)} running`;
+    const frames = ['.  ', '.. ', '...', ' ..', '  .', '   '];
+    const line = `${rail('blue', '◆')}  ${color('bold', label)} ${muted(`${elapsed} running ${frames[tick % frames.length]}`)}`;
     if (process.stdout.isTTY) {
       process.stdout.write(`\r${line}`);
     } else if (tick === 0) {
@@ -869,13 +1043,24 @@ const startModuleProgress = (moduleName, current, total) => {
   timer.unref?.();
 
   return {
+    log(message) {
+      if (stopped) return;
+      const line = `│    ${muted('□')} ${message}`;
+      if (process.stdout.isTTY) {
+        process.stdout.write('\r\x1b[2K');
+        console.log(line);
+        render();
+      } else {
+        console.log(line);
+      }
+    },
     stop(ok, durationMs) {
       if (stopped) return;
       stopped = true;
       clearInterval(timer);
-      const finalBar = ok ? color('green', '████████████████████████') : color('red', '████████████████████████');
       const status = ok ? color('green', 'done') : color('red', 'failed');
-      const line = `${color('cyan', '>>')} ${label.padEnd(20)} ${finalBar} ${status} ${color('dim', `${durationMs}ms`)}`;
+      const symbolColor = ok ? 'green' : 'red';
+      const line = `${rail(symbolColor, '◇')}  ${color('bold', label)} ${status} ${muted(`${durationMs}ms`)}`;
       if (process.stdout.isTTY) process.stdout.write(`\r${line}\n`);
       else console.log(line);
     },
@@ -883,33 +1068,42 @@ const startModuleProgress = (moduleName, current, total) => {
 };
 
 const printModuleResult = (moduleName, result) => {
+  const marker = result.ok ? color('blue', '■') : color('red', '■');
   const status = result.ok ? color('green', 'ok') : color('red', 'failed');
-  console.log(`${status} ${color('bold', moduleName)} ${color('dim', `${result.type} | ${result.durationMs}ms`)} ${summarize(moduleName, result)}`);
+  console.log(`│  ${marker} ${color('bold', moduleName)} ${muted(`${result.type} | ${result.durationMs}ms`)} ${status} ${summarize(moduleName, result)}`);
   for (const line of renderDetails(moduleName, result)) {
-    console.log(`  ${line}`);
+    console.log(`│    ${muted('□')} ${line}`);
   }
-  console.log('');
+  writeRail('│');
 };
 
 const printResults = (results) => {
-  console.log('');
-  console.log(gradient('SUMMARY'));
-  console.log(color('dim', '-------'));
   const entries = Object.entries(results.modules);
   const ok = entries.filter(([, result]) => result.ok).length;
   const failed = entries.length - ok;
   const active = entries.filter(([, result]) => result.type === 'active').length;
   const passive = entries.length - active;
   const elapsedMs = Date.parse(results.completedAt) - Date.parse(results.startedAt);
-  console.log(kv('Target', results.normalizedTarget));
-  console.log(kv('Profile', results.profile));
-  console.log(kv('Mode', results.mode));
-  console.log(kv('Modules', `${entries.length} total, ${passive} passive, ${active} active`));
-  console.log(kv('Status', `${ok} ok, ${failed} failed${results.interrupted ? ', interrupted' : ''}`));
-  console.log(kv('Elapsed', `${elapsedMs}ms`));
-  if (results.errors.length) {
-    console.log(kv('Errors', results.errors.join(' | ')));
+  writeRail('◇', `${color('bold', 'Summary')} ${muted(results.normalizedTarget)}`, failed ? 'yellow' : 'green');
+  console.log(`│  ${gradeSymbol(results.securityGrade)} ${kv('Security grade', formatSecurityGrade(results.securityGrade))}`);
+  if (results.securityGradeDetails?.length) {
+    console.log(`│  ${muted('□')} ${kv('Grade basis', results.securityGradeDetails.map((item) => `${item.category}:${item.score}/${item.weight}`).join(', '))}`);
   }
+  console.log(`│  ${muted('□')} ${kv('Profile', results.profile)}`);
+  console.log(`│  ${muted('□')} ${kv('Mode', results.mode)}`);
+  console.log(`│  ${muted('□')} ${kv('Modules', `${entries.length} total, ${passive} passive, ${active} active`)}`);
+  console.log(`│  ${muted('□')} ${kv('Status', `${ok} ok, ${failed} failed${results.interrupted ? ', interrupted' : ''}`)}`);
+  console.log(`│  ${muted('□')} ${kv('Elapsed', `${elapsedMs}ms`)}`);
+  if (results.recommendations?.length) {
+    writeRail('◇', color('bold', 'Recommendations'), results.securityGrade >= 8 ? 'green' : 'yellow');
+    for (const recommendation of results.recommendations.slice(0, 8)) {
+      console.log(`│  ${muted('□')} ${recommendation}`);
+    }
+  }
+  if (results.errors.length) {
+    console.log(`│  ${color('red', '□')} ${kv('Errors', results.errors.join(' | '))}`);
+  }
+  writeRail('└');
 };
 
 const renderDetails = (moduleName, result) => {
@@ -1063,7 +1257,7 @@ const renderDetails = (moduleName, result) => {
 
   if (['sqlinjection', 'xss', 'lfi'].includes(moduleName)) {
     return [
-      kv('Parameters tested', list(data.params)),
+      kv('Injection points', list(data.injectionPoints?.map(formatInjectionPoint) || data.params)),
       kv('Requests tested', data.tested),
       kv('Findings', data.findings.length),
       kv('Request errors', data.errors?.length || 0),
@@ -1209,6 +1403,140 @@ const summarize = (moduleName, result) => {
   return '';
 };
 
+const calculateSecurityAssessment = (results) => {
+  const modules = results.modules || {};
+  const details = [];
+  const recommendations = [];
+  const add = (category, weight, score, reason) => {
+    details.push({ category, weight, score: Number.parseFloat(score.toFixed(1)), reason });
+  };
+  const recommend = (message) => {
+    if (!recommendations.includes(message)) recommendations.push(message);
+  };
+
+  if (hasAnyModule(modules, ['sqlinjection', 'xss', 'lfi', 'corsMisconfig'])) {
+    let score = 40;
+    const sqliFindings = moduleFindings(modules.sqlinjection);
+    const xssFindings = moduleFindings(modules.xss);
+    const lfiFindings = moduleFindings(modules.lfi);
+    if (sqliFindings.length) {
+      score -= Math.min(18, 10 + sqliFindings.length * 2);
+      recommend('Prioritize SQL injection remediation: parameterize database queries and add server-side input validation.');
+    }
+    if (xssFindings.length) {
+      score -= Math.min(14, 8 + xssFindings.length * 1.5);
+      recommend('Fix XSS reflection points: context-encode output and enforce a strict Content-Security-Policy.');
+    }
+    if (lfiFindings.length) {
+      score -= Math.min(14, 8 + lfiFindings.length * 1.5);
+      recommend('Fix file inclusion paths: allowlist files, canonicalize paths, and block traversal/wrapper inputs.');
+    }
+    if (modules.corsMisconfig?.ok && modules.corsMisconfig.data?.vulnerable) {
+      score -= 10;
+      recommend('Restrict CORS to trusted origins and avoid wildcard origins with credentialed requests.');
+    }
+    add('vulnerabilities', 40, Math.max(0, score), 'SQLi/XSS/LFI/CORS findings');
+  }
+
+  if (modules.headers?.ok && modules.headers.data?.security) {
+    const present = modules.headers.data.security.present || [];
+    const missing = modules.headers.data.security.missing || [];
+    const score = Math.max(0, 20 * (present.length / Math.max(1, present.length + missing.length)));
+    if (missing.length) recommend(`Add missing security headers: ${missing.slice(0, 6).join(', ')}.`);
+    add('headers', 20, score, `${present.length} present, ${missing.length} missing`);
+  }
+
+  if (modules.sslTls?.ok && modules.sslTls.data && !modules.sslTls.data.skipped) {
+    const cert = modules.sslTls.data;
+    let score = 15;
+    if (cert.available === false) {
+      score = 0;
+      recommend('Enable valid HTTPS/TLS for the target.');
+    } else {
+      if (cert.authorized === false) {
+        score -= 5;
+        recommend('Fix TLS certificate trust issues so clients receive an authorized certificate chain.');
+      }
+      if (cert.daysUntilExpiry < 0) {
+        score -= 10;
+        recommend('Renew the expired TLS certificate immediately.');
+      } else if (cert.daysUntilExpiry !== null && cert.daysUntilExpiry !== undefined && cert.daysUntilExpiry <= 30) {
+        score -= 5;
+        recommend('Renew the TLS certificate before it expires within 30 days.');
+      }
+    }
+    add('tls', 15, Math.max(0, score), cert.available === false ? 'TLS unavailable' : 'certificate health');
+  }
+
+  if (hasAnyModule(modules, ['ports', 'wordpress', 'brokenLinks'])) {
+    let score = 15;
+    if (modules.ports?.ok && Array.isArray(modules.ports.data)) {
+      const openPorts = modules.ports.data.filter((port) => port.open);
+      score -= Math.min(6, openPorts.length * 0.75);
+      if (openPorts.length) recommend(`Review exposed services on open ports: ${openPorts.slice(0, 8).map((port) => port.port).join(', ')}.`);
+    }
+    if (modules.wordpress?.ok) {
+      const reachable = (modules.wordpress.data?.checks || []).filter((check) => check.ok || [401, 403].includes(check.status));
+      score -= Math.min(4, reachable.length * 0.8);
+      if (reachable.length) recommend('Harden WordPress endpoints: keep core/plugins updated and restrict admin/API exposure.');
+    }
+    if (modules.brokenLinks?.ok && Array.isArray(modules.brokenLinks.data?.broken)) {
+      const brokenCount = modules.brokenLinks.data.broken.length;
+      score -= Math.min(3, brokenCount * 0.15);
+      if (brokenCount) recommend('Fix broken links to reduce stale attack surface and improve site reliability.');
+    }
+    add('exposure', 15, Math.max(0, score), 'open services, WordPress indicators, broken links');
+  }
+
+  if (hasAnyModule(modules, ['virustotal', 'ddosFirewall', 'techStack'])) {
+    let score = 10;
+    if (modules.virustotal?.ok && modules.virustotal.data?.reputation < 0) {
+      score -= 4;
+      recommend('Investigate negative VirusTotal reputation and clean or delist flagged assets.');
+    }
+    if (modules.ddosFirewall?.ok) {
+      if (modules.ddosFirewall.data?.likelyProtected) score += 1;
+      else {
+        score -= 2;
+        recommend('Consider rate limiting or WAF/CDN protection for abusive traffic resilience.');
+      }
+    }
+    if (modules.techStack?.ok && modules.techStack.data?.detected?.some((item) => /wordpress|php|apache|nginx/i.test(item))) {
+      recommend('Review detected technologies for outdated versions and remove unnecessary fingerprinting headers.');
+    }
+    add('reputation', 10, Math.max(0, Math.min(10, score)), 'reputation, WAF, technology signals');
+  }
+
+  if (!details.length) {
+    add('coverage', 10, 5, 'no gradeable modules completed');
+    recommend('Run headers, sslTls, ports, and active vulnerability modules for a meaningful security grade.');
+  }
+
+  const totalWeight = details.reduce((sum, item) => sum + item.weight, 0);
+  const totalScore = details.reduce((sum, item) => sum + item.score, 0);
+  const grade = Math.max(1, Math.min(10, Number.parseFloat(((totalScore / Math.max(1, totalWeight)) * 10).toFixed(1))));
+  if (!recommendations.length) recommendations.push('No critical remediation was identified from the modules that completed. Expand scan coverage for higher confidence.');
+  return { grade, details, recommendations };
+};
+
+const moduleFindings = (moduleResult) =>
+  moduleResult?.ok && Array.isArray(moduleResult.data?.findings) ? moduleResult.data.findings : [];
+
+const hasAnyModule = (modules, names) => names.some((name) => modules[name]?.ok);
+
+const formatSecurityGrade = (grade) => Number.isFinite(grade) ? `${grade.toFixed(1)}/10 (${gradeLabel(grade)})` : 'n/a';
+const gradeLabel = (grade) => {
+  if (grade >= 8) return 'strong';
+  if (grade >= 6) return 'moderate';
+  if (grade >= 4) return 'weak';
+  return 'critical';
+};
+const gradeSymbol = (grade) => {
+  if (grade >= 8) return color('green', '□');
+  if (grade >= 6) return color('yellow', '□');
+  return color('red', '□');
+};
+
 const profileFor = (modules) => {
   const activeCount = modules.filter((moduleName) => ACTIVE_MODULES.includes(moduleName)).length;
   const passiveCount = modules.length - activeCount;
@@ -1217,21 +1545,100 @@ const profileFor = (modules) => {
   return 'passive';
 };
 
-const applyAdaptiveAdjustments = (options, moduleResult) => {
-  if (options.mode !== 'adaptive') return;
-  const slow = moduleResult.durationMs > Math.max(2500, options.timeout * 0.75);
-  const failed = !moduleResult.ok;
-  if (slow || failed) {
-    options.delay = Math.min(2000, Math.ceil(options.delay * 1.4));
-    options.payloads = Math.max(5, Math.floor(options.payloads * 0.85));
-    options.threads = Math.max(4, Math.floor(options.threads * 0.8));
+const applyAdaptiveAdjustments = (options, moduleResult, progress = null) => {
+  const stress = moduleStressScore(options, moduleResult);
+  if (stress >= 2) {
+    adjustSafety(options, 'stress', progress?.log, moduleResult.type);
     return;
   }
-  if (moduleResult.durationMs < 750) {
-    options.delay = Math.max(100, Math.floor(options.delay * 0.9));
-    options.threads = Math.min(50, options.threads + 1);
+  if (stress === 0 && moduleResult.ok && moduleResult.durationMs < Math.max(800, options.timeout * 0.2)) {
+    adjustSafety(options, 'relief', progress?.log, moduleResult.type);
   }
 };
+
+const moduleStressScore = (options, moduleResult) => {
+  let score = 0;
+  if (!moduleResult.ok) score += 2;
+  if (moduleResult.durationMs > Math.max(2500, options.timeout * 0.6)) score += 1;
+  const data = moduleResult.data;
+  if (data?.errors?.length && data?.tested !== undefined && data.errors.length / Math.max(1, data.tested + data.errors.length) > 0.25) score += 1;
+  if (Array.isArray(data) && data.filter((item) => item.error === 'timeout').length > Math.max(3, data.length * 0.2)) score += 1;
+  if (data?.rateLimited && data.rateLimited > 0) score += 2;
+  if (data?.protection?.challenged) score += 2;
+  return score;
+};
+
+const tunePacingFromSample = (options, sample) => {
+  const rateLimited = [403, 429, 503].includes(sample.status);
+  const slow = sample.durationMs && sample.durationMs > Math.max(1200, options.timeout * 0.5);
+  const failed = Boolean(sample.error);
+  if (rateLimited || slow || failed) {
+    adjustSafety(options, 'stress', options.log, sample.moduleName);
+    return;
+  }
+  if (sample.durationMs && sample.durationMs < 350) {
+    adjustSafety(options, 'relief', options.log, sample.moduleName);
+  }
+};
+
+const calibrateTargetSafety = async (target, options) => {
+  const before = safetySnapshot(options);
+  const started = performance.now();
+  try {
+    const response = await request(target.origin, { method: 'HEAD' }, Math.min(options.timeout, 5000));
+    const durationMs = Math.round(performance.now() - started);
+    tunePacingFromSample(options, { status: response.status, durationMs, moduleName: 'calibration' });
+    const after = safetySnapshot(options);
+    const calibration = {
+      status: response.status,
+      durationMs,
+      stressed: before !== after,
+      summary: `HTTP ${response.status} in ${durationMs}ms`,
+    };
+    options.calibration = calibration;
+    return calibration;
+  } catch (error) {
+    tunePacingFromSample(options, { error: error.message, moduleName: 'calibration' });
+    const calibration = {
+      error: error.message,
+      stressed: true,
+      summary: `probe failed: ${error.message}`,
+    };
+    options.calibration = calibration;
+    return calibration;
+  }
+};
+
+const adjustSafety = (options, direction, log = null, context = '') => {
+  const safety = options.safety;
+  if (!safety) return;
+  const before = safetySnapshot(options);
+  if (direction === 'stress') {
+    safety.stressEvents += 1;
+    safety.reliefEvents = 0;
+    options.delay = clampInt(Math.ceil(options.delay * 1.35) + 50, safety.minDelay, safety.maxDelay);
+    options.threads = clampInt(Math.floor(options.threads * 0.8), safety.minThreads, safety.maxThreads);
+    options.payloads = clampInt(Math.floor(options.payloads * 0.9), safety.minPayloads, safety.maxPayloads);
+    options.ddosRequests = clampInt(Math.floor(options.ddosRequests * 0.85), safety.minDdosRequests, safety.maxDdosRequests);
+  } else {
+    safety.reliefEvents += 1;
+    if (safety.reliefEvents < 3) return;
+    safety.reliefEvents = 0;
+    options.delay = clampInt(Math.floor(options.delay * 0.9), safety.minDelay, safety.maxDelay);
+    options.threads = clampInt(options.threads + 1, safety.minThreads, safety.maxThreads);
+    options.payloads = clampInt(options.payloads + 1, safety.minPayloads, safety.maxPayloads);
+    options.ddosRequests = clampInt(options.ddosRequests + 1, safety.minDdosRequests, safety.maxDdosRequests);
+  }
+  const after = safetySnapshot(options);
+  if (before !== after) {
+    log?.(`auto-tuned ${context ? `${context} ` : ''}pacing: ${after}`);
+  }
+};
+
+const safetySnapshot = (options) =>
+  `${options.payloads} payloads, ${options.threads} threads, ${options.delay}ms delay, ${options.ddosRequests} WAF probes`;
+
+const clampInt = (value, min, max) => Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
 
 const resolveSafe = async (hostname, type, timeoutMs = 5000) => {
   if (isInterrupted()) return [];
@@ -1308,17 +1715,130 @@ const loadPayloads = async (filename, limit) => {
   return payloads.slice(0, limit);
 };
 
-const discoverParams = (target) => {
-  const keys = [...target.url.searchParams.keys()];
-  if (keys.length) return keys;
-  return ['q', 'search', 'id', 'page', 'file', 'url'];
+const moduleNamePayloadFile = (moduleName) => {
+  if (moduleName === 'sqlinjection') return 'sqli.json';
+  if (moduleName === 'xss') return 'xss.json';
+  if (moduleName === 'lfi') return 'lfi.json';
+  return 'payloads';
 };
 
-const defaultParamValue = (moduleName, param) => {
-  if (moduleName === 'lfi') return ['file', 'page', 'include', 'path'].includes(param) ? 'index.php' : 'test';
-  if (moduleName === 'sqlinjection') return param === 'id' ? '1' : 'test';
+const discoverInjectionPoints = (target, moduleName) => {
+  const queryParams = [...target.url.searchParams.keys()];
+  if (queryParams.length) {
+    return queryParams.map((name) => ({
+      type: 'query',
+      name,
+      baseValue: target.url.searchParams.get(name) || defaultPayloadBaseValue(moduleName, name),
+      synthetic: false,
+    }));
+  }
+  return defaultPayloadParameters(moduleName).map((name) => ({
+    type: 'query',
+    name,
+    baseValue: defaultPayloadBaseValue(moduleName, name),
+    synthetic: true,
+  }));
+};
+
+const formatInjectionPoint = (injectionPoint) =>
+  `query parameter "${injectionPoint.name}"${injectionPoint.synthetic ? ' (default probe)' : ''}`;
+
+const buildPayloadUrl = (target, injectionPoint, payloadValue) => {
+  const url = new URL(target.url.href);
+  url.searchParams.set(injectionPoint.name, `${injectionPoint.baseValue}${payloadValue}`);
+  return url;
+};
+
+const defaultPayloadParameters = (moduleName) => {
+  if (moduleName === 'sqlinjection') return ['id'];
+  if (moduleName === 'lfi') return ['file', 'page', 'include', 'path'];
+  return ['q'];
+};
+
+const defaultPayloadBaseValue = (moduleName, paramName) => {
+  if (moduleName === 'sqlinjection') return '1';
+  if (moduleName === 'lfi') return 'index.php';
   return 'test';
 };
+
+const formatPayloadForLog = (payloadValue) => truncate(JSON.stringify(String(payloadValue)), 110);
+
+const firstRegexMatch = (text, pattern) => text.match(pattern)?.[0] || null;
+
+const XSS_DANGEROUS_CONTEXTS = [
+  /<script[^>]*>[\s\S]*?PAYLOAD[\s\S]*?<\/script>/i,
+  /<[^>]+\s+on\w+\s*=\s*["']?[^"']*?PAYLOAD[^"']*?["']?/i,
+  /<[^>]+\s+\w+=[^"'][^>\s]*?PAYLOAD/i,
+  /(href|src)\s*=\s*["']?(?:javascript|data):[^"']*?PAYLOAD[^"']*?["']?/i,
+  /<[^>]+\s+style\s*=\s*["']?[^"']*?expression\s*\([^)]*?PAYLOAD[^)]*\)[^"']*?["']?/i,
+  /<textarea[^>]*>[\s\S]*?PAYLOAD[\s\S]*?<\/textarea>/i,
+  /<title[^>]*>[\s\S]*?PAYLOAD[\s\S]*?<\/title>/i,
+  /<!--[\s\S]*?PAYLOAD[\s\S]*?-->/i,
+  />[^<]*?PAYLOAD[^<]*?</i,
+  /<style[^>]*>[\s\S]*?PAYLOAD[\s\S]*?<\/style>/i,
+  /<noscript[^>]*>[\s\S]*?PAYLOAD[\s\S]*?<\/noscript>/i,
+  /document\.(write|innerhtml)\s*=\s*["']?[^"']*?PAYLOAD[^"']*?["']?/i,
+  /["']:\s*["']?[^"']*?PAYLOAD[^"']*?["']/i,
+];
+
+const isEncodedReflection = (value) =>
+  /(&lt;|&gt;|&quot;|&#x27;|&#39;|&#x|%3c|%3e|%22|%27|%2f|\\x3c|\\x3e|\\u003c|\\u003e|\\"|\\')/i.test(value);
+
+const checkXssReflection = (responseText, payloadValue) => {
+  const response = String(responseText);
+  const payload = String(payloadValue);
+  const directIndex = response.toLowerCase().indexOf(payload.toLowerCase());
+  if (directIndex >= 0) {
+    const matchedPayload = response.slice(directIndex, directIndex + payload.length);
+    let confidence = 0.7;
+    let context = 'Direct unencoded payload reflection';
+    for (const pattern of XSS_DANGEROUS_CONTEXTS) {
+      const escapedPayload = escapeRegExp(payload);
+      const testPattern = new RegExp(pattern.source.replace('PAYLOAD', escapedPayload), 'i');
+      if (testPattern.test(response)) {
+        confidence = 0.95;
+        context = 'Direct reflection in dangerous HTML context';
+        break;
+      }
+    }
+    return {
+      reflected: true,
+      exploitable: !isEncodedReflection(matchedPayload),
+      context,
+      confidence,
+    };
+  }
+
+  const encodedPayloads = [
+    escapeHtml(payload),
+    encodeURIComponent(payload),
+    payload.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\//g, '\\/').replace(/</g, '\\x3c').replace(/>/g, '\\x3e'),
+    payload.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\//g, '\\/').replace(/</g, '\\u003c').replace(/>/g, '\\u003e'),
+  ];
+
+  return encodedPayloads.some((encoded) => response.toLowerCase().includes(encoded.toLowerCase()))
+    ? { reflected: true, exploitable: false, context: 'Payload reflected but safely encoded', confidence: 0 }
+    : { reflected: false, exploitable: false, context: 'Not reflected', confidence: 0 };
+};
+
+const checkLfiSignature = (responseText) => {
+  const response = String(responseText);
+  if (/[a-z_][a-z0-9_-]*:[x*]:\d+:\d+:/i.test(response) && response.includes('/bin/bash')) {
+    return { found: true, pattern: 'Unix password file format detected', confidence: 0.99 };
+  }
+  if (/[a-z_][a-z0-9_-]*:\$[a-z0-9.$]+\$[a-z0-9.$]+\$[a-z0-9.$]+/i.test(response)) {
+    return { found: true, pattern: 'Unix shadow file format detected', confidence: 0.99 };
+  }
+  if (/\[[a-z\s]+\]/i.test(response) && /;.*comment/i.test(response) && /fonts|extensions/i.test(response)) {
+    return { found: true, pattern: 'Windows INI file format detected', confidence: 0.95 };
+  }
+  const matched = LFI_MARKERS.find((pattern) => pattern.test(response));
+  return matched
+    ? { found: true, pattern: firstRegexMatch(response, matched) || String(matched), confidence: 0.8 }
+    : { found: false, pattern: null, confidence: 0 };
+};
+
+const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const escapeHtml = (value) => String(value)
   .replace(/&/g, '&amp;')
@@ -1394,6 +1914,7 @@ const main = async () => {
   try {
     const { target: rawTarget, options } = parseArgs(process.argv.slice(2));
     if (!options.color) colorEnabled = false;
+    if (!options.json) clearTerminal();
     if (options.help) {
       console.log(getHelp());
       return;

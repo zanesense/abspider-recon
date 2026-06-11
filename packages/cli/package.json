@@ -1,6 +1,6 @@
 {
   "name": "abspider",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "ABSpider Recon CLI for authorized passive and active web security reconnaissance.",
   "type": "module",
   "bin": {
