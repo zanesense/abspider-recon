@@ -1,11 +1,22 @@
 {
   "name": "abspider",
-  "version": "2.1.0",
-  "description": "ABSpider Recon CLI for authorized passive and active web security reconnaissance.",
-  "type": "module",
+  "version": "2.1.1",
+  "author": "zanesense",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zanesense/abspider-recon.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "abspider": "scripts/abspider-cli.mjs",
     "abspider-recon": "scripts/abspider-cli.mjs"
+  },
+  "bugs": {
+    "url": "https://github.com/zanesense/abspider-recon/issues"
+  },
+  "description": "ABSpider Recon CLI for authorized passive and active web security reconnaissance.",
+  "engines": {
+    "node": ">=20"
   },
   "files": [
     "scripts/abspider-cli.mjs",
@@ -13,9 +24,7 @@
     "README.md",
     "LICENSE"
   ],
-  "engines": {
-    "node": ">=20"
-  },
+  "homepage": "https://github.com/zanesense/abspider-recon#readme",
   "keywords": [
     "security",
     "recon",
@@ -28,18 +37,9 @@
     "sqli",
     "lfi"
   ],
-  "author": "zanesense",
   "license": "MIT",
-  "homepage": "https://github.com/zanesense/abspider-recon#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/zanesense/abspider-recon.git",
-    "directory": "packages/cli"
-  },
-  "bugs": {
-    "url": "https://github.com/zanesense/abspider-recon/issues"
-  },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "type": "module"
 }

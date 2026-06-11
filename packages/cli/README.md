@@ -216,8 +216,24 @@ You can use aliases with `--modules`.
 | `--output <file>`       | Write full JSON results to a file.                          |
 | `--pretty`              | Pretty-print JSON output.                                   |
 | `--no-color`            | Disable ANSI terminal colors.                               |
+| `--no-update`           | Disable the npm auto-update check for this run.             |
 | `--help`, `-h`          | Show help.                                                  |
 | `--version`, `-v`       | Show version.                                               |
+
+## Auto Updates
+
+When running as an installed npm package, ABSpider checks npm for a newer package version and automatically installs it with:
+
+```bash
+npm install -g abspider@latest
+```
+
+The updater is skipped for `--json`, `--help`, `--version`, CI runs, and direct source runs such as `node scripts/abspider-cli.mjs`. To disable it:
+
+```bash
+abspider example.com --no-update
+ABSPIDER_NO_UPDATE=1 abspider example.com
+```
 
 ## Configuration
 
@@ -422,3 +438,5 @@ src/payloads/sqli.json
 src/payloads/xss.json
 src/payloads/lfi.json
 ```
+
+<p align=center><a src=https://github.com/zanesense/abspider-recon>repo</a> • <a src=https://github.com/zanesense>developer

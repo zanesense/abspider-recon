@@ -1,11 +1,14 @@
 #!/usr/bin/env node
+import { spawn } from 'node:child_process';
 import dns from 'node:dns/promises';
 import fs from 'node:fs/promises';
+import https from 'node:https';
 import net from 'node:net';
+import path from 'node:path';
 import tls from 'node:tls';
 import { performance } from 'node:perf_hooks';
 
-const VERSION = '2.1.0';
+const VERSION = '2.1.1';
 const USER_AGENT = `ABSpider-CLI/${VERSION} (Authorized Security Scanner)`;
 const WEB_PORTS = [80, 443, 8000, 8080, 8443, 8888, 3000, 5000, 9000, 2082, 2083];
 const COMMON_PORTS = [
@@ -234,6 +237,7 @@ Options:
   --output <file>        Write full JSON results to a file.
   --pretty               Pretty-print JSON output.
   --no-color             Disable ANSI colors.
+  --no-update            Disable the npm auto-update check for this run.
   --help                 Show this help.
   --version              Show version.
 
@@ -268,6 +272,7 @@ const parseArgs = (argv) => {
     pretty: false,
     output: null,
     color: true,
+    update: true,
     explicit: new Set(),
   };
   let target = null;
@@ -287,6 +292,7 @@ const parseArgs = (argv) => {
     else if (arg === '--json') options.json = true;
     else if (arg === '--pretty') options.pretty = true;
     else if (arg === '--no-color') options.color = false;
+    else if (arg === '--no-update') options.update = false;
     else if (arg === '--modules' || arg === '-m') options.modules = readModules(argv[++i]);
     else if (arg.startsWith('--modules=')) options.modules = readModules(arg.slice('--modules='.length));
     else if (arg === '--ports' || arg === '-p') { options.ports = readPorts(argv[++i]); options.explicit.add('ports'); }
@@ -1640,6 +1646,109 @@ const safetySnapshot = (options) =>
 
 const clampInt = (value, min, max) => Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
 
+const maybeAutoUpdate = async (options) => {
+  if (!shouldAutoUpdate(options)) return;
+  try {
+    const latest = await fetchLatestNpmVersion('abspider', 1800);
+    if (!latest || compareVersions(latest, VERSION) <= 0) return;
+    console.log(color('yellow', `Update available: abspider ${VERSION} -> ${latest}. Installing from npm...`));
+    const result = await installLatestFromNpm(latest, 120000);
+    if (result.ok) {
+      console.log(color('green', `Updated abspider to ${latest}. This run will continue with ${VERSION}; restart the CLI to use the new version.`));
+    } else {
+      console.log(color('yellow', `Auto-update skipped: ${result.error || 'npm install failed'}`));
+    }
+    console.log('');
+  } catch (error) {
+    if (process.env.ABSPIDER_UPDATE_DEBUG === '1') {
+      console.log(color('yellow', `Auto-update check failed: ${error.message}`));
+      console.log('');
+    }
+  }
+};
+
+const shouldAutoUpdate = (options) =>
+  options.update &&
+  !options.json &&
+  !options.help &&
+  !options.version &&
+  process.env.ABSPIDER_NO_UPDATE !== '1' &&
+  process.env.CI !== 'true' &&
+  process.stdout.isTTY &&
+  isNpmPackageExecution();
+
+const isNpmPackageExecution = () => {
+  const entry = process.argv[1] ? path.normalize(process.argv[1]).toLowerCase() : '';
+  return entry.includes(`${path.sep}node_modules${path.sep}abspider${path.sep}`);
+};
+
+const fetchLatestNpmVersion = (packageName, timeoutMs) => new Promise((resolve, reject) => {
+  const requestOptions = {
+    hostname: 'registry.npmjs.org',
+    path: `/${encodeURIComponent(packageName)}/latest`,
+    headers: { accept: 'application/json', 'user-agent': USER_AGENT },
+    timeout: timeoutMs,
+  };
+  const req = https.get(requestOptions, (res) => {
+    if (res.statusCode !== 200) {
+      res.resume();
+      resolve(null);
+      return;
+    }
+    let body = '';
+    res.setEncoding('utf8');
+    res.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 20000) req.destroy(new Error('npm registry response too large'));
+    });
+    res.on('end', () => {
+      try {
+        resolve(JSON.parse(body).version || null);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+  req.on('timeout', () => req.destroy(new Error('npm registry check timed out')));
+  req.on('error', reject);
+});
+
+const installLatestFromNpm = (version, timeoutMs) => new Promise((resolve) => {
+  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const child = spawn(npmCommand, ['install', '-g', `abspider@${version}`, '--no-audit', '--fund=false'], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  });
+  let stderr = '';
+  const timer = setTimeout(() => {
+    child.kill();
+    resolve({ ok: false, error: 'npm install timed out' });
+  }, timeoutMs);
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk.toString();
+  });
+  child.on('error', (error) => {
+    clearTimeout(timer);
+    resolve({ ok: false, error: error.message });
+  });
+  child.on('close', (code) => {
+    clearTimeout(timer);
+    resolve({ ok: code === 0, error: code === 0 ? null : truncate(stderr.trim() || `npm exited with ${code}`, 180) });
+  });
+});
+
+const compareVersions = (left, right) => {
+  const leftParts = parseVersion(left);
+  const rightParts = parseVersion(right);
+  for (let index = 0; index < 3; index += 1) {
+    if (leftParts[index] > rightParts[index]) return 1;
+    if (leftParts[index] < rightParts[index]) return -1;
+  }
+  return 0;
+};
+
+const parseVersion = (value) => String(value).split(/[.-]/).slice(0, 3).map((part) => Number.parseInt(part, 10) || 0);
+
 const resolveSafe = async (hostname, type, timeoutMs = 5000) => {
   if (isInterrupted()) return [];
   const resolver = new dns.Resolver();
@@ -1915,6 +2024,7 @@ const main = async () => {
     const { target: rawTarget, options } = parseArgs(process.argv.slice(2));
     if (!options.color) colorEnabled = false;
     if (!options.json) clearTerminal();
+    await maybeAutoUpdate(options);
     if (options.help) {
       console.log(getHelp());
       return;
