@@ -12,7 +12,9 @@ import { performance } from 'node:perf_hooks';
 import { performWhoisLookup } from '../src/services/whoisService.js';
 import { performGeoIPLookup } from '../src/services/geoipService.js';
 
-const VERSION = '2.1.2';
+const FALLBACK_VERSION = '2.1.3';
+const PACKAGE_METADATA = await readPackageMetadata();
+const VERSION = PACKAGE_METADATA.version || FALLBACK_VERSION;
 const USER_AGENT = `ABSpider-CLI/${VERSION} (Authorized Security Scanner)`;
 const WEB_PORTS = [80, 443, 8000, 8080, 8443, 8888, 3000, 5000, 9000, 2082, 2083];
 const COMMON_PORTS = [
@@ -230,6 +232,14 @@ const clearTerminal = () => {
   if (process.stdout.isTTY) process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
 };
 const envValue = (...names) => names.map((name) => process.env[name]).find((value) => value && value.trim());
+async function readPackageMetadata() {
+  try {
+    const packageUrl = new URL('../package.json', import.meta.url);
+    return JSON.parse(await fs.readFile(packageUrl, 'utf8'));
+  } catch {
+    return { version: FALLBACK_VERSION };
+  }
+}
 
 const BANNER_LINES = [
   '          █████                        ███      █████                   ',
@@ -2223,11 +2233,11 @@ const maybeAutoUpdate = async (options) => {
       return { checked: true, updated: false, latest: null };
     }
     if (compareVersions(latest, VERSION) <= 0) {
-      writeUpdate(`Update check complete: ABSpider ${VERSION} matches npm latest. Continuing with this run.`, 'green');
+      writeUpdate(`Update check complete: local package.json ${VERSION} matches npm latest. Continuing with this run.`, 'green');
       if (!options.json) console.log('');
       return { checked: true, updated: false, latest };
     }
-    writeUpdate(`Update found: ABSpider ${VERSION} -> ${latest}. Installing the npm package before the scan starts...`, 'yellow');
+    writeUpdate(`Update found: local package.json ${VERSION}, npm latest ${latest}. Installing before the scan starts...`, 'yellow');
     const result = await installLatestFromNpm(latest, 120000);
     if (result.ok) {
       writeUpdate(`Update installed: ABSpider ${latest}. Relaunching this command so the new package handles the run...`, 'green');
@@ -2252,14 +2262,18 @@ const shouldAutoUpdate = (options) =>
   process.env.CI !== 'true';
 
 const relaunchCliAfterUpdate = (latest) => new Promise((resolve) => {
-  const child = spawn(process.execPath, process.argv.slice(1), {
-    stdio: 'inherit',
+  const command = process.execPath || (process.platform === 'win32' ? 'node.exe' : 'node');
+  const args = process.argv.slice(1).filter((arg) => typeof arg === 'string' && arg.length > 0);
+  const env = Object.fromEntries(Object.entries({
+    ...process.env,
+    ABSPIDER_RESTARTED_AFTER_UPDATE: '1',
+    ABSPIDER_UPDATED_TO: latest,
+  }).filter(([, value]) => value !== undefined && value !== null).map(([key, value]) => [key, String(value)]));
+  const child = spawn(command, args, {
+    cwd: process.cwd(),
+    stdio: [process.stdin.isTTY ? 'inherit' : 'ignore', 'inherit', 'inherit'],
     windowsHide: true,
-    env: {
-      ...process.env,
-      ABSPIDER_RESTARTED_AFTER_UPDATE: '1',
-      ABSPIDER_UPDATED_TO: latest,
-    },
+    env,
   });
   child.on('error', (error) => resolve({ ok: false, error: error.message }));
   child.on('close', (code) => resolve({ ok: true, exitCode: code ?? 0 }));
