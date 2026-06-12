@@ -96,6 +96,81 @@ const ACTIVE_MODULES = ['ports', 'sqlinjection', 'xss', 'lfi', 'wordpress', 'bro
 const ALL_MODULES = [...PASSIVE_MODULES, ...ACTIVE_MODULES];
 const DEFAULT_MODULES = [...PASSIVE_MODULES];
 
+const SECURITY_HEADER_CHECKS = [
+  {
+    name: 'Strict-Transport-Security',
+    key: 'strict-transport-security',
+    severity: 'critical',
+    recommendation: 'Enable HSTS with max-age of at least 31536000 seconds and includeSubDomains.',
+    check: (value) => /max-age=(\d+)/i.test(value || '') && Number.parseInt(value.match(/max-age=(\d+)/i)?.[1] || '0', 10) >= 31536000 && /includesubdomains/i.test(value),
+  },
+  {
+    name: 'Content-Security-Policy',
+    key: 'content-security-policy',
+    severity: 'critical',
+    recommendation: 'Implement a strict CSP and avoid unsafe-inline/unsafe-eval where possible.',
+    check: (value) => Boolean(value && value.length > 20 && !/unsafe-inline|unsafe-eval/i.test(value)),
+  },
+  {
+    name: 'X-Frame-Options',
+    key: 'x-frame-options',
+    severity: 'high',
+    recommendation: 'Set X-Frame-Options to DENY or SAMEORIGIN to reduce clickjacking risk.',
+    check: (value) => ['DENY', 'SAMEORIGIN'].includes(String(value || '').toUpperCase()),
+  },
+  {
+    name: 'X-Content-Type-Options',
+    key: 'x-content-type-options',
+    severity: 'high',
+    recommendation: 'Set X-Content-Type-Options to nosniff.',
+    check: (value) => String(value || '').toLowerCase() === 'nosniff',
+  },
+  {
+    name: 'Referrer-Policy',
+    key: 'referrer-policy',
+    severity: 'medium',
+    recommendation: 'Use no-referrer, same-origin, or strict-origin-when-cross-origin.',
+    check: (value) => ['no-referrer', 'same-origin', 'strict-origin-when-cross-origin'].includes(String(value || '').toLowerCase()),
+  },
+  {
+    name: 'Permissions-Policy',
+    key: 'permissions-policy',
+    severity: 'medium',
+    recommendation: 'Restrict browser features with a Permissions-Policy header.',
+    check: (value) => Boolean(value),
+  },
+  {
+    name: 'X-XSS-Protection',
+    key: 'x-xss-protection',
+    severity: 'low',
+    recommendation: 'Set legacy X-XSS-Protection to 1; mode=block where supported.',
+    check: (value) => String(value || '').toLowerCase() === '1; mode=block',
+  },
+  {
+    name: 'Cross-Origin-Embedder-Policy',
+    key: 'cross-origin-embedder-policy',
+    severity: 'high',
+    recommendation: 'Set Cross-Origin-Embedder-Policy to require-corp when cross-origin isolation is needed.',
+    check: (value) => String(value || '').toLowerCase() === 'require-corp',
+  },
+  {
+    name: 'Cross-Origin-Opener-Policy',
+    key: 'cross-origin-opener-policy',
+    severity: 'high',
+    recommendation: 'Set Cross-Origin-Opener-Policy to same-origin or same-origin-allow-popups.',
+    check: (value) => ['same-origin', 'same-origin-allow-popups'].includes(String(value || '').toLowerCase()),
+  },
+  {
+    name: 'Cross-Origin-Resource-Policy',
+    key: 'cross-origin-resource-policy',
+    severity: 'medium',
+    recommendation: 'Set Cross-Origin-Resource-Policy to same-origin or same-site.',
+    check: (value) => ['same-origin', 'same-site'].includes(String(value || '').toLowerCase()),
+  },
+];
+
+const WP_SENSITIVE_FILES = ['wp-config.php', 'wp-config.php.bak', 'readme.html', 'license.txt', 'wp-content/debug.log', 'xmlrpc.php'];
+
 const MODULE_ALIASES = {
   site: 'siteInfo',
   siteinfo: 'siteInfo',
@@ -478,10 +553,23 @@ const runSiteInfo = async (target, options, cache) => {
 const runHeaders = async (target, options) => {
   const response = await request(target.origin, { method: 'HEAD' }, options.timeout);
   const headers = Object.fromEntries(response.headers.entries());
-  const expected = ['content-security-policy', 'strict-transport-security', 'x-content-type-options', 'x-frame-options', 'referrer-policy', 'permissions-policy'];
-  const present = expected.filter((header) => headers[header]);
-  const missing = expected.filter((header) => !headers[header]);
-  return { status: response.status, headers, security: { score: Math.round((present.length / expected.length) * 100), present, missing }, protection: detectProtection(response) };
+  const securityHeaders = analyzeSecurityHeaders(headers);
+  return {
+    status: response.status,
+    statusCode: response.status,
+    headers,
+    securityHeaders,
+    security: {
+      score: securityHeaders.score,
+      grade: securityHeaders.grade,
+      present: securityHeaders.present.map((header) => header.name),
+      missing: securityHeaders.missing.map((header) => header.name),
+    },
+    cookies: analyzeCookies(response.headers.get('set-cookie')),
+    cacheControl: analyzeCacheControl(headers['cache-control']),
+    cors: analyzeCorsHeaders(headers),
+    protection: detectProtection(response),
+  };
 };
 
 const runWhois = async (target, options) => {
@@ -508,7 +596,18 @@ const runDns = async (target) => {
   return records;
 };
 
-const runMx = async (target) => ({ records: await resolveSafe(target.domain, 'MX') });
+const runMx = async (target) => {
+  const mxRecords = await resolveSafe(target.domain, 'MX');
+  const enriched = await Promise.all(mxRecords.map(async (record) => ({
+    ...record,
+    ip: record.exchange ? (await resolveSafe(record.exchange, 'A'))[0] : undefined,
+  })));
+  const txtRecords = (await resolveSafe(target.domain, 'TXT')).flat().map((record) => Array.isArray(record) ? record.join('') : String(record).replace(/^"|"$/g, ''));
+  const dmarcRecords = (await resolveSafe(`_dmarc.${target.domain}`, 'TXT')).flat().map((record) => Array.isArray(record) ? record.join('') : String(record).replace(/^"|"$/g, ''));
+  const spfRecord = txtRecords.find((record) => /^v=spf1/i.test(record));
+  const dmarcRecord = dmarcRecords.find((record) => /^v=DMARC1/i.test(record));
+  return { domain: target.domain, records: enriched, mxRecords: enriched, spfRecord, dmarcRecord };
+};
 
 const runSubnet = async (target) => {
   const ip = (await resolveSafe(target.hostname, 'A'))[0];
@@ -611,12 +710,59 @@ const runReverseIp = async (target, options) => {
 const runVirusTotal = async (target, options) => {
   const key = envValue('VIRUSTOTAL_API_KEY', 'VITE_VIRUSTOTAL_API_KEY');
   if (!key) return { skipped: true, reason: 'Set VIRUSTOTAL_API_KEY or VITE_VIRUSTOTAL_API_KEY to enable this module.' };
-  const response = await request(`https://www.virustotal.com/api/v3/domains/${encodeURIComponent(target.domain)}`, {
-    method: 'GET',
-    headers: { 'x-apikey': key },
-  }, options.timeout);
-  const data = await response.json();
-  return { status: response.status, stats: data.data?.attributes?.last_analysis_stats || null, reputation: data.data?.attributes?.reputation ?? null };
+  const errors = [];
+  const result = { tested: true, domain: target.domain, errors };
+  const vtRequest = async (pathName) => {
+    const response = await request(`https://www.virustotal.com/api/v3/domains/${encodeURIComponent(target.domain)}${pathName}`, {
+      method: 'GET',
+      headers: { 'x-apikey': key, accept: 'application/json' },
+    }, Math.max(options.timeout, 15000));
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.error) {
+      throw new Error(data.error?.message || `VirusTotal ${pathName || '/'} returned HTTP ${response.status}`);
+    }
+    return { response, data };
+  };
+
+  try {
+    const { response, data } = await vtRequest('');
+    const attributes = data.data?.attributes || {};
+    result.status = response.status;
+    result.stats = attributes.last_analysis_stats || null;
+    result.reputation = attributes.reputation ?? null;
+    result.lastAnalysisDate = attributes.last_analysis_date ? new Date(attributes.last_analysis_date * 1000).toISOString() : undefined;
+    result.maliciousVotes = attributes.last_analysis_stats?.malicious || 0;
+    result.harmlessVotes = attributes.last_analysis_stats?.harmless || 0;
+    result.categories = Object.values(attributes.categories || {});
+    result.registrar = attributes.registrar;
+    result.whois = attributes.whois;
+  } catch (error) {
+    errors.push(`Domain report: ${error.message}`);
+  }
+
+  try {
+    const { data } = await vtRequest('/detected_urls');
+    result.detectedUrls = (data.data || []).map((item) => ({
+      url: item.id,
+      positives: item.attributes?.last_analysis_stats?.malicious || 0,
+      total: Object.keys(item.attributes?.last_analysis_results || {}).length,
+    }));
+  } catch (error) {
+    errors.push(`Detected URLs: ${error.message}`);
+  }
+
+  try {
+    const { data } = await vtRequest('/communicating_files');
+    result.detectedCommunicatingFiles = (data.data || []).map((item) => ({
+      sha256: item.id,
+      filename: item.attributes?.meaningful_name || 'N/A',
+      positives: item.attributes?.last_analysis_stats?.malicious || 0,
+    }));
+  } catch (error) {
+    errors.push(`Communicating files: ${error.message}`);
+  }
+
+  return result;
 };
 
 const runSslTls = async (target, options) => {
@@ -653,12 +799,14 @@ const runSslTls = async (target, options) => {
 const runTechStack = async (target, options, cache) => {
   const { response, text, protection } = await getHtml(target, options, cache);
   const headers = Object.fromEntries(response.headers.entries());
-  const localDetected = detectTechStack(text, headers);
+  const technologies = detectTechStackDetailed(text, headers);
+  const localDetected = technologies.map((item) => item.name);
   const builtWith = await lookupBuiltWithTechStack(target, options);
   const detected = [...new Set([...localDetected, ...(builtWith.technologies || []).map((item) => item.name)])];
   return {
     detected,
     localDetected,
+    technologies: mergeTechnologies(technologies, builtWith.technologies || []),
     builtWith,
     generator: firstMatch(text, /<meta[^>]+name=["']generator["'][^>]+content=["']([^"']+)["']/i),
     protection,
@@ -738,26 +886,91 @@ const normalizeBuiltWithList = (value) => {
   return [value];
 };
 
+const mergeTechnologies = (localTechnologies, builtWithTechnologies) => {
+  const merged = new Map();
+  for (const item of localTechnologies) {
+    merged.set(item.name.toLowerCase(), item);
+  }
+  for (const item of builtWithTechnologies) {
+    const key = item.name.toLowerCase();
+    if (!merged.has(key)) {
+      merged.set(key, {
+        name: item.name,
+        category: item.categories?.[0] || 'BuiltWith',
+        categories: item.categories || [],
+        confidence: 1,
+        evidence: item.description || 'BuiltWith API',
+        firstDetected: item.firstDetected,
+        lastDetected: item.lastDetected,
+      });
+    }
+  }
+  return [...merged.values()].sort((a, b) => a.name.localeCompare(b.name));
+};
+
+const serverTechnologyName = (value) => {
+  const text = String(value);
+  if (/nginx/i.test(text)) return 'Nginx';
+  if (/apache/i.test(text)) return 'Apache HTTP Server';
+  if (/microsoft-iis/i.test(text)) return 'Microsoft IIS';
+  if (/cloudflare/i.test(text)) return 'Cloudflare';
+  if (/gws/i.test(text)) return 'Google Web Server';
+  if (/envoy/i.test(text)) return 'Envoy Proxy';
+  return `Server: ${text}`;
+};
+
+const poweredByTechnologyName = (value) => {
+  const text = String(value);
+  if (/php/i.test(text)) return 'PHP';
+  if (/asp\.net/i.test(text)) return 'ASP.NET';
+  if (/express/i.test(text)) return 'Express.js';
+  if (/next\.?js/i.test(text)) return 'Next.js';
+  if (/vercel/i.test(text)) return 'Vercel';
+  return `Powered by: ${text}`;
+};
+
 const detectTechStack = (text, headers) => {
+  return detectTechStackDetailed(text, headers).map((item) => item.name);
+};
+
+const detectTechStackDetailed = (text, headers) => {
   const headerText = JSON.stringify(headers);
   const checks = [
-    ['WordPress', /wp-content|wp-includes|wordpress/i],
-    ['React', /react|data-reactroot|__REACT_DEVTOOLS_GLOBAL_HOOK__/i],
-    ['Vue', /vue(?:\.runtime)?\.js|data-v-/i],
-    ['Angular', /ng-version|angular/i],
-    ['jQuery', /jquery/i],
-    ['Bootstrap', /bootstrap/i],
-    ['Tailwind CSS', /tailwind/i],
-    ['Google Analytics', /google-analytics|gtag\(|G-[A-Z0-9]+/i],
-    ['Cloudflare', /cloudflare|cf-ray|cf-cache-status/i],
+    ['WordPress', 'CMS/Framework', /wp-content|wp-includes|wordpress/i, 'WordPress marker in HTML'],
+    ['React', 'Library/Framework', /react|data-reactroot|__REACT_DEVTOOLS_GLOBAL_HOOK__|react\.production\.min\.js/i, 'React marker in HTML/script'],
+    ['Vue.js', 'Library/Framework', /vue(?:\.runtime)?\.js|vue\.min\.js|data-v-|vue-app/i, 'Vue marker in HTML/script'],
+    ['Angular', 'Library/Framework', /ng-version|angular|angular\.min\.js/i, 'Angular marker in HTML/script'],
+    ['jQuery', 'Library/Framework', /jquery/i, 'jQuery marker in HTML/script'],
+    ['Bootstrap', 'CSS Framework', /bootstrap(?:\.min)?\.css/i, 'Bootstrap stylesheet marker'],
+    ['Tailwind CSS', 'CSS Framework', /tailwind(?:\.min)?\.css|tailwind/i, 'Tailwind marker'],
+    ['Google Analytics', 'Analytics', /google-analytics|gtag\(|G-[A-Z0-9]+/i, 'Google Analytics marker'],
+    ['Google Tag Manager', 'Analytics', /gtm\.js|googletagmanager/i, 'Google Tag Manager marker'],
+    ['Cloudflare', 'CDN/WAF', /cloudflare|cf-ray|cf-cache-status/i, 'Cloudflare header/body marker'],
+    ['Akamai', 'CDN/WAF', /akamai/i, 'Akamai header/body marker'],
+    ['Fastly', 'CDN/Cache', /fastly/i, 'Fastly header/body marker'],
+    ['Varnish Cache', 'CDN/Cache', /varnish/i, 'Varnish cache marker'],
+    ['Font Awesome', 'Icon Library', /font-awesome/i, 'Font Awesome marker'],
+    ['Shopify', 'CMS/Ecommerce', /shopify/i, 'Shopify marker'],
+    ['Joomla', 'CMS', /joomla/i, 'Joomla marker'],
+    ['Drupal', 'CMS', /drupal/i, 'Drupal marker'],
   ];
 
-  const detected = checks
-    .filter(([, pattern]) => pattern.test(text) || pattern.test(headerText))
-    .map(([name]) => name);
-  if (headers.server) detected.push(`Server: ${headers.server}`);
-  if (headers['x-powered-by']) detected.push(`Powered by: ${headers['x-powered-by']}`);
-  return [...new Set(detected)];
+  const detected = [];
+  const add = (technology) => {
+    if (!detected.some((item) => item.name.toLowerCase() === technology.name.toLowerCase())) detected.push(technology);
+  };
+  for (const [name, category, pattern, evidence] of checks) {
+    if (pattern.test(text) || pattern.test(headerText)) add({ name, category, confidence: /header/i.test(evidence) ? 1 : 0.8, evidence });
+  }
+  if (headers.server) {
+    add({ name: serverTechnologyName(headers.server), category: 'Web Server', confidence: 1, evidence: `Server header: ${headers.server}` });
+  }
+  if (headers['x-powered-by']) {
+    add({ name: poweredByTechnologyName(headers['x-powered-by']), category: 'Framework/Language', confidence: 1, evidence: `X-Powered-By header: ${headers['x-powered-by']}` });
+  }
+  const generator = firstMatch(text, /<meta[^>]+name=["']generator["'][^>]+content=["']([^"']+)["']/i);
+  if (generator) add({ name: generator, category: 'CMS/Generator', confidence: 1, evidence: `Meta generator: ${generator}` });
+  return detected;
 };
 
 const runSeo = async (target, options, cache) => {
@@ -794,7 +1007,7 @@ const runPorts = async (target, options) => {
 
 const runSqlInjection = async (target, options) => {
   const payloads = await loadPayloads('sqli.json', options.payloads);
-  return runPayloadProbe(target, options, payloads, (body, payload, response, baseline, context) => {
+  const result = await runPayloadProbe(target, options, payloads, (body, payload, response, baseline, context) => {
     const matched = SQL_ERRORS.find((pattern) => pattern.test(body));
     if (matched) return { found: true, indicator: firstRegexMatch(body, matched) || String(matched), confidence: 0.9 };
     if (payload.type?.includes('Time-based Blind') && context.durationMs >= 4500) {
@@ -816,6 +1029,15 @@ const runSqlInjection = async (target, options) => {
     }
     return { found: false };
   }, 'sqlinjection');
+  const blindFindings = await runBooleanBlindSqlChecks(target, options, result.injectionPoints, result.baseline);
+  for (const finding of blindFindings) {
+    if (!result.findings.some((item) => item.param === finding.param && item.type === finding.type)) result.findings.unshift(finding);
+  }
+  result.vulnerable = result.findings.length > 0;
+  result.vulnerabilities = result.findings;
+  result.testedPayloads = result.tested;
+  result.method = 'Error-based, Time-based, Boolean Blind, and Heuristic Analysis';
+  return result;
 };
 
 const runXss = async (target, options) => {
@@ -916,12 +1138,17 @@ const runPayloadProbe = async (target, options, payloads, isFinding, moduleName)
     options.log?.(`finished ${formatInjectionPoint(injectionPoint)} (${tested} requests tested so far)`);
   }
   options.log?.(`${moduleName} probe complete: ${tested} requests, ${findings.length} findings, ${errors.length} errors`);
-  return { module: moduleName, tested, params: injectionPoints.map((point) => point.name), injectionPoints, findings, errors };
+  return { module: moduleName, tested, params: injectionPoints.map((point) => point.name), injectionPoints, findings, vulnerabilities: findings, vulnerable: findings.length > 0, testedPayloads: tested, errors, baseline };
 };
 
-const runWordPress = async (target, options) => {
+const runWordPress = async (target, options, cache) => {
   const paths = ['/wp-login.php', '/wp-admin/', '/wp-json/', '/xmlrpc.php', '/wp-content/'];
   const checks = [];
+  const sensitiveFiles = [];
+  const vulnerabilities = [];
+  const plugins = [];
+  const themes = [];
+  const { text } = await getHtml(target, options, cache).catch(() => ({ text: '' }));
   options.log?.(`checking ${paths.length} WordPress indicator paths`);
   for (const path of paths) {
     options.log?.(`requesting ${path}`);
@@ -930,9 +1157,40 @@ const runWordPress = async (target, options) => {
     const latest = checks.at(-1);
     options.log?.(latest.error ? `${path} error: ${latest.error}` : `${path} returned HTTP ${latest.status}`);
   }
-  const isWordPress = checks.some((check) => check.ok) || checks.some((check) => [401, 403].includes(check.status));
+  const isWordPress = /wp-content|wp-includes|wordpress/i.test(text) || checks.some((check) => check.ok) || checks.some((check) => [401, 403].includes(check.status));
+  const version = firstMatch(text, /wordpress\s+(\d+\.\d+(?:\.\d+)?)/i) || firstMatch(text, /<meta[^>]+name=["']generator["'][^>]+content=["']WordPress\s+([^"']+)["']/i);
+  if (isWordPress) {
+    for (const file of WP_SENSITIVE_FILES) {
+      const url = new URL(file, `${target.origin}/`);
+      options.log?.(`checking WordPress sensitive file ${file}`);
+      const response = await request(url.href, { method: 'HEAD' }, Math.min(options.timeout, 5000)).catch((error) => ({ error }));
+      if (!response.error && response.ok) {
+        const size = response.headers.get('content-length');
+        sensitiveFiles.push({ path: file, accessible: true, size: size ? Number.parseInt(size, 10) : undefined });
+      }
+    }
+
+    for (const match of text.matchAll(/wp-content\/plugins\/([^\/'")\s?]+)/gi)) {
+      if (!plugins.includes(match[1])) plugins.push(match[1]);
+    }
+    for (const match of text.matchAll(/wp-content\/themes\/([^\/'")\s?]+)/gi)) {
+      if (!themes.includes(match[1])) themes.push(match[1]);
+    }
+    if (version && Number.parseFloat(version) < 6) {
+      vulnerabilities.push({ title: 'Outdated WordPress Version', severity: 'high', description: `WordPress ${version} is outdated. Update recommended.` });
+    }
+    if (sensitiveFiles.some((file) => file.path === 'xmlrpc.php')) {
+      vulnerabilities.push({ title: 'XML-RPC Enabled', severity: 'medium', description: 'XML-RPC is accessible and can be used for brute force amplification.' });
+    }
+    if (sensitiveFiles.some((file) => file.path.includes('debug.log'))) {
+      vulnerabilities.push({ title: 'Debug Log Exposed', severity: 'high', description: 'Debug log file is publicly accessible and may contain sensitive information.' });
+    }
+    if (sensitiveFiles.some((file) => file.path.includes('wp-config'))) {
+      vulnerabilities.push({ title: 'Configuration File Exposed', severity: 'high', description: 'WordPress configuration file or backup is accessible.' });
+    }
+  }
   options.log?.(isWordPress ? 'WordPress indicators found' : 'no WordPress indicators found');
-  return { isWordPress, checks };
+  return { isWordPress, version, checks, sensitiveFiles, plugins, themes, vulnerabilities };
 };
 
 const runBrokenLinks = async (target, options, cache) => {
@@ -1216,13 +1474,17 @@ const renderDetails = (moduleName, result) => {
   }
 
   if (moduleName === 'headers') {
-    return [
-      kv('Security score', `${data.security.score}/100`),
+    return compactLines([
+      kv('Security score', `${data.security.score}/100 (${data.security.grade || data.securityHeaders?.grade || 'n/a'})`),
       kv('Present', list(data.security.present)),
       kv('Missing', list(data.security.missing)),
+      kv('Insecure present', list(data.securityHeaders?.present?.filter((header) => !header.secure).map((header) => header.name))),
+      kv('Cookie issues', list((data.cookies || []).flatMap((cookie) => cookie.issues.map((issue) => `${cookie.name}: ${issue}`)), 6)),
+      kv('Cache issues', list(data.cacheControl?.issues, 5)),
+      kv('CORS issues', list(data.cors?.issues, 5)),
       kv('Protection', formatProtection(data.protection)),
       ...Object.entries(data.headers).slice(0, 18).map(([name, value]) => kv(name, truncate(String(value), 110))),
-    ];
+    ]);
   }
 
   if (moduleName === 'whois') {
@@ -1273,9 +1535,13 @@ const renderDetails = (moduleName, result) => {
   }
 
   if (moduleName === 'mx') {
-    return data.records.length
-      ? data.records.map((record) => kv('MX', `${record.exchange || record} ${record.priority !== undefined ? `(priority ${record.priority})` : ''}`.trim()))
-      : [kv('MX', 'none found')];
+    return compactLines([
+      kv('SPF', data.spfRecord || 'missing'),
+      kv('DMARC', data.dmarcRecord || 'missing'),
+      ...(data.records.length
+        ? data.records.map((record) => kv('MX', `${record.exchange || '(null MX)'} ${record.priority !== undefined ? `(priority ${record.priority})` : ''}${record.ip ? ` ${record.ip}` : ''}`.trim()))
+        : [kv('MX', 'none found')]),
+    ]);
   }
 
   if (moduleName === 'subnet') {
@@ -1307,9 +1573,18 @@ const renderDetails = (moduleName, result) => {
   }
 
   if (moduleName === 'virustotal') {
-    return data.stats
-      ? [kv('Reputation', data.reputation), ...Object.entries(data.stats).map(([name, value]) => kv(name, value))]
-      : [kv('Status', data.reason || 'No VirusTotal API key configured')];
+    if (!data.stats && data.reason) return [kv('Status', data.reason)];
+    return compactLines([
+      kv('Reputation', data.reputation),
+      kv('Last analysis', data.lastAnalysisDate),
+      kv('Categories', list(data.categories, 8)),
+      kv('Registrar', data.registrar),
+      ...(data.stats ? Object.entries(data.stats).map(([name, value]) => kv(name, value)) : []),
+      kv('Detected URLs', data.detectedUrls?.length || 0),
+      kv('Communicating files', data.detectedCommunicatingFiles?.length || 0),
+      ...(data.detectedUrls?.slice(0, 5).map((item) => kv('Detected URL', `${item.positives}/${item.total} ${truncate(item.url, 100)}`)) || []),
+      ...(data.errors?.length ? [kv('API errors', list(data.errors, 3))] : []),
+    ]);
   }
 
   if (moduleName === 'sslTls') {
@@ -1335,6 +1610,7 @@ const renderDetails = (moduleName, result) => {
         : `failed: ${data.builtWith.reason || 'unknown error'}`;
     return compactLines([
       kv('Detected', list(data.detected, 20)),
+      ...(data.technologies?.slice(0, 15).map((item) => kv('Technology', `${item.name} (${item.category || list(item.categories, 3) || 'unknown'}, ${Math.round((item.confidence || 0) * 100)}%)${item.evidence ? ` - ${truncate(item.evidence, 70)}` : ''}`)) || []),
       kv('BuiltWith', builtWithStatus),
       ...(data.builtWith?.technologies?.length
         ? data.builtWith.technologies.slice(0, 15).map((item) => kv('BuiltWith tech', `${item.name}${item.categories?.length ? ` (${list(item.categories, 4)})` : ''}`))
@@ -1380,10 +1656,16 @@ const renderDetails = (moduleName, result) => {
   }
 
   if (moduleName === 'wordpress') {
-    return [
+    return compactLines([
       kv('WordPress likely', String(Boolean(data.isWordPress))),
+      kv('Version', data.version),
+      kv('Plugins', list(data.plugins, 10)),
+      kv('Themes', list(data.themes, 10)),
+      kv('Sensitive files', data.sensitiveFiles?.length || 0),
+      kv('Vulnerabilities', data.vulnerabilities?.length || 0),
+      ...(data.vulnerabilities?.map((finding) => kv(finding.severity, `${finding.title}: ${finding.description}`)) || []),
       ...data.checks.map((check) => kv(check.path, check.error || `${check.status} ${check.ok ? 'reachable' : 'not reachable'}`)),
-    ];
+    ]);
   }
 
   if (moduleName === 'brokenLinks') {
@@ -1423,6 +1705,101 @@ const renderDetails = (moduleName, result) => {
 
 const kv = (key, value) => `${color('dim', `${key}:`)} ${value === null || value === undefined || value === '' ? 'n/a' : value}`;
 const compactLines = (lines) => lines.filter((line) => !line.endsWith(' n/a'));
+const analyzeSecurityHeaders = (headers) => {
+  const present = [];
+  const missing = [];
+  let score = 0;
+  const maxScore = SECURITY_HEADER_CHECKS.reduce((sum, header) => sum + severityWeight(header.severity), 0);
+  for (const header of SECURITY_HEADER_CHECKS) {
+    const value = headers[header.key];
+    const secure = value ? Boolean(header.check(value)) : false;
+    const record = {
+      name: header.name,
+      value,
+      present: Boolean(value),
+      secure,
+      recommendation: secure ? undefined : header.recommendation,
+      severity: header.severity,
+    };
+    if (value) {
+      present.push(record);
+      score += secure ? severityWeight(header.severity) : Math.max(1, Math.round(severityWeight(header.severity) * 0.25));
+    } else {
+      missing.push(record);
+    }
+  }
+  const percentage = Math.round((score / Math.max(1, maxScore)) * 100);
+  return { present, missing, score: percentage, grade: gradeFromPercentage(percentage) };
+};
+
+const severityWeight = (severity) => {
+  if (severity === 'critical') return 20;
+  if (severity === 'high') return 15;
+  if (severity === 'medium') return 10;
+  return 5;
+};
+
+const gradeFromPercentage = (score) => score >= 90 ? 'A+' : score >= 80 ? 'A' : score >= 70 ? 'B' : score >= 60 ? 'C' : score >= 50 ? 'D' : 'F';
+
+const analyzeCookies = (setCookieHeader) => {
+  if (!setCookieHeader) return [];
+  return setCookieHeader.split(/,(?=\s*[a-zA-Z0-9_]+=)/g).map((cookie) => {
+    const parts = cookie.split(';').map((part) => part.trim());
+    const [nameValue] = parts;
+    const [name, ...valueParts] = nameValue.split('=');
+    const secure = parts.some((part) => part.toLowerCase() === 'secure');
+    const httpOnly = parts.some((part) => part.toLowerCase() === 'httponly');
+    const sameSitePart = parts.find((part) => part.toLowerCase().startsWith('samesite='));
+    const domainPart = parts.find((part) => part.toLowerCase().startsWith('domain='));
+    const pathPart = parts.find((part) => part.toLowerCase().startsWith('path='));
+    const expiresPart = parts.find((part) => part.toLowerCase().startsWith('expires='));
+    const sameSite = sameSitePart?.split('=')[1];
+    const issues = [];
+    if (!secure) issues.push('Missing Secure flag');
+    if (!httpOnly) issues.push('Missing HttpOnly flag');
+    if (!sameSite) issues.push('Missing SameSite attribute');
+    else if (sameSite.toLowerCase() === 'none' && !secure) issues.push('SameSite=None requires Secure flag');
+    return {
+      name,
+      value: valueParts.join('='),
+      secure,
+      httpOnly,
+      sameSite,
+      domain: domainPart?.split('=')[1],
+      path: pathPart?.split('=')[1],
+      expires: expiresPart?.slice('expires='.length),
+      issues,
+    };
+  }).filter((cookie) => cookie.name);
+};
+
+const analyzeCacheControl = (value) => {
+  const directives = value ? value.split(',').map((item) => item.trim()) : [];
+  const lower = directives.map((item) => item.toLowerCase());
+  const issues = [];
+  if (!value) issues.push('Cache-Control header missing');
+  if (value && !lower.some((item) => item.startsWith('max-age') || item.startsWith('s-maxage'))) issues.push('Missing max-age or s-maxage directive');
+  if (lower.includes('private') && !lower.includes('no-cache') && !lower.includes('no-store')) issues.push('Private cache control without no-cache/no-store may still cache sensitive data');
+  if (lower.includes('public') && (lower.includes('private') || lower.includes('no-cache') || lower.includes('no-store'))) issues.push('Conflicting public/private cache directives detected');
+  return { present: Boolean(value), directives, issues };
+};
+
+const analyzeCorsHeaders = (headers) => {
+  const allowOrigin = headers['access-control-allow-origin'];
+  const allowMethods = headers['access-control-allow-methods'];
+  const allowHeaders = headers['access-control-allow-headers'];
+  const exposeHeaders = headers['access-control-expose-headers'];
+  const allowCredentials = headers['access-control-allow-credentials'] === 'true';
+  const maxAge = headers['access-control-max-age'] ? Number.parseInt(headers['access-control-max-age'], 10) : undefined;
+  const issues = [];
+  if (allowOrigin === '*') issues.push('CORS allows all origins (*)');
+  if (allowCredentials && allowOrigin === '*') issues.push('CORS allows credentials with wildcard origin');
+  if (allowMethods?.includes('*')) issues.push('CORS allows all methods (*)');
+  if (allowHeaders?.includes('*')) issues.push('CORS allows all headers (*)');
+  if (maxAge !== undefined && maxAge > 86400) issues.push(`CORS Max-Age is very high (${maxAge}s)`);
+  return { enabled: Boolean(allowOrigin), allowOrigin, allowMethods, allowHeaders, exposeHeaders, allowCredentials, maxAge, issues };
+};
+
 const list = (items, limit = 12) => {
   if (!items || items.length === 0) return 'none';
   const values = (Array.isArray(items) ? items : [items]).map((item) => typeof item === 'string' ? item : JSON.stringify(item));
@@ -1553,11 +1930,16 @@ const calculateSecurityAssessment = (results) => {
   }
 
   if (modules.headers?.ok && modules.headers.data?.security) {
-    const present = modules.headers.data.security.present || [];
-    const missing = modules.headers.data.security.missing || [];
-    const score = Math.max(0, 20 * (present.length / Math.max(1, present.length + missing.length)));
-    if (missing.length) recommend(`Add missing security headers: ${missing.slice(0, 6).join(', ')}.`);
-    add('headers', 20, score, `${present.length} present, ${missing.length} missing`);
+    const present = modules.headers.data.securityHeaders?.present || [];
+    const missing = modules.headers.data.securityHeaders?.missing || [];
+    const headerScore = modules.headers.data.securityHeaders?.score ?? modules.headers.data.security.score ?? 0;
+    const score = Math.max(0, Math.min(20, headerScore / 5));
+    const insecurePresent = present.filter((header) => !header.secure);
+    if (missing.length) recommend(`Add missing security headers: ${missing.slice(0, 6).map((header) => header.name || header).join(', ')}.`);
+    if (insecurePresent.length) recommend(`Harden weak security headers: ${insecurePresent.slice(0, 4).map((header) => header.name).join(', ')}.`);
+    const cookieIssues = (modules.headers.data.cookies || []).flatMap((cookie) => cookie.issues || []);
+    if (cookieIssues.length) recommend('Fix cookie flags: require Secure, HttpOnly, and SameSite where appropriate.');
+    add('headers', 20, score, `${present.length} present, ${missing.length} missing, grade ${modules.headers.data.securityHeaders?.grade || 'n/a'}`);
   }
 
   if (modules.sslTls?.ok && modules.sslTls.data && !modules.sslTls.data.skipped) {
@@ -1593,6 +1975,10 @@ const calculateSecurityAssessment = (results) => {
       const reachable = (modules.wordpress.data?.checks || []).filter((check) => check.ok || [401, 403].includes(check.status));
       score -= Math.min(4, reachable.length * 0.8);
       if (reachable.length) recommend('Harden WordPress endpoints: keep core/plugins updated and restrict admin/API exposure.');
+      const wpVulnerabilities = modules.wordpress.data?.vulnerabilities || [];
+      const highWp = wpVulnerabilities.filter((finding) => finding.severity === 'high').length;
+      score -= Math.min(5, highWp * 1.5 + Math.max(0, wpVulnerabilities.length - highWp) * 0.75);
+      if (wpVulnerabilities.length) recommend('Remediate WordPress findings: update outdated versions and block exposed sensitive files.');
     }
     if (modules.brokenLinks?.ok && Array.isArray(modules.brokenLinks.data?.broken)) {
       const brokenCount = modules.brokenLinks.data.broken.length;
@@ -1608,6 +1994,11 @@ const calculateSecurityAssessment = (results) => {
       score -= 4;
       recommend('Investigate negative VirusTotal reputation and clean or delist flagged assets.');
     }
+    const maliciousUrls = modules.virustotal?.data?.detectedUrls?.filter((url) => url.positives > 0) || [];
+    if (maliciousUrls.length) {
+      score -= Math.min(3, maliciousUrls.length);
+      recommend('Review VirusTotal detected URLs and remove or remediate malicious flagged paths.');
+    }
     if (modules.ddosFirewall?.ok) {
       if (modules.ddosFirewall.data?.likelyProtected) score += 1;
       else {
@@ -1615,10 +2006,33 @@ const calculateSecurityAssessment = (results) => {
         recommend('Consider rate limiting or WAF/CDN protection for abusive traffic resilience.');
       }
     }
+    const outdatedTech = (modules.techStack?.data?.technologies || []).filter((tech) =>
+      (tech.name === 'WordPress' && tech.version && Number.parseFloat(tech.version) < 6) ||
+      (tech.name === 'PHP' && tech.version && Number.parseFloat(tech.version) < 8) ||
+      (tech.name === 'Apache HTTP Server' && tech.version && Number.parseFloat(tech.version) < 2.4) ||
+      (tech.name === 'Nginx' && tech.version && Number.parseFloat(tech.version) < 1.2));
+    if (outdatedTech.length) {
+      score -= Math.min(2, outdatedTech.length * 0.5);
+      recommend(`Update outdated detected technologies: ${outdatedTech.slice(0, 5).map((tech) => tech.name).join(', ')}.`);
+    }
     if (modules.techStack?.ok && modules.techStack.data?.detected?.some((item) => /wordpress|php|apache|nginx/i.test(item))) {
       recommend('Review detected technologies for outdated versions and remove unnecessary fingerprinting headers.');
     }
     add('reputation', 10, Math.max(0, Math.min(10, score)), 'reputation, WAF, technology signals');
+  }
+
+  if (modules.mx?.ok) {
+    const mxData = modules.mx.data;
+    let score = 5;
+    if (!mxData.spfRecord) {
+      score -= 2;
+      recommend('Publish an SPF record to reduce email spoofing risk.');
+    }
+    if (!mxData.dmarcRecord) {
+      score -= 2;
+      recommend('Publish a DMARC record to improve domain email abuse protection.');
+    }
+    add('email', 5, Math.max(0, score), `${mxData.records?.length || 0} MX, SPF ${mxData.spfRecord ? 'present' : 'missing'}, DMARC ${mxData.dmarcRecord ? 'present' : 'missing'}`);
   }
 
   if (!details.length) {
@@ -1973,6 +2387,61 @@ const buildPayloadUrl = (target, injectionPoint, payloadValue) => {
   const url = new URL(target.url.href);
   url.searchParams.set(injectionPoint.name, `${injectionPoint.baseValue}${payloadValue}`);
   return url;
+};
+
+const runBooleanBlindSqlChecks = async (target, options, injectionPoints, baseline) => {
+  const findings = [];
+  for (const injectionPoint of injectionPoints || []) {
+    throwIfInterrupted();
+    const trueUrl = buildPayloadUrl(target, injectionPoint, ' AND 1=1--');
+    const falseUrl = buildPayloadUrl(target, injectionPoint, ' AND 1=0--');
+    options.log?.(`sending boolean-blind SQLi true/false probes to ${formatInjectionPoint(injectionPoint)}`);
+    try {
+      const trueResponse = await request(trueUrl.href, { method: 'GET' }, options.timeout);
+      const trueBody = await trueResponse.text();
+      await sleep(Math.min(options.delay, 500));
+      const falseResponse = await request(falseUrl.href, { method: 'GET' }, options.timeout);
+      const falseBody = await falseResponse.text();
+      const lengthDiff = Math.abs(trueBody.length - falseBody.length);
+      const minDiff = Math.max(50, (baseline?.length || Math.max(trueBody.length, falseBody.length)) * 0.1);
+      let indicator = null;
+      let confidence = 0;
+      let evidence = null;
+      if (trueResponse.status !== falseResponse.status) {
+        indicator = `Different HTTP status codes for TRUE (${trueResponse.status}) vs FALSE (${falseResponse.status}) conditions`;
+        confidence = 0.9;
+        evidence = `True status: ${trueResponse.status}, false status: ${falseResponse.status}`;
+      } else if (lengthDiff > minDiff) {
+        indicator = `Significant content length difference for TRUE (${trueBody.length}) vs FALSE (${falseBody.length}) conditions`;
+        confidence = 0.85;
+        evidence = `True length: ${trueBody.length}, false length: ${falseBody.length}, baseline length: ${baseline?.length || 'n/a'}`;
+      } else if (trueBody !== falseBody && baseline?.body && trueBody === baseline.body && falseBody !== baseline.body) {
+        indicator = 'Content differs for TRUE vs FALSE conditions';
+        confidence = 0.8;
+        evidence = `False response differs from baseline by ${Math.abs(falseBody.length - baseline.body.length)} bytes`;
+      }
+      if (indicator) {
+        options.log?.(`boolean-blind SQLi candidate at ${formatInjectionPoint(injectionPoint)} (${Math.round(confidence * 100)}% confidence)`);
+        findings.push({
+          param: injectionPoint.name,
+          injectionPoint: injectionPoint.type,
+          url: trueUrl.href,
+          payload: `${injectionPoint.baseValue} AND [BOOLEAN CONDITION]--`,
+          type: 'Boolean-based Blind',
+          severity: 'critical',
+          status: trueResponse.status,
+          indicator,
+          confidence,
+          evidence,
+        });
+      }
+    } catch (error) {
+      options.log?.(`boolean-blind SQLi probe failed at ${formatInjectionPoint(injectionPoint)}: ${error.message}`);
+      tunePacingFromSample(options, { error: error.message, moduleName: 'sqlinjection' });
+    }
+    await sleep(options.delay);
+  }
+  return findings;
 };
 
 const defaultPayloadParameters = (moduleName) => {
