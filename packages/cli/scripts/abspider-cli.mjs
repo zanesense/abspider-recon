@@ -5,12 +5,14 @@ import fs from 'node:fs/promises';
 import https from 'node:https';
 import net from 'node:net';
 import path from 'node:path';
+import { emitKeypressEvents } from 'node:readline';
+import readline from 'node:readline/promises';
 import tls from 'node:tls';
 import { performance } from 'node:perf_hooks';
 import { performWhoisLookup } from '../src/services/whoisService.js';
 import { performGeoIPLookup } from '../src/services/geoipService.js';
 
-const VERSION = '2.1.1';
+const VERSION = '2.1.2';
 const USER_AGENT = `ABSpider-CLI/${VERSION} (Authorized Security Scanner)`;
 const WEB_PORTS = [80, 443, 8000, 8080, 8443, 8888, 3000, 5000, 9000, 2082, 2083];
 const COMMON_PORTS = [
@@ -315,6 +317,7 @@ Options:
   --output <file>        Write full JSON results to a file.
   --pretty               Pretty-print JSON output.
   --no-color             Disable ANSI colors.
+  --interactive, -i      Prompt for target, profile, modules, and scan settings.
   --update               Check npm and update abspider, then exit if no target is provided.
   --no-update            Disable the npm auto-update check for this run.
   --help                 Show this help.
@@ -322,6 +325,7 @@ Options:
 
 Examples:
   abspider example.com
+  abspider --interactive
   abspider example.com --all
   abspider https://example.com --active --mode conservative
   abspider https://example.com --all --mode aggressive --port-profile common
@@ -353,6 +357,7 @@ const parseArgs = (argv) => {
     color: true,
     update: true,
     forceUpdate: false,
+    interactive: false,
     explicit: new Set(),
   };
   let target = null;
@@ -372,6 +377,7 @@ const parseArgs = (argv) => {
     else if (arg === '--json') options.json = true;
     else if (arg === '--pretty') options.pretty = true;
     else if (arg === '--no-color') options.color = false;
+    else if (arg === '--interactive' || arg === '-i') options.interactive = true;
     else if (arg === '--update') options.forceUpdate = true;
     else if (arg === '--no-update') options.update = false;
     else if (arg === '--modules' || arg === '-m') options.modules = readModules(argv[++i]);
@@ -485,8 +491,23 @@ const readPorts = (value) => {
 const normalizeTarget = (rawTarget) => {
   if (!rawTarget || rawTarget.trim().length === 0) throw new Error('Target is required');
   const input = rawTarget.trim();
+  if (/\s/.test(input)) throw new Error('Invalid target: URLs and hostnames cannot contain whitespace.');
   const urlText = /^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(input) ? input : `https://${input}`;
-  const url = new URL(urlText);
+  let url;
+  try {
+    url = new URL(urlText);
+  } catch {
+    throw new Error(`Invalid target URL: ${input}`);
+  }
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error(`Invalid target protocol: ${url.protocol.replace(':', '')}. Use http or https.`);
+  }
+  if (url.username || url.password) {
+    throw new Error('Invalid target: credentials in URLs are not supported.');
+  }
+  if (!isValidTargetHostname(url.hostname)) {
+    throw new Error(`Invalid target hostname: ${url.hostname || input}`);
+  }
   return {
     input,
     url,
@@ -495,6 +516,19 @@ const normalizeTarget = (rawTarget) => {
     domain: url.hostname.replace(/^www\./i, ''),
     port: url.port ? Number.parseInt(url.port, 10) : (url.protocol === 'http:' ? 80 : 443),
   };
+};
+
+const isValidTargetHostname = (hostname) => {
+  const host = String(hostname || '').toLowerCase();
+  const bareHost = host.replace(/^\[/, '').replace(/\]$/, '');
+  if (!host || host.length > 253) return false;
+  if (host === 'localhost') return true;
+  if (net.isIP(bareHost)) return true;
+  if (!host.includes('.')) return false;
+  return host.split('.').every((label) =>
+    label.length >= 1 &&
+    label.length <= 63 &&
+    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label));
 };
 
 const request = async (url, options, timeoutMs) => {
@@ -1294,6 +1328,7 @@ const runScan = async (target, options) => {
   if (!options.json) printRunHeader(target, options);
 
   for (let index = 0; index < options.modules.length; index += 1) {
+    if (!options.json && index > 0) await sleep(options.interModuleDelay ?? 350);
     if (isInterrupted()) {
       results.interrupted = true;
       results.errors.push('Scan interrupted by user');
@@ -1343,7 +1378,7 @@ const runScan = async (target, options) => {
 
 const printRunHeader = (target, options) => {
   const activeModules = options.modules.filter((moduleName) => ACTIVE_MODULES.includes(moduleName));
-  console.log(cliSchemeBanner());
+  if (!options.suppressBanner) console.log(cliSchemeBanner());
   compactBanner();
   writeRail('◇', `${color('bold', 'Target:')} ${target.origin}`, 'green');
   writeRail('│');
@@ -2173,24 +2208,32 @@ const maybeAutoUpdate = async (options) => {
   const writeUpdate = (message, level = 'gray') => {
     const output = color(level, message);
     if (options.json) console.error(output);
-    else console.log(output);
+    else writeRail(level === 'yellow' ? '◇' : '◆', output, level);
   };
+  if (process.env.ABSPIDER_RESTARTED_AFTER_UPDATE === '1') {
+    writeUpdate(`Update applied. Running ABSpider ${VERSION} in the relaunched session.`, 'green');
+    if (!options.json) console.log('');
+    return { checked: false, restartedSession: true };
+  }
   try {
     const latest = await fetchLatestNpmVersion('abspider', 1800);
     if (!latest) {
-      writeUpdate('ABSpider update check: npm did not return a latest version.', 'yellow');
+      writeUpdate('Update check reached npm, but no latest version was returned. Continuing with the local build.', 'yellow');
       if (!options.json) console.log('');
       return { checked: true, updated: false, latest: null };
     }
     if (compareVersions(latest, VERSION) <= 0) {
-      writeUpdate(`ABSpider is up to date (${VERSION}).`, 'green');
+      writeUpdate(`Update check complete: ABSpider ${VERSION} matches npm latest. Continuing with this run.`, 'green');
       if (!options.json) console.log('');
       return { checked: true, updated: false, latest };
     }
-    writeUpdate(`Update available: abspider ${VERSION} -> ${latest}. Installing from npm...`, 'yellow');
+    writeUpdate(`Update found: ABSpider ${VERSION} -> ${latest}. Installing the npm package before the scan starts...`, 'yellow');
     const result = await installLatestFromNpm(latest, 120000);
     if (result.ok) {
-      writeUpdate(`Updated abspider to ${latest}. Restart the CLI to use the new version.`, 'green');
+      writeUpdate(`Update installed: ABSpider ${latest}. Relaunching this command so the new package handles the run...`, 'green');
+      if (!options.json) console.log('');
+      const restart = await relaunchCliAfterUpdate(latest);
+      return { checked: true, updated: true, restarted: restart.ok, latest, error: restart.error || null, exitCode: restart.exitCode };
     } else {
       writeUpdate(`Auto-update failed: ${result.error || 'npm install failed'}`, 'yellow');
     }
@@ -2207,6 +2250,20 @@ const shouldAutoUpdate = (options) =>
   options.update &&
   process.env.ABSPIDER_NO_UPDATE !== '1' &&
   process.env.CI !== 'true';
+
+const relaunchCliAfterUpdate = (latest) => new Promise((resolve) => {
+  const child = spawn(process.execPath, process.argv.slice(1), {
+    stdio: 'inherit',
+    windowsHide: true,
+    env: {
+      ...process.env,
+      ABSPIDER_RESTARTED_AFTER_UPDATE: '1',
+      ABSPIDER_UPDATED_TO: latest,
+    },
+  });
+  child.on('error', (error) => resolve({ ok: false, error: error.message }));
+  child.on('close', (code) => resolve({ ok: true, exitCode: code ?? 0 }));
+});
 
 const isNpmPackageExecution = () => {
   const entry = process.argv[1] ? path.normalize(process.argv[1]).toLowerCase() : '';
@@ -2604,13 +2661,337 @@ const installShutdownHandlers = (controller) => {
   };
 };
 
+const runInteractiveSetup = async (rawTarget, options) => {
+  if (options.json) throw new Error('--interactive cannot be combined with --json');
+  const rl = await createPromptSession();
+  try {
+    console.log(cliSchemeBanner());
+    writeRail('◇', color('bold', 'Interactive scan setup'), 'blue');
+    writeRail('│');
+    const target = await askTarget(rl, rawTarget);
+    const profile = await askChoice(rl, 'Module profile', [
+      ['passive', 'Passive reconnaissance'],
+      ['active', 'Active vulnerability modules'],
+      ['all', 'All modules'],
+      ['custom', 'Choose modules'],
+    ], 'passive');
+
+    if (profile === 'passive') options.modules = [...PASSIVE_MODULES];
+    else if (profile === 'active') options.modules = [...ACTIVE_MODULES];
+    else if (profile === 'all') options.modules = [...ALL_MODULES];
+    else options.modules = await askModuleSelector(rl, options.modules);
+
+    options.mode = await askChoice(rl, 'Scan mode', [
+      ['conservative', 'Gentler checks, fewer active requests'],
+      ['adaptive', 'Balanced auto-tuned scan'],
+      ['aggressive', 'Broader coverage with safety tuning'],
+    ], options.mode);
+
+    const explicit = new Set();
+    options.explicit = explicit;
+    applyModeDefaults(options);
+
+    const configureAdvanced = await askYesNo(rl, 'Adjust advanced settings?', false);
+    if (configureAdvanced) {
+      options.threads = await askPositiveInt(rl, 'Concurrent threads', options.threads, 1, 100);
+      explicit.add('threads');
+      options.timeout = await askPositiveInt(rl, 'Request timeout ms', options.timeout, 1000, 120000);
+      options.payloads = await askPositiveInt(rl, 'Payloads per active injection check', options.payloads, 1, 1000);
+      explicit.add('payloads');
+      options.delay = await askPositiveInt(rl, 'Delay between active payloads ms', options.delay, 1, 10000);
+      explicit.add('delay');
+      options.ddosRequests = await askPositiveInt(rl, 'Bounded WAF probe requests', options.ddosRequests, 1, 250);
+      explicit.add('ddosRequests');
+      options.subdomainLimit = Math.min(
+        await askPositiveInt(rl, 'Subdomain wordlist limit', options.subdomainLimit, 1, COMMON_SUBDOMAINS.length),
+        COMMON_SUBDOMAINS.length,
+      );
+      explicit.add('subdomainLimit');
+      options.ct = await askYesNo(rl, 'Use crt.sh certificate transparency lookup?', options.ct);
+      const portProfile = await askChoice(rl, 'Port profile', [
+        ['current', `Current (${options.ports.length} ports)`],
+        ['web', 'Common web ports'],
+        ['common', 'Common service ports'],
+        ['full', 'TCP 1-1024'],
+      ], 'current');
+      if (portProfile !== 'current') {
+        options.ports = readPortProfile(portProfile);
+        explicit.add('ports');
+      }
+    }
+
+    options.modules = [...new Set(options.modules)];
+    options.threads = Math.min(options.threads, 100);
+    options.payloads = Math.min(options.payloads, 1000);
+    options.ddosRequests = Math.min(options.ddosRequests, 250);
+    options.subdomainLimit = Math.min(options.subdomainLimit, COMMON_SUBDOMAINS.length);
+    options.safety = buildSafetyLimits(options, MODE_PROFILES[options.mode]);
+    delete options.explicit;
+    writeRail('◇', `${color('bold', 'Selected modules:')} ${options.modules.join(', ')}`, 'green');
+    writeRail('│');
+    return { target, options };
+  } finally {
+    rl.close();
+  }
+};
+
+const createPromptSession = async () => {
+  if (process.stdin.isTTY) {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.isTty = true;
+    return rl;
+  }
+  let input = '';
+  for await (const chunk of process.stdin) input += chunk.toString();
+  const answers = input.split(/\r?\n/);
+  return {
+    async question(promptText) {
+      const answer = answers.length ? answers.shift() : '';
+      process.stdout.write(promptText);
+      if (answer) process.stdout.write(`${answer}\n`);
+      else process.stdout.write('\n');
+      return answer;
+    },
+    close() {},
+    isTty: false,
+  };
+};
+
+const askRequired = async (rl, label) => {
+  while (true) {
+    const answer = (await rl.question(`${label}: `)).trim();
+    if (answer) return answer;
+    console.log(color('yellow', `${label} is required.`));
+  }
+};
+
+const askTarget = async (rl, initialTarget) => {
+  if (initialTarget) {
+    try {
+      normalizeTarget(initialTarget);
+      return initialTarget;
+    } catch (error) {
+      console.log(color('yellow', `${error.message}. Enter a different target.`));
+    }
+  }
+  while (true) {
+    const answer = await askRequired(rl, 'Target URL or domain');
+    try {
+      normalizeTarget(answer);
+      return answer;
+    } catch (error) {
+      console.log(color('yellow', error.message));
+    }
+  }
+};
+
+const askChoice = async (rl, label, choices, defaultValue) => {
+  if (rl.isTty) return askChoiceWithArrows(label, choices, defaultValue);
+  console.log(color('bold', label));
+  for (let index = 0; index < choices.length; index += 1) {
+    const [value, description] = choices[index];
+    const selected = value === defaultValue ? '●' : '○';
+    console.log(`  ${index + 1}. (${selected}) ${value} - ${description}`);
+  }
+  while (true) {
+    const answer = (await rl.question(`Choose ${label.toLowerCase()} [${defaultValue}]: `)).trim().toLowerCase();
+    if (!answer) return defaultValue;
+    const byIndex = Number.parseInt(answer, 10);
+    if (Number.isInteger(byIndex) && choices[byIndex - 1]) return choices[byIndex - 1][0];
+    const match = choices.find(([value]) => value === answer);
+    if (match) return match[0];
+    console.log(color('yellow', `Enter a number from 1-${choices.length} or one of: ${choices.map(([value]) => value).join(', ')}`));
+  }
+};
+
+const askModuleSelector = async (rl, defaults) => {
+  if (rl.isTty) return askModuleSelectorWithArrows(defaults);
+  const selected = new Set(defaults);
+  while (true) {
+    console.log(color('bold', 'Choose modules'));
+    ALL_MODULES.forEach((moduleName, index) => {
+      const selectedMark = selected.has(moduleName) ? '●' : '○';
+      const type = ACTIVE_MODULES.includes(moduleName) ? 'active' : 'passive';
+      console.log(`  ${String(index + 1).padStart(2, ' ')}. (${selectedMark}) ${moduleName} ${muted(type)}`);
+    });
+    const answer = (await rl.question('Toggle module numbers, or type all/passive/active/none/done [done]: ')).trim().toLowerCase();
+    if (!answer || answer === 'done') break;
+    if (answer === 'all') {
+      ALL_MODULES.forEach((moduleName) => selected.add(moduleName));
+      continue;
+    }
+    if (answer === 'passive') {
+      selected.clear();
+      PASSIVE_MODULES.forEach((moduleName) => selected.add(moduleName));
+      continue;
+    }
+    if (answer === 'active') {
+      selected.clear();
+      ACTIVE_MODULES.forEach((moduleName) => selected.add(moduleName));
+      continue;
+    }
+    if (answer === 'none') {
+      selected.clear();
+      continue;
+    }
+    for (const part of answer.split(',').map((value) => value.trim()).filter(Boolean)) {
+      const index = Number.parseInt(part, 10);
+      const moduleName = ALL_MODULES[index - 1] || readModules(part)[0];
+      if (selected.has(moduleName)) selected.delete(moduleName);
+      else selected.add(moduleName);
+    }
+  }
+  if (!selected.size) {
+    console.log(color('yellow', 'No modules selected; using passive modules.'));
+    return [...PASSIVE_MODULES];
+  }
+  return [...selected];
+};
+
+const askChoiceWithArrows = async (label, choices, defaultValue) => {
+  let index = Math.max(0, choices.findIndex(([value]) => value === defaultValue));
+  const render = () => {
+    process.stdout.write('\x1b[?25l');
+    console.log(color('bold', label));
+    choices.forEach(([value, description], choiceIndex) => {
+      const focused = choiceIndex === index;
+      const symbol = focused ? '●' : '○';
+      const prefix = focused ? color('cyan', '›') : ' ';
+      const text = `${prefix} (${symbol}) ${value} - ${description}`;
+      console.log(focused ? color('bold', text) : text);
+    });
+    console.log(muted('Use ↑/↓ to move, Enter to select.'));
+  };
+  return withArrowKeyUi(render, (key) => {
+    if (key.name === 'up') index = (index - 1 + choices.length) % choices.length;
+    else if (key.name === 'down') index = (index + 1) % choices.length;
+    else if (key.name === 'return') return choices[index][0];
+    return undefined;
+  });
+};
+
+const askModuleSelectorWithArrows = async (defaults) => {
+  const selected = new Set(defaults);
+  let index = 0;
+  const render = () => {
+    process.stdout.write('\x1b[?25l');
+    console.log(color('bold', 'Choose modules'));
+    ALL_MODULES.forEach((moduleName, moduleIndex) => {
+      const focused = moduleIndex === index;
+      const selectedMark = selected.has(moduleName) ? '●' : '○';
+      const type = ACTIVE_MODULES.includes(moduleName) ? 'active' : 'passive';
+      const prefix = focused ? color('cyan', '›') : ' ';
+      const text = `${prefix} (${selectedMark}) ${moduleName} ${muted(type)}`;
+      console.log(focused ? color('bold', text) : text);
+    });
+    console.log(muted('Use ↑/↓ to move, Space to toggle, Enter to continue. Press a/p/n for active/passive/none, A for all.'));
+  };
+  const result = await withArrowKeyUi(render, (key, sequence) => {
+    if (key.name === 'up') index = (index - 1 + ALL_MODULES.length) % ALL_MODULES.length;
+    else if (key.name === 'down') index = (index + 1) % ALL_MODULES.length;
+    else if (key.name === 'space') {
+      const moduleName = ALL_MODULES[index];
+      if (selected.has(moduleName)) selected.delete(moduleName);
+      else selected.add(moduleName);
+    } else if (key.name === 'return') {
+      return selected.size ? [...selected] : [...PASSIVE_MODULES];
+    } else if (sequence === 'A') {
+      ALL_MODULES.forEach((moduleName) => selected.add(moduleName));
+    } else if (sequence === 'a') {
+      selected.clear();
+      ACTIVE_MODULES.forEach((moduleName) => selected.add(moduleName));
+    } else if (sequence === 'p') {
+      selected.clear();
+      PASSIVE_MODULES.forEach((moduleName) => selected.add(moduleName));
+    } else if (sequence === 'n') {
+      selected.clear();
+    }
+    return undefined;
+  });
+  if (!result.length) {
+    console.log(color('yellow', 'No modules selected; using passive modules.'));
+    return [...PASSIVE_MODULES];
+  }
+  return result;
+};
+
+const withArrowKeyUi = (render, onKey) => new Promise((resolve) => {
+  const input = process.stdin;
+  const output = process.stdout;
+  const previousRawMode = input.isRaw;
+  let renderedLines = 0;
+  const redraw = () => {
+    if (renderedLines) output.write(`\x1b[${renderedLines}F\x1b[J`);
+    const originalLog = console.log;
+    renderedLines = 0;
+    console.log = (...args) => {
+      renderedLines += 1;
+      originalLog(...args);
+    };
+    try {
+      render();
+    } finally {
+      console.log = originalLog;
+    }
+  };
+  const cleanup = () => {
+    input.off('keypress', onKeypress);
+    input.setRawMode?.(previousRawMode || false);
+    output.write('\x1b[?25h\n');
+  };
+  const onKeypress = (sequence, key = {}) => {
+    if (key.ctrl && key.name === 'c') {
+      cleanup();
+      process.kill(process.pid, 'SIGINT');
+      return;
+    }
+    const value = onKey(key, sequence);
+    if (value !== undefined) {
+      cleanup();
+      resolve(value);
+      return;
+    }
+    redraw();
+  };
+  emitKeypressEvents(input);
+  input.setRawMode?.(true);
+  input.resume();
+  input.on('keypress', onKeypress);
+  redraw();
+});
+
+const askYesNo = async (rl, label, defaultValue) => {
+  const suffix = defaultValue ? 'Y/n' : 'y/N';
+  while (true) {
+    const answer = (await rl.question(`${label} [${suffix}]: `)).trim().toLowerCase();
+    if (!answer) return defaultValue;
+    if (['y', 'yes'].includes(answer)) return true;
+    if (['n', 'no'].includes(answer)) return false;
+    console.log(color('yellow', 'Enter yes or no.'));
+  }
+};
+
+const askPositiveInt = async (rl, label, defaultValue, min, max) => {
+  while (true) {
+    const answer = (await rl.question(`${label} [${defaultValue}]: `)).trim();
+    if (!answer) return defaultValue;
+    const value = Number.parseInt(answer, 10);
+    if (Number.isInteger(value) && value >= min && value <= max) return value;
+    console.log(color('yellow', `Enter a number between ${min} and ${max}.`));
+  }
+};
+
 const main = async () => {
   let removeShutdownHandlers = null;
   try {
     const { target: rawTarget, options } = parseArgs(process.argv.slice(2));
     if (!options.color) colorEnabled = false;
     if (!options.json) clearTerminal();
-    await maybeAutoUpdate(options);
+    const updateResult = await maybeAutoUpdate(options);
+    if (updateResult.restarted) {
+      process.exitCode = updateResult.exitCode ?? 0;
+      return;
+    }
     if (options.forceUpdate && !rawTarget) return;
     if (options.help) {
       console.log(getHelp());
@@ -2620,17 +3001,19 @@ const main = async () => {
       console.log(VERSION);
       return;
     }
-    const target = normalizeTarget(rawTarget);
+    const interactiveSetup = options.interactive ? await runInteractiveSetup(rawTarget, options) : { target: rawTarget, options };
+    if (options.interactive && !interactiveSetup.options.json) clearTerminal();
+    const target = normalizeTarget(interactiveSetup.target);
     const shutdownController = new AbortController();
     activeShutdownSignal = shutdownController.signal;
     removeShutdownHandlers = installShutdownHandlers(shutdownController);
-    const results = await runScan(target, options);
-    const json = JSON.stringify(results, null, options.pretty ? 2 : 0);
-    if (options.output) await fs.writeFile(options.output, `${JSON.stringify(results, null, 2)}\n`, 'utf8');
-    if (options.json) console.log(json);
+    const results = await runScan(target, interactiveSetup.options);
+    const json = JSON.stringify(results, null, interactiveSetup.options.pretty ? 2 : 0);
+    if (interactiveSetup.options.output) await fs.writeFile(interactiveSetup.options.output, `${JSON.stringify(results, null, 2)}\n`, 'utf8');
+    if (interactiveSetup.options.json) console.log(json);
     else {
       printResults(results);
-      if (options.output) console.log(`\nFull JSON written to ${options.output}`);
+      if (interactiveSetup.options.output) console.log(`\nFull JSON written to ${interactiveSetup.options.output}`);
     }
     process.exitCode = results.interrupted ? 130 : (results.errors.length ? 2 : 0);
   } catch (error) {

@@ -216,18 +216,25 @@ You can use aliases with `--modules`.
 | `--output <file>`       | Write full JSON results to a file.                          |
 | `--pretty`              | Pretty-print JSON output.                                   |
 | `--no-color`            | Disable ANSI terminal colors.                               |
-| `--update`              | Check npm, update ABSpider if needed, and exit when no target is provided. |
+| `--interactive`, `-i`   | Prompt for target, profile, modules, and scan settings with arrow-key controls. |
+| `--update`              | Check npm, update ABSpider if needed, relaunch, and exit when no target is provided. |
 | `--no-update`           | Disable the npm auto-update check for this run.             |
 | `--help`, `-h`          | Show help.                                                  |
 | `--version`, `-v`       | Show version.                                               |
 
+## Interactive Mode
+
+Run `abspider --interactive` or `abspider -i` to configure a scan step by step. In a terminal, use Up/Down arrow keys to move through choices, Enter to select a radio option, and Space to toggle modules before pressing Enter to continue.
+
 ## Auto Updates
 
-ABSpider checks npm whenever the CLI starts. If the installed version is current, it prints that the tool is up to date. If a newer package exists, it automatically installs it with:
+ABSpider checks npm whenever the CLI starts. If the installed version is current, it continues the run. If a newer package exists, it installs it with:
 
 ```bash
 npm install -g abspider@latest
 ```
+
+After a successful install, the CLI relaunches the same command once so the new package handles the scan. The relaunched process skips the update check to avoid an update loop.
 
 To update explicitly without running a scan:
 
