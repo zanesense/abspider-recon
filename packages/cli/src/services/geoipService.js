@@ -113,6 +113,10 @@ export async function performGeoIPLookup(target, options = {}) {
           result.currency = loc.annotations?.currency?.name || result.currency;
           result.flag = loc.annotations?.flag || result.flag;
           result.formatted = loc.formatted;
+          result.reverseGeocoding = {
+            source: 'opencage',
+            confidence: loc.confidence,
+          };
           result.source = result.source || 'opencage';
         }
       }

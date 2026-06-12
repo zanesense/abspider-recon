@@ -152,6 +152,7 @@ const writeRail = (symbol, text = '', symbolColor = 'gray') => console.log(`${ra
 const clearTerminal = () => {
   if (process.stdout.isTTY) process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
 };
+const envValue = (...names) => names.map((name) => process.env[name]).find((value) => value && value.trim());
 
 const BANNER_LINES = [
   '          █████                        ███      █████                   ',
@@ -239,6 +240,7 @@ Options:
   --output <file>        Write full JSON results to a file.
   --pretty               Pretty-print JSON output.
   --no-color             Disable ANSI colors.
+  --update               Check npm and update abspider, then exit if no target is provided.
   --no-update            Disable the npm auto-update check for this run.
   --help                 Show this help.
   --version              Show version.
@@ -275,6 +277,7 @@ const parseArgs = (argv) => {
     output: null,
     color: true,
     update: true,
+    forceUpdate: false,
     explicit: new Set(),
   };
   let target = null;
@@ -294,6 +297,7 @@ const parseArgs = (argv) => {
     else if (arg === '--json') options.json = true;
     else if (arg === '--pretty') options.pretty = true;
     else if (arg === '--no-color') options.color = false;
+    else if (arg === '--update') options.forceUpdate = true;
     else if (arg === '--no-update') options.update = false;
     else if (arg === '--modules' || arg === '-m') options.modules = readModules(argv[++i]);
     else if (arg.startsWith('--modules=')) options.modules = readModules(arg.slice('--modules='.length));
@@ -483,7 +487,7 @@ const runHeaders = async (target, options) => {
 const runWhois = async (target, options) => {
   const data = await performWhoisLookup(target.domain, {
     timeout: options.timeout,
-    securitytrailsKey: process.env.SECURITYTRAILS_API_KEY || process.env.VITE_SECURITYTRAILS_API_KEY,
+    securitytrailsKey: envValue('SECURITYTRAILS_API_KEY', 'VITE_SECURITYTRAILS_API_KEY'),
   });
   return data;
 };
@@ -491,7 +495,7 @@ const runWhois = async (target, options) => {
 const runGeoIp = async (target, options) => {
   const data = await performGeoIPLookup(target.domain, {
     timeout: options.timeout,
-    opencageKey: process.env.OPENCAGE_API_KEY || process.env.VITE_OPENCAGE_API_KEY,
+    opencageKey: envValue('OPENCAGE_API_KEY', 'VITE_OPENCAGE_API_KEY'),
   });
   return data;
 };
@@ -580,7 +584,7 @@ const enumerateCrtShSubdomains = async (target, options) => {
 };
 
 const enumerateSecurityTrailsSubdomains = async (target, options) => {
-  const key = process.env.SECURITYTRAILS_API_KEY || process.env.VITE_SECURITYTRAILS_API_KEY;
+  const key = envValue('SECURITYTRAILS_API_KEY', 'VITE_SECURITYTRAILS_API_KEY');
   if (!key) return [];
   try {
     const response = await request(`https://api.securitytrails.com/v1/domain/${encodeURIComponent(target.domain)}/subdomains`, {
@@ -605,7 +609,7 @@ const runReverseIp = async (target, options) => {
 };
 
 const runVirusTotal = async (target, options) => {
-  const key = process.env.VIRUSTOTAL_API_KEY || process.env.VITE_VIRUSTOTAL_API_KEY;
+  const key = envValue('VIRUSTOTAL_API_KEY', 'VITE_VIRUSTOTAL_API_KEY');
   if (!key) return { skipped: true, reason: 'Set VIRUSTOTAL_API_KEY or VITE_VIRUSTOTAL_API_KEY to enable this module.' };
   const response = await request(`https://www.virustotal.com/api/v3/domains/${encodeURIComponent(target.domain)}`, {
     method: 'GET',
@@ -649,12 +653,89 @@ const runSslTls = async (target, options) => {
 const runTechStack = async (target, options, cache) => {
   const { response, text, protection } = await getHtml(target, options, cache);
   const headers = Object.fromEntries(response.headers.entries());
-  const detected = detectTechStack(text, headers);
+  const localDetected = detectTechStack(text, headers);
+  const builtWith = await lookupBuiltWithTechStack(target, options);
+  const detected = [...new Set([...localDetected, ...(builtWith.technologies || []).map((item) => item.name)])];
   return {
     detected,
+    localDetected,
+    builtWith,
     generator: firstMatch(text, /<meta[^>]+name=["']generator["'][^>]+content=["']([^"']+)["']/i),
     protection,
   };
+};
+
+const lookupBuiltWithTechStack = async (target, options) => {
+  const key = envValue('BUILTWITH_API_KEY', 'VITE_BUILTWITH_API_KEY');
+  if (!key) return { enabled: false };
+  try {
+    const url = `https://api.builtwith.com/v21/api.json?KEY=${encodeURIComponent(key)}&LOOKUP=${encodeURIComponent(target.domain)}`;
+    const response = await request(url, { method: 'GET', headers: { accept: 'application/json' } }, Math.max(options.timeout, 15000));
+    const data = await response.json();
+    if (!response.ok || data.Errors?.length) {
+      const reason = data.Errors?.map((error) => error.Message || error.Error || String(error)).join('; ') || `HTTP ${response.status}`;
+      return { enabled: true, ok: false, status: response.status, reason };
+    }
+    const technologies = extractBuiltWithTechnologies(data);
+    return {
+      enabled: true,
+      ok: true,
+      status: response.status,
+      source: 'builtwith.com',
+      technologies,
+      count: technologies.length,
+    };
+  } catch (error) {
+    return { enabled: true, ok: false, reason: error.message };
+  }
+};
+
+const extractBuiltWithTechnologies = (data) => {
+  const seen = new Map();
+  const add = (technology, pathSource) => {
+    const name = technology?.Name || technology?.name || technology?.Technology || technology?.technology;
+    if (!name) return;
+    const categories = [
+      ...normalizeBuiltWithList(technology.Tag),
+      ...normalizeBuiltWithList(technology.Categories),
+      ...normalizeBuiltWithList(technology.Category),
+    ];
+    const key = String(name).toLowerCase();
+    if (!seen.has(key)) {
+      seen.set(key, {
+        name: String(name),
+        categories: [...new Set(categories.map(String).filter(Boolean))],
+        description: technology.Description || technology.description || null,
+        firstDetected: technology.FirstDetected || technology.firstDetected || null,
+        lastDetected: technology.LastDetected || technology.lastDetected || null,
+        sourcePath: pathSource || null,
+      });
+    } else {
+      const current = seen.get(key);
+      current.categories = [...new Set([...current.categories, ...categories.map(String).filter(Boolean)])];
+      current.sourcePath ||= pathSource || null;
+    }
+  };
+
+  for (const result of data.Results || data.results || []) {
+    const paths = result.Result?.Paths || result.result?.paths || result.Paths || result.paths || [];
+    for (const pathEntry of paths) {
+      const pathSource = pathEntry.Url || pathEntry.url || pathEntry.Path || pathEntry.path || null;
+      for (const technology of pathEntry.Technologies || pathEntry.technologies || []) add(technology, pathSource);
+    }
+    for (const technology of result.Result?.Technologies || result.result?.technologies || result.Technologies || result.technologies || []) add(technology, null);
+  }
+  for (const technology of data.Technologies || data.technologies || []) add(technology, null);
+
+  return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+};
+
+const normalizeBuiltWithList = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => typeof item === 'string' ? [item] : [item?.Name, item?.name, item?.Tag, item?.tag]).filter(Boolean);
+  }
+  return [value];
 };
 
 const detectTechStack = (text, headers) => {
@@ -1178,7 +1259,11 @@ const renderDetails = (moduleName, result) => {
     const location = [data.city, data.region, data.country].filter(Boolean).join(', ');
     if (location) lines.push(kv('Location', location));
     if (data.latitude != null && data.longitude != null) lines.push(kv('Coordinates', `${data.latitude}, ${data.longitude}`));
+    if (data.formatted) lines.push(kv('Formatted', data.formatted));
     if (data.timezone) lines.push(kv('Timezone', data.timezone));
+    if (data.reverseGeocoding?.source) {
+      lines.push(kv('Reverse geocoding', `${data.reverseGeocoding.source}${data.reverseGeocoding.confidence != null ? ` confidence ${data.reverseGeocoding.confidence}` : ''}`));
+    }
     if (data.source) lines.push(kv('Source', data.source));
     return compactLines(lines);
   }
@@ -1243,8 +1328,17 @@ const renderDetails = (moduleName, result) => {
   }
 
   if (moduleName === 'techStack') {
+    const builtWithStatus = !data.builtWith?.enabled
+      ? null
+      : data.builtWith.ok
+        ? `${data.builtWith.count || 0} technologies`
+        : `failed: ${data.builtWith.reason || 'unknown error'}`;
     return compactLines([
       kv('Detected', list(data.detected, 20)),
+      kv('BuiltWith', builtWithStatus),
+      ...(data.builtWith?.technologies?.length
+        ? data.builtWith.technologies.slice(0, 15).map((item) => kv('BuiltWith tech', `${item.name}${item.categories?.length ? ` (${list(item.categories, 4)})` : ''}`))
+        : []),
       kv('Generator', data.generator),
       kv('Protection', formatProtection(data.protection)),
     ]);
@@ -1409,7 +1503,10 @@ const summarize = (moduleName, result) => {
   if (moduleName === 'reverseip') return `${data.domains?.length || 0} domains`;
   if (moduleName === 'virustotal') return data.stats ? JSON.stringify(data.stats) : 'not configured';
   if (moduleName === 'sslTls') return data.validTo ? `valid to ${data.validTo}` : 'no cert data';
-  if (moduleName === 'techStack') return data.detected.join(', ') || 'none detected';
+  if (moduleName === 'techStack') {
+    const source = data.builtWith?.ok ? `, BuiltWith ${data.builtWith.count || 0}` : '';
+    return `${data.detected.join(', ') || 'none detected'}${source}`;
+  }
   if (moduleName === 'seo') return `h1 ${data.h1Count}, img missing alt ${data.imgWithoutAlt}`;
   if (moduleName === 'ports') return `open ${data.filter((port) => port.open).map((port) => port.port).join(', ') || 'none'}`;
   if (['sqlinjection', 'xss', 'lfi'].includes(moduleName)) return `${data.findings.length} findings / ${data.tested} tests`;
@@ -1658,35 +1755,44 @@ const safetySnapshot = (options) =>
 const clampInt = (value, min, max) => Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
 
 const maybeAutoUpdate = async (options) => {
-  if (!shouldAutoUpdate(options)) return;
+  if (!shouldAutoUpdate(options)) return { checked: false, reason: 'disabled' };
+  const writeUpdate = (message, level = 'gray') => {
+    const output = color(level, message);
+    if (options.json) console.error(output);
+    else console.log(output);
+  };
   try {
     const latest = await fetchLatestNpmVersion('abspider', 1800);
-    if (!latest || compareVersions(latest, VERSION) <= 0) return;
-    console.log(color('yellow', `Update available: abspider ${VERSION} -> ${latest}. Installing from npm...`));
+    if (!latest) {
+      writeUpdate('ABSpider update check: npm did not return a latest version.', 'yellow');
+      if (!options.json) console.log('');
+      return { checked: true, updated: false, latest: null };
+    }
+    if (compareVersions(latest, VERSION) <= 0) {
+      writeUpdate(`ABSpider is up to date (${VERSION}).`, 'green');
+      if (!options.json) console.log('');
+      return { checked: true, updated: false, latest };
+    }
+    writeUpdate(`Update available: abspider ${VERSION} -> ${latest}. Installing from npm...`, 'yellow');
     const result = await installLatestFromNpm(latest, 120000);
     if (result.ok) {
-      console.log(color('green', `Updated abspider to ${latest}. This run will continue with ${VERSION}; restart the CLI to use the new version.`));
+      writeUpdate(`Updated abspider to ${latest}. Restart the CLI to use the new version.`, 'green');
     } else {
-      console.log(color('yellow', `Auto-update skipped: ${result.error || 'npm install failed'}`));
+      writeUpdate(`Auto-update failed: ${result.error || 'npm install failed'}`, 'yellow');
     }
-    console.log('');
+    if (!options.json) console.log('');
+    return { checked: true, updated: result.ok, latest, error: result.error || null };
   } catch (error) {
-    if (process.env.ABSPIDER_UPDATE_DEBUG === '1') {
-      console.log(color('yellow', `Auto-update check failed: ${error.message}`));
-      console.log('');
-    }
+    writeUpdate(`Auto-update check failed: ${error.message}`, 'yellow');
+    if (!options.json) console.log('');
+    return { checked: false, updated: false, error: error.message };
   }
 };
 
 const shouldAutoUpdate = (options) =>
   options.update &&
-  !options.json &&
-  !options.help &&
-  !options.version &&
   process.env.ABSPIDER_NO_UPDATE !== '1' &&
-  process.env.CI !== 'true' &&
-  process.stdout.isTTY &&
-  isNpmPackageExecution();
+  process.env.CI !== 'true';
 
 const isNpmPackageExecution = () => {
   const entry = process.argv[1] ? path.normalize(process.argv[1]).toLowerCase() : '';
@@ -2036,6 +2142,7 @@ const main = async () => {
     if (!options.color) colorEnabled = false;
     if (!options.json) clearTerminal();
     await maybeAutoUpdate(options);
+    if (options.forceUpdate && !rawTarget) return;
     if (options.help) {
       console.log(getHelp());
       return;

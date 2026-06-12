@@ -150,7 +150,7 @@ abspider example.com --aggressive
 | `siteInfo`   | Fetches status, title, response time, content length, resolved IP, server headers, and protection hints. |
 | `headers`    | Collects response headers and scores common security headers.                                            |
 | `whois`      | Queries RDAP domain registration data.                                                                   |
-| `geoip`      | Looks up IP geolocation and ASN information.                                                             |
+| `geoip`      | Looks up IP geolocation and ASN information, with optional OpenCage reverse geocoding.                    |
 | `dns`        | Resolves DNS records such as A, AAAA, MX, NS, TXT, CNAME, and SOA.                                       |
 | `mx`         | Retrieves mail exchange records.                                                                         |
 | `subnet`     | Calculates a basic `/24` subnet from the resolved IPv4 address.                                          |
@@ -158,7 +158,7 @@ abspider example.com --aggressive
 | `reverseip`  | Performs reverse IP lookup using HackerTarget.                                                           |
 | `virustotal` | Queries VirusTotal domain reputation when an API key is configured.                                      |
 | `sslTls`     | Retrieves TLS certificate metadata, issuer, validity, SAN, and fingerprint.                              |
-| `techStack`  | Detects common technologies from HTML and headers.                                                       |
+| `techStack`  | Detects common technologies from HTML and headers, with optional BuiltWith API enrichment.                |
 | `seo`        | Extracts title, description, canonical URL, H1 count, image alt status, and link counts.                 |
 
 ### Active Modules
@@ -216,19 +216,26 @@ You can use aliases with `--modules`.
 | `--output <file>`       | Write full JSON results to a file.                          |
 | `--pretty`              | Pretty-print JSON output.                                   |
 | `--no-color`            | Disable ANSI terminal colors.                               |
+| `--update`              | Check npm, update ABSpider if needed, and exit when no target is provided. |
 | `--no-update`           | Disable the npm auto-update check for this run.             |
 | `--help`, `-h`          | Show help.                                                  |
 | `--version`, `-v`       | Show version.                                               |
 
 ## Auto Updates
 
-When running as an installed npm package, ABSpider checks npm for a newer package version and automatically installs it with:
+ABSpider checks npm whenever the CLI starts. If the installed version is current, it prints that the tool is up to date. If a newer package exists, it automatically installs it with:
 
 ```bash
 npm install -g abspider@latest
 ```
 
-The updater is skipped for `--json`, `--help`, `--version`, CI runs, and direct source runs such as `node scripts/abspider-cli.mjs`. To disable it:
+To update explicitly without running a scan:
+
+```bash
+abspider --update
+```
+
+For `--json` scans, update status is written to stderr so stdout remains valid JSON. The updater is skipped only for CI runs or when disabled:
 
 ```bash
 abspider example.com --no-update
@@ -244,6 +251,8 @@ Some modules work without API keys, but these variables enable additional data s
 ```bash
 export SECURITYTRAILS_API_KEY="your-securitytrails-api-key"
 export VIRUSTOTAL_API_KEY="your-virustotal-api-key"
+export BUILTWITH_API_KEY="your-builtwith-api-key"
+export OPENCAGE_API_KEY="your-opencage-api-key"
 ```
 
 The tool also checks Vite-style equivalents:
@@ -251,7 +260,11 @@ The tool also checks Vite-style equivalents:
 ```bash
 export VITE_SECURITYTRAILS_API_KEY="your-securitytrails-api-key"
 export VITE_VIRUSTOTAL_API_KEY="your-virustotal-api-key"
+export VITE_BUILTWITH_API_KEY="your-builtwith-api-key"
+export VITE_OPENCAGE_API_KEY="your-opencage-api-key"
 ```
+
+`BUILTWITH_API_KEY` enriches the `techStack` module. `OPENCAGE_API_KEY` enriches the `geoip` module after latitude and longitude are resolved.
 
 ### Payload Files
 
