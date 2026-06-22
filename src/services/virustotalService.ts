@@ -47,7 +47,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
           'Accept': 'application/json',
         },
         timeout: 15000,
-        signal: requestManager.scanController?.signal,
+        signal: requestManager.getAbortSignal(),
       });
 
       if (domainData.data) {
@@ -83,7 +83,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
           'Accept': 'application/json',
         },
         timeout: 15000,
-        signal: requestManager.scanController?.signal,
+        signal: requestManager.getAbortSignal(),
       });
 
       if (urlsData.data && urlsData.data.length > 0) {
@@ -115,7 +115,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
           'Accept': 'application/json',
         },
         timeout: 15000,
-        signal: requestManager.scanController?.signal,
+        signal: requestManager.getAbortSignal(),
       });
 
       if (filesData.data && filesData.data.length > 0) {

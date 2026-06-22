@@ -68,7 +68,7 @@ const XSSVulnerabilities = ({ xss, isTested, moduleError }: XSSVulnerabilitiesPr
             <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
               <Lightbulb className="h-4 w-4" />
               <AlertDescription>
-                <div className="font-semibold mb-2 text-destructive dark:text-red-400">🛡️ Mitigation Recommendations:</div>
+                <div className="font-semibold mb-2 text-destructive dark:text-red-400">Mitigation Recommendations:</div>
                 <ul className="list-disc list-inside space-y-1 text-destructive-foreground dark:text-red-300 text-sm">
                   <li>Encode all user input before rendering (HTML, JavaScript, URL encoding)</li>
                   <li>Implement Content Security Policy (CSP) headers</li>

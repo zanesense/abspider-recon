@@ -100,7 +100,7 @@ export const performTechStackFingerprinting = async (target: string, requestMana
 
   try {
     const url = normalizeUrl(target);
-    const { response, metadata } = await fetchWithBypass(url, { timeout: 15000, signal: requestManager.scanController?.signal });
+    const { response, metadata } = await fetchWithBypass(url, { timeout: 15000, signal: requestManager.getAbortSignal() });
     corsMetadata = metadata;
     const html = await response.text();
     const lowerHtml = html.toLowerCase();

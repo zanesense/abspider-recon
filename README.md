@@ -95,7 +95,7 @@ Both surfaces share the same scanner engine. Pick whichever fits the engagement.
 
 ## ✨ Features
 
-- 🛰️ **21 recon modules** spanning passive intelligence, header analysis, fingerprinting, and bounded active checks.
+- 🛰️ **35 recon modules** spanning passive intelligence, header analysis, fingerprinting, infrastructure analysis, and bounded active checks.
 - 🧠 **Three scan styles** — `conservative`, `adaptive` (default), and `aggressive` — for both dashboard and CLI workflows.
 - 🛡️ **Bounded by design** — every active module has explicit payload counts, request delays, and concurrency limits. Nothing fires blindly.
 - 💻 **Local CLI** — run the full scanner from your terminal with `npx abspider <target>`, or `npm run cli -- <target>` for local development.
@@ -134,6 +134,20 @@ Both surfaces share the same scanner engine. Pick whichever fits the engagement.
 | Broken Links | ✅ | `brokenLinks` | Active | Walks discovered links and reports unreachable ones. |
 | CORS | ✅ | `corsMisconfig` | Active | Tests wildcard or reflected arbitrary-origin CORS responses. |
 | DDoS / WAF | ✅ | `ddosFirewall` | Active | Sends a bounded sequence of HEAD requests and records rate-limit signals. |
+| CDN Detection | ✅ | `cdnDetection` | Passive | Identifies CDN providers via response headers and CNAME records. |
+| Cloud Provider | ✅ | `cloudProvider` | Passive | Detects cloud hosting provider via headers and DNS. |
+| Email Security | ✅ | `emailSecurity` | Passive | SPF/DKIM/DMARC record analysis and security scoring. |
+| Cookie Audit | ✅ | `cookieAudit` | Passive | Checks Secure, HttpOnly, SameSite flags on all cookies. |
+| JS Analysis | ✅ | `jsInspection` | Passive | Extracts API endpoints, keys, and internal paths from JS bundles. |
+| S3 Buckets | ✅ | `s3Bucket` | Active | Discovers open or leaky AWS S3 buckets for the domain. |
+| Git Exposure | ✅ | `gitExposure` | Active | Detects exposed .git/config, .env, and backup files. |
+| Email Harvesting | ✅ | `emailHarvesting` | Passive | Extracts email addresses from pages, mailto links, and robots.txt. |
+| Sitemap/Robots | ✅ | `robotsSitemap` | Passive | Parses robots.txt disallowed paths and sitemap.xml structure. |
+| Open Redirect | ✅ | `openRedirect` | Active | Finds redirect parameters vulnerable to SSRF and phishing. |
+| CVE Scanner | ✅ | `cveScanner` | Passive | Cross-references detected tech stack versions against known CVEs. |
+| GraphQL | ✅ | `graphQL` | Active | Checks for exposed GraphQL schemas on common endpoints. |
+| Rate Limiting | ✅ | `rateLimit` | Active | Verifies if the target rate-limits rapid requests. |
+| CSRF Detection | ✅ | `csrfDetection` | Passive | Scans forms for missing CSRF tokens. |
 
 > 🔎 **Dashboard-only convenience modules** (settings, preferences, key vault) live under `src/services/` and are not part of the recon flow.
 
@@ -203,7 +217,7 @@ abspider-recon/
 │   ├── lib/                          # Shared utilities
 │   ├── pages/                        # React Router pages
 │   ├── payloads/                     # SQLi, XSS, and LFI payload JSON files
-│   ├── services/                     # 21 recon modules, report generation, settings, scan orchestrator
+│   ├── services/                     # 35 recon modules, report generation, settings, scan orchestrator
 │   ├── shims/                        # Type shims
 │   └── utils/                        # cn(), formatters, small helpers
 │
@@ -775,7 +789,7 @@ Please open an issue first if your change is large or design-related.
 
 Releases are tracked on the [GitHub Releases](https://github.com/zanesense/abspider-recon/releases) page. The notable milestones so far:
 
-- **2.0.1** — Current. Polished landing page, redesigned app shell, expanded module list, hardened CLI modes, Supabase row-level security across all dashboard tables.
+- **2.1.0** — Current. Added 14 new modules across three new categories: Infrastructure Analysis (CDN Detection, Cloud Provider, Email Security, Cookie Audit), Reconnaissance & Discovery (JS Analysis, S3 Buckets, Git Exposure, Email Harvesting, Sitemap/Robots), and Vulnerability Assessment (Open Redirect, CVE Scanner, GraphQL, Rate Limiting, CSRF). New "Reconnaissance & Discovery" section in scan config.
 - **2.0.0** — Major rewrite. Split the project into the dashboard SPA and the published `abspider` CLI package (`packages/cli`). Introduced the Vercel Edge proxy, persistent scan history, JSON/PDF/DOCX reports, and per-user settings.
 - **1.x** — Pre-split recon dashboard. Single Vite app with a smaller module set and no published CLI.
 

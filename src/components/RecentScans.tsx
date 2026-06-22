@@ -47,40 +47,40 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
 
   return (
     <SurfaceCard color="purple">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-          <div className="p-2 bg-indigo-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
+      <CardHeader className="p-5 sm:p-6">
+        <CardTitle className="flex min-w-0 items-center gap-3 text-slate-900 dark:text-slate-100">
+          <div className="shrink-0 p-2 bg-indigo-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
             <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <span className="font-semibold">Recent Scans</span>
+          <span className="min-w-0 font-semibold">Recent Scans</span>
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
           Latest reconnaissance activities
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
         <div className="space-y-3">
           {scans.map((scan) => (
-            <div key={scan.id} className="flex items-center justify-between group">
+            <div key={scan.id} className="group flex min-w-0 items-start gap-2">
               <Link
                 to={`/scan/${scan.id}`}
-                className="flex-1 flex items-center justify-between p-4 bg-gradient-to-r from-slate-50/50 to-slate-100/30 dark:from-slate-800/30 dark:to-slate-700/20 rounded-lg border border-slate-200/30 dark:border-slate-700/30 hover:border-indigo-500/40 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 dark:hover:from-indigo-900/20 dark:hover:to-purple-900/10 transition-all duration-300 group"
+                className="flex min-w-0 flex-1 flex-col gap-3 rounded-lg border border-slate-200/30 bg-gradient-to-r from-slate-50/50 to-slate-100/30 p-3 transition-all duration-300 hover:border-indigo-500/40 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 dark:border-slate-700/30 dark:from-slate-800/30 dark:to-slate-700/20 dark:hover:from-indigo-900/20 dark:hover:to-purple-900/10 sm:flex-row sm:items-center sm:justify-between sm:p-4"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h4 className="text-slate-900 dark:text-slate-100 font-semibold group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+                    <h4 className="min-w-0 break-all text-slate-900 dark:text-slate-100 font-semibold group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {scan.target}
                     </h4>
-                    <Badge className={getStatusColor(scan.status)}>
+                    <Badge className={`${getStatusColor(scan.status)} shrink-0`}>
                       {scan.status}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <Clock className="h-3 w-3" />
-                    <span>{new Date(scan.timestamp).toLocaleString()}</span>
+                  <div className="flex min-w-0 items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    <span className="min-w-0 break-words">{new Date(scan.timestamp).toLocaleString()}</span>
                   </div>
                 </div>
-                <ExternalLink className="h-4 w-4 text-slate-500 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
+                <ExternalLink className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
               </Link>
               <button
                 onClick={(e) => {
@@ -88,7 +88,7 @@ const RecentScans = ({ scans, onScanDeleted }: RecentScansProps) => {
                   e.preventDefault();
                   handleDeleteScan(scan.id, scan.target);
                 }}
-                className="ml-2 p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                className="shrink-0 rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:opacity-100 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400 sm:opacity-0 sm:group-hover:opacity-100"
                 aria-label="Delete scan"
               >
                 <Trash2 className="h-4 w-4" />

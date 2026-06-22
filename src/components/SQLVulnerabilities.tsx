@@ -83,7 +83,7 @@ const SQLVulnerabilities = ({ sqlinjection, isTested, moduleError }: SQLVulnerab
             <Alert variant="destructive" className="bg-destructive/10 border-destructive/50">
               <Lightbulb className="h-4 w-4" />
               <AlertDescription>
-                <div className="font-semibold mb-2 text-destructive dark:text-red-400">🛡️ Mitigation Recommendations:</div>
+                <div className="font-semibold mb-2 text-destructive dark:text-red-400">Mitigation Recommendations:</div>
                 <ul className="list-disc list-inside space-y-1 text-destructive-foreground dark:text-red-300 text-sm">
                   <li>Use parameterized queries or prepared statements (NEVER concatenate user input)</li>
                   <li>Implement strict input validation and sanitization</li>

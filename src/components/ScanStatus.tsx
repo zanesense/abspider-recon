@@ -1,41 +1,32 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug, StopCircle, Gauge, Brain } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Loader2, Timer, Shield, Globe, Network, AlertTriangle, Code, TrendingUp, Zap, MapPin, Mail, FileWarning, Star, Link, Lock, Fingerprint, Link as LinkIcon, Bug, StopCircle, Gauge, Brain, Cloud, Cookie, FileCode, Database, GitBranch, FileText, ExternalLink, Search } from 'lucide-react';
 import { Scan } from '@/services/scanService';
-import React, { useCallback, useSyncExternalStore } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface ScanStatusProps {
   scan: Scan;
 }
 
 const ScanStatus = ({ scan }: ScanStatusProps) => {
-  const subscribe = useCallback(
-    (onStoreChange: () => void) => {
-      if (scan.status !== 'running') {
-        return () => {};
-      }
-      const interval = setInterval(onStoreChange, 1000);
-      return () => clearInterval(interval);
-    },
-    [scan.status],
+  const [realtimeElapsedMs, setRealtimeElapsedMs] = useState(() =>
+    scan.status === 'running' ? Date.now() - scan.timestamp : (scan.completedAt ?? scan.timestamp) - scan.timestamp
   );
 
-  const getSnapshot = useCallback(
-    () => Date.now() - scan.timestamp,
-    [scan.timestamp],
-  );
+  useEffect(() => {
+    if (scan.status !== 'running') {
+      return;
+    }
+    const interval = setInterval(() => {
+      setRealtimeElapsedMs(Date.now() - scan.timestamp);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [scan.status, scan.timestamp]);
 
-  const getServerSnapshot = useCallback(
-    () => scan.elapsedMs ?? 0,
-    [scan.elapsedMs],
-  );
-
-  const realtimeElapsedMs = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const displayedElapsedMs = scan.status === 'running'
+    ? realtimeElapsedMs
+    : (scan.completedAt ?? scan.timestamp) - scan.timestamp;
 
   const getStatusIcon = () => {
     switch (scan.status) {
@@ -118,12 +109,26 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     lfi: FileWarning,
     wordpress: Code,
     seo: TrendingUp,
+    cdnDetection: Globe,
+    cloudProvider: Cloud,
+    emailSecurity: Mail,
+    cookieAudit: Cookie,
     ddosFirewall: Zap,
     virustotal: Link,
     sslTls: Lock,
     techStack: Fingerprint,
     brokenLinks: LinkIcon,
     corsMisconfig: Bug,
+    jsInspection: FileCode,
+    s3Bucket: Database,
+    gitExposure: GitBranch,
+    emailHarvesting: Mail,
+    robotsSitemap: FileText,
+    openRedirect: ExternalLink,
+    cveScanner: Bug,
+    graphQL: Network,
+    rateLimit: Gauge,
+    csrfDetection: Shield,
   };
 
   const moduleLabels: Record<string, string> = {
@@ -142,13 +147,28 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     lfi: 'LFI',
     wordpress: 'WordPress',
     seo: 'SEO',
+    cdnDetection: 'CDN Detection',
+    cloudProvider: 'Cloud Provider',
+    emailSecurity: 'Email Security',
+    cookieAudit: 'Cookie Audit',
     ddosFirewall: 'DDoS Firewall',
     virustotal: 'VirusTotal',
     sslTls: 'SSL/TLS',
     techStack: 'Tech Stack',
     brokenLinks: 'Broken Links',
     corsMisconfig: 'CORS Misconfig',
+    jsInspection: 'JS Analysis',
+    s3Bucket: 'S3 Buckets',
+    gitExposure: 'Git Exposure',
+    emailHarvesting: 'Email Harvest',
+    robotsSitemap: 'Robots/Sitemap',
+    openRedirect: 'Open Redirect',
+    cveScanner: 'CVE Scanner',
+    graphQL: 'GraphQL',
+    rateLimit: 'Rate Limit',
+    csrfDetection: 'CSRF',
   };
+  const skippedModules = scan.progress?.skippedModules || [];
 
   return (
     <Card className="bg-card border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:border-primary/50">
@@ -194,7 +214,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
             <p className="text-muted-foreground mb-1">Elapsed Time</p>
             <div className="flex items-center gap-1 text-foreground">
               <Timer className="h-3 w-3" />
-              <span className="font-mono">{formatElapsedTime(realtimeElapsedMs)}</span>
+              <span className="font-mono">{formatElapsedTime(displayedElapsedMs)}</span>
             </div>
           </div>
           {scan.completedAt && (
@@ -235,6 +255,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
             {Object.entries(scan.config).map(([key, value]) => {
               if (value === true && moduleLabels[key]) {
                 const Icon = moduleIcons[key];
+                const isSkipped = skippedModules.includes(key);
                 const isVulnModule = ['sqlinjection', 'xss', 'lfi', 'virustotal', 'sslTls', 'corsMisconfig'].includes(key);
                 const isSecurityModule = ['ddosFirewall'].includes(key);
                 
@@ -261,12 +282,14 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
                   <Badge 
                     key={key} 
                     className={`flex items-center gap-1 px-2 py-1 text-xs font-medium 
-                                ${isVulnModule ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 
+                                ${isSkipped ? 'bg-muted text-muted-foreground border-border line-through' :
+                                  isVulnModule ? 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' : 
                                   isSecurityModule ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30' :
                                   'bg-primary/10 text-primary border-primary/30'}`}
                   >
                     {Icon && <Icon className="h-3 w-3" />}
                     {moduleLabels[key]}
+                    {isSkipped && ' (skipped)'}
                     {payloadInfo}
                   </Badge>
                 );

@@ -157,7 +157,7 @@ export const performLFIScan = async (
     let baselineStatus = 0;
     
     try {
-      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager?.scanController?.signal });
+      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager?.getAbortSignal() });
       corsMetadata = baselineResult.metadata;
       const baselineText = await baselineResult.response.text();
       baselineLength = baselineText.length;
@@ -172,7 +172,7 @@ export const performLFIScan = async (
 
     for (const paramKey of paramKeys) {
       for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
-        if (requestManager?.scanController?.signal.aborted) {
+        if (requestManager?.isAborted()) {
           throw new Error('Scan aborted');
         }
 
@@ -192,7 +192,7 @@ export const performLFIScan = async (
             response = await requestManager.fetch(testUrl.toString(), { timeout: 10000 });
           } else {
             // Fallback if requestManager is not provided (shouldn't happen in normal flow)
-            const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager?.scanController?.signal });
+            const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager?.getAbortSignal() });
             response = testResult.response;
           }
           
@@ -202,7 +202,7 @@ export const performLFIScan = async (
           const signatureCheck = checkLFISignature(text);
 
           if (signatureCheck.found && signatureCheck.confidence >= 0.7) { // Only consider high confidence detections
-            console.log(`[LFI Scan] ⚠️ ${severity.toUpperCase()}: LFI vulnerability detected! ${signatureCheck.pattern}`);
+            console.log(`[LFI Scan] ${severity.toUpperCase()}: LFI vulnerability detected! ${signatureCheck.pattern}`);
             
             // Check if this specific vulnerability (payload + parameter) has already been recorded
             const isDuplicate = result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload);
@@ -233,7 +233,7 @@ export const performLFIScan = async (
             const percentDiff = (sizeDiff / baselineLength) * 100;
             
             if (percentDiff > 50 && text.length > baselineLength && text.length < 100000) { // Ensure it's a significant increase, not just a small change
-              console.log(`[LFI Scan] ⚠️ Suspicious content change: ${percentDiff.toFixed(1)}%`);
+              console.log(`[LFI Scan] Suspicious content change: ${percentDiff.toFixed(1)}%`);
               
               if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload)) {
                 result.vulnerable = true;
@@ -252,7 +252,7 @@ export const performLFIScan = async (
 
           // Check for server errors (e.g., 500)
           if (baselineStatus > 0 && response.status !== baselineStatus && response.status >= 500) {
-            console.log(`[LFI Scan] ⚠️ Server error detected (${response.status})`);
+            console.log(`[LFI Scan] Server error detected (${response.status})`);
             if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload)) {
               result.vulnerable = true;
               result.vulnerabilities.push({

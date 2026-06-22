@@ -43,7 +43,7 @@ export const performWordPressScan = async (target: string, requestManager: Reque
   try {
     const url = normalizeUrl(target);
 
-    const fetchResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.scanController?.signal }); // Pass signal
+    const fetchResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.getAbortSignal() }); // Pass signal
     result.corsMetadata = fetchResult.metadata;
     
     const html = await fetchResult.response.text();
@@ -73,7 +73,7 @@ export const performWordPressScan = async (target: string, requestManager: Reque
     for (const file of SENSITIVE_FILES) {
       try {
         const fileUrl = `${url}/${file}`;
-        const fileResult = await fetchWithBypass(fileUrl, { timeout: 3000, signal: requestManager.scanController?.signal }); // Pass signal
+        const fileResult = await fetchWithBypass(fileUrl, { timeout: 3000, signal: requestManager.getAbortSignal() }); // Pass signal
 
         if (fileResult.response.ok) {
           const size = fileResult.response.headers.get('content-length');

@@ -25,7 +25,7 @@ const fetchDomainDetails = async (domain: string, requestManager: RequestManager
   try {
     const url = normalizeUrl(`https://${domain}`); // Always try HTTPS first
     const startTime = Date.now();
-    const { response } = await fetchWithBypass(url, { timeout: 5000, signal: requestManager.scanController?.signal });
+    const { response } = await fetchWithBypass(url, { timeout: 5000, signal: requestManager.getAbortSignal() });
     // const responseTime = Date.now() - startTime; // Not used in details object, but could be added
 
     details.httpStatus = response.status;
@@ -124,7 +124,7 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
         const { data: stData } = await fetchJSONWithBypass(apiUrl, {
           headers: { 'APIKEY': securitytrailsKey },
           timeout: 15000,
-          signal: requestManager.scanController?.signal,
+          signal: requestManager.getAbortSignal(),
         });
 
         if (stData.records && stData.records.length > 0) {

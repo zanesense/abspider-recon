@@ -21,26 +21,26 @@ const APIKeyStatusCard = ({ configuredKeys, totalKeys, isLoading }: APIKeyStatus
 
   return (
     <SurfaceCard color="amber">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-          <div className="p-2 bg-amber-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
+      <CardHeader className="p-5 sm:p-6">
+        <CardTitle className="flex min-w-0 items-center gap-3 text-slate-900 dark:text-slate-100">
+          <div className="shrink-0 p-2 bg-amber-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
             <Key className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </div>
-          <span className="font-semibold">API Key Status</span>
+          <span className="min-w-0 font-semibold">API Key Status</span>
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
           Overview of your integrated API keys
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-5 pt-0 sm:p-6 sm:pt-0">
         {isLoading ? (
           <div className="flex items-center justify-center py-6">
             <Loader2 className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400" />
           </div>
         ) : (
-          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50/50 to-slate-100/30 dark:from-slate-800/30 dark:to-slate-700/20 rounded-lg border border-slate-200/30 dark:border-slate-700/30">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-gradient-to-r from-slate-50/50 to-slate-100/30 dark:from-slate-800/30 dark:to-slate-700/20 rounded-lg border border-slate-200/30 dark:border-slate-700/30">
             <span className="text-slate-900 dark:text-slate-100 font-medium">Configured Keys</span>
-            <Badge className={statusColorClass}>
+            <Badge className={`${statusColorClass} shrink-0`}>
               {statusText}
             </Badge>
           </div>

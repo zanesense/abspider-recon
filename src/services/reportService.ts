@@ -494,7 +494,7 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
     if (headers.securityHeaders.present?.length > 0) {
       const presentData = headers.securityHeaders.present.map((h: any) => [
         h.name,
-        h.secure ? '✓ Secure' : '⚠ Needs improvement',
+        h.secure ? '✓ Secure' : 'Needs improvement',
         h.recommendation || 'Properly configured',
       ]);
       

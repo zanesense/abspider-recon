@@ -10,7 +10,7 @@ export const useInitialNotifications = () => {
 
       // Add welcome notification
       addNotification({
-        title: '👋 Welcome to ABSpider',
+        title: 'Welcome to ABSpider',
         message: 'Your reconnaissance dashboard is ready. Start by creating your first scan or explore the features.',
         type: 'success',
         action: {
@@ -21,7 +21,7 @@ export const useInitialNotifications = () => {
 
       // Add system status notification
       addNotification({
-        title: '⚡ System Status',
+        title: 'System Status',
         message: 'All systems operational. API integrations are active and ready for scanning.',
         type: 'info'
       });

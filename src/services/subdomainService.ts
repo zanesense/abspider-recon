@@ -111,7 +111,7 @@ export const enumerateSubdomainsCrtSh = async (domain: string, requestManager: R
     const crtShUrl = `https://crt.sh/?q=%.${domain}&output=json`;
     
     // Use fetchWithBypass for crt.sh to handle CORS, passing requestManager's signal
-    const { response } = await fetchWithBypass(crtShUrl, { timeout: 20000, signal: requestManager.scanController?.signal });
+    const { response } = await fetchWithBypass(crtShUrl, { timeout: 20000, signal: requestManager.getAbortSignal() });
     
     if (!response.ok) {
       console.warn(`[Subdomain crt.sh] Failed with status ${response.status}`);
@@ -171,7 +171,7 @@ export const enumerateSubdomainsSecurityTrails = async (domain: string, requestM
     const { response } = await fetchWithBypass(apiUrl, {
       headers: { 'APIKEY': securitytrailsKey },
       timeout: 15000,
-      signal: requestManager.scanController?.signal,
+      signal: requestManager.getAbortSignal(),
     });
 
     if (!response.ok) {

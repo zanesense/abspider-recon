@@ -126,7 +126,7 @@ export const performFullHeaderAnalysis = async (
   try {
     const url = normalizeUrl(target);
     
-    const fetchResult = await fetchWithBypass(url, { signal: requestManager.scanController?.signal }); // Pass signal
+    const fetchResult = await fetchWithBypass(url, { signal: requestManager.getAbortSignal() }); // Pass signal
     const response = fetchResult.response;
     
     const headers: Record<string, string> = {};

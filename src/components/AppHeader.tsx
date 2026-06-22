@@ -1,8 +1,6 @@
 import React from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Bug } from 'lucide-react';
-import CurrentDateTime from '@/components/CurrentDateTime';
-import NotificationCenter from '@/components/NotificationCenter';
 
 interface AppHeaderProps {
   title: string;
@@ -12,20 +10,22 @@ interface AppHeaderProps {
 
 const AppHeader: React.FC<AppHeaderProps> = ({ title, subtitle, children }) => {
   return (
-    <header className="flex items-center sticky top-0 z-10 gap-4 surface-header px-6 py-4 shadow-2xl">
+    <header className="flex items-center sticky top-0 z-10 gap-2 sm:gap-4 bg-gradient-to-r from-primary/8 via-background to-primary/5 backdrop-blur-sm shadow-sm px-3 sm:px-6 py-2 sm:py-3">
       <SidebarTrigger />
-      <div className="flex-1">
-        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-3">
-          <Bug className="h-7 w-7 text-blue-600 dark:text-blue-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-        )}
+      <div className="flex items-center gap-2">
+        <Bug className="h-5 w-5 text-primary/70" />
       </div>
-      <div className="flex items-center gap-3">
-        <NotificationCenter />
-        <CurrentDateTime className="hidden md:flex" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent truncate">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground hidden sm:block truncate">{subtitle}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
         {children}
       </div>
     </header>

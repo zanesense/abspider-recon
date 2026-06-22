@@ -87,17 +87,17 @@ export const testDiscordWebhook = async (webhookUrl: string) => {
 
   const payload = {
     embeds: [{
-      title: '✅ Webhook Test Successful',
+      title: 'Webhook Test Successful',
       description: 'Your Discord webhook is configured correctly and ready to receive scan notifications!',
       color: 0x10B981,
       fields: [
         {
-          name: '🔧 Configuration',
+          name: 'Configuration',
           value: 'ABSpider Recon Dashboard',
           inline: true,
         },
         {
-          name: '⏰ Test Time',
+          name: 'Test Time',
           value: new Date().toLocaleString(),
           inline: true,
         },
@@ -130,6 +130,6 @@ export const testDiscordWebhook = async (webhookUrl: string) => {
     throw new Error(`Webhook test failed with status ${response.status}: ${errorText}`);
   }
 
-  console.log('[Discord Test] ✓ Test message sent successfully');
+  console.log('[Discord Test] Test message sent successfully');
   return true;
 };

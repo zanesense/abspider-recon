@@ -241,7 +241,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
     let baselineLength = 0;
     
     try {
-      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.scanController?.signal });
+      const baselineResult = await fetchWithBypass(url, { timeout: 10000, signal: requestManager.getAbortSignal() });
       result.corsMetadata = baselineResult.metadata;
       baselineResponseText = await baselineResult.response.text();
       baselineStatus = baselineResult.response.status;
@@ -259,7 +259,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
       // Perform Boolean-based Blind SQLi test first for this parameter
       const booleanBlindResult = await testBooleanBlind(url, paramKey, originalValue, requestManager, baselineResponseText, baselineLength, baselineStatus);
       if (booleanBlindResult.vulnerable) {
-        console.log(`[SQL Scan] ⚠️ CRITICAL: Boolean-based Blind SQLi detected on parameter '${paramKey}'`);
+        console.log(`[SQL Scan] CRITICAL: Boolean-based Blind SQLi detected on parameter '${paramKey}'`);
         result.vulnerable = true;
         result.vulnerabilities.push({
           payload: originalValue + " AND [BOOLEAN CONDITION]--",
@@ -273,7 +273,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
       }
 
       for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
-        if (requestManager.scanController?.signal.aborted) {
+        if (requestManager.isAborted()) {
           throw new Error('Scan aborted');
         }
 
@@ -291,7 +291,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
             const { vulnerable, duration } = await testTimeBased(testUrl.toString(), requestManager);
             
             if (vulnerable) {
-              console.log(`[SQL Scan] ⚠️ CRITICAL: Time-based SQL injection confirmed (${duration}ms delay)`);
+              console.log(`[SQL Scan] CRITICAL: Time-based SQL injection confirmed (${duration}ms delay)`);
               result.vulnerable = true;
               result.vulnerabilities.push({
                 payload,
@@ -309,7 +309,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
           }
 
           // Error-based and other testing
-          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal });
+          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.getAbortSignal() });
           const response = testResult.response;
           result.testedPayloads++;
 
@@ -318,7 +318,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
 
           // Check for SQL errors
           if (errorCheck.found) {
-            console.log(`[SQL Scan] ⚠️ ${severity.toUpperCase()}: SQL error detected - ${errorCheck.pattern}`);
+            console.log(`[SQL Scan] ${severity.toUpperCase()}: SQL error detected - ${errorCheck.pattern}`);
             result.vulnerable = true;
             
             const evidence = getEvidenceSnippet(text, errorCheck.pattern!);
@@ -336,7 +336,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
 
           // Heuristic: Check for status code changes (e.g., 500 Internal Server Error)
           if (baselineStatus > 0 && response.status !== baselineStatus && response.status >= 500) {
-            console.log(`[SQL Scan] ⚠️ Server error detected (${response.status})`);
+            console.log(`[SQL Scan] Server error detected (${response.status})`);
             if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload && v.indicator.includes('HTTP'))) {
               result.vulnerable = true;
               result.vulnerabilities.push({
@@ -358,7 +358,7 @@ export const performSQLScan = async (target: string, requestManager: RequestMana
             
             // Consider a change significant if it's more than 20% or a large absolute difference
             if (percentDiff > 20 || sizeDiff > 500) { 
-              console.log(`[SQL Scan] ⚠️ Suspicious content change: ${percentDiff.toFixed(1)}%`);
+              console.log(`[SQL Scan] Suspicious content change: ${percentDiff.toFixed(1)}%`);
               if (!result.vulnerabilities.some(v => v.parameter === paramKey && v.payload === payload && v.indicator.includes('content length'))) {
                 result.vulnerable = true;
                 result.vulnerabilities.push({

@@ -30,21 +30,21 @@ const DatabaseStatusCard = ({ isLoading, isError }: DatabaseStatusCardProps) => 
 
   return (
     <SurfaceCard color="emerald">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-          <div className="p-2 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
+      <CardHeader className="p-5 sm:p-6">
+        <CardTitle className="flex min-w-0 items-center gap-3 text-slate-900 dark:text-slate-100">
+          <div className="shrink-0 p-2 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
             <Database className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <span className="font-semibold">Database Connection</span>
+          <span className="min-w-0 font-semibold">Database Connection</span>
         </CardTitle>
         <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
           Supabase database connection status
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3"> {/* Changed from space-y-3 to space-y-2 */}
-        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50/50 to-slate-100/30 dark:from-slate-800/30 dark:to-slate-700/20 rounded-lg border border-slate-200/30 dark:border-slate-700/30">
+      <CardContent className="space-y-3 p-5 pt-0 sm:p-6 sm:pt-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-gradient-to-r from-slate-50/50 to-slate-100/30 dark:from-slate-800/30 dark:to-slate-700/20 rounded-lg border border-slate-200/30 dark:border-slate-700/30">
           <span className="text-slate-900 dark:text-slate-100 font-medium">Status</span>
-          <Badge className={`flex items-center gap-2 ${statusColorClass}`}>
+          <Badge className={`flex shrink-0 items-center gap-2 ${statusColorClass}`}>
             {statusIcon}
             {statusText}
           </Badge>

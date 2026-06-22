@@ -468,12 +468,12 @@ const AppSettings = () => {
         title="App Settings" 
         subtitle="Configure application-wide preferences and integrations"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
             onClick={handleExportSettings}
-            className="gap-2"
+            className="gap-2 bg-gradient-to-r from-muted-foreground/10 to-muted-foreground/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
           >
             <Download className="h-4 w-4" />
             Export
@@ -482,7 +482,7 @@ const AppSettings = () => {
             variant="outline"
             size="sm"
             onClick={() => document.getElementById('import-settings')?.click()}
-            className="gap-2"
+            className="gap-2 bg-gradient-to-r from-muted-foreground/10 to-muted-foreground/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
           >
             <Upload className="h-4 w-4" />
             Import
@@ -495,7 +495,7 @@ const AppSettings = () => {
             onChange={handleImportSettings}
           />
           <Link to="/account-settings">
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2 bg-gradient-to-r from-muted-foreground/10 to-muted-foreground/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <User className="h-4 w-4" />
               Account
             </Button>
@@ -503,7 +503,7 @@ const AppSettings = () => {
         </div>
       </AppHeader>
       
-      <main className="flex-1 overflow-auto p-6 surface-main">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 surface-main">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* User Preferences */}
           <SurfaceCard color="blue">
@@ -1092,7 +1092,7 @@ const AppSettings = () => {
             <Button
               onClick={handleSaveAllSettings}
               size="lg"
-              className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-lg"
+              className="flex-1 bg-gradient-to-r from-primary via-primary/70 to-primary/40 shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 text-primary-foreground"
             >
               <Save className="h-4 w-4 mr-2" />
               Save All Settings

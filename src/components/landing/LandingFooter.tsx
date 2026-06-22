@@ -146,7 +146,7 @@ const LandingFooter = () => {
             </div>
             
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <span>Made with ❤️ for security professionals</span>
+              <span>Made for security professionals</span>
               <Link to="/status" className="hover:text-foreground transition-colors">
                 <StatusIndicator size="sm" />
               </Link>

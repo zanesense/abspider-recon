@@ -341,14 +341,14 @@ const AccountSettings = () => {
           variant="outline"
           size="sm"
           onClick={() => navigate('/settings')}
-          className="gap-2"
+          className="gap-2 bg-gradient-to-r from-muted-foreground/10 to-muted-foreground/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
         >
           <ArrowLeft className="h-4 w-4" />
           App Settings
         </Button>
       </AppHeader>
       
-      <main className="flex-1 overflow-auto p-6 surface-main">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 surface-main">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Profile Overview */}
           <SurfaceCard color="blue">
@@ -408,7 +408,7 @@ const AccountSettings = () => {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
@@ -518,7 +518,7 @@ const AccountSettings = () => {
               <Button
                 onClick={handleProfileUpdate}
                 disabled={loadingProfileUpdate}
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30"
+                className="w-full bg-gradient-to-r from-primary via-primary/70 to-primary/40 shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 text-primary-foreground"
               >
                 {loadingProfileUpdate ? (
                   <>
@@ -594,7 +594,7 @@ const AccountSettings = () => {
               <Button
                 onClick={handleChangePassword}
                 disabled={loadingPasswordChange || !currentPassword || !newPassword || !confirmPassword || !passwordsMatch}
-                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg shadow-orange-500/30"
+                className="w-full bg-gradient-to-r from-destructive via-destructive/70 to-destructive/40 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 text-destructive-foreground"
               >
                 {loadingPasswordChange ? (
                   <>

@@ -186,7 +186,7 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
       const originalValue = params.get(paramKey) || 'test'; // Use a default value if param is empty
 
       for (const { payload, severity, type, confidence: baseConfidence } of payloadsToTest) {
-        if (requestManager.scanController?.signal.aborted) {
+        if (requestManager.isAborted()) {
           throw new Error('Scan aborted');
         }
 
@@ -197,7 +197,7 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
           testParams.set(paramKey, originalValue + payload);
           testUrl.search = testParams.toString();
 
-          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.scanController?.signal });
+          const testResult = await fetchWithBypass(testUrl.toString(), { timeout: 10000, signal: requestManager.getAbortSignal() });
           if (!result.corsMetadata) {
             result.corsMetadata = testResult.metadata;
           }

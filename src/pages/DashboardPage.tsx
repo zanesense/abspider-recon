@@ -38,10 +38,10 @@ const DashboardPage = () => {
   return (
     <div className="flex flex-col h-full w-full">
       <AppHeader 
-        title="ABSpider Dashboard" 
+        title="Dashboard" 
         subtitle="Overview of your reconnaissance activities"
       >
-        <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30">
+        <Button asChild className="bg-gradient-to-r from-primary via-primary/70 to-primary/40 shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 text-primary-foreground">
           <Link to="/new-scan">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Scan
@@ -49,7 +49,7 @@ const DashboardPage = () => {
         </Button>
       </AppHeader>
       
-      <main className="flex-1 overflow-auto p-6 surface-main">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 surface-main">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Hero Section */}
           <div className="text-center space-y-4 mb-12">
@@ -65,10 +65,10 @@ const DashboardPage = () => {
           </div>
 
           {/* Scan Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] items-start gap-4 sm:gap-6">
             <SurfaceCard color="blue">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Total Scans</CardTitle>
+                <CardTitle className="min-w-0 text-sm font-medium text-slate-600 dark:text-slate-300">Total Scans</CardTitle>
                 <div className="p-3 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <History className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
@@ -84,7 +84,7 @@ const DashboardPage = () => {
 
             <SurfaceCard color="emerald">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Completed</CardTitle>
+                <CardTitle className="min-w-0 text-sm font-medium text-slate-600 dark:text-slate-300">Completed</CardTitle>
                 <div className="p-3 bg-emerald-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
@@ -100,7 +100,7 @@ const DashboardPage = () => {
 
             <SurfaceCard color="amber">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Active Scans</CardTitle>
+                <CardTitle className="min-w-0 text-sm font-medium text-slate-600 dark:text-slate-300">Active Scans</CardTitle>
                 <div className="p-3 bg-amber-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <Zap className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse" />
                 </div>
@@ -116,7 +116,7 @@ const DashboardPage = () => {
 
             <SurfaceCard color="rose">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Failed Scans</CardTitle>
+                <CardTitle className="min-w-0 text-sm font-medium text-slate-600 dark:text-slate-300">Failed Scans</CardTitle>
                 <div className="p-3 bg-rose-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                 </div>
@@ -138,13 +138,13 @@ const DashboardPage = () => {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-700 ml-6" />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-start gap-4 sm:gap-6">
               <Link to="/new-scan" className="group">
                 <Card className="relative overflow-hidden bg-gradient-to-br from-violet-500/5 via-purple-500/10 to-indigo-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer">
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <CardHeader className="text-center pb-6 pt-8 relative z-10">
-                    <div className="mx-auto p-6 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-2xl w-20 h-20 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg">
-                      <Zap className="h-10 w-10 text-violet-600 dark:text-violet-400" />
+                  <CardHeader className="text-center p-5 sm:p-6 relative z-10">
+                    <div className="mx-auto aspect-square w-16 sm:w-20 p-4 sm:p-5 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg">
+                      <Zap className="h-full w-full text-violet-600 dark:text-violet-400" />
                     </div>
                     <CardTitle className="text-xl font-bold text-violet-700 dark:text-violet-300 mt-4">Quick Scan</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
@@ -157,9 +157,9 @@ const DashboardPage = () => {
               <Link to="/all-scans" className="group">
                 <Card className="relative overflow-hidden bg-gradient-to-br from-teal-500/5 via-cyan-500/10 to-blue-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer">
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-teal-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <CardHeader className="text-center pb-6 pt-8 relative z-10">
-                    <div className="mx-auto p-6 bg-gradient-to-br from-teal-500/20 to-cyan-500/20 rounded-2xl w-20 h-20 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg">
-                      <Activity className="h-10 w-10 text-teal-600 dark:text-teal-400" />
+                  <CardHeader className="text-center p-5 sm:p-6 relative z-10">
+                    <div className="mx-auto aspect-square w-16 sm:w-20 p-4 sm:p-5 bg-gradient-to-br from-teal-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg">
+                      <Activity className="h-full w-full text-teal-600 dark:text-teal-400" />
                     </div>
                     <CardTitle className="text-xl font-bold text-teal-700 dark:text-teal-300 mt-4">Scan History</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
@@ -172,9 +172,9 @@ const DashboardPage = () => {
               <Link to="/reports" className="group">
                 <Card className="relative overflow-hidden bg-gradient-to-br from-amber-500/5 via-yellow-500/10 to-orange-500/5 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer">
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <CardHeader className="text-center pb-6 pt-8 relative z-10">
-                    <div className="mx-auto p-6 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-2xl w-20 h-20 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg">
-                      <FileText className="h-10 w-10 text-amber-600 dark:text-amber-400" />
+                  <CardHeader className="text-center p-5 sm:p-6 relative z-10">
+                    <div className="mx-auto aspect-square w-16 sm:w-20 p-4 sm:p-5 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg">
+                      <FileText className="h-full w-full text-amber-600 dark:text-amber-400" />
                     </div>
                     <CardTitle className="text-xl font-bold text-amber-700 dark:text-amber-300 mt-4">Reports</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
@@ -189,7 +189,7 @@ const DashboardPage = () => {
           {/* System Status & API Keys */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-foreground">System Status</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 auto-rows-min">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,22rem),1fr))] items-start gap-4 sm:gap-6">
               <DatabaseStatusCard isLoading={isLoadingApiKeys} isError={isErrorApiKeys} />
               <APIKeyStatusCard 
                 configuredKeys={configuredApiKeys} 
@@ -200,7 +200,7 @@ const DashboardPage = () => {
           </div>
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,24rem),1fr))] items-start gap-4 sm:gap-6">
             <VulnerabilitySummaryCard scans={scans} />
             <RecentScans scans={scans.slice(0, 7)} onScanDeleted={refetch} />
           </div>

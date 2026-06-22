@@ -122,12 +122,12 @@ const ProfileCardPopover = () => {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="w-full h-auto p-3 flex items-center justify-between rounded-lg border border-transparent hover:border-primary/50 hover:bg-primary/5 transition-all group"
+          className="w-full h-auto p-3 flex items-center justify-between rounded-lg hover:bg-muted/50 transition-colors duration-150 group"
         >
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-primary/20">
+            <Avatar className="h-10 w-10 ring-1 ring-border">
               <AvatarImage src={userProfile.avatarUrl} alt={displayName} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
+              <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                 {userProfile.initials}
               </AvatarFallback>
             </Avatar>
@@ -139,16 +139,16 @@ const ProfileCardPopover = () => {
               </p>
             </div>
           </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors duration-150" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-96 p-0 bg-card border-border shadow-2xl" align="end">
-        <div className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-b border-border">
+      <DropdownMenuContent className="w-72 sm:w-96 p-0 bg-card border-border" align="end">
+        <div className="p-6 bg-primary/5 border-b border-border">
           <DropdownMenuLabel className="flex flex-col space-y-3 p-0">
             <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16 border-4 border-primary/20 shadow-lg">
+              <Avatar className="h-16 w-16 ring-2 ring-border">
                 <AvatarImage src={userProfile.avatarUrl} alt={displayName} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold text-xl">
+                <AvatarFallback className="bg-primary text-primary-foreground font-bold text-xl">
                   {userProfile.initials}
                 </AvatarFallback>
               </Avatar>
@@ -159,11 +159,11 @@ const ProfileCardPopover = () => {
                   {userProfile.email}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/15">
                     <User className="h-3 w-3 mr-1" />
                     {userProfile.role}
                   </Badge>
-                  <Badge variant="outline" className="border-green-500/30 text-green-600 dark:text-green-400">
+                  <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-500/40">
                     <Shield className="h-3 w-3 mr-1" />
                     Active
                   </Badge>
@@ -174,26 +174,26 @@ const ProfileCardPopover = () => {
         </div>
         
         <div className="p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center p-3 bg-muted/30 rounded-lg border border-border/50">
               <div className="text-2xl font-bold text-primary">{userProfile.scanCount}</div>
-              <div className="text-xs text-muted-foreground">Total Scans</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Total Scans</div>
             </div>
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">Active</div>
-              <div className="text-xs text-muted-foreground">Status</div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg border border-border/50">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">Active</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Status</div>
             </div>
           </div>
 
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center justify-between">
+          <div className="divide-y divide-border/50 text-sm">
+            <div className="flex items-center justify-between py-2.5">
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="h-4 w-4" /> 
                 Member since
               </span>
               <span className="text-foreground font-medium">{userProfile.createdAt}</span>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between py-2.5">
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" /> 
                 Last active
@@ -203,11 +203,11 @@ const ProfileCardPopover = () => {
           </div>
         </div>
 
-        <div className="p-4 border-t border-border space-y-2">
+        <div className="p-4 border-t border-border space-y-1">
           <DropdownMenuItem asChild className="cursor-pointer p-0">
-            <Link to="/account-settings" className="flex items-center w-full p-3 hover:bg-muted/50 rounded-md transition-colors">
+            <Link to="/account-settings" className="flex items-center w-full px-3 py-2.5 hover:bg-muted/50 rounded-md transition-colors duration-150">
               <Settings className="h-4 w-4 mr-3 text-muted-foreground" />
-              <span className="text-foreground font-medium">Account Settings</span>
+              <span className="text-foreground font-medium text-sm">Account Settings</span>
             </Link>
           </DropdownMenuItem>
 
@@ -215,9 +215,9 @@ const ProfileCardPopover = () => {
             <Button
               onClick={handleLogout}
               disabled={loadingLogout}
-              variant="destructive"
+              variant="ghost"
               size="sm"
-              className="w-full justify-start gap-3 h-12"
+              className="w-full justify-start gap-3 h-10 px-3 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
             >
               {loadingLogout ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -68,7 +68,14 @@ Desktop.ini
 # Local Supabase CLI state
 supabase/.temp
 
+# Python (FastAPI backend)
+__pycache__
+*.pyc
+.venv
+*.egg-info
+
 # Docker/runtime scratch files
 *.pid
 tmp
 temp
+.env*

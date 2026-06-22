@@ -116,7 +116,7 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
                       <p className="text-xs text-muted-foreground font-mono break-all">{header.value}</p>
                       {header.recommendation && (
                         <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1 break-words">
-                          ⚠️ {header.recommendation}
+                          ⚠ {header.recommendation}
                         </p>
                       )}
                     </div>
@@ -173,7 +173,7 @@ const HeadersAnalysis = ({ headersAnalysis, isTested, moduleError }: HeadersAnal
                 {cookie.issues && cookie.issues.length > 0 && (
                   <div className="text-xs text-yellow-600 dark:text-yellow-500 space-y-1">
                     {cookie.issues.map((issue: string, i: number) => (
-                      <div key={i} className="break-words">⚠️ {issue}</div>
+                      <div key={i} className="break-words">⚠ {issue}</div>
                     ))}
                   </div>
                 )}

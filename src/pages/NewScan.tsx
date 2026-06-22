@@ -56,6 +56,20 @@ const scanFormSchema = z.object({
   lfi: z.boolean(),
   wordpress: z.boolean(),
   seo: z.boolean(),
+  cdnDetection: z.boolean(),
+  cloudProvider: z.boolean(),
+  emailSecurity: z.boolean(),
+  cookieAudit: z.boolean(),
+  jsInspection: z.boolean(),
+  s3Bucket: z.boolean(),
+  gitExposure: z.boolean(),
+  emailHarvesting: z.boolean(),
+  robotsSitemap: z.boolean(),
+  openRedirect: z.boolean(),
+  cveScanner: z.boolean(),
+  graphQL: z.boolean(),
+  rateLimit: z.boolean(),
+  csrfDetection: z.boolean(),
   ddosFirewall: z.boolean(),
   virustotal: z.boolean(),
   sslTls: z.boolean(),
@@ -73,6 +87,44 @@ const scanFormSchema = z.object({
 });
 
 type ScanFormValues = z.infer<typeof scanFormSchema>;
+
+const SCAN_MODULE_KEYS = [
+  'siteInfo',
+  'headers',
+  'whois',
+  'geoip',
+  'dns',
+  'mx',
+  'subnet',
+  'ports',
+  'subdomains',
+  'reverseip',
+  'sqlinjection',
+  'xss',
+  'lfi',
+  'wordpress',
+  'seo',
+  'cdnDetection',
+  'cloudProvider',
+  'emailSecurity',
+  'cookieAudit',
+  'jsInspection',
+  's3Bucket',
+  'gitExposure',
+  'emailHarvesting',
+  'robotsSitemap',
+  'openRedirect',
+  'cveScanner',
+  'graphQL',
+  'rateLimit',
+  'csrfDetection',
+  'ddosFirewall',
+  'virustotal',
+  'sslTls',
+  'techStack',
+  'brokenLinks',
+  'corsMisconfig',
+] as const satisfies readonly (keyof ScanFormValues)[];
 
 const NewScan = () => {
   const navigate = useNavigate();
@@ -99,6 +151,20 @@ const NewScan = () => {
       lfi: false,
       wordpress: false,
       seo: true,
+      cdnDetection: true,
+      cloudProvider: true,
+      emailSecurity: false,
+      cookieAudit: false,
+      jsInspection: false,
+      s3Bucket: false,
+      gitExposure: false,
+      emailHarvesting: false,
+      robotsSitemap: false,
+      openRedirect: false,
+      cveScanner: false,
+      graphQL: false,
+      rateLimit: false,
+      csrfDetection: false,
       ddosFirewall: false,
       virustotal: false,
       sslTls: false,
@@ -120,12 +186,8 @@ const NewScan = () => {
   const formData = watch();
 
   // Count selected modules for header display
-  const selectedModules = Object.values(formData).filter(value => 
-    typeof value === 'boolean' && value === true
-  ).length;
-  const totalModules = Object.keys(formData).filter(key => 
-    typeof formData[key as keyof typeof formData] === 'boolean'
-  ).length;
+  const selectedModules = SCAN_MODULE_KEYS.filter(key => formData[key] === true).length;
+  const totalModules = SCAN_MODULE_KEYS.length;
 
   const handleSaveTemplate = () => {
     const template = {
@@ -292,7 +354,7 @@ const NewScan = () => {
   };
 
   const toggleNetworkIntelligence = () => {
-    const allChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
+    const allChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip && formData.cdnDetection && formData.cloudProvider && formData.emailSecurity;
     setValue('whois', !allChecked);
     setValue('geoip', !allChecked);
     setValue('dns', !allChecked);
@@ -301,15 +363,22 @@ const NewScan = () => {
     setValue('ports', !allChecked);
     setValue('subdomains', !allChecked);
     setValue('reverseip', !allChecked);
+    setValue('cdnDetection', !allChecked);
+    setValue('cloudProvider', !allChecked);
+    setValue('emailSecurity', !allChecked);
   };
 
   const toggleVulnerabilityAssessment = () => {
-    const allChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal && formData.corsMisconfig;
+    const allChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal && formData.corsMisconfig && formData.openRedirect && formData.cveScanner && formData.graphQL && formData.csrfDetection;
     setValue('sqlinjection', !allChecked);
     setValue('xss', !allChecked);
     setValue('lfi', !allChecked);
     setValue('virustotal', !allChecked);
     setValue('corsMisconfig', !allChecked);
+    setValue('openRedirect', !allChecked);
+    setValue('cveScanner', !allChecked);
+    setValue('graphQL', !allChecked);
+    setValue('csrfDetection', !allChecked);
   };
 
   const toggleCmsDetection = () => {
@@ -323,20 +392,34 @@ const NewScan = () => {
     setValue('brokenLinks', !allChecked);
   };
 
+  const toggleRecon = () => {
+    const allChecked = formData.jsInspection && formData.s3Bucket && formData.gitExposure && formData.emailHarvesting && formData.robotsSitemap;
+    setValue('jsInspection', !allChecked);
+    setValue('s3Bucket', !allChecked);
+    setValue('gitExposure', !allChecked);
+    setValue('emailHarvesting', !allChecked);
+    setValue('robotsSitemap', !allChecked);
+  };
+
   const toggleSecurityTesting = () => {
-    const allChecked = formData.ddosFirewall && formData.sslTls;
+    const allChecked = formData.ddosFirewall && formData.sslTls && formData.cookieAudit && formData.rateLimit;
     setValue('ddosFirewall', !allChecked);
     setValue('sslTls', !allChecked);
+    setValue('cookieAudit', !allChecked);
+    setValue('rateLimit', !allChecked);
   };
 
   const allBasicChecked = formData.siteInfo && formData.headers && formData.techStack;
   const anyBasicChecked = formData.siteInfo || formData.headers || formData.techStack;
 
-  const allNetworkChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip;
-  const anyNetworkChecked = formData.whois || formData.geoip || formData.dns || formData.mx || formData.subnet || formData.ports || formData.subdomains || formData.reverseip;
+  const allNetworkChecked = formData.whois && formData.geoip && formData.dns && formData.mx && formData.subnet && formData.ports && formData.subdomains && formData.reverseip && formData.cdnDetection && formData.cloudProvider && formData.emailSecurity;
+  const anyNetworkChecked = formData.whois || formData.geoip || formData.dns || formData.mx || formData.subnet || formData.ports || formData.subdomains || formData.reverseip || formData.cdnDetection || formData.cloudProvider || formData.emailSecurity;
 
-  const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal && formData.corsMisconfig;
-  const anyVulnChecked = formData.sqlinjection || formData.xss || formData.lfi || formData.virustotal || formData.corsMisconfig;
+  const allReconChecked = formData.jsInspection && formData.s3Bucket && formData.gitExposure && formData.emailHarvesting && formData.robotsSitemap;
+  const anyReconChecked = formData.jsInspection || formData.s3Bucket || formData.gitExposure || formData.emailHarvesting || formData.robotsSitemap;
+
+  const allVulnChecked = formData.sqlinjection && formData.xss && formData.lfi && formData.virustotal && formData.corsMisconfig && formData.openRedirect && formData.cveScanner && formData.graphQL && formData.csrfDetection;
+  const anyVulnChecked = formData.sqlinjection || formData.xss || formData.lfi || formData.virustotal || formData.corsMisconfig || formData.openRedirect || formData.cveScanner || formData.graphQL || formData.csrfDetection;
 
   const allCmsChecked = formData.wordpress;
   const anyCmsChecked = formData.wordpress;
@@ -344,8 +427,8 @@ const NewScan = () => {
   const allSeoChecked = formData.seo && formData.brokenLinks;
   const anySeoChecked = formData.seo || formData.brokenLinks;
 
-  const allSecurityChecked = formData.ddosFirewall && formData.sslTls;
-  const anySecurityChecked = formData.ddosFirewall || formData.sslTls;
+  const allSecurityChecked = formData.ddosFirewall && formData.sslTls && formData.cookieAudit && formData.rateLimit;
+  const anySecurityChecked = formData.ddosFirewall || formData.sslTls || formData.cookieAudit || formData.rateLimit;
 
   const targetHostname = formData.target ? extractHostname(formData.target) : '';
   const isTargetInternal = targetHostname && (isInternalIP(targetHostname) || targetHostname === 'localhost');
@@ -363,7 +446,7 @@ const NewScan = () => {
         onSmartScanModeChange={(mode) => setValue('smartScanMode', mode)}
       />
       
-      <main className="flex-1 overflow-auto p-6 surface-main">
+          <main className="flex-1 overflow-auto p-4 sm:p-6 surface-main">
         <div className="max-w-5xl mx-auto space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Target Input */}
@@ -575,6 +658,36 @@ const NewScan = () => {
                       <span className="font-medium">Reverse IP Lookup</span> - Sites on same server
                     </label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="cdnDetection"
+                      checked={formData.cdnDetection}
+                      onCheckedChange={(checked) => setValue('cdnDetection', checked as boolean)}
+                    />
+                    <label htmlFor="cdnDetection" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">CDN Detection</span> - Identify CDN providers
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="cloudProvider"
+                      checked={formData.cloudProvider}
+                      onCheckedChange={(checked) => setValue('cloudProvider', checked as boolean)}
+                    />
+                    <label htmlFor="cloudProvider" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Cloud Provider</span> - Detect cloud hosting provider
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="emailSecurity"
+                      checked={formData.emailSecurity}
+                      onCheckedChange={(checked) => setValue('emailSecurity', checked as boolean)}
+                    />
+                    <label htmlFor="emailSecurity" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Email Security</span> - SPF/DKIM/DMARC analysis
+                    </label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -653,9 +766,47 @@ const NewScan = () => {
                       <span className="font-medium">CORS Misconfiguration</span> - Cross-Origin Resource Sharing
                     </label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="openRedirect"
+                      checked={formData.openRedirect}
+                      onCheckedChange={(checked) => setValue('openRedirect', checked as boolean)}
+                    />
+                    <label htmlFor="openRedirect" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Open Redirect</span> - SSRF & phishing vector detection
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="cveScanner"
+                      checked={formData.cveScanner}
+                      onCheckedChange={(checked) => setValue('cveScanner', checked as boolean)}
+                    />
+                    <label htmlFor="cveScanner" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">CVE Scanner</span> - Cross-reference tech with known CVEs
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="graphQL"
+                      checked={formData.graphQL}
+                      onCheckedChange={(checked) => setValue('graphQL', checked as boolean)}
+                    />
+                    <label htmlFor="graphQL" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">GraphQL Introspection</span> - Exposed GraphQL schema check
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="csrfDetection"
+                      checked={formData.csrfDetection}
+                      onCheckedChange={(checked) => setValue('csrfDetection', checked as boolean)}
+                    />
+                    <label htmlFor="csrfDetection" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">CSRF Detection</span> - Forms missing CSRF tokens
+                    </label>
+                  </div>
                 </div>
-                
-
               </CardContent>
             </Card>
 
@@ -691,6 +842,84 @@ const NewScan = () => {
                     />
                     <label htmlFor="wordpress" className="text-sm text-foreground cursor-pointer">
                       <span className="font-medium">WordPress Scan</span> - Plugins, themes, versions
+                    </label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Reconnaissance & Discovery */}
+            <Card className={cn(
+              "group relative overflow-hidden backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1",
+              anyReconChecked 
+                ? "bg-gradient-to-br from-cyan-500/10 via-teal-500/15 to-cyan-500/10" 
+                : "bg-gradient-to-br from-cyan-500/5 via-teal-500/10 to-cyan-500/5"
+            )}>
+              <div className={cn(
+                "absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent transition-opacity duration-500",
+                anyReconChecked ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )} />
+              <CardHeader className="flex flex-row items-center justify-between relative z-10">
+                <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
+                  <div className="p-2 bg-cyan-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                    <Network className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <span className="font-semibold">Reconnaissance & Discovery</span>
+                </CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={toggleRecon} className="bg-cyan-50/50 dark:bg-cyan-900/20 border-cyan-200/50 dark:border-cyan-700/30 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-100/70 dark:hover:bg-cyan-800/30">
+                  {allReconChecked ? <><Square className="h-4 w-4 mr-2" /> Deselect All</> : <><CheckSquare className="h-4 w-4 mr-2" /> Select All</>}
+                </Button>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="jsInspection"
+                      checked={formData.jsInspection}
+                      onCheckedChange={(checked) => setValue('jsInspection', checked as boolean)}
+                    />
+                    <label htmlFor="jsInspection" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">JavaScript Analysis</span> - Extract API endpoints & keys
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="s3Bucket"
+                      checked={formData.s3Bucket}
+                      onCheckedChange={(checked) => setValue('s3Bucket', checked as boolean)}
+                    />
+                    <label htmlFor="s3Bucket" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">S3 Bucket Discovery</span> - Find exposed S3 buckets
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="gitExposure"
+                      checked={formData.gitExposure}
+                      onCheckedChange={(checked) => setValue('gitExposure', checked as boolean)}
+                    />
+                    <label htmlFor="gitExposure" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Git Exposure</span> - Detect .git & .env leaks
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="emailHarvesting"
+                      checked={formData.emailHarvesting}
+                      onCheckedChange={(checked) => setValue('emailHarvesting', checked as boolean)}
+                    />
+                    <label htmlFor="emailHarvesting" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Email Harvesting</span> - Extract email addresses
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="robotsSitemap"
+                      checked={formData.robotsSitemap}
+                      onCheckedChange={(checked) => setValue('robotsSitemap', checked as boolean)}
+                    />
+                    <label htmlFor="robotsSitemap" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Sitemap/Robots</span> - Parse robots.txt & sitemap.xml
                     </label>
                   </div>
                 </div>
@@ -789,6 +1018,26 @@ const NewScan = () => {
                       <span className="font-medium">SSL/TLS Analysis</span> - Certificate details & expiry
                     </label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="cookieAudit"
+                      checked={formData.cookieAudit}
+                      onCheckedChange={(checked) => setValue('cookieAudit', checked as boolean)}
+                    />
+                    <label htmlFor="cookieAudit" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Cookie Security Audit</span> - Secure, HttpOnly, SameSite analysis
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="rateLimit"
+                      checked={formData.rateLimit}
+                      onCheckedChange={(checked) => setValue('rateLimit', checked as boolean)}
+                    />
+                    <label htmlFor="rateLimit" className="text-sm text-foreground cursor-pointer">
+                      <span className="font-medium">Rate Limiting Test</span> - Check if target rate-limits requests
+                    </label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -852,7 +1101,7 @@ const NewScan = () => {
             </SurfaceCard>
 
             {/* Submit Button */}
-            <div className="flex justify-end gap-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
               <Button
                 type="button"
                 variant="outline"

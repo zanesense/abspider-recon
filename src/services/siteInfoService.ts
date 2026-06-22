@@ -55,7 +55,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
     let html = '';
     
     try {
-      const fetchResult = await fetchWithBypass(url, { timeout: 15000, signal: requestManager.scanController?.signal }); // Pass signal
+      const fetchResult = await fetchWithBypass(url, { timeout: 15000, signal: requestManager.getAbortSignal() }); // Pass signal
       result.responseTime = Date.now() - startTime;
       result.corsMetadata = fetchResult.metadata;
       
@@ -124,7 +124,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
           console.log('[Site Info] Attempting BuiltWith API enrichment...');
           const builtwithApiUrl = `https://api.builtwith.com/v1/api.json?key=${builtwithKey}&lookup=${domain}`;
           // Use fetchJSONWithBypass for BuiltWith API, passing requestManager's signal
-          const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000, signal: requestManager.scanController?.signal });
+          const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000, signal: requestManager.getAbortSignal() });
 
           if (builtwithData.Results && builtwithData.Results.length > 0) {
             // No longer adding to result.technologies here, as TechStackInfo handles it
@@ -140,7 +140,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       // Try to get robots.txt
       try {
         const robotsUrl = `${url}/robots.txt`;
-        const robotsResult = await fetchWithBypass(robotsUrl, { timeout: 5000, signal: requestManager.scanController?.signal }); // Pass signal
+        const robotsResult = await fetchWithBypass(robotsUrl, { timeout: 5000, signal: requestManager.getAbortSignal() }); // Pass signal
         
         if (robotsResult.response.ok) {
           result.robotsTxt = await robotsResult.response.text();

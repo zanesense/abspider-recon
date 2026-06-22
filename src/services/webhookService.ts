@@ -20,32 +20,32 @@ export const sendDiscordWebhook = async (scan: Scan) => {
     }
 
     const embed = {
-      title: '🔍 ABSpider Reconnaissance Update', // Changed title to be more general
+      title: 'ABSpider Reconnaissance Update',
       description: `Scan **${scan.target}** has been **${scan.status.toUpperCase()}**`, // Updated description
       color: embedColor,
       fields: [
         {
-          name: '🎯 Target',
+          name: 'Target',
           value: scan.target,
           inline: true,
         },
         {
-          name: '📊 Status',
+          name: 'Status',
           value: scan.status.toUpperCase(),
           inline: true,
         },
         {
-          name: '🆔 Scan ID',
+          name: 'Scan ID',
           value: scan.id,
           inline: false,
         },
         {
-          name: '⏰ Started',
+          name: 'Started',
           value: new Date(scan.timestamp).toLocaleString(),
           inline: true,
         },
         {
-          name: '✅ Last Update', // Changed from Completed to Last Update
+          name: 'Last Update',
           value: scan.completedAt ? new Date(scan.completedAt).toLocaleString() : 'N/A',
           inline: true,
         },
@@ -58,7 +58,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
 
     if (scan.results.geoip && scan.results.geoip.ip) {
       embed.fields.push({
-        name: '🌍 Location',
+        name: 'Location',
         value: `${scan.results.geoip.city || 'Unknown'}, ${scan.results.geoip.country || 'Unknown'} (${scan.results.geoip.ip})`,
         inline: false,
       });
@@ -69,7 +69,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
       const headersAnalysis = scan.results.headers; 
       if (headersAnalysis?.securityHeaders) {
         embed.fields.push({
-          name: '🔒 Security Headers',
+          name: 'Security Headers',
           value: `${headersAnalysis.securityHeaders.present.length} present, ${headersAnalysis.securityHeaders.missing.length} missing`,
           inline: true,
         });
@@ -78,7 +78,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
 
     if (scan.results.subdomains) {
       embed.fields.push({
-        name: '🌐 Subdomains',
+        name: 'Subdomains',
         value: `${scan.results.subdomains.subdomains.length} discovered`,
         inline: true,
       });
@@ -87,7 +87,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
     if (scan.results.ports) {
       const openPorts = scan.results.ports.filter((p: any) => p.status === 'open');
       embed.fields.push({
-        name: '🔌 Open Ports',
+          name: 'Open Ports',
         value: `${openPorts.length} found`,
         inline: true,
       });
@@ -95,7 +95,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
 
     if (scan.results.sqlinjection && scan.results.sqlinjection.vulnerable) {
       embed.fields.push({
-        name: '⚠️ SQL Injection',
+          name: 'SQL Injection',
         value: `${scan.results.sqlinjection.vulnerabilities.length} vulnerabilities found`,
         inline: true,
       });
@@ -103,7 +103,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
 
     if (scan.results.xss && scan.results.xss.vulnerable) {
       embed.fields.push({
-        name: '⚠️ XSS',
+          name: 'XSS',
         value: `${scan.results.xss.vulnerabilities.length} vulnerabilities found`,
         inline: true,
       });
@@ -111,7 +111,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
 
     if (scan.errors && scan.errors.length > 0) {
       embed.fields.push({
-        name: '⚠️ Errors',
+          name: 'Errors',
         value: scan.errors.slice(0, 3).join('\n') || 'Some modules failed',
         inline: false,
       });
@@ -144,7 +144,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
 
     return true;
   } catch (error: any) {
-    console.error('[Discord Webhook] ✗ Failed:', error);
+    console.error('[Discord Webhook] Failed:', error);
     throw new Error(`Failed to send Discord webhook: ${error.message}`, { cause: error });
   }
 };

@@ -1,9 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle, FileText, FileDown, FileType, FileSpreadsheet, RotateCcw, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, Download, Send, Pause, Play, StopCircle, AlertTriangle, FileText, FileDown, FileType, FileSpreadsheet, RefreshCcw, SkipForward } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { getScanById, pauseScan, resumeScan, stopScan, startScan } from '@/services/scanService';
+import { getScanById, pauseScan, resumeScan, skipCurrentModule, stopScan, startScan } from '@/services/scanService';
 import { sendDiscordWebhook } from '@/services/webhookService';
 import { useToast } from '@/hooks/use-toast';
 import ScanStatus from '@/components/ScanStatus';
@@ -29,6 +29,20 @@ import SslTlsResults from '@/components/SslTlsResults';
 import TechStackInfo from '@/components/TechStackInfo';
 import BrokenLinkResults from '@/components/BrokenLinkResults';
 import CorsMisconfigResults from '@/components/CorsMisconfigResults';
+import CDNDetectionResults from '@/components/CDNDetectionResults';
+import CloudProviderResults from '@/components/CloudProviderResults';
+import EmailSecurityResults from '@/components/EmailSecurityResults';
+import CookieAuditResults from '@/components/CookieAuditResults';
+import JSAnalysisResults from '@/components/JSAnalysisResults';
+import S3BucketResults from '@/components/S3BucketResults';
+import GitExposureResults from '@/components/GitExposureResults';
+import EmailHarvestingResults from '@/components/EmailHarvestingResults';
+import RobotsSitemapResults from '@/components/RobotsSitemapResults';
+import OpenRedirectResults from '@/components/OpenRedirectResults';
+import CVEScannerResults from '@/components/CVEScannerResults';
+import GraphQLResults from '@/components/GraphQLResults';
+import RateLimitResults from '@/components/RateLimitResults';
+import CSRFDetectionResults from '@/components/CSRFDetectionResults';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect, useState } from 'react';
 import {
@@ -131,6 +145,21 @@ const ScanResults = () => {
     toast({ title: "Scan Paused", description: "The scan has been paused" });
   };
 
+  const handleSkipModule = async () => {
+    if (!scan) return;
+    try {
+      await skipCurrentModule(scan.id);
+      queryClient.invalidateQueries({ queryKey: ['scan', id] });
+      toast({ title: "Module Skipped", description: "The current module is being skipped" });
+    } catch (error: any) {
+      toast({
+        title: "Unable to Skip Module",
+        description: error.message || "The current module could not be skipped.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleResumeScan = () => {
     if (!scan) return;
     resumeScan(scan.id);
@@ -206,7 +235,7 @@ const ScanResults = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center sticky top-0 z-10 gap-4 surface-header px-6 py-4 shadow-2xl">
+      <header className="flex flex-wrap items-center sticky top-0 z-10 gap-2 sm:gap-4 surface-header px-4 sm:px-6 py-3 sm:py-4 shadow-2xl">
         <SidebarTrigger />
         <Button
           variant="ghost"
@@ -214,18 +243,21 @@ const ScanResults = () => {
           onClick={() => navigate('/')}
           className="text-muted-foreground hover:text-primary hover:bg-muted/50"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          <span className="hidden sm:inline">Back</span>
         </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-foreground">{scan.target}</h1>
-          <p className="text-sm text-muted-foreground">Scan ID: {scan.id}</p>
+        <div className="flex-1 min-w-0 order-3 sm:order-none w-full sm:w-auto mt-1 sm:mt-0">
+          <h1 className="text-base sm:text-lg md:text-2xl font-semibold text-foreground truncate">{scan.target}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">Scan ID: {scan.id}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto order-last sm:order-none mt-1 sm:mt-0">
           {scan.status === 'running' && (
             <>
               <Button onClick={handlePauseScan} variant="outline" size="sm" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
                 <Pause className="h-4 w-4 mr-2" /> Pause
+              </Button>
+              <Button onClick={handleSkipModule} variant="outline" size="sm" className="border-border text-foreground hover:text-primary hover:bg-muted/50">
+                <SkipForward className="h-4 w-4 mr-2" /> Skip Module
               </Button>
               <Button onClick={handleStopScan} variant="outline" size="sm" className="border-destructive text-destructive hover:text-destructive-foreground hover:bg-destructive/20">
                 <StopCircle className="h-4 w-4 mr-2" /> Stop
@@ -273,8 +305,17 @@ const ScanResults = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-6 surface-main">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 surface-main">
         <div className="max-w-7xl mx-auto space-y-6">
+          {scan.status === 'running' && (
+            <Alert variant="default" className="border-yellow-500/50 bg-yellow-500/10">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <AlertTitle className="text-yellow-500 font-semibold">Scan In Progress</AlertTitle>
+              <AlertDescription className="text-yellow-600 dark:text-yellow-400">
+                Keep this browser tab open while the scan is running. Closing or navigating away will abort in-progress modules and lose partial results.
+              </AlertDescription>
+            </Alert>
+          )}
           {/* Top Row: Scan Status and Summary Widget */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ScanStatus scan={scan} />
@@ -295,6 +336,11 @@ const ScanResults = () => {
                 isTested={scan.config.headers} 
                 moduleError={getModuleError('headers')} 
               />
+              <CDNDetectionResults 
+                cdnDetection={scan.results.cdnDetection} 
+                isTested={scan.config.cdnDetection} 
+                moduleError={getModuleError('cdnDetection')} 
+              />
               <TechStackInfo 
                 techStack={scan.results.techStack} 
                 isTested={scan.config.techStack} 
@@ -314,6 +360,41 @@ const ScanResults = () => {
                 mx={scan.results.mx} 
                 isTested={scan.config.mx} 
                 moduleError={getModuleError('mx')} 
+              />
+              <EmailSecurityResults 
+                emailSecurity={scan.results.emailSecurity} 
+                isTested={scan.config.emailSecurity} 
+                moduleError={getModuleError('emailSecurity')} 
+              />
+              <GitExposureResults 
+                gitExposure={scan.results.gitExposure} 
+                isTested={scan.config.gitExposure} 
+                moduleError={getModuleError('gitExposure')} 
+              />
+              <EmailHarvestingResults 
+                emailHarvesting={scan.results.emailHarvesting} 
+                isTested={scan.config.emailHarvesting} 
+                moduleError={getModuleError('emailHarvesting')} 
+              />
+              <RobotsSitemapResults 
+                robotsSitemap={scan.results.robotsSitemap} 
+                isTested={scan.config.robotsSitemap} 
+                moduleError={getModuleError('robotsSitemap')} 
+              />
+              <OpenRedirectResults 
+                openRedirect={scan.results.openRedirect} 
+                isTested={scan.config.openRedirect} 
+                moduleError={getModuleError('openRedirect')} 
+              />
+              <GraphQLResults 
+                graphQL={scan.results.graphQL} 
+                isTested={scan.config.graphQL} 
+                moduleError={getModuleError('graphQL')} 
+              />
+              <CSRFDetectionResults 
+                csrfDetection={scan.results.csrfDetection} 
+                isTested={scan.config.csrfDetection} 
+                moduleError={getModuleError('csrfDetection')} 
               />
               <SubnetInfo 
                 subnet={scan.results.subnet} 
@@ -338,6 +419,31 @@ const ScanResults = () => {
                 geoip={scan.results.geoip} 
                 isTested={scan.config.geoip} 
                 moduleError={getModuleError('geoip')} 
+              />
+              <CloudProviderResults 
+                cloudProvider={scan.results.cloudProvider} 
+                isTested={scan.config.cloudProvider} 
+                moduleError={getModuleError('cloudProvider')} 
+              />
+              <JSAnalysisResults 
+                jsInspection={scan.results.jsInspection} 
+                isTested={scan.config.jsInspection} 
+                moduleError={getModuleError('jsInspection')} 
+              />
+              <S3BucketResults 
+                s3Bucket={scan.results.s3Bucket} 
+                isTested={scan.config.s3Bucket} 
+                moduleError={getModuleError('s3Bucket')} 
+              />
+              <CVEScannerResults 
+                cveScanner={scan.results.cveScanner} 
+                isTested={scan.config.cveScanner} 
+                moduleError={getModuleError('cveScanner')} 
+              />
+              <RateLimitResults 
+                rateLimit={scan.results.rateLimit} 
+                isTested={scan.config.rateLimit} 
+                moduleError={getModuleError('rateLimit')} 
               />
               <SubdomainList 
                 subdomains={scan.results.subdomains} 
@@ -369,6 +475,11 @@ const ScanResults = () => {
                 corsMisconfig={scan.results.corsMisconfig} 
                 isTested={scan.config.corsMisconfig} 
                 moduleError={getModuleError('corsMisconfig')} 
+              />
+              <CookieAuditResults 
+                cookieAudit={scan.results.cookieAudit} 
+                isTested={scan.config.cookieAudit} 
+                moduleError={getModuleError('cookieAudit')} 
               />
               <WordPressInfo 
                 wordpress={scan.results.wordpress} 

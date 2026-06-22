@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -110,46 +109,38 @@ const ScanHeader: React.FC<ScanHeaderProps> = ({
       title="New Scan" 
       subtitle="Configure and launch intelligent security reconnaissance"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
         {/* Module Status */}
-        <Card className="bg-muted/30 border-border">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-sm">
-              <StatusIcon className={`h-4 w-4 ${moduleStatus.color}`} />
-              <span className="font-medium">{selectedModules}/{totalModules}</span>
-              <span className="text-muted-foreground">modules</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-1.5 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 bg-muted/30 rounded-md border border-border/50">
+          <StatusIcon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${moduleStatus.color}`} />
+          <span className="font-medium">{selectedModules}/{totalModules}</span>
+          <span className="text-muted-foreground hidden sm:inline">modules</span>
+        </div>
 
         {/* Smart Scan Mode Selector */}
-        <Card className="bg-muted/30 border-border">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <SmartModeIcon className={`h-4 w-4 ${smartModeInfo.color}`} />
-              <Select
-                value={smartScanMode}
-                onValueChange={onSmartScanModeChange}
-              >
-                <SelectTrigger className="h-6 border-0 bg-transparent p-0 text-sm font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="conservative">Conservative</SelectItem>
-                  <SelectItem value="adaptive">Adaptive</SelectItem>
-                  <SelectItem value="aggressive">Aggressive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-muted/30 rounded-md border border-border/50">
+          <SmartModeIcon className={`h-3.5 w-3.5 ${smartModeInfo.color}`} />
+          <Select
+            value={smartScanMode}
+            onValueChange={onSmartScanModeChange}
+          >
+            <SelectTrigger className="h-6 border-0 bg-transparent p-0 text-sm font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="conservative">Conservative</SelectItem>
+              <SelectItem value="adaptive">Adaptive</SelectItem>
+              <SelectItem value="aggressive">Aggressive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Quick Actions */}
         <Popover open={showQuickActions} onOpenChange={setShowQuickActions}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-1 sm:gap-2">
               <Settings className="h-4 w-4" />
-              Actions
+              <span className="hidden sm:inline">Actions</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-3" align="end">
@@ -236,12 +227,12 @@ const ScanHeader: React.FC<ScanHeaderProps> = ({
 
         {/* Main Action Button */}
         <Button 
-          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30 gap-2"
+          className="bg-gradient-to-r from-primary via-primary/70 to-primary/40 shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 text-primary-foreground gap-2"
           disabled={isScanning || selectedModules === 0}
         >
           {isScanning ? (
             <>
-              <Timer className="h-4 w-4 animate-pulse" />
+              <Timer className="h-4 w-4" />
               Scanning...
             </>
           ) : (
@@ -257,10 +248,10 @@ const ScanHeader: React.FC<ScanHeaderProps> = ({
           variant="outline"
           size="sm"
           onClick={() => navigate('/dashboard')}
-          className="gap-2"
+          className="gap-1 sm:gap-2"
         >
           <FileText className="h-4 w-4" />
-          Dashboard
+          <span className="hidden sm:inline">Dashboard</span>
         </Button>
       </div>
     </AppHeader>

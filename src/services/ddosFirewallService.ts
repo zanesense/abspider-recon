@@ -90,7 +90,7 @@ export const performDDoSFirewallTest = async (
     const evidenceSnippets = new Set<string>();
 
     for (let i = 0; i < numRequests; i++) {
-      if (requestManager?.scanController?.signal.aborted) {
+      if (requestManager?.isAborted()) {
         throw new Error('Scan aborted by user');
       }
 

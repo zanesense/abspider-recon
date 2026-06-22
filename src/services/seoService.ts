@@ -35,7 +35,7 @@ export const performSEOAnalysis = async (target: string, requestManager: Request
 
     const startTime = Date.now();
     // Use fetchWithBypass which is integrated with RequestManager's signal
-    const { response } = await fetchWithBypass(url, { timeout: 15000, signal: requestManager.scanController?.signal });
+    const { response } = await fetchWithBypass(url, { timeout: 15000, signal: requestManager.getAbortSignal() });
     const loadTime = Date.now() - startTime;
 
     const html = await response.text();

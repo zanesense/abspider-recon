@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import http.client; http.client.HTTPConnection('127.0.0.1', 8000).request('GET', '/api/proxy?url=https://example.com'); r = http.client.HTTPConnection('127.0.0.1', 8000).getresponse(); exit(0 if r.status < 500 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   app:
     build:
       context: .
@@ -9,6 +24,10 @@ services:
       - "3000:8080"
     environment:
       - NODE_ENV=production
+      - API_PROXY_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   # Development service (optional)

@@ -20,6 +20,20 @@ import { performSslTlsAnalysis, SslTlsResult } from './sslTlsService';
 import { performTechStackFingerprinting, TechStackResult } from './techStackService';
 import { performBrokenLinkCheck, BrokenLinkResult } from './brokenLinkService';
 import { performCorsMisconfigScan, CorsMisconfigResult } from './corsMisconfigService';
+import { performCDNDetection, CDNDetectionResult } from './cdnDetectionService';
+import { performCloudProviderDetection, CloudProviderResult } from './cloudProviderService';
+import { performEmailSecurityCheck, EmailSecurityResult } from './emailSecurityService';
+import { performCookieAudit, CookieAuditResult } from './cookieAuditService';
+import { performJSInspection, JSInspectionResult } from './jsAnalysisService';
+import { performS3BucketDiscovery, S3BucketResult } from './s3BucketService';
+import { performGitExposureCheck, GitExposureResult } from './gitExposureService';
+import { performEmailHarvesting, EmailHarvestingResult } from './emailHarvestingService';
+import { performRobotsSitemapParse, RobotsSitemapResult } from './robotsSitemapService';
+import { performOpenRedirectCheck, OpenRedirectResult } from './openRedirectService';
+import { performCVEScan, CVEScannerResult } from './cveScannerService';
+import { performGraphQLScan, GraphQLResult } from './graphQLService';
+import { performRateLimitTest, RateLimitResult } from './rateLimitService';
+import { performCSRFDetection, CSRFDetectionResult } from './csrfDetectionService';
 import { getSettings } from './settingsService';
 import { setProxyList } from './apiUtils';
 import { sendDiscordWebhook } from './webhookService';
@@ -45,12 +59,26 @@ export interface ScanConfig {
   lfi: boolean;
   wordpress: boolean;
   seo: boolean;
+  cdnDetection: boolean;
+  cloudProvider: boolean;
+  emailSecurity: boolean;
+  cookieAudit: boolean;
   ddosFirewall: boolean;
   virustotal: boolean;
   sslTls: boolean;
   techStack: boolean;
   brokenLinks: boolean;
   corsMisconfig: boolean;
+  jsInspection: boolean;
+  s3Bucket: boolean;
+  gitExposure: boolean;
+  emailHarvesting: boolean;
+  robotsSitemap: boolean;
+  openRedirect: boolean;
+  cveScanner: boolean;
+  graphQL: boolean;
+  rateLimit: boolean;
+  csrfDetection: boolean;
   xssPayloads: number;
   sqliPayloads: number;
   lfiPayloads: number;
@@ -76,12 +104,26 @@ export interface ScanResults {
   lfi?: LFIScanResult;
   wordpress?: WordPressScanResult;
   seo?: SEOAnalysis;
+  cdnDetection?: CDNDetectionResult;
+  cloudProvider?: CloudProviderResult;
+  emailSecurity?: EmailSecurityResult;
+  cookieAudit?: CookieAuditResult;
   ddosFirewall?: DDoSFirewallResult;
   virustotal?: VirusTotalResult;
   sslTls?: SslTlsResult;
   techStack?: TechStackResult;
   brokenLinks?: BrokenLinkResult;
   corsMisconfig?: CorsMisconfigResult;
+  jsInspection?: JSInspectionResult;
+  s3Bucket?: S3BucketResult;
+  gitExposure?: GitExposureResult;
+  emailHarvesting?: EmailHarvestingResult;
+  robotsSitemap?: RobotsSitemapResult;
+  openRedirect?: OpenRedirectResult;
+  cveScanner?: CVEScannerResult;
+  graphQL?: GraphQLResult;
+  rateLimit?: RateLimitResult;
+  csrfDetection?: CSRFDetectionResult;
 }
 
 export interface Scan {
@@ -94,6 +136,7 @@ export interface Scan {
     current: number;
     total: number;
     stage: string;
+    skippedModules?: string[];
   };
   config: ScanConfig;
   results: ScanResults;
@@ -153,7 +196,13 @@ const fromScanDbRow = (row: ScanDbRow): Scan => ({
 });
 
 
-const activeScans = new Map<string, { controller: AbortController; promise: Promise<void>; requestManager: RequestManager }>();
+const activeScans = new Map<string, {
+  controller: AbortController;
+  promise: Promise<void>;
+  requestManager: RequestManager;
+  currentModule?: string;
+  skipRequested?: boolean;
+}>();
 
 const upsertScanToDatabase = async (scan: Scan) => {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -382,6 +431,12 @@ const runScan = async (
   try {
     for (let i = 0; i < modulesToRun.length; i++) {
       const moduleName = modulesToRun[i];
+      const scanEntry = activeScans.get(scanId);
+      if (scanEntry) {
+        scanEntry.currentModule = moduleName;
+        scanEntry.skipRequested = false;
+        scanEntry.requestManager.resetModuleAbortController();
+      }
 
       if (i < completedStages) {
         console.log(`[ScanService] Skipping already completed module: ${moduleName}`);
@@ -503,12 +558,105 @@ const runScan = async (
               moduleResult = await performCorsMisconfigScan(config.target, requestManager);
               currentScan.results.corsMisconfig = moduleResult;
               break;
+            case 'cdnDetection':
+              moduleResult = await performCDNDetection(config.target, requestManager);
+              currentScan.results.cdnDetection = moduleResult;
+              break;
+            case 'cloudProvider':
+              moduleResult = await performCloudProviderDetection(config.target, requestManager);
+              currentScan.results.cloudProvider = moduleResult;
+              break;
+            case 'emailSecurity':
+              moduleResult = await performEmailSecurityCheck(config.target, requestManager);
+              currentScan.results.emailSecurity = moduleResult;
+              break;
+            case 'cookieAudit':
+              moduleResult = await performCookieAudit(config.target, requestManager);
+              currentScan.results.cookieAudit = moduleResult;
+              break;
+            case 'jsInspection':
+              moduleResult = await performJSInspection(config.target, requestManager);
+              currentScan.results.jsInspection = moduleResult;
+              break;
+            case 's3Bucket':
+              moduleResult = await performS3BucketDiscovery(config.target, requestManager);
+              currentScan.results.s3Bucket = moduleResult;
+              break;
+            case 'gitExposure':
+              moduleResult = await performGitExposureCheck(config.target, requestManager);
+              currentScan.results.gitExposure = moduleResult;
+              break;
+            case 'emailHarvesting':
+              moduleResult = await performEmailHarvesting(config.target, requestManager);
+              currentScan.results.emailHarvesting = moduleResult;
+              break;
+            case 'robotsSitemap':
+              moduleResult = await performRobotsSitemapParse(config.target, requestManager);
+              currentScan.results.robotsSitemap = moduleResult;
+              break;
+            case 'openRedirect':
+              moduleResult = await performOpenRedirectCheck(config.target, requestManager);
+              currentScan.results.openRedirect = moduleResult;
+              break;
+            case 'cveScanner':
+              moduleResult = await performCVEScan(config.target, requestManager);
+              currentScan.results.cveScanner = moduleResult;
+              break;
+            case 'graphQL':
+              moduleResult = await performGraphQLScan(config.target, requestManager);
+              currentScan.results.graphQL = moduleResult;
+              break;
+            case 'rateLimit':
+              moduleResult = await performRateLimitTest(config.target, requestManager);
+              currentScan.results.rateLimit = moduleResult;
+              break;
+            case 'csrfDetection':
+              moduleResult = await performCSRFDetection(config.target, requestManager);
+              currentScan.results.csrfDetection = moduleResult;
+              break;
             default:
               console.warn(`[ScanService] Unknown module: ${moduleName}`);
+          }
+
+          if (activeScans.get(scanId)?.skipRequested) {
+            delete (currentScan.results as Record<string, unknown>)[moduleName];
+            currentScan = {
+              ...currentScan,
+              progress: {
+                ...currentScan.progress!,
+                skippedModules: [
+                  ...(currentScan.progress?.skippedModules || []),
+                  moduleName,
+                ],
+                stage: `Skipped ${moduleName} scan`,
+              },
+            };
+            const latestEntry = activeScans.get(scanId);
+            if (latestEntry) latestEntry.skipRequested = false;
           }
           await upsertScanToDatabase(currentScan);
 
         } catch (moduleError: any) {
+          if (activeScans.get(scanId)?.skipRequested) {
+            delete (currentScan.results as Record<string, unknown>)[moduleName];
+            currentScan = {
+              ...currentScan,
+              progress: {
+                ...currentScan.progress!,
+                skippedModules: [
+                  ...(currentScan.progress?.skippedModules || []),
+                  moduleName,
+                ],
+                stage: `Skipped ${moduleName} scan`,
+              },
+            };
+            const latestEntry = activeScans.get(scanId);
+            if (latestEntry) latestEntry.skipRequested = false;
+            await upsertScanToDatabase(currentScan);
+            console.log(`[ScanService] Module ${moduleName} skipped by user.`);
+            continue;
+          }
+
           console.error(`[ScanService] Error in ${moduleName} module:`, moduleError);
           currentScan.errors.push(`${moduleName}: ${moduleError.message}`);
           await upsertScanToDatabase(currentScan);
@@ -590,6 +738,31 @@ export const resumeScan = async (id: string) => {
 
   console.log(`[ScanService] Resuming scan ${id}.`);
   await runScan(updatedScan.id, updatedScan.config, newController, newRequestManager);
+};
+
+export const skipCurrentModule = async (id: string) => {
+  const scanEntry = activeScans.get(id);
+  if (!scanEntry) {
+    throw new Error('Cannot skip module: scan is not running in this browser session.');
+  }
+
+  const currentScan = await getScanById(id);
+  if (!currentScan || currentScan.status !== 'running') {
+    throw new Error('Cannot skip module: scan is not currently running.');
+  }
+
+  scanEntry.skipRequested = true;
+  scanEntry.requestManager.abortAll();
+
+  const moduleName = scanEntry.currentModule || 'current module';
+  await upsertScanToDatabase({
+    ...currentScan,
+    progress: {
+      ...currentScan.progress!,
+      stage: `Skipping ${moduleName} scan`,
+    },
+  });
+  console.log(`[ScanService] Skip requested for scan ${id}, module: ${moduleName}.`);
 };
 
 export const stopScan = async (id: string) => {

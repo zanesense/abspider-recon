@@ -34,7 +34,7 @@ export const performBrokenLinkCheck = async (target: string, requestManager: Req
   const baseDomain = extractDomain(target);
   let corsMetadata: any;
 
-  while (linksToVisit.length > 0 && !requestManager.scanController?.signal.aborted) {
+  while (linksToVisit.length > 0 && !requestManager.isAborted()) {
     const { url: currentUrl, sourcePage } = linksToVisit.shift()!;
 
     if (visitedUrls.has(currentUrl)) {
@@ -47,7 +47,7 @@ export const performBrokenLinkCheck = async (target: string, requestManager: Req
       const { response, metadata } = await fetchWithBypass(currentUrl, {
         method: 'HEAD', // Use HEAD for efficiency
         timeout: 10000,
-        signal: requestManager.scanController?.signal,
+        signal: requestManager.getAbortSignal(),
       });
       corsMetadata = metadata; // Keep the last metadata
 
@@ -65,7 +65,7 @@ export const performBrokenLinkCheck = async (target: string, requestManager: Req
         const { response: fullResponse } = await fetchWithBypass(currentUrl, {
           method: 'GET',
           timeout: 15000,
-          signal: requestManager.scanController?.signal,
+          signal: requestManager.getAbortSignal(),
         });
         const html = await fullResponse.text();
         const linkMatches = html.matchAll(/<a[^>]*href=["']([^"']+)["']/gi);

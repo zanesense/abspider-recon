@@ -34,7 +34,7 @@ export const performSslTlsAnalysis = async (target: string, requestManager: Requ
     const crtShUrl = `https://crt.sh/?q=${domain}&output=json`;
     const { data: crtData } = await fetchJSONWithBypass(crtShUrl, {
       timeout: 15000,
-      signal: requestManager.scanController?.signal,
+      signal: requestManager.getAbortSignal(),
     });
 
     if (Array.isArray(crtData) && crtData.length > 0) {

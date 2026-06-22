@@ -1,4 +1,4 @@
-// This service now uses the Vercel Serverless Function at /api/proxy
+// This service now uses the FastAPI proxy at /api/proxy
 // to reliably bypass CORS restrictions and ensure accurate results.
 
 const CLOUDFLARE_BYPASS_HEADERS = {
@@ -55,21 +55,21 @@ export class CORSBypass {
 
       // Check if blocked by Cloudflare or other protection
       if (response.status === 403 || response.status === 503) {
-        console.log(`[CORS Bypass] Forbidden/Service Unavailable detected (likely protection), switching to Vercel proxy...`);
+        console.log(`[CORS Bypass] Forbidden/Service Unavailable detected (likely protection), switching to proxy...`);
       }
     } catch (error: any) {
       errors.push(`Direct: ${error.message}`);
       console.log(`[CORS Bypass] Direct fetch failed: ${error.message}`);
     }
 
-    // 2. Try via Vercel Proxy
+    // 2. Try via backend proxy
     try {
-      console.log(`[CORS Bypass] Attempting via Vercel Proxy: ${url}`);
+      console.log(`[CORS Bypass] Attempting via backend proxy: ${url}`);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       // Construct the proxy URL
-      // We assume the app is running on same origin or Vercel
+      // We assume the app is running on same origin
       const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
 
       const response = await fetch(proxyUrl, {
@@ -85,7 +85,7 @@ export class CORSBypass {
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        console.log(`[CORS Bypass] ✓ Success with Vercel proxy`);
+        console.log(`[CORS Bypass] ✓ Success with backend proxy`);
         return response;
       } else {
         const text = await response.text();
@@ -93,8 +93,8 @@ export class CORSBypass {
       }
 
     } catch (error: any) {
-      errors.push(`Vercel Proxy: ${error.message}`);
-      console.log(`[CORS Bypass] Vercel proxy failed: ${error.message}`);
+        errors.push(`Backend Proxy: ${error.message}`);
+      console.log(`[CORS Bypass] Backend proxy failed: ${error.message}`);
     }
 
     throw new Error(`All approach attempts failed. Errors: ${errors.join(' | ')}`);
@@ -129,7 +129,7 @@ export interface FetchWithBypassResult {
 
 /**
  * Unified CORS bypass helper with metadata tracking
- * Tries direct fetch first, then falls back to Vercel Proxy
+ * Tries direct fetch first, then falls back to backend proxy
  */
 export async function fetchWithBypass(
   url: string,
@@ -182,10 +182,10 @@ export async function fetchWithBypass(
     console.log(`[fetchWithBypass] Direct fetch failed: ${error.message}`);
   }
 
-  // Try Vercel Proxy
+  // Try backend proxy
   metadata.attemptsViaProxy++;
   try {
-    console.log(`[fetchWithBypass] Trying Vercel Proxy: ${url}`);
+    console.log(`[fetchWithBypass] Trying backend proxy: ${url}`);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -207,7 +207,7 @@ export async function fetchWithBypass(
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      console.log(`[fetchWithBypass] ✓ Success with Vercel proxy`);
+      console.log(`[fetchWithBypass] ✓ Success with backend proxy`);
       metadata.usedProxy = true;
       metadata.proxyUrl = '/api/proxy';
       return { response, metadata };

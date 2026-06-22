@@ -46,7 +46,7 @@ export const performCorsMisconfigScan = async (target: string, requestManager: R
       const { response, metadata } = await fetchWithBypass(url, {
         headers: { 'Origin': 'https://arbitrary.com' },
         timeout: 10000,
-        signal: requestManager.scanController?.signal,
+        signal: requestManager.getAbortSignal(),
       });
       corsMetadata = metadata;
 
@@ -69,12 +69,12 @@ export const performCorsMisconfigScan = async (target: string, requestManager: R
 
     // 2. Test for dynamic origin reflection and null origin
     for (const origin of TEST_ORIGINS) {
-      if (requestManager.scanController?.signal.aborted) throw new Error('Scan aborted');
+      if (requestManager.isAborted()) throw new Error('Scan aborted');
       try {
         const { response, metadata } = await fetchWithBypass(url, {
           headers: { 'Origin': origin },
           timeout: 10000,
-          signal: requestManager.scanController?.signal,
+          signal: requestManager.getAbortSignal(),
         });
         corsMetadata = metadata;
 

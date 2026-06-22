@@ -23,6 +23,7 @@ export class RequestManager {
   private minRequestInterval = 200; // Default minimum interval between requests
   private recentMetrics: RequestMetrics[] = [];
   private metricsBufferSize = 50; // Keep last 50 requests for performance calculation
+  private moduleAbortController = new AbortController();
 
   public scanController?: AbortController; 
 
@@ -55,7 +56,7 @@ export class RequestManager {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
-      if (this.scanController?.signal.aborted || abortController.signal.aborted) {
+      if (this.isAborted() || abortController.signal.aborted) {
         throw new Error('Request aborted by scan controller');
       }
 
@@ -68,6 +69,7 @@ export class RequestManager {
         
         const combinedSignal = this.createCombinedSignal([
           this.scanController?.signal,
+          this.moduleAbortController.signal,
           abortController.signal,
         ].filter(Boolean) as AbortSignal[]);
 
@@ -95,7 +97,7 @@ export class RequestManager {
       } catch (error: any) {
         lastError = error;
 
-        if (error.name === 'AbortError' || this.scanController?.signal.aborted) {
+        if (error.name === 'AbortError' || this.isAborted()) {
           this.activeRequests.delete(requestId);
           throw new Error('Request aborted', { cause: error });
         }
@@ -155,10 +157,31 @@ export class RequestManager {
 
   abortAll(): void {
     console.log(`[RequestManager] Aborting ${this.activeRequests.size} active requests`);
+    this.moduleAbortController.abort();
     for (const controller of this.activeRequests.values()) {
       controller.abort();
     }
     this.activeRequests.clear();
+  }
+
+  resetModuleAbortController(): void {
+    if (this.moduleAbortController.signal.aborted) {
+      this.moduleAbortController = new AbortController();
+    }
+  }
+
+  getAbortSignal(): AbortSignal | undefined {
+    if (!this.scanController?.signal) {
+      return this.moduleAbortController.signal;
+    }
+    return this.createCombinedSignal([
+      this.scanController.signal,
+      this.moduleAbortController.signal,
+    ]);
+  }
+
+  isAborted(): boolean {
+    return Boolean(this.scanController?.signal.aborted || this.moduleAbortController.signal.aborted);
   }
 
   getActiveRequestCount(): number {

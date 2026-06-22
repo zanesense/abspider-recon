@@ -41,7 +41,7 @@ export const performWhoisLookup = async (target: string, requestManager: Request
         const { data, metadata } = await fetchJSONWithBypass(apiUrl, {
           headers: { 'APIKEY': securitytrailsKey },
           timeout: 15000,
-          signal: requestManager.scanController?.signal,
+          signal: requestManager.getAbortSignal(),
         });
 
         if (data.registrar) { // Check for a key indicator of success
@@ -96,7 +96,7 @@ export const performWhoisLookup = async (target: string, requestManager: Request
     
     try {
       // Use fetchJSONWithBypass for RDAP, passing requestManager's signal
-      const { data: rdapData, metadata: rdapCorsMetadata } = await fetchJSONWithBypass(rdapUrl, { timeout: 15000, signal: requestManager.scanController?.signal });
+      const { data: rdapData, metadata: rdapCorsMetadata } = await fetchJSONWithBypass(rdapUrl, { timeout: 15000, signal: requestManager.getAbortSignal() });
       
       if (rdapData.entities && rdapData.entities.length > 0) {
         const entity = rdapData.entities[0];

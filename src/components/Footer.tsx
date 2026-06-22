@@ -6,72 +6,66 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 border-t border-slate-700/50 dark:border-slate-800/50">
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Brand Section */}
+    <footer className="border-t border-border bg-gradient-to-r from-muted/80 via-background to-muted/80">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
-              <Bug className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" size={18} />
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-sm">
+              <Bug className="text-primary-foreground" size={18} />
             </div>
             <div>
-              <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              <h3 className="text-sm sm:text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 ABSpider
               </h3>
-              <p className="text-xs text-slate-400">Security Reconnaissance</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Security Reconnaissance</p>
             </div>
           </div>
 
-          {/* Links */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <a
               href="https://zanesense.dev/abspider-recon"
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <BookOpen className="h-4 w-4" />
-              Documentation
+              <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Documentation</span>
             </a>
             <a
               href="https://github.com/zanesense/abspider-recon"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Github className="h-4 w-4" />
-              Source Code
+              <Github className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Source Code</span>
             </a>
             <a
               href="https://github.com/zanesense/abspider-recon/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Bug className="h-4 w-4" />
-              Report Issues
+              <Bug className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Report Issues</span>
             </a>
           </div>
 
-          {/* Copyright */}
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span>© {currentYear} ABSpider by</span>
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-sm text-muted-foreground flex-wrap justify-center">
+            <span>&copy; {currentYear} ABSpider by</span>
             <a
               href="https://github.com/zanesense"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-md border border-blue-500/30 text-blue-400 hover:text-blue-300 hover:border-blue-400/50 transition-all duration-300 font-medium"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-border bg-muted/50 text-foreground hover:bg-muted transition-colors font-medium"
             >
               <Github className="h-3 w-3" />
               zanesense
             </a>
-            <span>• Made with</span>
-            <Heart className="h-4 w-4 text-red-500 animate-pulse" />
-            <span>for security researchers</span>
+            <span className="hidden sm:inline">&bull; Made with <Heart className="h-3.5 w-3.5 inline text-red-500" /> for security researchers</span>
           </div>
         </div>
 
-        {/* Legal Notice */}
-        <div className="mt-4 pt-4 border-t border-slate-700/50 text-center">
-          <p className="text-xs text-slate-500">
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border text-center">
+          <p className="text-[10px] sm:text-xs text-muted-foreground/60">
             For educational and authorized testing purposes only.
           </p>
         </div>
