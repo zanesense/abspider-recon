@@ -75,10 +75,13 @@ export class RequestManager {
           abortController.signal,
         ].filter(Boolean) as AbortSignal[]);
 
-        const headers: Record<string, string> = {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          ...(fetchOptions.headers as Record<string, string> || {}),
-        };
+        const requestHeaders = (fetchOptions.headers as Record<string, string> || {});
+        const headers: Record<string, string> = skipProxy
+          ? requestHeaders
+          : {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              ...requestHeaders,
+            };
 
         const fetchResult: FetchWithBypassResult = await fetchWithBypass(url, {
           method: fetchOptions.method,

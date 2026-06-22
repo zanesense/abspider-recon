@@ -86,34 +86,34 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
       console.warn('[GeoIP] ipapi.co failed, trying alternatives...');
     }
 
-    // --- Try ip-api.com as fallback ---
+    // --- Try ipwho.is as HTTPS fallback ---
     if (!result.country) {
       try {
-        const ipApiUrl = `http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,city,lat,lon,timezone,isp,org,as,zip,currency`;
+        const ipApiUrl = `https://ipwho.is/${ip}?fields=success,country,country_code,region,city,latitude,longitude,timezone,connection,postal,currency`;
         const ipApiResponse = await requestManager.fetch(ipApiUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
 
         if (ipApiResponse.ok) {
           const data = await ipApiResponse.json();
 
-          if (data.status === 'success') {
+          if (data.success !== false) {
             result.country = data.country;
-            result.countryCode = data.countryCode;
+            result.countryCode = data.country_code;
             result.region = data.region;
             result.city = data.city;
-            result.latitude = data.lat;
-            result.longitude = data.lon;
-            result.timezone = data.timezone;
-            result.isp = data.isp;
-            result.org = data.org;
-            result.asn = data.as;
-            result.postal = data.zip;
-            result.currency = data.currency;
+            result.latitude = data.latitude;
+            result.longitude = data.longitude;
+            result.timezone = data.timezone?.id || data.timezone;
+            result.isp = data.connection?.isp;
+            result.org = data.connection?.org;
+            result.asn = data.connection?.asn ? `AS${data.connection.asn}` : undefined;
+            result.postal = data.postal;
+            result.currency = data.currency?.code || data.currency;
 
-            console.log(`[GeoIP] ✓ Data from ip-api.com`);
+            console.log(`[GeoIP] ✓ Data from ipwho.is`);
           }
         }
       } catch {
-        console.warn('[GeoIP] ip-api.com failed');
+        console.warn('[GeoIP] ipwho.is failed');
       }
     }
 

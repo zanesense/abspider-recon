@@ -17,6 +17,7 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 - Added `skipProxy` support to `fetchWithBypass()`, `corsProxy.fetch()`, and `RequestManager.fetch()` so direct provider APIs return their real JSON bodies instead of proxy HTML or gateway responses.
 - Updated CORS-enabled API calls to bypass `/api/proxy`, including Google DNS, crt.sh, RDAP, Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit, ipapi, and ip-api.
+- Fixed MX and GeoIP direct-fetch failures by avoiding scanner-only headers on `skipProxy` requests and replacing the HTTP GeoIP fallback with an HTTPS endpoint.
 - Corrected the dashboard module count to reflect 35 recon modules.
 - Added scan controls that let a user skip the currently running module and continue with the next module.
 - Fixed dashboard component/widget sizing so panels use responsive dimensions instead of fixed lengths.

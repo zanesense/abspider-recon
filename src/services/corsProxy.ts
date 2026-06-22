@@ -37,7 +37,7 @@ export class CORSBypass {
 
       const response = await fetch(url, {
         method,
-        headers: {
+        headers: skipProxy ? headers : {
           ...CLOUDFLARE_BYPASS_HEADERS,
           ...headers,
         },
@@ -163,7 +163,7 @@ export async function fetchWithBypass(
 
     const response = await fetch(url, {
       method,
-      headers: {
+      headers: skipProxy ? headers : {
         ...CLOUDFLARE_BYPASS_HEADERS,
         ...headers,
       },
