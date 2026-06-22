@@ -42,6 +42,7 @@ export const performWhoisLookup = async (target: string, requestManager: Request
           headers: { 'APIKEY': securitytrailsKey },
           timeout: 15000,
           signal: requestManager.getAbortSignal(),
+          skipProxy: true,
         });
 
         if (data.registrar) { // Check for a key indicator of success
@@ -77,7 +78,7 @@ export const performWhoisLookup = async (target: string, requestManager: Request
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=NS`;
     
     try {
-      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 }); // Use requestManager
+      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
       const dnsData = await dnsResponse.json();
       
       if (dnsData.Answer) {
@@ -96,7 +97,7 @@ export const performWhoisLookup = async (target: string, requestManager: Request
     
     try {
       // Use fetchJSONWithBypass for RDAP, passing requestManager's signal
-      const { data: rdapData, metadata: rdapCorsMetadata } = await fetchJSONWithBypass(rdapUrl, { timeout: 15000, signal: requestManager.getAbortSignal() });
+      const { data: rdapData, metadata: rdapCorsMetadata } = await fetchJSONWithBypass(rdapUrl, { timeout: 15000, signal: requestManager.getAbortSignal(), skipProxy: true });
       
       if (rdapData.entities && rdapData.entities.length > 0) {
         const entity = rdapData.entities[0];

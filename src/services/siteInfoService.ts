@@ -38,7 +38,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
     // Get IP address first (always works)
     try {
       const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
-      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 }); // Use requestManager
+      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
       const dnsData = await dnsResponse.json();
       
       if (dnsData.Answer && dnsData.Answer.length > 0) {
@@ -124,7 +124,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
           console.log('[Site Info] Attempting BuiltWith API enrichment...');
           const builtwithApiUrl = `https://api.builtwith.com/v1/api.json?key=${builtwithKey}&lookup=${domain}`;
           // Use fetchJSONWithBypass for BuiltWith API, passing requestManager's signal
-          const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000, signal: requestManager.getAbortSignal() });
+          const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000, signal: requestManager.getAbortSignal(), skipProxy: true });
 
           if (builtwithData.Results && builtwithData.Results.length > 0) {
             // No longer adding to result.technologies here, as TechStackInfo handles it

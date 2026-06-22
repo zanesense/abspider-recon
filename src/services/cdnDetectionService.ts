@@ -166,7 +166,7 @@ export const performCDNDetection = async (target: string, requestManager: Reques
   // Check CNAME records for CDN patterns
   try {
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=CNAME`;
-    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 });
+    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000, skipProxy: true });
     const dnsData = await dnsResponse.json();
 
     if (dnsData.Answer) {

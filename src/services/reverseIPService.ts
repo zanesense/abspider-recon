@@ -105,7 +105,7 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
 
   try {
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
-    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 });
+    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000, skipProxy: true });
     const dnsData = await dnsResponse.json();
 
     if (!dnsData.Answer || dnsData.Answer.length === 0) {
@@ -125,6 +125,7 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
           headers: { 'APIKEY': securitytrailsKey },
           timeout: 15000,
           signal: requestManager.getAbortSignal(),
+          skipProxy: true,
         });
 
         if (stData.records && stData.records.length > 0) {
@@ -144,7 +145,7 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
     // Fallback to PTR lookup if SecurityTrails is not used or fails
     if (rawDiscoveredDomains.length === 0) {
       const ptrUrl = `https://dns.google/resolve?name=${result.ip.split('.').reverse().join('.')}.in-addr.arpa&type=PTR`;
-      const ptrResponse = await requestManager.fetch(ptrUrl, { timeout: 10000 });
+      const ptrResponse = await requestManager.fetch(ptrUrl, { timeout: 10000, skipProxy: true });
       const ptrData = await ptrResponse.json();
 
       if (ptrData.Answer) {

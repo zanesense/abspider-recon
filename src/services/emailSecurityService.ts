@@ -40,7 +40,7 @@ export interface EmailSecurityResult {
 const queryTXTRecord = async (domain: string, requestManager: RequestManager): Promise<string[]> => {
   try {
     const url = `https://dns.google/resolve?name=${domain}&type=TXT`;
-    const response = await requestManager.fetch(url, { timeout: 10000 });
+    const response = await requestManager.fetch(url, { timeout: 10000, skipProxy: true });
     const data = await response.json();
     if (data.Answer) {
       return data.Answer.map((r: any) => r.data.replace(/^"|"$/g, ''));

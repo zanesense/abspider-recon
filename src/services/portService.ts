@@ -181,7 +181,7 @@ export const scanCommonPorts = async (
     let ipAddress: string | undefined;
     try {
       const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
-      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 }); // Use requestManager
+      const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
       const dnsData = await dnsResponse.json();
       if (dnsData.Answer && dnsData.Answer.length > 0) {
         ipAddress = dnsData.Answer[0].data;
@@ -196,7 +196,7 @@ export const scanCommonPorts = async (
       try {
         console.log('[Port Scan] Attempting Shodan API lookup...');
         const shodanApiUrl = `https://api.shodan.io/shodan/host/${ipAddress}?key=${shodanKey}`;
-        const shodanResponse = await requestManager.fetch(shodanApiUrl, { timeout: 15000 }); // Use requestManager
+        const shodanResponse = await requestManager.fetch(shodanApiUrl, { timeout: 15000, skipProxy: true }); // Use requestManager
 
         if (shodanResponse.ok) {
           const shodanData = await shodanResponse.json();

@@ -12,7 +12,7 @@ export const testShodanAPI = async (apiKey: string): Promise<APIKeyTestResult> =
   if (!apiKey) return { success: false, message: 'API Key is missing.' };
   try {
     const url = `https://api.shodan.io/api-info?key=${apiKey}`;
-    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT, skipProxy: true });
     const data = await response.json();
 
     if (response.ok && data.query_credits !== undefined) {
@@ -30,7 +30,7 @@ export const testVirusTotalAPI = async (apiKey: string): Promise<APIKeyTestResul
   try {
     const testUrl = 'example.com'; 
     const url = `https://www.virustotal.com/vtapi/v2/url/report?apikey=${apiKey}&resource=${testUrl}`;
-    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT, skipProxy: true });
     const data = await response.json();
 
     if (response.ok && data.response_code !== undefined) {
@@ -53,7 +53,8 @@ export const testSecurityTrailsAPI = async (apiKey: string): Promise<APIKeyTestR
     const url = `https://api.securitytrails.com/v1/ping`;
     const response = await corsProxy.fetch(url, {
       headers: { 'APIKEY': apiKey },
-      timeout: API_TEST_TIMEOUT
+      timeout: API_TEST_TIMEOUT,
+      skipProxy: true
     });
     const data = await response.json();
 
@@ -72,7 +73,7 @@ export const testBuiltWithAPI = async (apiKey: string): Promise<APIKeyTestResult
   try {
     const testDomain = 'example.com';
     const url = `https://api.builtwith.com/v1/api.json?key=${apiKey}&lookup=${testDomain}`;
-    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT, skipProxy: true });
     const data = await response.json();
 
     if (response.ok && data.Results) {
@@ -91,7 +92,7 @@ export const testOpenCageAPI = async (apiKey: string): Promise<APIKeyTestResult>
     const testLat = 40.7128;
     const testLon = -74.0060;
     const url = `https://api.opencagedata.com/geocode/v1/json?q=${testLat}+${testLon}&key=${apiKey}`;
-    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT, skipProxy: true });
     const data = await response.json();
 
     if (response.ok && data.results) {
@@ -109,7 +110,7 @@ export const testHunterAPI = async (apiKey: string): Promise<APIKeyTestResult> =
   try {
     const testEmail = 'test@example.com';
     const url = `https://api.hunter.io/v2/email-verifier?email=${testEmail}&api_key=${apiKey}`;
-    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT });
+    const response = await corsProxy.fetch(url, { timeout: API_TEST_TIMEOUT, skipProxy: true });
     const data = await response.json();
 
     if (response.ok && data.data) {
@@ -129,7 +130,8 @@ export const testClearbitAPI = async (apiKey: string): Promise<APIKeyTestResult>
     const url = `https://company.clearbit.com/v1/companies/find?domain=${testDomain}`;
     const response = await corsProxy.fetch(url, {
       headers: { 'Authorization': `Bearer ${apiKey}` },
-      timeout: API_TEST_TIMEOUT
+      timeout: API_TEST_TIMEOUT,
+      skipProxy: true
     });
 
     if (response.status === 200 || response.status === 404) {

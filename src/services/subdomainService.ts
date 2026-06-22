@@ -70,7 +70,7 @@ export const enumerateSubdomainsDNS = async (
         const dnsUrl = `https://dns.google/resolve?name=${fullDomain}&type=A`;
         
         // Use requestManager.fetch for controlled concurrency and retries
-        const response = await requestManager.fetch(dnsUrl, { timeout: 5000 });
+        const response = await requestManager.fetch(dnsUrl, { timeout: 5000, skipProxy: true });
         
         if (!response.ok) return;
         
@@ -111,7 +111,7 @@ export const enumerateSubdomainsCrtSh = async (domain: string, requestManager: R
     const crtShUrl = `https://crt.sh/?q=%.${domain}&output=json`;
     
     // Use fetchWithBypass for crt.sh to handle CORS, passing requestManager's signal
-    const { response } = await fetchWithBypass(crtShUrl, { timeout: 20000, signal: requestManager.getAbortSignal() });
+    const { response } = await fetchWithBypass(crtShUrl, { timeout: 20000, signal: requestManager.getAbortSignal(), skipProxy: true });
     
     if (!response.ok) {
       console.warn(`[Subdomain crt.sh] Failed with status ${response.status}`);
@@ -172,6 +172,7 @@ export const enumerateSubdomainsSecurityTrails = async (domain: string, requestM
       headers: { 'APIKEY': securitytrailsKey },
       timeout: 15000,
       signal: requestManager.getAbortSignal(),
+      skipProxy: true,
     });
 
     if (!response.ok) {

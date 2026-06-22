@@ -23,7 +23,7 @@ export interface DNSLookupResult {
 const queryDNS = async (domain: string, type: string, requestManager: RequestManager): Promise<DNSRecord[]> => {
   try {
     const url = `https://dns.google/resolve?name=${domain}&type=${type}`;
-    const response = await requestManager.fetch(url, { timeout: 10000 }); // Use requestManager
+    const response = await requestManager.fetch(url, { timeout: 10000, skipProxy: true }); // Use requestManager
     const data = await response.json();
     
     if (data.Answer) {

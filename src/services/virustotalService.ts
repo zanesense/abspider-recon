@@ -48,6 +48,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
         },
         timeout: 15000,
         signal: requestManager.getAbortSignal(),
+        skipProxy: true,
       });
 
       if (domainData.data) {
@@ -84,6 +85,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
         },
         timeout: 15000,
         signal: requestManager.getAbortSignal(),
+        skipProxy: true,
       });
 
       if (urlsData.data && urlsData.data.length > 0) {
@@ -116,6 +118,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
         },
         timeout: 15000,
         signal: requestManager.getAbortSignal(),
+        skipProxy: true,
       });
 
       if (filesData.data && filesData.data.length > 0) {

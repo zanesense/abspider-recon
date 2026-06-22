@@ -149,7 +149,7 @@ export const performCloudProviderDetection = async (target: string, requestManag
   // Check CNAME records for cloud provider patterns
   try {
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=CNAME`;
-    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 });
+    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000, skipProxy: true });
     const dnsData = await dnsResponse.json();
 
     if (dnsData.Answer) {

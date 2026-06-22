@@ -46,7 +46,7 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
     const domain = extractDomain(target);
 
     const dnsUrl = `https://dns.google/resolve?name=${domain}&type=A`;
-    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000 }); // Use requestManager
+    const dnsResponse = await requestManager.fetch(dnsUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
     const dnsData = await dnsResponse.json();
 
     if (!dnsData.Answer || dnsData.Answer.length === 0) {
@@ -61,7 +61,7 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
     // --- Try ipapi.co ---
     try {
       const ipapiUrl = `https://ipapi.co/${ip}/json/`;
-      const ipapiResponse = await requestManager.fetch(ipapiUrl, { timeout: 10000 }); // Use requestManager
+      const ipapiResponse = await requestManager.fetch(ipapiUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
 
       if (ipapiResponse.ok) {
         const data = await ipapiResponse.json();
@@ -90,7 +90,7 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
     if (!result.country) {
       try {
         const ipApiUrl = `http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,city,lat,lon,timezone,isp,org,as,zip,currency`;
-        const ipApiResponse = await requestManager.fetch(ipApiUrl, { timeout: 10000 }); // Use requestManager
+        const ipApiResponse = await requestManager.fetch(ipApiUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
 
         if (ipApiResponse.ok) {
           const data = await ipApiResponse.json();
@@ -122,7 +122,7 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
     if (opencageKey && result.latitude && result.longitude) {
       try {
         const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${result.latitude}+${result.longitude}&key=${opencageKey}`;
-        const opencageResponse = await requestManager.fetch(opencageUrl, { timeout: 10000 }); // Use requestManager
+        const opencageResponse = await requestManager.fetch(opencageUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
 
         if (opencageResponse.ok) {
           const data = await opencageResponse.json();

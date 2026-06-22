@@ -24,7 +24,7 @@ export const performMXLookup = async (target: string, requestManager: RequestMan
   };
 
   const mxUrl = `https://dns.google/resolve?name=${domain}&type=MX`;
-  const mxResponse = await requestManager.fetch(mxUrl, { timeout: 10000 }); // Use requestManager
+  const mxResponse = await requestManager.fetch(mxUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
   const mxData = await mxResponse.json();
 
   if (mxData.Answer) {
@@ -34,7 +34,7 @@ export const performMXLookup = async (target: string, requestManager: RequestMan
       const exchange = parts[1].replace(/\.$/, '');
 
       const ipUrl = `https://dns.google/resolve?name=${exchange}&type=A`;
-      const ipResponse = await requestManager.fetch(ipUrl, { timeout: 10000 }); // Use requestManager
+      const ipResponse = await requestManager.fetch(ipUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
       const ipData = await ipResponse.json();
       
       let ip: string | undefined;
@@ -48,7 +48,7 @@ export const performMXLookup = async (target: string, requestManager: RequestMan
   }
 
   const txtUrl = `https://dns.google/resolve?name=${domain}&type=TXT`;
-  const txtResponse = await requestManager.fetch(txtUrl, { timeout: 10000 }); // Use requestManager
+  const txtResponse = await requestManager.fetch(txtUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
   const txtData = await txtResponse.json();
 
   if (txtData.Answer) {
@@ -62,7 +62,7 @@ export const performMXLookup = async (target: string, requestManager: RequestMan
   }
 
   const dmarcUrl = `https://dns.google/resolve?name=_dmarc.${domain}&type=TXT`;
-  const dmarcResponse = await requestManager.fetch(dmarcUrl, { timeout: 10000 }); // Use requestManager
+  const dmarcResponse = await requestManager.fetch(dmarcUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
   const dmarcData = await dmarcResponse.json();
 
   if (dmarcData.Answer && dmarcData.Answer.length > 0) {

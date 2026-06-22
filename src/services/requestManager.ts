@@ -14,6 +14,7 @@ interface RequestManagerOptions extends RequestInit {
   timeout?: number;
   retries?: number;
   retryDelay?: number;
+  skipProxy?: boolean;
 }
 
 export class RequestManager {
@@ -39,6 +40,7 @@ export class RequestManager {
       timeout = 10000,
       retries = 2,
       retryDelay = 1000,
+      skipProxy = false,
       ...fetchOptions
     } = options;
 
@@ -84,6 +86,7 @@ export class RequestManager {
           body: fetchOptions.body as string,
           timeout,
           signal: combinedSignal,
+          skipProxy,
         });
 
         metrics.endTime = Date.now();

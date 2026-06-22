@@ -20,12 +20,13 @@ interface FetchOptions {
   headers?: Record<string, string>;
   body?: string;
   timeout?: number;
+  skipProxy?: boolean;
 }
 
 export class CORSBypass {
 
   async fetch(url: string, options: FetchOptions = {}): Promise<Response> {
-    const { method = 'GET', headers = {}, body, timeout = 20000 } = options;
+    const { method = 'GET', headers = {}, body, timeout = 20000, skipProxy = false } = options;
     const errors: string[] = [];
 
     // 1. Try direct fetch first (Optimization)
@@ -48,7 +49,7 @@ export class CORSBypass {
 
       clearTimeout(timeoutId);
 
-      if (response.ok || (response.status >= 200 && response.status < 400)) {
+      if (skipProxy || response.ok || (response.status >= 200 && response.status < 400)) {
         console.log(`[CORS Bypass] ✓ Direct fetch successful`);
         return response;
       }
@@ -60,9 +61,16 @@ export class CORSBypass {
     } catch (error: any) {
       errors.push(`Direct: ${error.message}`);
       console.log(`[CORS Bypass] Direct fetch failed: ${error.message}`);
+      if (skipProxy) {
+        throw new Error(`Direct fetch failed and proxy is disabled. Errors: ${errors.join(' | ')}`, { cause: error });
+      }
     }
 
     // 2. Try via backend proxy
+    if (skipProxy) {
+      throw new Error(`Direct fetch returned an unsupported response and proxy is disabled. Errors: ${errors.join(' | ')}`);
+    }
+
     try {
       console.log(`[CORS Bypass] Attempting via backend proxy: ${url}`);
       const controller = new AbortController();
@@ -135,7 +143,7 @@ export async function fetchWithBypass(
   url: string,
   options: FetchOptions & { signal?: AbortSignal } = {}
 ): Promise<FetchWithBypassResult> {
-  const { method = 'GET', headers = {}, body, timeout = 20000, signal } = options;
+  const { method = 'GET', headers = {}, body, timeout = 20000, signal, skipProxy = false } = options;
   const errors: string[] = [];
   const metadata: CORSBypassMetadata = {
     usedProxy: false,
@@ -167,7 +175,7 @@ export async function fetchWithBypass(
 
     clearTimeout(timeoutId);
 
-    if (response.ok || (response.status >= 200 && response.status < 400)) {
+    if (skipProxy || response.ok || (response.status >= 200 && response.status < 400)) {
       console.log(`[fetchWithBypass] ✓ Direct fetch successful`);
       return { response, metadata };
     }
@@ -180,9 +188,16 @@ export async function fetchWithBypass(
   } catch (error: any) {
     errors.push(`Direct: ${error.message}`);
     console.log(`[fetchWithBypass] Direct fetch failed: ${error.message}`);
+    if (skipProxy) {
+      throw new Error(`Direct fetch failed and proxy is disabled. Errors: ${errors.join(' | ')}`, { cause: error });
+    }
   }
 
   // Try backend proxy
+  if (skipProxy) {
+    throw new Error(`Direct fetch returned an unsupported response and proxy is disabled. Errors: ${errors.join(' | ')}`);
+  }
+
   metadata.attemptsViaProxy++;
   try {
     console.log(`[fetchWithBypass] Trying backend proxy: ${url}`);

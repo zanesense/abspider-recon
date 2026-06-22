@@ -4,7 +4,7 @@
   "version": "2.0.1",
   "type": "module",
   "scripts": {
-    "cli": "node scripts/abspider-cli.mjs",
+    "cli": "node packages/cli/scripts/abspider-cli.mjs",
     "dev": "vite dev",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
