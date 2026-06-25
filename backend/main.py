@@ -19,6 +19,8 @@ CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Expose-Headers": "X-ABSpider-Proxy, X-ABSpider-Target-URL",
+    "X-ABSpider-Proxy": "fastapi",
 }
 
 
@@ -61,6 +63,7 @@ async def proxy_handler(request: Request, url: str = Query(...)):
             resp_headers.pop("content-length", None)
             resp_headers.pop("transfer-encoding", None)
             resp_headers.update(CORS_HEADERS)
+            resp_headers["X-ABSpider-Target-URL"] = url
 
             return Response(
                 content=response.content,

@@ -93,6 +93,7 @@ export class CORSBypass {
       clearTimeout(timeoutId);
 
       if (response.ok) {
+        await assertValidProxyResponse(response, url);
         console.log(`[CORS Bypass] ✓ Success with backend proxy`);
         return response;
       } else {
@@ -134,6 +135,28 @@ export interface FetchWithBypassResult {
   response: Response;
   metadata: CORSBypassMetadata;
 }
+
+const isLikelyAppShell = (text: string) => {
+  const normalized = text.slice(0, 5000).toLowerCase();
+  return (
+    normalized.includes('<div id="root"') &&
+    (normalized.includes('abspider recon') || normalized.includes('/src/main.tsx') || normalized.includes('/assets/'))
+  );
+};
+
+const assertValidProxyResponse = async (response: Response, targetUrl: string) => {
+  if (response.headers.get('x-abspider-proxy')) return;
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return;
+
+  const text = await response.clone().text().catch(() => '');
+  if (isLikelyAppShell(text)) {
+    throw new Error(
+      `Backend proxy is unavailable or misrouted for ${targetUrl}. Received the ABSpider app shell instead of target content.`
+    );
+  }
+};
 
 /**
  * Unified CORS bypass helper with metadata tracking
@@ -222,6 +245,7 @@ export async function fetchWithBypass(
     clearTimeout(timeoutId);
 
     if (response.ok) {
+      await assertValidProxyResponse(response, url);
       console.log(`[fetchWithBypass] ✓ Success with backend proxy`);
       metadata.usedProxy = true;
       metadata.proxyUrl = '/api/proxy';
