@@ -1,4 +1,5 @@
 import httpx
+from urllib.parse import urlparse
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse, Response
 
@@ -14,6 +15,11 @@ ALLOWED_HEADERS = {
 }
 
 DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+ALLOWED_TARGET_HOSTS = {
+    "api.example.com",
+    "example.com",
+}
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -31,10 +37,18 @@ async def proxy_options():
 
 @app.api_route("/api/proxy", methods=["GET", "POST"])
 async def proxy_handler(request: Request, url: str = Query(...)):
-    if not url.startswith(("http://", "https://")):
+    parsed_url = urlparse(url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
         return JSONResponse(
             status_code=400,
-            content={"error": "Invalid URL. Must start with http:// or https://"},
+            content={"error": "Invalid URL. Must be an absolute http(s) URL"},
+            headers=CORS_HEADERS,
+        )
+
+    if parsed_url.hostname.lower() not in ALLOWED_TARGET_HOSTS:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Target host is not allowed"},
             headers=CORS_HEADERS,
         )
 
