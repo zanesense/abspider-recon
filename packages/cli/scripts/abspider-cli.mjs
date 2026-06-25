@@ -95,8 +95,15 @@ const MODE_PROFILES = {
   },
 };
 
-const PASSIVE_MODULES = ['siteInfo', 'headers', 'whois', 'geoip', 'dns', 'mx', 'subnet', 'subdomains', 'reverseip', 'virustotal', 'sslTls', 'techStack', 'seo'];
-const ACTIVE_MODULES = ['ports', 'sqlinjection', 'xss', 'lfi', 'wordpress', 'brokenLinks', 'corsMisconfig', 'ddosFirewall'];
+const PASSIVE_MODULES = [
+  'siteInfo', 'headers', 'whois', 'geoip', 'dns', 'mx', 'subnet', 'subdomains', 'reverseip', 'virustotal', 'sslTls',
+  'techStack', 'seo', 'cdnDetection', 'cloudProvider', 'emailSecurity', 'cookieAudit', 'jsInspection', 'emailHarvesting',
+  'robotsSitemap',
+];
+const ACTIVE_MODULES = [
+  'ports', 'sqlinjection', 'xss', 'lfi', 'wordpress', 'brokenLinks', 'corsMisconfig', 'ddosFirewall', 's3Bucket',
+  'gitExposure', 'openRedirect', 'cveScanner', 'graphQL', 'rateLimit', 'csrfDetection',
+];
 const ALL_MODULES = [...PASSIVE_MODULES, ...ACTIVE_MODULES];
 const DEFAULT_MODULES = [...PASSIVE_MODULES];
 
@@ -175,6 +182,86 @@ const SECURITY_HEADER_CHECKS = [
 
 const WP_SENSITIVE_FILES = ['wp-config.php', 'wp-config.php.bak', 'readme.html', 'license.txt', 'wp-content/debug.log', 'xmlrpc.php'];
 
+const CDN_SIGNATURES = [
+  { name: 'Cloudflare', headers: { 'cf-ray': /.*/, 'cf-cache-status': /.*/, 'cf-request-id': /.*/ }, serverPattern: /^cloudflare/i },
+  { name: 'Akamai', headers: { 'x-akamai-*': /.*/, 'x-check-cacheable': /.*/, 'x-akamai-transformed': /.*/ }, serverPattern: /Akamai/i },
+  { name: 'Fastly', headers: { 'x-cache': /.*/, 'x-served-by': /.*/, 'x-timer': /.*/ }, serverPattern: /Fastly/i },
+  { name: 'Amazon CloudFront', headers: { 'x-amz-cf-id': /.*/, 'x-amz-cf-pop': /.*/ }, serverPattern: /CloudFront/i, cnamePattern: /\.cloudfront\.net$/i },
+  { name: 'AWS S3', headers: { 'x-amz-request-id': /.*/, 'x-amz-id-2': /.*/ }, serverPattern: /AmazonS3/i },
+  { name: 'StackPath', serverPattern: /StackPath/i },
+  { name: 'Imperva Incapsula', headers: { 'x-iinfo': /.*/ }, serverPattern: /Incapsula/i, cnamePattern: /\.incapdns\.net$/i },
+  { name: 'Sucuri', headers: { 'x-sucuri-id': /.*/, 'x-sucuri-cache': /.*/ }, serverPattern: /Sucuri/i, cnamePattern: /\.sucuri\.net$/i },
+  { name: 'BunnyCDN', serverPattern: /BunnyCDN/i, cnamePattern: /\.bunnycdn\.com$/i },
+  { name: 'KeyCDN', headers: { 'x-keycdn-*': /.*/ }, serverPattern: /KeyCDN/i },
+  { name: 'CacheFly', cnamePattern: /\.cachefly\.net$/i },
+  { name: 'jsDelivr', cnamePattern: /\.jsdelivr\.net$/i },
+  { name: 'Azure CDN', headers: { 'x-azure-*': /.*/ }, serverPattern: /Azure/i, cnamePattern: /\.azureedge\.net$/i },
+  { name: 'Google Cloud CDN', headers: { 'x-goog-*': /.*/ }, serverPattern: /^Google\s/i, cnamePattern: /\.cdn\.google\.com$/i },
+];
+
+const CLOUD_SIGNATURES = [
+  { name: 'Amazon Web Services', headers: { 'x-amz-request-id': /.*/, 'x-amz-id-2': /.*/, 'x-amz-cf-id': /.*/, 'x-amz-cf-pop': /.*/ }, serverPattern: /(AmazonS3|CloudFront|awselb)/i, cnamePattern: /\.(amazonaws\.com|cloudfront\.net|elb\.amazonaws\.com)$/i },
+  { name: 'Google Cloud Platform', headers: { 'x-goog-*': /.*/ }, serverPattern: /^Google\s/i, cnamePattern: /\.(cdn\.google\.com|googleusercontent\.com|gcp\.gov)|c\.googleservices\.com$/i },
+  { name: 'Microsoft Azure', headers: { 'x-azure-*': /.*/ }, serverPattern: /Azure/i, cnamePattern: /\.(azureedge\.net|azurewebsites\.net|trafficmanager\.net|cloudapp\.net|azurefd\.net)$/i },
+  { name: 'DigitalOcean', serverPattern: /DigitalOcean/i, cnamePattern: /\.digitaloceanspaces\.com$/i },
+  { name: 'OVH', serverPattern: /OVH/i },
+  { name: 'Linode', serverPattern: /Linode/i },
+  { name: 'Vultr', serverPattern: /Vultr/i },
+  { name: 'Heroku', headers: { 'x-heroku-*': /.*/ }, serverPattern: /Heroku/i, cnamePattern: /\.herokuapp\.com$/i },
+  { name: 'Alibaba Cloud', headers: { 'x-aliyun-*': /.*/ }, serverPattern: /Aliyun/i, cnamePattern: /\.alicdn\.com$/i },
+  { name: 'Oracle Cloud', serverPattern: /Oracle/i, cnamePattern: /\.oraclecloud\.com$/i },
+  { name: 'IBM Cloud', serverPattern: /IBM/i, cnamePattern: /\.(cloudibm\.com|appdomain\.cloud)$/i },
+];
+
+const DKIM_SELECTORS = ['google', 'selector1', 'selector2', 'default', 'dkim', 'mail', 'zoho', 'protonmail', 'migadu', 'mxroute'];
+const BUCKET_SUFFIXES = ['', '-assets', '-backup', '-files', '-data', '-storage', '-uploads', '-public', '-static', '-media', '-content', '-dev', '-stage', '-prod', '-logs', '-config', '-db', '-images', '-docs', '-resources', '-archive', ' backup', ' files', ' data', ' storage', '-bucket'];
+const EXPOSURE_PATHS = ['/.git/HEAD', '/.git/config', '/.env', '/.env.example', '/.env.backup', '/.gitignore', '/.htaccess', '/config.json', '/config.js', '/config.php', '/backup.sql', '/dump.sql', '/db.sql', '/wp-config.php.bak', '/.svn/entries', '/.DS_Store', '/composer.json', '/package.json', '/npm-debug.log', '/yarn-error.log'];
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+const COMMON_EMAIL_PAGES = ['', '/about', '/contact', '/team', '/support', '/privacy', '/terms', '/careers', '/blog'];
+const REDIRECT_PARAMS = ['url', 'redirect', 'redirect_uri', 'redirect_url', 'return', 'return_to', 'return_path', 'next', 'goto', 'target', 'destination', 'out', 'view', 'image_url', 'go', 'to', 'link', 'ref', 'source', 'u', 'r', 'qurl'];
+const GRAPHQL_PATHS = ['/graphql', '/graphql/console', '/graphiql', '/graphql-explorer', '/api/graphql', '/api/v1/graphql', '/api/v2/graphql', '/api/graphiql', '/gql', '/api/gql', '/query', '/v1/graphql', '/v2/graphql', '/v3/graphql', '/graphql/schema', '/graphql/v1', '/graphql/v2', '/_graphql', '/__graphql'];
+const CSRF_TOKEN_NAMES = ['csrf_token', 'csrf', '_csrf', '_token', 'token', 'csrf-token', 'csrfToken', 'authenticity_token', 'auth_token', 'xsrf-token', '__RequestVerificationToken', 'csrfmiddlewaretoken', '_csrf_token', 'nonce', '_wpnonce', 'wp_nonce'];
+
+const API_KEY_PATTERNS = [
+  /(?:['"`])(?:api[_-]?key|apikey|api_secret|apiSecret|secret|token|access_token|bearer)\s*[:=]\s*['"`]([^'"`]{8,})['"`]/gi,
+  /AIza[0-9A-Za-z_-]{35}(?:['"`])?/g,
+  /sk-[0-9a-zA-Z]{32,}/g,
+  /(?:xox[abpore]-)[a-zA-Z0-9-]{10,}/g,
+  /ghp_[a-zA-Z0-9]{36}/g,
+  /gho_[a-zA-Z0-9]{36}/g,
+  /ghu_[a-zA-Z0-9]{36}/g,
+  /AKIA[0-9A-Z]{16}/g,
+  /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g,
+];
+const ENDPOINT_PATTERNS = [/['"`](\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.\/-]+(?:\.json|\.xml|\.php)?)['"`]/g, /(?:url|path|route|endpoint)\s*[=:]\s*['"`]([^'"`]{2,})['"`]/gi];
+const INTERNAL_PATH_PATTERNS = [/(?:from|require|import)\s*['"`]\.\.?\/[^'"`]+['"`]/g, /['"`](\.\.?\/[^'"`]{2,})['"`]/g];
+const INTROSPECTION_QUERY = JSON.stringify({ query: `query IntrospectionQuery { __schema { queryType { name } mutationType { name } types { name kind fields { name type { name kind } } } } }` });
+const CVE_DATABASE = [
+  { id: 'CVE-2024-44000', technology: 'WordPress', versionRange: '<6.6', severity: 'Critical', description: 'Unauthenticated RCE via template injection' },
+  { id: 'CVE-2024-31245', technology: 'WordPress', versionRange: '<6.5.2', severity: 'High', description: 'Stored XSS in block editor' },
+  { id: 'CVE-2023-45179', technology: 'WordPress', versionRange: '<6.3.2', severity: 'High', description: 'SQL injection via shortcode attributes' },
+  { id: 'CVE-2023-23488', technology: 'WordPress', versionRange: '<6.1.2', severity: 'Medium', description: 'CSRF in XML-RPC' },
+  { id: 'CVE-2024-39573', technology: 'Apache HTTP Server', versionRange: '<2.4.60', severity: 'High', description: 'HTTP/2 memory corruption' },
+  { id: 'CVE-2024-24795', technology: 'Apache HTTP Server', versionRange: '<2.4.59', severity: 'Medium', description: 'HTTP response splitting' },
+  { id: 'CVE-2023-45802', technology: 'Apache HTTP Server', versionRange: '<2.4.58', severity: 'Medium', description: 'HTTP/2 stream memory leak' },
+  { id: 'CVE-2024-24989', technology: 'Nginx', versionRange: '<1.24.1', severity: 'High', description: 'HTTP/3 QUIC memory corruption' },
+  { id: 'CVE-2023-44487', technology: 'Nginx', versionRange: '<1.25.3', severity: 'Medium', description: 'HTTP/2 Rapid Reset attack' },
+  { id: 'CVE-2024-4577', technology: 'PHP', versionRange: '<8.3.8', severity: 'Critical', description: 'Argument injection in CGI mode' },
+  { id: 'CVE-2024-1874', technology: 'PHP', versionRange: '<8.2.17', severity: 'High', description: 'PHAR deserialization bypass' },
+  { id: 'CVE-2023-3823', technology: 'PHP', versionRange: '<8.1.22', severity: 'High', description: 'File upload bypass' },
+  { id: 'CVE-2024-27982', technology: 'Node.js', versionRange: '<20.11.1', severity: 'High', description: 'HTTP request smuggling' },
+  { id: 'CVE-2024-22019', technology: 'Node.js', versionRange: '<18.19.1', severity: 'High', description: 'Denial of Service via HTTP/2' },
+  { id: 'CVE-2020-11023', technology: 'jQuery', versionRange: '<3.5.0', severity: 'Medium', description: 'XSS via HTML parsing' },
+  { id: 'CVE-2020-11022', technology: 'jQuery', versionRange: '<3.5.0', severity: 'Medium', description: 'XSS via HTML injection in $.htmlPrefilter' },
+  { id: 'CVE-2024-30016', technology: 'React', versionRange: '<18.2.0', severity: 'Medium', description: 'Server-side rendering XSS' },
+  { id: 'CVE-2024-32792', technology: 'Angular', versionRange: '<17.0.8', severity: 'High', description: 'Prototype pollution in SSR' },
+  { id: 'CVE-2024-29041', technology: 'Express', versionRange: '<4.19.2', severity: 'High', description: 'Open redirect via malformed URL' },
+  { id: 'CVE-2024-38875', technology: 'Django', versionRange: '<5.0.4', severity: 'High', description: 'SQL injection in filter expressions' },
+  { id: 'CVE-2024-27351', technology: 'Django', versionRange: '<5.0.3', severity: 'Medium', description: 'Potential XSS in urlize template filter' },
+  { id: 'CVE-2024-29297', technology: 'Laravel', versionRange: '<10.48.0', severity: 'High', description: 'Mass assignment vulnerability' },
+  { id: 'CVE-2024-31238', technology: 'Cloudflare', versionRange: '<2024.3', severity: 'Medium', description: 'HTTP/2 rapid reset bypass' },
+];
+
 const MODULE_ALIASES = {
   site: 'siteInfo',
   siteinfo: 'siteInfo',
@@ -205,6 +292,39 @@ const MODULE_ALIASES = {
   reverseip: 'reverseip',
   subdomain: 'subdomains',
   subdomains: 'subdomains',
+  cdn: 'cdnDetection',
+  cdndetection: 'cdnDetection',
+  cloud: 'cloudProvider',
+  cloudprovider: 'cloudProvider',
+  email: 'emailSecurity',
+  emailsecurity: 'emailSecurity',
+  cookies: 'cookieAudit',
+  cookie: 'cookieAudit',
+  cookieaudit: 'cookieAudit',
+  js: 'jsInspection',
+  javascript: 'jsInspection',
+  jsinspection: 'jsInspection',
+  s3: 's3Bucket',
+  s3bucket: 's3Bucket',
+  git: 'gitExposure',
+  gitexposure: 'gitExposure',
+  secrets: 'gitExposure',
+  emailharvesting: 'emailHarvesting',
+  harvest: 'emailHarvesting',
+  robots: 'robotsSitemap',
+  sitemap: 'robotsSitemap',
+  robotssitemap: 'robotsSitemap',
+  redirect: 'openRedirect',
+  openredirect: 'openRedirect',
+  cve: 'cveScanner',
+  cves: 'cveScanner',
+  cvescanner: 'cveScanner',
+  graphql: 'graphQL',
+  gql: 'graphQL',
+  ratelimit: 'rateLimit',
+  rate: 'rateLimit',
+  csrf: 'csrfDetection',
+  csrfdetection: 'csrfDetection',
 };
 
 const palette = {
@@ -1294,6 +1414,526 @@ const runDdosFirewall = async (target, options) => {
   return { requests: responses.length, rateLimited, avgResponseTimeMs, likelyProtected: rateLimited > 0, responses };
 };
 
+const headersObject = (response) => Object.fromEntries(response.headers.entries());
+
+const detectBySignatures = async (target, options, signatures, resultKey) => {
+  const detected = signatures.map((item) => ({ name: item.name, detected: false, evidence: [] }));
+  try {
+    const response = await request(target.origin, { method: 'HEAD' }, Math.max(options.timeout, 15000));
+    const headers = headersObject(response);
+    const serverHeader = headers.server || '';
+    signatures.forEach((signature, index) => {
+      if (signature.serverPattern?.test(serverHeader)) {
+        detected[index].detected = true;
+        detected[index].evidence.push(`Server header: ${serverHeader}`);
+      }
+      for (const headerKey of Object.keys(signature.headers || {})) {
+        const wildcardKey = headerKey.replace(/\*$/, '');
+        const matchingHeaders = Object.entries(headers).filter(([key]) => headerKey.endsWith('*') ? key.startsWith(wildcardKey) : key === headerKey);
+        for (const [key, value] of matchingHeaders) {
+          detected[index].detected = true;
+          detected[index].evidence.push(`Header ${key}: ${String(value).substring(0, 100)}`);
+        }
+      }
+    });
+  } catch (error) {
+    options.log?.(`${resultKey} header probe failed: ${error.message}`);
+  }
+  try {
+    const cnameRecords = await dnsGoogle(target.domain, 'CNAME', options);
+    for (const record of cnameRecords) {
+      const cnameValue = String(record.data || '').toLowerCase();
+      signatures.forEach((signature, index) => {
+        if (signature.cnamePattern?.test(cnameValue)) {
+          detected[index].detected = true;
+          detected[index].evidence.push(`CNAME record: ${cnameValue}`);
+        }
+      });
+    }
+  } catch (error) {
+    options.log?.(`${resultKey} CNAME probe failed: ${error.message}`);
+  }
+  return detected;
+};
+
+const runCdnDetection = async (target, options) => {
+  const cdns = await detectBySignatures(target, options, CDN_SIGNATURES, 'CDN detection');
+  return { cdns, detectedCount: cdns.filter((item) => item.detected).length, target: target.domain };
+};
+
+const runCloudProvider = async (target, options) => {
+  const providers = await detectBySignatures(target, options, CLOUD_SIGNATURES, 'cloud provider detection');
+  return { providers, detectedCount: providers.filter((item) => item.detected).length, target: target.domain };
+};
+
+const dnsGoogle = async (name, type, options) => {
+  const response = await request(`https://dns.google/resolve?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`, { method: 'GET', headers: { accept: 'application/json' } }, Math.max(options.timeout, 10000));
+  const data = await response.json().catch(() => ({}));
+  return Array.isArray(data.Answer) ? data.Answer : [];
+};
+
+const queryTxtRecords = async (name, options) => {
+  const records = await dnsGoogle(name, 'TXT', options).catch(() => []);
+  return records.map((record) => String(record.data || '').replace(/^"|"$/g, ''));
+};
+
+const parseSpf = (records) => {
+  const raw = records.find((record) => record.startsWith('v=spf1'));
+  if (!raw) return { exists: false, raw: '', valid: false, issues: ['No SPF record found'] };
+  const issues = [];
+  let allMechanism;
+  if (raw.includes('~all')) allMechanism = 'softfail';
+  else if (raw.includes('-all')) allMechanism = 'hardfail';
+  else if (raw.includes('?all')) allMechanism = 'neutral';
+  else if (raw.includes('+all')) allMechanism = 'pass';
+  else issues.push('No "all" mechanism defined; anyone can send email as this domain');
+  const dnsLookups = raw.split(' ').filter((part) => part.startsWith('include:') || part.startsWith('a') || part.startsWith('mx') || part.startsWith('ptr')).length;
+  if (dnsLookups > 10) issues.push(`Excessive DNS lookups (${dnsLookups}); SPF spec allows max 10`);
+  return { exists: true, raw, valid: issues.length === 0, allMechanism, issues };
+};
+
+const parseDmarc = (record) => {
+  const issues = [];
+  const tags = {};
+  record.split(';').forEach((tag) => {
+    const [key, ...vals] = tag.trim().split('=');
+    if (key && vals.length > 0) tags[key.trim().toLowerCase()] = vals.join('=').trim();
+  });
+  const policy = tags.p;
+  if (!policy) issues.push('No policy tag (p=) defined');
+  else if (!['none', 'quarantine', 'reject'].includes(policy)) issues.push(`Unknown policy: ${policy}`);
+  const pct = tags.pc ? Number.parseInt(tags.pc, 10) : tags.pct ? Number.parseInt(tags.pct, 10) : undefined;
+  if (pct !== undefined && (pct < 0 || pct > 100)) issues.push(`Invalid pct value: ${pct}`);
+  if (!tags.rua && !tags.ruf) issues.push('No reporting addresses (rua/ruf) configured');
+  return { exists: true, raw: record, valid: issues.length === 0, policy, pct, rua: tags.rua, ruf: tags.ruf, issues };
+};
+
+const runEmailSecurity = async (target, options) => {
+  const txtRecords = await queryTxtRecords(target.domain, options);
+  const spf = parseSpf(txtRecords);
+  const dkim = [];
+  for (const selector of DKIM_SELECTORS) {
+    const records = await queryTxtRecords(`${selector}._domainkey.${target.domain}`, options);
+    if (records.length) dkim.push({ exists: true, selector, raw: records[0].substring(0, 200), valid: records.some((record) => record.includes('v=DKIM1') || record.includes('k=rsa')) });
+  }
+  const dmarcRecords = await queryTxtRecords(`_dmarc.${target.domain}`, options);
+  const dmarc = dmarcRecords.length ? parseDmarc(dmarcRecords.find((record) => record.startsWith('v=DMARC1')) || dmarcRecords[0]) : { exists: false, raw: '', valid: false, issues: ['No DMARC record found'] };
+  let score = 5;
+  if (spf.exists) score += 1.5;
+  if (spf.allMechanism === 'hardfail') score += 0.5;
+  if (dmarc.exists) score += 1.5;
+  if (dmarc.policy === 'reject') score += 1;
+  if (dmarc.policy === 'quarantine') score += 0.5;
+  if (dkim.length > 0) score += 1;
+  if (spf.valid && dmarc.valid && dkim.some((record) => record.valid)) score += 0.5;
+  return { domain: target.domain, spf, dkim, dmarc, overallScore: Math.round(score * 10) / 10 };
+};
+
+const splitSetCookie = (value) => value ? String(value).split(/,(?=\s*[a-zA-Z0-9_]+=)/g) : [];
+
+const parseSetCookieForAudit = (headerValue) => {
+  const parts = headerValue.split(';').map((part) => part.trim());
+  const [name = 'unknown'] = (parts[0] || '').split('=');
+  const cookie = { name, secure: false, httpOnly: false, issues: [] };
+  for (const part of parts.slice(1)) {
+    const [key, ...vals] = part.split('=');
+    const normalizedKey = key.trim().toLowerCase();
+    const value = vals.join('=').trim();
+    if (normalizedKey === 'secure') cookie.secure = true;
+    else if (normalizedKey === 'httponly') cookie.httpOnly = true;
+    else if (normalizedKey === 'samesite') {
+      cookie.sameSite = value;
+      if (!['lax', 'strict', 'none'].includes(value.toLowerCase())) cookie.issues.push(`Invalid SameSite value: ${value}`);
+    } else if (normalizedKey === 'domain') cookie.domain = value;
+    else if (normalizedKey === 'path') cookie.path = value;
+    else if (normalizedKey === 'expires') cookie.expires = value;
+  }
+  if (!cookie.secure) cookie.issues.push('Missing Secure flag');
+  if (!cookie.httpOnly) cookie.issues.push('Missing HttpOnly flag');
+  if (!cookie.sameSite) cookie.issues.push('Missing SameSite attribute');
+  return cookie;
+};
+
+const runCookieAudit = async (target, options) => {
+  const cookies = [];
+  try {
+    const response = await request(target.origin, { method: 'GET' }, Math.max(options.timeout, 15000));
+    const setCookies = response.headers.getSetCookie?.() || splitSetCookie(response.headers.get('set-cookie'));
+    cookies.push(...setCookies.map(parseSetCookieForAudit));
+  } catch (error) {
+    options.log?.(`cookie audit failed: ${error.message}`);
+  }
+  return {
+    cookies,
+    totalCount: cookies.length,
+    secureCount: cookies.filter((cookie) => cookie.secure).length,
+    httpOnlyCount: cookies.filter((cookie) => cookie.httpOnly).length,
+    sameSiteCount: cookies.filter((cookie) => cookie.sameSite).length,
+    insecureCookies: cookies.filter((cookie) => cookie.issues.length > 0).length,
+  };
+};
+
+const extractScriptSrcs = (html) => [...html.matchAll(/<script[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi)].map((match) => match[1]);
+const analyzeJsContent = (content) => {
+  const endpoints = new Set();
+  const apiKeys = new Set();
+  const internalPaths = new Set();
+  for (const pattern of API_KEY_PATTERNS) {
+    for (const match of content.matchAll(pattern)) {
+      const key = match[1] || match[0];
+      if (key.length < 200) apiKeys.add(key.substring(0, 100));
+    }
+  }
+  for (const pattern of ENDPOINT_PATTERNS) {
+    for (const match of content.matchAll(pattern)) {
+      const endpoint = match[1];
+      if (endpoint?.length < 100 && !endpoint.startsWith('//')) endpoints.add(endpoint);
+    }
+  }
+  for (const pattern of INTERNAL_PATH_PATTERNS) {
+    for (const match of content.matchAll(pattern)) {
+      const internalPath = match[1];
+      if (internalPath?.length < 100) internalPaths.add(internalPath);
+    }
+  }
+  return { endpoints: [...endpoints].slice(0, 50), apiKeys: [...apiKeys].slice(0, 20), internalPaths: [...internalPaths].slice(0, 30) };
+};
+
+const runJsInspection = async (target, options, cache) => {
+  const files = [];
+  let text = '';
+  try {
+    text = (await getHtml(target, options, cache)).text;
+  } catch (error) {
+    options.log?.(`JS inspection failed: ${error.message}`);
+    return { files, totalFiles: 0, totalEndpoints: 0, totalApiKeys: 0 };
+  }
+  let inlineContent = '';
+  for (const match of text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)) inlineContent += `${match[1]}\n`;
+  if (inlineContent.length > 50) {
+    const analysis = analyzeJsContent(inlineContent);
+    if (analysis.endpoints.length || analysis.apiKeys.length || analysis.internalPaths.length) files.push({ url: 'inline-scripts', size: inlineContent.length, ...analysis });
+  }
+  const fetched = new Set();
+  for (const src of extractScriptSrcs(text).slice(0, 20)) {
+    const jsUrl = new URL(src, target.origin).href;
+    if (fetched.has(jsUrl)) continue;
+    fetched.add(jsUrl);
+    try {
+      const response = await request(jsUrl, { method: 'GET' }, Math.max(options.timeout, 10000));
+      const content = await response.text();
+      const analysis = analyzeJsContent(content);
+      if (analysis.endpoints.length || analysis.apiKeys.length || analysis.internalPaths.length) files.push({ url: jsUrl, size: content.length, ...analysis });
+    } catch { /* skip failed JS fetches */ }
+  }
+  return { files, totalFiles: files.length, totalEndpoints: files.reduce((sum, file) => sum + file.endpoints.length, 0), totalApiKeys: files.reduce((sum, file) => sum + file.apiKeys.length, 0) };
+};
+
+const checkBucket = async (name, options) => {
+  const info = { name, accessible: false, listing: false, statusCode: 0 };
+  try {
+    const response = await request(`http://${name}.s3.amazonaws.com/`, { method: 'GET' }, Math.max(options.timeout, 8000));
+    info.statusCode = response.status;
+    if (response.status === 200) {
+      info.accessible = true;
+      const text = await response.text();
+      info.listing = text.includes('<ListBucketResult') || text.includes('<Contents>');
+    } else if (response.status === 403) {
+      info.accessible = true;
+    }
+  } catch { /* bucket unavailable */ }
+  return info;
+};
+
+const runS3Bucket = async (target, options) => {
+  const baseName = target.domain.replace(/^www\./, '').split('.')[0];
+  const checked = new Set();
+  const buckets = [];
+  const candidates = [target.domain, baseName, `${baseName}-${target.domain.split('.').slice(-2, -1)[0] || 'app'}`];
+  for (const candidate of candidates) {
+    for (const suffix of BUCKET_SUFFIXES) {
+      const name = `${candidate}${suffix}`;
+      if (checked.has(name)) continue;
+      checked.add(name);
+      const info = await checkBucket(name, options);
+      if (info.accessible || info.statusCode !== 0) buckets.push(info);
+    }
+  }
+  return { buckets, openBuckets: buckets.filter((bucket) => bucket.listing).length, totalChecked: checked.size };
+};
+
+const runGitExposure = async (target, options) => {
+  const files = [];
+  let totalExposed = 0;
+  let criticalExposed = 0;
+  for (const exposurePath of EXPOSURE_PATHS) {
+    try {
+      const response = await request(new URL(exposurePath, target.origin).href, { method: 'GET' }, Math.max(options.timeout, 10000));
+      if (response.status === 200 || response.status === 403) {
+        const exposed = { path: exposurePath, exposed: true, statusCode: response.status };
+        if (response.status === 200) exposed.preview = (await response.text()).substring(0, 200);
+        files.push(exposed);
+        totalExposed += 1;
+        if (exposurePath.includes('.git') || exposurePath.includes('.env') || exposurePath.includes('backup') || exposurePath.includes('dump') || exposurePath.includes('sql')) criticalExposed += 1;
+      }
+    } catch { /* file not found */ }
+  }
+  return { files, totalExposed, criticalExposed };
+};
+
+const extractEmailsFromText = (text, source) => {
+  const found = new Map();
+  for (const match of text.matchAll(EMAIL_REGEX)) {
+    const email = match[0].toLowerCase();
+    if (['example.com', 'domain.com', 'your@email', '@email.com', '@test.com', '@localhost'].some((ignored) => email.includes(ignored))) continue;
+    if (email.length > 50) continue;
+    const start = Math.max(0, match.index - 40);
+    const context = text.substring(start, match.index + email.length + 40).replace(/\s+/g, ' ').trim();
+    if (!found.has(email)) found.set(email, { email, source, context: context.substring(0, 120) });
+  }
+  return [...found.values()];
+};
+
+const runEmailHarvesting = async (target, options) => {
+  const allEmails = new Map();
+  try {
+    const response = await request(new URL('/robots.txt', target.origin).href, { method: 'GET' }, Math.max(options.timeout, 8000));
+    if (response.status === 200) extractEmailsFromText(await response.text(), 'robots.txt').forEach((entry) => allEmails.set(entry.email, entry));
+  } catch { /* ignore */ }
+  for (const page of COMMON_EMAIL_PAGES.slice(0, 5)) {
+    try {
+      const response = await request(new URL(page || '/', target.origin).href, { method: 'GET' }, Math.max(options.timeout, 10000));
+      if (response.status !== 200) continue;
+      const html = await response.text();
+      for (const match of html.matchAll(/mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi)) {
+        const email = match[1].toLowerCase();
+        if (!allEmails.has(email)) allEmails.set(email, { email, source: `${page || '/'} (mailto:)`, context: '' });
+      }
+      extractEmailsFromText(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '), page || '/').forEach((entry) => allEmails.set(entry.email, entry));
+    } catch { /* ignore */ }
+  }
+  const emails = [...allEmails.values()];
+  return { emails, totalEmails: emails.length, uniqueDomains: [...new Set(emails.map((entry) => entry.email.split('@')[1]).filter(Boolean))] };
+};
+
+const runRobotsSitemap = async (target, options) => {
+  const result = { robots: { exists: false, content: '', userAgents: [], disallowedPaths: [], sitemapLinks: [] }, sitemap: { exists: false, urls: [], count: 0 } };
+  try {
+    const response = await request(new URL('/robots.txt', target.origin).href, { method: 'GET' }, Math.max(options.timeout, 10000));
+    if (response.status === 200) {
+      const text = await response.text();
+      result.robots.exists = true;
+      result.robots.content = text.substring(0, 2000);
+      for (const line of text.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('User-agent:')) result.robots.userAgents.push({ agent: trimmed.split(':')[1]?.trim() || '*', disallowed: [], allowed: [] });
+        else if (trimmed.startsWith('Disallow:')) {
+          const pathName = trimmed.split(':').slice(1).join(':').trim();
+          if (pathName) {
+            result.robots.disallowedPaths.push(pathName);
+            result.robots.userAgents.at(-1)?.disallowed.push(pathName);
+          }
+        } else if (trimmed.startsWith('Allow:')) {
+          const pathName = trimmed.split(':').slice(1).join(':').trim();
+          if (pathName) result.robots.userAgents.at(-1)?.allowed.push(pathName);
+        } else if (trimmed.toLowerCase().startsWith('sitemap:')) {
+          const sitemapUrl = trimmed.split(':').slice(1).join(':').trim();
+          if (sitemapUrl) result.robots.sitemapLinks.push(sitemapUrl);
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  const sitemapUrls = result.robots.sitemapLinks.length ? result.robots.sitemapLinks : [new URL('/sitemap.xml', target.origin).href, new URL('/sitemap_index.xml', target.origin).href];
+  for (const sitemapUrl of sitemapUrls.slice(0, 3)) {
+    try {
+      const response = await request(sitemapUrl, { method: 'GET' }, Math.max(options.timeout, 10000));
+      if (response.status !== 200) continue;
+      const xml = await response.text();
+      for (const match of xml.matchAll(/<loc>([^<]+)<\/loc>/g)) result.sitemap.urls.push(match[1]);
+      result.sitemap.exists = true;
+      result.sitemap.urls = result.sitemap.urls.slice(0, 500);
+      result.sitemap.count = result.sitemap.urls.length;
+      break;
+    } catch { /* ignore */ }
+  }
+  return result;
+};
+
+const runOpenRedirect = async (target, options) => {
+  const tests = [];
+  const testExternalUrl = 'https://example.com';
+  for (const param of REDIRECT_PARAMS.slice(0, 15)) {
+    const testUrl = `${target.origin}?${param}=${encodeURIComponent(testExternalUrl)}`;
+    try {
+      const response = await request(testUrl, { method: 'GET', redirect: 'manual' }, Math.max(options.timeout, 10000));
+      const test = { param, url: testUrl, vulnerable: false, statusCode: response.status };
+      const location = response.headers.get('location');
+      if (location) {
+        test.redirectedTo = location;
+        if (location.includes(testExternalUrl) || (!location.startsWith('/') && !location.includes(target.domain))) test.vulnerable = true;
+      }
+      if ([200, 301, 302, 307, 308].includes(response.status)) {
+        const text = await response.text();
+        if (text.includes(testExternalUrl)) {
+          test.vulnerable = true;
+          test.redirectedTo ||= '(body contains external URL)';
+        }
+      }
+      tests.push(test);
+    } catch { /* ignore */ }
+  }
+  return { tests, vulnerableCount: tests.filter((test) => test.vulnerable).length, totalTested: tests.length };
+};
+
+const parseCveVersion = (version) => String(version).split('.').map((part) => Number.parseInt(part, 10) || 0);
+const cveVersionInRange = (current, range) => {
+  const op = range[0];
+  const curParts = parseCveVersion(current);
+  const rangeParts = parseCveVersion(range.substring(1));
+  for (let index = 0; index < Math.max(curParts.length, rangeParts.length); index += 1) {
+    const currentPart = curParts[index] || 0;
+    const rangePart = rangeParts[index] || 0;
+    if (currentPart !== rangePart) {
+      if (op === '<') return currentPart < rangePart;
+      if (op === '>') return currentPart > rangePart;
+      if (op === '=') return false;
+      if (op === '~') return currentPart <= rangePart && curParts[0] === rangeParts[0];
+    }
+  }
+  return op === '=' || op === '<' || op === '~';
+};
+
+const runCveScanner = async (target, options, cache) => {
+  const { response, text } = await getHtml(target, options, cache).catch(() => ({ response: { headers: new Headers() }, text: '' }));
+  const headers = headersObject(response);
+  const techMap = {};
+  const server = headers.server || '';
+  const poweredBy = headers['x-powered-by'] || '';
+  const generator = firstMatch(text, /<meta[^>]*name=["']generator["'][^>]*content=["']([^"']+)["']/i) || '';
+  if (server.includes('Apache')) techMap['Apache HTTP Server'] = firstMatch(server, /Apache\/([\d.]+)/i) || 'detected';
+  if (server.includes('nginx')) techMap.Nginx = firstMatch(server, /nginx\/([\d.]+)/i) || 'detected';
+  if (generator.includes('WordPress')) techMap.WordPress = firstMatch(generator, /WordPress\s*([\d.]+)/i) || 'detected';
+  if (poweredBy.includes('PHP')) techMap.PHP = firstMatch(poweredBy, /PHP\/([\d.]+)/i) || 'detected';
+  if (text.includes('wp-content')) techMap.WordPress ||= 'detected';
+  if (text.includes('jquery')) techMap.jQuery = firstMatch(text, /jquery[\/-]([\d.]+)/i) || 'detected';
+  if (text.includes('react')) techMap.React = firstMatch(text, /react[\/-]([\d.]+)/i) || 'detected';
+  if (text.includes('angular')) techMap.Angular = firstMatch(text, /angular[\/-]([\d.]+)/i) || 'detected';
+  if (poweredBy.includes('Express')) techMap.Express = 'detected';
+  if (generator.includes('Laravel')) techMap.Laravel = 'detected';
+  if (generator.includes('Django')) techMap.Django = 'detected';
+  const techStackChecked = Object.entries(techMap).map(([tech, version]) => `${tech}${version !== 'detected' ? ` ${version}` : ''}`);
+  const matches = CVE_DATABASE.filter((cve) => {
+    const version = techMap[cve.technology];
+    return version && (version === 'detected' || cveVersionInRange(version, cve.versionRange));
+  }).map((cve) => ({ cveId: cve.id, technology: cve.technology, version: techMap[cve.technology] !== 'detected' ? techMap[cve.technology] : undefined, severity: cve.severity, description: cve.description }));
+  return { matches, totalFound: matches.length, techStackChecked, techStackFound: techStackChecked.length > 0 };
+};
+
+const runGraphQl = async (target, options) => {
+  const endpoints = [];
+  let introspectionEnabled = false;
+  for (const pathName of GRAPHQL_PATHS.slice(0, 10)) {
+    const url = new URL(pathName, target.origin).href;
+    try {
+      const response = await request(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: INTROSPECTION_QUERY }, Math.max(options.timeout, 10000));
+      if (response.status === 200) {
+        const data = await response.json().catch(() => ({}));
+        const endpoint = { path: pathName, accessible: true, introspectionOpen: false };
+        if (data?.data?.__schema) {
+          endpoint.introspectionOpen = true;
+          introspectionEnabled = true;
+          endpoint.queryType = data.data.__schema.queryType?.name;
+          endpoint.mutationType = data.data.__schema.mutationType?.name;
+          endpoint.typeCount = data.data.__schema.types?.length;
+        }
+        endpoints.push(endpoint);
+      }
+    } catch {
+      if (pathName.includes('graphiql') || pathName.includes('explorer')) {
+        try {
+          const response = await request(url, { method: 'GET' }, Math.min(options.timeout, 5000));
+          const text = await response.text();
+          if (response.status === 200 && (/graphiql|GraphQL|Playground/.test(text))) endpoints.push({ path: pathName, accessible: true, introspectionOpen: false });
+        } catch { /* ignore */ }
+      }
+    }
+  }
+  return { endpoints, totalEndpoints: endpoints.length, openEndpoints: endpoints.filter((endpoint) => endpoint.introspectionOpen || endpoint.accessible).length, introspectionEnabled };
+};
+
+const runRateLimit = async (target, options) => {
+  const statusCodes = [];
+  const rateLimitHeaders = {};
+  let requestsBlocked = 0;
+  let details = '';
+  for (let index = 0; index < 20; index += 1) {
+    try {
+      const response = await request(target.origin, { method: 'GET' }, Math.min(options.timeout, 5000));
+      statusCodes.push(response.status);
+      if (index === 0) {
+        for (const header of ['retry-after', 'x-ratelimit-remaining', 'x-ratelimit-limit', 'x-ratelimit-reset', 'rate-limit']) {
+          const value = response.headers.get(header);
+          if (value) rateLimitHeaders[header] = value;
+        }
+      }
+      if (response.status === 429) {
+        requestsBlocked += 1;
+        const retryAfter = response.headers.get('retry-after');
+        if (retryAfter) details = `Rate limited after ${index + 1} requests. Retry-After: ${retryAfter}s`;
+      }
+    } catch {
+      requestsBlocked += 1;
+    }
+  }
+  if (requestsBlocked === 0 && Object.keys(rateLimitHeaders).length > 0) details = 'Rate limit headers detected but no blocking occurred within 20 requests';
+  else if (requestsBlocked === 0) details = 'No rate limiting detected within 20 rapid requests';
+  else if (!details) details = `Rate limited: ${requestsBlocked}/20 requests blocked`;
+  return { rateLimited: requestsBlocked > 0, statusCodes, requestsSent: 20, requestsBlocked, details, rateLimitHeaders };
+};
+
+const parseCsrfForm = (formHtml) => {
+  const form = {
+    action: firstMatch(formHtml, /action\s*=\s*"([^"]*)"/i) || '(no action)',
+    method: (firstMatch(formHtml, /method\s*=\s*"([^"]*)"/i) || 'GET').toUpperCase(),
+    hasCSRFToken: false,
+    inputs: [],
+  };
+  for (const inputMatch of formHtml.matchAll(/<input[\s\S]*?\/?>/gi)) {
+    const attrs = {};
+    for (const attrMatch of inputMatch[0].matchAll(/(\w+)\s*=\s*"([^"]*)"/g)) attrs[attrMatch[1].toLowerCase()] = attrMatch[2];
+    const name = attrs.name || '';
+    const type = attrs.type || 'text';
+    form.inputs.push({ name, type });
+    if (type === 'hidden' && CSRF_TOKEN_NAMES.some((token) => name.toLowerCase().includes(token.toLowerCase()))) {
+      form.hasCSRFToken = true;
+      form.tokenField = name;
+    }
+  }
+  return form;
+};
+
+const runCsrfDetection = async (target, options) => {
+  const forms = [];
+  const pages = [target.origin, ...['/login', '/signup', '/register', '/contact'].map((pathName) => new URL(pathName, target.origin).href)];
+  for (const pageUrl of pages.slice(0, 5)) {
+    try {
+      const response = await request(pageUrl, { method: 'GET' }, Math.max(options.timeout, 10000));
+      if (response.status !== 200) continue;
+      const html = await response.text();
+      const metaCsrf = /<meta[^>]*name=["']csrf-token["'][^>]*content=["']([^"']+)["']/i.test(html) || /<meta[^>]*name=["']_token["'][^>]*content=["']([^"']+)["']/i.test(html);
+      for (const formMatch of html.matchAll(/<form[\s\S]*?<\/form>/gi)) {
+        const form = parseCsrfForm(formMatch[0]);
+        if (!form.hasCSRFToken && metaCsrf) {
+          form.hasCSRFToken = true;
+          form.tokenField = 'meta csrf-token';
+        }
+        forms.push(form);
+      }
+    } catch { /* ignore */ }
+  }
+  return { forms, totalForms: forms.length, formsWithoutToken: forms.filter((form) => !form.hasCSRFToken).length };
+};
+
 const MODULE_RUNNERS = {
   siteInfo: runSiteInfo,
   headers: runHeaders,
@@ -1316,6 +1956,20 @@ const MODULE_RUNNERS = {
   brokenLinks: runBrokenLinks,
   corsMisconfig: runCorsMisconfig,
   ddosFirewall: runDdosFirewall,
+  cdnDetection: runCdnDetection,
+  cloudProvider: runCloudProvider,
+  emailSecurity: runEmailSecurity,
+  cookieAudit: runCookieAudit,
+  jsInspection: runJsInspection,
+  s3Bucket: runS3Bucket,
+  gitExposure: runGitExposure,
+  emailHarvesting: runEmailHarvesting,
+  robotsSitemap: runRobotsSitemap,
+  openRedirect: runOpenRedirect,
+  cveScanner: runCveScanner,
+  graphQL: runGraphQl,
+  rateLimit: runRateLimit,
+  csrfDetection: runCsrfDetection,
 };
 
 const runScan = async (target, options) => {
@@ -1745,6 +2399,128 @@ const renderDetails = (moduleName, result) => {
     ];
   }
 
+  if (moduleName === 'cdnDetection') {
+    return [
+      kv('Detected', `${data.detectedCount}/${data.cdns.length}`),
+      ...data.cdns.filter((cdn) => cdn.detected).map((cdn) => kv(cdn.name, list(cdn.evidence, 4))),
+    ];
+  }
+
+  if (moduleName === 'cloudProvider') {
+    return [
+      kv('Detected', `${data.detectedCount}/${data.providers.length}`),
+      ...data.providers.filter((provider) => provider.detected).map((provider) => kv(provider.name, list(provider.evidence, 4))),
+    ];
+  }
+
+  if (moduleName === 'emailSecurity') {
+    return compactLines([
+      kv('Score', `${data.overallScore}/10`),
+      kv('SPF', data.spf.exists ? `${data.spf.allMechanism || 'present'}${data.spf.issues?.length ? ` (${list(data.spf.issues, 3)})` : ''}` : 'missing'),
+      kv('DMARC', data.dmarc.exists ? `${data.dmarc.policy || 'present'}${data.dmarc.issues?.length ? ` (${list(data.dmarc.issues, 3)})` : ''}` : 'missing'),
+      kv('DKIM selectors', data.dkim.length ? data.dkim.map((record) => `${record.selector}${record.valid ? '' : ' invalid'}`).join(', ') : 'none found'),
+    ]);
+  }
+
+  if (moduleName === 'cookieAudit') {
+    return [
+      kv('Cookies', data.totalCount),
+      kv('Secure', data.secureCount),
+      kv('HttpOnly', data.httpOnlyCount),
+      kv('SameSite', data.sameSiteCount),
+      kv('With issues', data.insecureCookies),
+      ...data.cookies.slice(0, 12).map((cookie) => kv(cookie.name, cookie.issues?.length ? list(cookie.issues, 4) : 'ok')),
+    ];
+  }
+
+  if (moduleName === 'jsInspection') {
+    return [
+      kv('Files with findings', data.totalFiles),
+      kv('Endpoints', data.totalEndpoints),
+      kv('API keys/tokens', data.totalApiKeys),
+      ...data.files.slice(0, 8).map((file) => kv(truncate(file.url, 60), `endpoints ${file.endpoints.length}, keys ${file.apiKeys.length}, paths ${file.internalPaths.length}`)),
+    ];
+  }
+
+  if (moduleName === 's3Bucket') {
+    return [
+      kv('Checked', data.totalChecked),
+      kv('Accessible buckets', data.buckets.length),
+      kv('Open listings', data.openBuckets),
+      ...data.buckets.slice(0, 20).map((bucket) => kv(bucket.name, `${bucket.statusCode}${bucket.listing ? ' listing enabled' : bucket.accessible ? ' exists/access denied' : ''}`)),
+    ];
+  }
+
+  if (moduleName === 'gitExposure') {
+    return [
+      kv('Exposed files', data.totalExposed),
+      kv('Critical exposed', data.criticalExposed),
+      ...data.files.slice(0, 20).map((file) => kv(file.path, `${file.statusCode}${file.preview ? ` ${truncate(file.preview.replace(/\s+/g, ' '), 80)}` : ''}`)),
+    ];
+  }
+
+  if (moduleName === 'emailHarvesting') {
+    return [
+      kv('Emails', data.totalEmails),
+      kv('Domains', list(data.uniqueDomains, 8)),
+      ...data.emails.slice(0, 20).map((entry) => kv(entry.email, `${entry.source}${entry.context ? ` - ${truncate(entry.context, 70)}` : ''}`)),
+    ];
+  }
+
+  if (moduleName === 'robotsSitemap') {
+    return [
+      kv('robots.txt', data.robots.exists ? 'found' : 'missing'),
+      kv('User agents', data.robots.userAgents.length),
+      kv('Disallowed paths', list(data.robots.disallowedPaths, 12)),
+      kv('Sitemaps', list(data.robots.sitemapLinks, 6)),
+      kv('Sitemap URLs', data.sitemap.count),
+      ...data.sitemap.urls.slice(0, 10).map((url) => kv('URL', truncate(url, 100))),
+    ];
+  }
+
+  if (moduleName === 'openRedirect') {
+    return [
+      kv('Tested', data.totalTested),
+      kv('Vulnerable', data.vulnerableCount),
+      ...data.tests.filter((test) => test.vulnerable).slice(0, 12).map((test) => kv(test.param, `${test.statusCode} -> ${test.redirectedTo}`)),
+    ];
+  }
+
+  if (moduleName === 'cveScanner') {
+    return [
+      kv('Tech found', data.techStackFound ? list(data.techStackChecked, 12) : 'none'),
+      kv('CVE matches', data.totalFound),
+      ...data.matches.slice(0, 20).map((match) => kv(match.cveId, `${match.severity} ${match.technology}${match.version ? ` ${match.version}` : ''}: ${match.description}`)),
+    ];
+  }
+
+  if (moduleName === 'graphQL') {
+    return [
+      kv('Endpoints', data.totalEndpoints),
+      kv('Open endpoints', data.openEndpoints),
+      kv('Introspection', data.introspectionEnabled ? 'enabled' : 'not detected'),
+      ...data.endpoints.slice(0, 12).map((endpoint) => kv(endpoint.path, endpoint.introspectionOpen ? `introspection open (${endpoint.typeCount || 0} types)` : 'accessible')),
+    ];
+  }
+
+  if (moduleName === 'rateLimit') {
+    return [
+      kv('Rate limited', String(Boolean(data.rateLimited))),
+      kv('Requests sent', data.requestsSent),
+      kv('Blocked/errors', data.requestsBlocked),
+      kv('Details', data.details),
+      kv('Headers', Object.entries(data.rateLimitHeaders || {}).map(([key, value]) => `${key}:${value}`).join(', ') || 'none'),
+    ];
+  }
+
+  if (moduleName === 'csrfDetection') {
+    return [
+      kv('Forms', data.totalForms),
+      kv('Without token', data.formsWithoutToken),
+      ...data.forms.slice(0, 12).map((form) => kv(`${form.method} ${form.action}`, form.hasCSRFToken ? `token ${form.tokenField || 'present'}` : 'no token detected')),
+    ];
+  }
+
   return [JSON.stringify(data)];
 };
 
@@ -1936,6 +2712,20 @@ const summarize = (moduleName, result) => {
   if (moduleName === 'brokenLinks') return `${data.broken.length}/${data.checked} broken`;
   if (moduleName === 'corsMisconfig') return data.finding;
   if (moduleName === 'ddosFirewall') return `${data.rateLimited}/${data.requests} limited, avg ${data.avgResponseTimeMs}ms`;
+  if (moduleName === 'cdnDetection') return `${data.detectedCount} CDN/WAF providers`;
+  if (moduleName === 'cloudProvider') return `${data.detectedCount} cloud providers`;
+  if (moduleName === 'emailSecurity') return `score ${data.overallScore}/10`;
+  if (moduleName === 'cookieAudit') return `${data.insecureCookies}/${data.totalCount} cookies with issues`;
+  if (moduleName === 'jsInspection') return `${data.totalFiles} files, ${data.totalEndpoints} endpoints, ${data.totalApiKeys} keys`;
+  if (moduleName === 's3Bucket') return `${data.openBuckets} open listings / ${data.totalChecked} checked`;
+  if (moduleName === 'gitExposure') return `${data.totalExposed} exposed, ${data.criticalExposed} critical`;
+  if (moduleName === 'emailHarvesting') return `${data.totalEmails} emails`;
+  if (moduleName === 'robotsSitemap') return `robots ${data.robots.exists ? 'found' : 'missing'}, sitemap ${data.sitemap.count} URLs`;
+  if (moduleName === 'openRedirect') return `${data.vulnerableCount}/${data.totalTested} vulnerable`;
+  if (moduleName === 'cveScanner') return `${data.totalFound} CVE matches`;
+  if (moduleName === 'graphQL') return `${data.openEndpoints} endpoints, introspection ${data.introspectionEnabled ? 'open' : 'closed'}`;
+  if (moduleName === 'rateLimit') return data.details;
+  if (moduleName === 'csrfDetection') return `${data.formsWithoutToken}/${data.totalForms} forms without token`;
   return '';
 };
 
@@ -1950,7 +2740,7 @@ const calculateSecurityAssessment = (results) => {
     if (!recommendations.includes(message)) recommendations.push(message);
   };
 
-  if (hasAnyModule(modules, ['sqlinjection', 'xss', 'lfi', 'corsMisconfig'])) {
+  if (hasAnyModule(modules, ['sqlinjection', 'xss', 'lfi', 'corsMisconfig', 'openRedirect', 'graphQL', 'csrfDetection', 'cveScanner', 'gitExposure', 's3Bucket'])) {
     let score = 40;
     const sqliFindings = moduleFindings(modules.sqlinjection);
     const xssFindings = moduleFindings(modules.xss);
@@ -1971,6 +2761,31 @@ const calculateSecurityAssessment = (results) => {
       score -= 10;
       recommend('Restrict CORS to trusted origins and avoid wildcard origins with credentialed requests.');
     }
+    if (modules.openRedirect?.ok && modules.openRedirect.data?.vulnerableCount > 0) {
+      score -= Math.min(8, modules.openRedirect.data.vulnerableCount * 2);
+      recommend('Fix open redirect parameters by validating redirect destinations against an allowlist.');
+    }
+    if (modules.graphQL?.ok && modules.graphQL.data?.introspectionEnabled) {
+      score -= 6;
+      recommend('Disable public GraphQL introspection or restrict it to authenticated administrative users.');
+    }
+    if (modules.csrfDetection?.ok && modules.csrfDetection.data?.formsWithoutToken > 0) {
+      score -= Math.min(6, modules.csrfDetection.data.formsWithoutToken * 1.5);
+      recommend('Add CSRF tokens to state-changing forms and validate tokens server-side.');
+    }
+    if (modules.cveScanner?.ok && modules.cveScanner.data?.totalFound > 0) {
+      const highMatches = modules.cveScanner.data.matches?.filter((match) => /critical|high/i.test(match.severity)).length || 0;
+      score -= Math.min(12, 4 + highMatches * 2 + modules.cveScanner.data.totalFound);
+      recommend('Review detected technology CVE matches and patch or verify affected versions.');
+    }
+    if (modules.gitExposure?.ok && modules.gitExposure.data?.totalExposed > 0) {
+      score -= Math.min(10, modules.gitExposure.data.criticalExposed * 3 + modules.gitExposure.data.totalExposed);
+      recommend('Remove exposed repository, environment, backup, and configuration files from the web root.');
+    }
+    if (modules.s3Bucket?.ok && modules.s3Bucket.data?.openBuckets > 0) {
+      score -= Math.min(8, modules.s3Bucket.data.openBuckets * 3);
+      recommend('Lock down publicly listable storage buckets and audit bucket policies.');
+    }
     add('vulnerabilities', 40, Math.max(0, score), 'SQLi/XSS/LFI/CORS findings');
   }
 
@@ -1984,6 +2799,9 @@ const calculateSecurityAssessment = (results) => {
     if (insecurePresent.length) recommend(`Harden weak security headers: ${insecurePresent.slice(0, 4).map((header) => header.name).join(', ')}.`);
     const cookieIssues = (modules.headers.data.cookies || []).flatMap((cookie) => cookie.issues || []);
     if (cookieIssues.length) recommend('Fix cookie flags: require Secure, HttpOnly, and SameSite where appropriate.');
+    if (modules.cookieAudit?.ok && modules.cookieAudit.data?.insecureCookies > 0) {
+      recommend('Fix Set-Cookie attributes reported by cookieAudit: require Secure, HttpOnly, and SameSite where appropriate.');
+    }
     add('headers', 20, score, `${present.length} present, ${missing.length} missing, grade ${modules.headers.data.securityHeaders?.grade || 'n/a'}`);
   }
 
@@ -2033,7 +2851,7 @@ const calculateSecurityAssessment = (results) => {
     add('exposure', 15, Math.max(0, score), 'open services, WordPress indicators, broken links');
   }
 
-  if (hasAnyModule(modules, ['virustotal', 'ddosFirewall', 'techStack'])) {
+  if (hasAnyModule(modules, ['virustotal', 'ddosFirewall', 'techStack', 'rateLimit', 'cdnDetection', 'cloudProvider'])) {
     let score = 10;
     if (modules.virustotal?.ok && modules.virustotal.data?.reputation < 0) {
       score -= 4;
@@ -2051,6 +2869,12 @@ const calculateSecurityAssessment = (results) => {
         recommend('Consider rate limiting or WAF/CDN protection for abusive traffic resilience.');
       }
     }
+    if (modules.rateLimit?.ok && !modules.rateLimit.data?.rateLimited) {
+      score -= 2;
+      recommend('Consider application-level rate limiting on sensitive routes and login/API endpoints.');
+    }
+    if (modules.cdnDetection?.ok && modules.cdnDetection.data?.detectedCount > 0) score += 0.5;
+    if (modules.cloudProvider?.ok && modules.cloudProvider.data?.detectedCount > 0) recommend('Review exposed cloud provider assets and ensure origin services are not directly reachable.');
     const outdatedTech = (modules.techStack?.data?.technologies || []).filter((tech) =>
       (tech.name === 'WordPress' && tech.version && Number.parseFloat(tech.version) < 6) ||
       (tech.name === 'PHP' && tech.version && Number.parseFloat(tech.version) < 8) ||
@@ -2066,18 +2890,21 @@ const calculateSecurityAssessment = (results) => {
     add('reputation', 10, Math.max(0, Math.min(10, score)), 'reputation, WAF, technology signals');
   }
 
-  if (modules.mx?.ok) {
-    const mxData = modules.mx.data;
+  if (modules.mx?.ok || modules.emailSecurity?.ok) {
+    const mxData = modules.mx?.data || {};
     let score = 5;
-    if (!mxData.spfRecord) {
+    const hasSpf = mxData.spfRecord || modules.emailSecurity?.data?.spf?.exists;
+    const hasDmarc = mxData.dmarcRecord || modules.emailSecurity?.data?.dmarc?.exists;
+    if (!hasSpf) {
       score -= 2;
       recommend('Publish an SPF record to reduce email spoofing risk.');
     }
-    if (!mxData.dmarcRecord) {
+    if (!hasDmarc) {
       score -= 2;
       recommend('Publish a DMARC record to improve domain email abuse protection.');
     }
-    add('email', 5, Math.max(0, score), `${mxData.records?.length || 0} MX, SPF ${mxData.spfRecord ? 'present' : 'missing'}, DMARC ${mxData.dmarcRecord ? 'present' : 'missing'}`);
+    if (modules.emailSecurity?.data?.dkim?.length > 0) score += 0.5;
+    add('email', 5, Math.max(0, Math.min(5, score)), `${mxData.records?.length || 0} MX, SPF ${hasSpf ? 'present' : 'missing'}, DMARC ${hasDmarc ? 'present' : 'missing'}`);
   }
 
   if (!details.length) {

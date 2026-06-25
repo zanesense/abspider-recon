@@ -1,161 +1,106 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { Bug, Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import { Bug, Github, Linkedin, Mail, Twitter } from 'lucide-react';
 import StatusIndicator from '@/components/StatusIndicator';
 
-const LandingFooter = () => {
-  const footerLinks = {
-    product: [
-      { label: 'Features', href: '#features' },
-      { label: 'How it Works', href: '#how-it-works' },
-      { label: 'Pricing', href: '/pricing' },
-      { label: 'Documentation', href: 'https://zanesense.dev/abspider-recon' }
-    ],
-    company: [
-      { label: 'About Us', href: '/about' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Careers', href: '/careers' },
-      { label: 'Contact', href: '/contact' }
-    ],
-    resources: [
-      { label: 'Help Center', href: '/help' },
-      { label: 'Security', href: '/security' },
-      { label: 'Status', href: '/status' },
-      { label: 'Changelog', href: '/changelog' }
-    ],
-    legal: [
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Cookie Policy', href: '/cookies' },
-      { label: 'GDPR', href: '/gdpr' }
-    ]
-  };
+const LINKS = {
+  Product: [
+    { label: 'Features', href: '#features' },
+    { label: 'How it works', href: '#how-it-works' },
+    { label: 'CLI package', href: 'https://www.npmjs.com/package/abspider', ext: true },
+    { label: 'Changelog', href: 'https://github.com/zanesense/abspider-recon/blob/main/CHANGELOG.md', ext: true },
+  ],
+  Resources: [
+    { label: 'Documentation', href: 'https://github.com/zanesense/abspider-recon/tree/main/docs', ext: true },
+    { label: 'Status', href: '/status' },
+    { label: 'Security policy', href: 'https://github.com/zanesense/abspider-recon/blob/main/SECURITY.md', ext: true },
+    { label: 'Issue tracker', href: 'https://github.com/zanesense/abspider-recon/issues', ext: true },
+  ],
+  Legal: [
+    { label: 'MIT License', href: 'https://github.com/zanesense/abspider-recon/blob/main/LICENSE', ext: true },
+    { label: 'Privacy policy', href: '/privacy' },
+    { label: 'Terms of use', href: '/terms' },
+  ],
+};
 
-  const socialLinks = [
-    { icon: Github, href: 'https://github.com/zanesense/abspider-recon', label: 'GitHub' },
-    { icon: Twitter, href: 'https://twitter.com/ihatesaim', label: 'Twitter' },
-    { icon: Linkedin, href: 'https://linkedin.com/saaimaly', label: 'LinkedIn' },
-    { icon: Mail, href: 'mailto:defnotsaim@proton.me', label: 'Email' }
-  ];
+const SOCIALS = [
+  { icon: Github, href: 'https://github.com/zanesense/abspider-recon', label: 'GitHub' },
+  { icon: Twitter, href: 'https://twitter.com/ihatesaim', label: 'Twitter' },
+  { icon: Linkedin, href: 'https://linkedin.com/in/saaimaly', label: 'LinkedIn' },
+  { icon: Mail, href: 'mailto:defnotsaim@proton.me', label: 'Email' },
+];
 
-  return (
-    <footer className="bg-gradient-to-b from-muted/20 to-background border-t border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Main Footer Content */}
-        <div className="py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
-            {/* Brand Section */}
-            <div className="lg:col-span-2 space-y-6">
-              <Link to="/" className="flex items-center gap-3 group">
-                <div className="relative">
-                  <Bug className="h-8 w-8 text-blue-600 dark:text-blue-400 transition-transform duration-200 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-blue-600/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                  ABSpider
-                </span>
-              </Link>
-              
-              <p className="text-muted-foreground leading-relaxed max-w-sm">
-                Advanced web reconnaissance platform trusted by security professionals worldwide. 
-                Discover hidden intelligence in minutes, not hours.
-              </p>
-              
-              {/* Social Links */}
-              <div className="flex items-center gap-4">
-                {socialLinks.map((social, index) => (
-                  <a
-                    key={index}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors duration-200 group"
-                    aria-label={social.label}
-                  >
-                    <social.icon className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Product Links */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-                Product
-              </h3>
-              <ul className="space-y-3">
-                {footerLinks.product.map((link, index) => (
-                  <li key={index}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-
-            {/* Resources Links */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-                Resources
-              </h3>
-              <ul className="space-y-3">
-                {footerLinks.resources.map((link, index) => (
-                  <li key={index}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Legal Links */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-                Legal
-              </h3>
-              <ul className="space-y-3">
-                {footerLinks.legal.map((link, index) => (
-                  <li key={index}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
+const LandingFooter = () => (
+  <footer className="border-t border-border bg-muted/40 text-muted-foreground dark:bg-slate-950 dark:text-slate-400">
+    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="grid grid-cols-2 gap-10 md:grid-cols-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+        {/* Brand */}
+        <div className="col-span-2 space-y-5 md:col-span-1">
+          <Link to="/" className="group inline-flex items-center gap-2.5">
+            <Bug className="h-6 w-6 text-primary transition-transform duration-200 group-hover:scale-110" />
+            <span className="text-base font-bold text-foreground">ABSpider</span>
+          </Link>
+          <p className="max-w-xs text-sm leading-relaxed">
+            Web reconnaissance for authorized security work - GUI and CLI coverage built around inspectable evidence.
+          </p>
+          <div className="flex gap-3">
+            {SOCIALS.map((s) => (
+              <a
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-foreground/5 transition-colors duration-150 hover:bg-foreground/10 hover:text-foreground"
+              >
+                <s.icon className="h-4 w-4" />
+              </a>
+            ))}
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="py-8 border-t border-border">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-muted-foreground">
-              © 2024 ABSpider. All rights reserved.
-            </div>
-            
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <span>Made for security professionals</span>
-              <Link to="/status" className="hover:text-foreground transition-colors">
-                <StatusIndicator size="sm" />
-              </Link>
-            </div>
+        {/* Link columns */}
+        {Object.entries(LINKS).map(([col, items]) => (
+          <div key={col} className="space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-foreground">{col}</h3>
+            <ul className="space-y-2.5">
+              {items.map((item) => (
+                <li key={item.label}>
+                  {'ext' in item && item.ext ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cursor-pointer text-sm transition-colors duration-150 hover:text-foreground"
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link
+                      to={item.href}
+                      className="cursor-pointer text-sm transition-colors duration-150 hover:text-foreground"
+                    >
+                      {item.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
+        ))}
+      </div>
+
+      {/* Bottom bar */}
+      <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
+        <p className="text-sm">© {new Date().getFullYear()} ABSpider. MIT License.</p>
+        <div className="flex items-center gap-5 text-sm">
+          <span>Use only on assets you own or have written permission to test.</span>
+          <Link to="/status" className="cursor-pointer">
+            <StatusIndicator size="sm" />
+          </Link>
         </div>
       </div>
-    </footer>
-  );
-};
+    </div>
+  </footer>
+);
 
 export default LandingFooter;

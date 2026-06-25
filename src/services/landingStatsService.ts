@@ -1,129 +1,145 @@
 import { supabase } from '@/SupabaseClient';
 
 export interface LandingStats {
-  totalUsers: number;
-  totalScans: number;
-  totalVulnerabilities: number;
-  uptime: number;
-  avgScanTime: number;
-  dataSourcesCount: number;
-  accuracyRate: number;
+  repositoryStars: number | null;
+  repositoryForks: number | null;
+  repositoryIssues: number | null;
+  latestVersion: string | null;
+  monthlyDownloads: number | null;
+  totalScans: number | null;
+  completedScans: number | null;
+  totalFindings: number | null;
+  avgScanTimeSeconds: number | null;
+  lastUpdated: string | null;
 }
 
-export const getLandingStats = async (): Promise<LandingStats> => {
+const GITHUB_REPO_API = 'https://api.github.com/repos/zanesense/abspider-recon';
+const NPM_DOWNLOADS_API = 'https://api.npmjs.org/downloads/point/last-month/abspider';
+const NPM_PACKAGE_API = 'https://registry.npmjs.org/abspider/latest';
+const CACHE_DURATION = 5 * 60 * 1000;
+
+let cachedStats: LandingStats | null = null;
+let cacheTimestamp = 0;
+
+const emptyStats = (): LandingStats => ({
+  repositoryStars: null,
+  repositoryForks: null,
+  repositoryIssues: null,
+  latestVersion: null,
+  monthlyDownloads: null,
+  totalScans: null,
+  completedScans: null,
+  totalFindings: null,
+  avgScanTimeSeconds: null,
+  lastUpdated: null,
+});
+
+const fetchJson = async <T>(url: string, timeoutMs = 5000): Promise<T | null> => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    // Get total unique users count
-    const { count: totalUsers } = await supabase
-      .from('user_scans')
-      .select('user_id', { count: 'exact', head: true })
-      .not('user_id', 'is', null);
+    const response = await fetch(url, {
+      headers: { accept: 'application/json' },
+      signal: controller.signal,
+    });
 
-    // Get total scans count
-    const { count: totalScans } = await supabase
-      .from('user_scans')
-      .select('*', { count: 'exact', head: true });
-
-    // Get completed scans for vulnerability count calculation
-    const { data: completedScans } = await supabase
-      .from('user_scans')
-      .select('results')
-      .eq('status', 'completed')
-      .not('results', 'is', null);
-
-    // Calculate total vulnerabilities found across all scans
-    let totalVulnerabilities = 0;
-    if (completedScans) {
-      completedScans.forEach(scan => {
-        const results = scan.results;
-        if (results) {
-          // Count SQL injection vulnerabilities
-          if (results.sqlinjection?.vulnerabilities) {
-            totalVulnerabilities += results.sqlinjection.vulnerabilities.length;
-          }
-          // Count XSS vulnerabilities
-          if (results.xss?.vulnerabilities) {
-            totalVulnerabilities += results.xss.vulnerabilities.length;
-          }
-          // Count LFI vulnerabilities
-          if (results.lfi?.vulnerabilities) {
-            totalVulnerabilities += results.lfi.vulnerabilities.length;
-          }
-          // Count SSL/TLS issues
-          if (results.sslTls?.vulnerabilities) {
-            totalVulnerabilities += results.sslTls.vulnerabilities.length;
-          }
-          // Count CORS misconfigurations
-          if (results.corsMisconfig?.vulnerabilities) {
-            totalVulnerabilities += results.corsMisconfig.vulnerabilities.length;
-          }
-          // Count WordPress vulnerabilities
-          if (results.wordpress?.vulnerabilities) {
-            totalVulnerabilities += results.wordpress.vulnerabilities.length;
-          }
-          // Count VirusTotal detections
-          if (results.virustotal?.detectedUrls) {
-            totalVulnerabilities += results.virustotal.detectedUrls.length;
-          }
-        }
-      });
-    }
-
-    // Calculate average scan time from completed scans
-    const { data: scanTimes } = await supabase
-      .from('user_scans')
-      .select('elapsed_ms')
-      .eq('status', 'completed')
-      .not('elapsed_ms', 'is', null);
-
-    let avgScanTime = 45; // Default fallback in seconds
-    if (scanTimes && scanTimes.length > 0) {
-      const totalTime = scanTimes.reduce((sum, scan) => sum + (scan.elapsed_ms || 0), 0);
-      avgScanTime = Math.round(totalTime / scanTimes.length / 1000); // Convert to seconds
-    }
-
-    // Static values based on your app's capabilities
-    const dataSourcesCount = 15; // Based on your various API integrations
-    const accuracyRate = 99.9; // High accuracy rate for your reconnaissance
-    const uptime = 99.9; // High uptime SLA
-
-    return {
-      totalUsers: totalUsers || 0,
-      totalScans: totalScans || 0,
-      totalVulnerabilities: totalVulnerabilities,
-      uptime,
-      avgScanTime,
-      dataSourcesCount,
-      accuracyRate
-    };
-  } catch (error) {
-    console.error('Error fetching landing stats:', error);
-    // Return fallback stats if database query fails
-    return {
-      totalUsers: 1250,
-      totalScans: 28000,
-      totalVulnerabilities: 4500,
-      uptime: 99.9,
-      avgScanTime: 45,
-      dataSourcesCount: 15,
-      accuracyRate: 99.9
-    };
+    if (!response.ok) return null;
+    return await response.json() as T;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
   }
 };
 
-// Cache stats for 5 minutes to avoid excessive database queries
-let cachedStats: LandingStats | null = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const countFindings = (results: Record<string, any> | null | undefined): number => {
+  if (!results) return 0;
+
+  const countArray = (value: unknown) => Array.isArray(value) ? value.length : 0;
+
+  return [
+    countArray(results.sqlinjection?.vulnerabilities || results.sqlinjection?.findings),
+    countArray(results.xss?.vulnerabilities || results.xss?.findings),
+    countArray(results.lfi?.vulnerabilities || results.lfi?.findings),
+    countArray(results.wordpress?.vulnerabilities),
+    countArray(results.virustotal?.detectedUrls),
+    results.corsMisconfig?.vulnerable ? 1 : 0,
+    results.openRedirect?.vulnerableCount || 0,
+    results.cveScanner?.totalFound || 0,
+    results.graphQL?.introspectionEnabled ? 1 : 0,
+    results.csrfDetection?.formsWithoutToken || 0,
+    results.gitExposure?.criticalExposed || 0,
+    results.s3Bucket?.openBuckets || 0,
+    results.cookieAudit?.insecureCookies || 0,
+  ].reduce((total, value) => total + Number(value || 0), 0);
+};
+
+const getPublicProjectMetrics = async (): Promise<Partial<LandingStats>> => {
+  const [repo, downloads, latest] = await Promise.all([
+    fetchJson<{ stargazers_count?: number; forks_count?: number; open_issues_count?: number; pushed_at?: string }>(GITHUB_REPO_API),
+    fetchJson<{ downloads?: number }>(NPM_DOWNLOADS_API),
+    fetchJson<{ version?: string }>(NPM_PACKAGE_API),
+  ]);
+
+  return {
+    repositoryStars: repo?.stargazers_count ?? null,
+    repositoryForks: repo?.forks_count ?? null,
+    repositoryIssues: repo?.open_issues_count ?? null,
+    latestVersion: latest?.version ?? null,
+    monthlyDownloads: downloads?.downloads ?? null,
+    lastUpdated: repo?.pushed_at ?? null,
+  };
+};
+
+const getScanMetrics = async (): Promise<Partial<LandingStats>> => {
+  try {
+    const [{ count: totalScans }, { count: completedScans }, { data: completedRows }, { data: scanTimes }] = await Promise.all([
+      supabase.from('user_scans').select('*', { count: 'exact', head: true }),
+      supabase.from('user_scans').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+      supabase.from('user_scans').select('results').eq('status', 'completed').not('results', 'is', null).limit(500),
+      supabase.from('user_scans').select('elapsed_ms').eq('status', 'completed').not('elapsed_ms', 'is', null).limit(500),
+    ]);
+
+    const totalFindings = completedRows?.reduce((sum, scan) => sum + countFindings(scan.results), 0) ?? null;
+    const elapsedValues = scanTimes?.map((scan) => scan.elapsed_ms).filter((value): value is number => typeof value === 'number' && value > 0) || [];
+    const avgScanTimeSeconds = elapsedValues.length
+      ? Math.round(elapsedValues.reduce((sum, value) => sum + value, 0) / elapsedValues.length / 1000)
+      : null;
+
+    return {
+      totalScans: totalScans ?? null,
+      completedScans: completedScans ?? null,
+      totalFindings,
+      avgScanTimeSeconds,
+    };
+  } catch {
+    return {};
+  }
+};
+
+export const getLandingStats = async (): Promise<LandingStats> => {
+  const [projectMetrics, scanMetrics] = await Promise.all([
+    getPublicProjectMetrics(),
+    getScanMetrics(),
+  ]);
+
+  return {
+    ...emptyStats(),
+    ...projectMetrics,
+    ...scanMetrics,
+  };
+};
 
 export const getCachedLandingStats = async (): Promise<LandingStats> => {
   const now = Date.now();
-  
-  if (cachedStats && (now - cacheTimestamp) < CACHE_DURATION) {
+
+  if (cachedStats && now - cacheTimestamp < CACHE_DURATION) {
     return cachedStats;
   }
-  
+
   cachedStats = await getLandingStats();
   cacheTimestamp = now;
-  
+
   return cachedStats;
 };

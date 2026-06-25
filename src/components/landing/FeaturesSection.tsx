@@ -1,128 +1,97 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Globe, 
-  Shield, 
-  Zap, 
-  Eye, 
-  Lock, 
-  Activity,
-  Search,
-  FileText,
-  TrendingUp,
-  Clock
-} from 'lucide-react';
+﻿import { Activity, Cloud, Code2, Database, FileText, MailCheck, Network, ShieldCheck } from 'lucide-react';
 
-const FeaturesSection = () => {
-  const features = [
-    {
-      icon: Globe,
-      title: 'Subdomain Discovery',
-      description: 'Uncover hidden subdomains using advanced enumeration techniques with 15+ data sources including DNS brute-forcing and certificate transparency logs.',
-      gradient: 'from-blue-500 to-cyan-500',
-      bgGradient: 'from-blue-500/5 via-blue-500/10 to-cyan-500/5'
-    },
-    {
-      icon: Shield,
-      title: 'Security Analysis',
-      description: 'Comprehensive vulnerability scanning including SQL injection, XSS, LFI, CORS misconfigurations, and SSL/TLS security assessment.',
-      gradient: 'from-emerald-500 to-teal-500',
-      bgGradient: 'from-emerald-500/5 via-emerald-500/10 to-teal-500/5'
-    },
-    {
-      icon: Search,
-      title: 'Technology Stack Detection',
-      description: 'Identify frameworks, libraries, servers, CMS platforms, and analytics tools powering any website with advanced fingerprinting.',
-      gradient: 'from-purple-500 to-pink-500',
-      bgGradient: 'from-purple-500/5 via-purple-500/10 to-pink-500/5'
-    },
-    {
-      icon: Activity,
-      title: 'Port & Service Scanning',
-      description: 'Scan common ports, detect running services, and identify potential attack vectors with intelligent service fingerprinting.',
-      gradient: 'from-orange-500 to-red-500',
-      bgGradient: 'from-orange-500/5 via-orange-500/10 to-red-500/5'
-    },
-    {
-      icon: FileText,
-      title: 'Detailed Reports',
-      description: 'Generate comprehensive PDF reports with security grades, actionable insights, and executive summaries for stakeholders.',
-      gradient: 'from-indigo-500 to-blue-500',
-      bgGradient: 'from-indigo-500/5 via-indigo-500/10 to-blue-500/5'
-    },
-    {
-      icon: Zap,
-      title: 'Smart Scanning',
-      description: 'Adaptive scanning with intelligent throttling, proxy rotation, and performance optimization for reliable results.',
-      gradient: 'from-yellow-500 to-orange-500',
-      bgGradient: 'from-yellow-500/5 via-yellow-500/10 to-orange-500/5'
-    }
-  ];
+const BENTO = [
+  {
+    icon: Network,
+    title: 'Perimeter mapping',
+    body: 'DNS, MX, subnet, subdomains via crt.sh, CDN/cloud detection, reverse IP, robots.txt, broken links.',
+    span: 'md:col-span-2',
+    accent: 'bg-blue-500/8 border-blue-500/15 dark:bg-blue-500/6',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Exploitability checks',
+    body: 'SQLi, XSS, LFI, open redirect, CORS, GraphQL exposure, CSRF gaps, rate-limit behavior.',
+    span: '',
+    accent: 'bg-rose-500/8 border-rose-500/15 dark:bg-rose-500/6',
+  },
+  {
+    icon: Cloud,
+    title: 'Cloud & repo exposure',
+    body: 'S3 bucket discovery, .git/.env file exposure, cookie flag audits, JavaScript secret extraction.',
+    span: '',
+    accent: 'bg-amber-500/8 border-amber-500/15 dark:bg-amber-500/6',
+  },
+  {
+    icon: Code2,
+    title: 'Stack fingerprinting',
+    body: 'Tech detection, WordPress signals, CVE matching on detected versions, SSL/TLS cert analysis.',
+    span: '',
+    accent: 'bg-violet-500/8 border-violet-500/15 dark:bg-violet-500/6',
+  },
+  {
+    icon: MailCheck,
+    title: 'Email posture',
+    body: 'SPF, DKIM, DMARC analysis with security scoring. MX record discovery and priority mapping.',
+    span: 'md:col-span-2',
+    accent: 'bg-teal-500/8 border-teal-500/15 dark:bg-teal-500/6',
+  },
+];
 
-  return (
-    <section id="features" className="py-24 bg-gradient-to-b from-background to-muted/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center space-y-4 mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-            Powerful Features for
-            <span className="block bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              Complete Reconnaissance
-            </span>
-          </h2>
-          <p className="max-w-2xl mx-auto text-lg text-muted-foreground">
-            Everything you need to gather comprehensive intelligence about any web target, 
-            from basic enumeration to advanced security analysis.
-          </p>
-        </div>
+const EVIDENCE = [
+  { icon: Activity, label: 'Adaptive pacing', body: 'Smart scan controls reduce load automatically when errors or latency rise.' },
+  { icon: Database, label: 'Persisted history', body: 'Authenticated scans save structured results via Supabase with row-level security.' },
+  { icon: FileText, label: 'Export-ready', body: 'PDF, DOCX, and JSON reports built in - no extra tooling needed.' },
+];
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <Card 
-              key={index}
-              className={`group relative overflow-hidden bg-gradient-to-br ${feature.bgGradient} backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2`}
-            >
-              {/* Gradient Overlay */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-              
-              <CardHeader className="relative z-10">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-lg bg-gradient-to-r ${feature.gradient} bg-opacity-10 group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className={`h-6 w-6 bg-gradient-to-r ${feature.gradient} bg-clip-text text-transparent`} />
-                  </div>
-                  <CardTitle className="text-xl font-semibold text-foreground group-hover:text-foreground transition-colors duration-300">
-                    {feature.title}
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="relative z-10">
-                <CardDescription className="text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </CardDescription>
-              </CardContent>
-
-              {/* Hover Effect Border */}
-              <div className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${feature.gradient} p-[1px]`}>
-                <div className="w-full h-full rounded-lg bg-background" />
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center mt-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-            <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-              New features added monthly
-            </span>
-          </div>
-        </div>
+const FeaturesSection = () => (
+  <section id="features" className="landing-section bg-background py-28">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="landing-reveal mb-16 max-w-2xl">
+        <span className="text-sm font-semibold uppercase tracking-widest text-primary">Coverage engine</span>
+        <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+          Investigation-grade coverage, not a checkbox sheet.
+        </h2>
+        <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
+          ABSpider organises 35 modules into discovery, exploitability, exposure, and fingerprinting - so you move from map to proof to fix without context-switching.
+        </p>
       </div>
-    </section>
-  );
-};
+
+      {/* Bento grid */}
+      <div data-gsap="stagger-grid" className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {BENTO.map((card) => (
+          <div
+            key={card.title}
+            className={`landing-card rounded-2xl border p-6 ${card.span} ${card.accent}`}
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background shadow-sm">
+              <card.icon className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="mt-5 text-base font-semibold text-foreground">{card.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{card.body}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Evidence strip */}
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {EVIDENCE.map((item) => (
+          <div key={item.label} className="landing-card flex gap-4 rounded-2xl border border-border bg-muted/30 p-5">
+            <div className="shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <item.icon className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{item.label}</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
 
 export default FeaturesSection;

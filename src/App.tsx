@@ -2,7 +2,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { Routes, Route, BrowserRouter, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -78,7 +78,7 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/status" element={<StatusPage />} />
                 <Route path="/app" element={<Index />} />
-                <Route path="/login" element={<ModernLogin />} />
+                <Route path="/login" element={<Navigate to="/" replace />} />
                 
                 {/* Protected Routes */}
                 <Route path="*" element={

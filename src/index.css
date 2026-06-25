@@ -1,16 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* White */
-    --foreground: 222.2 84% 4.9%; /* Dark Gray */
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 222.2 84% 4.9%; /* Dark Gray */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 210 90% 50%; /* A vibrant blue */
+    --primary: 210 90% 50%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -22,12 +24,12 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 210 90% 50%; /* Match primary */
+    --ring: 210 90% 50%;
     --radius: 0.75rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 210 90% 50%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%; /* Changed for light mode readability */
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
@@ -35,13 +37,13 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%; /* Dark Slate */
-    --foreground: 210 40% 98%; /* Off-white */
-    --card: 222 32% 12%; /* Slightly darker than muted so cards lift off the bg */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222 32% 9%;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 90% 60%; /* Brighter Blue */
+    --primary: 210 90% 60%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -51,9 +53,9 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%; /* Darker border */
+    --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 210 90% 60%; /* Match primary */
+    --ring: 210 90% 60%;
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 210 90% 60%;
@@ -71,35 +73,24 @@
   }
 
   body {
-    @apply bg-background text-foreground transition-colors duration-300;
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
-  
-  /* Ensure all elements respect theme */
-  .light {
-    color-scheme: light;
-  }
-  
-  .dark {
-    color-scheme: dark;
-  }
+
+  .light { color-scheme: light; }
+  .dark  { color-scheme: dark; }
 }
 
 @layer utilities {
-  /* Page-level surface: light uses the theme background, dark uses a subtle
-     slate gradient so the dashboard doesn't read as a flat black rectangle. */
   .surface-main {
     @apply bg-background dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
   }
 
-  /* Sticky header surface: same dark gradient but horizontal and with a
-     translucent fallback for light mode. */
   .surface-header {
     @apply bg-background/95 backdrop-blur-md border-b border-border dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
   }
 
-  /* Hover-glow overlay: a sibling of CardHeader/CardContent that paints a
-     diagonal gradient on hover. pointer-events-none is mandatory so it
-     doesn't intercept clicks on the form controls beneath. */
   .surface-card-glow {
     @apply pointer-events-none absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500;
   }
@@ -108,11 +99,27 @@
     @apply bg-white/10 backdrop-blur-lg border border-white/20;
   }
 
-  .dark .glass-effect {
-    @apply bg-slate-900/50 backdrop-blur-lg border border-slate-700/50;
+  /* Professional dot-grid background */
+  .dot-grid {
+    background-image: radial-gradient(circle, hsl(var(--foreground) / 0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 
-  .gradient-border {
-    @apply relative before:absolute before:inset-0 before:rounded-lg before:p-[1px] before:bg-gradient-to-r before:from-cyan-500 before:to-blue-500 before:-z-10;
+  /* Subtle line grid */
+  .line-grid {
+    background-image:
+      linear-gradient(hsl(var(--foreground) / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent dark:from-blue-400 dark:via-blue-300 dark:to-cyan-300;
+  }
+
+  /* Landing card hover */
+  .landing-card {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
   }
 }

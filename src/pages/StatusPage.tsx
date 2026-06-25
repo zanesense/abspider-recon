@@ -1,84 +1,110 @@
-import React, { useState } from 'react';
+﻿import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDistanceToNow } from 'date-fns';
+import { Link } from 'react-router-dom';
+import {
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeft,
+  Bug,
+  CheckCircle,
+  Clock,
+  Database,
+  Gauge,
+  RefreshCw,
+  Server,
+  Shield,
+  TrendingUp,
+  XCircle,
+  Zap,
+} from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  CheckCircle,
-  AlertTriangle,
-  XCircle,
-  RefreshCw,
-  Activity,
-  Database,
-  Shield,
-  Zap,
-  Clock,
-  TrendingUp,
-  AlertCircle,
-  Server,
-  Bug
-} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getCachedAppStatus } from '@/services/statusService';
-import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
+import BackToTop from '@/components/landing/BackToTop';
+
+type StatusTone = 'operational' | 'degraded' | 'down' | 'unknown';
+
+const TONE: Record<StatusTone, {
+  label: string;
+  icon: typeof CheckCircle;
+  text: string;
+  badge: string;
+  dot: string;
+  bar: string;
+}> = {
+  operational: {
+    label: 'Operational',
+    icon: CheckCircle,
+    text: 'text-emerald-600 dark:text-emerald-400',
+    badge: 'border-emerald-500/25 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300',
+    dot: 'bg-emerald-500',
+    bar: 'bg-gradient-to-r from-emerald-500 to-teal-500',
+  },
+  degraded: {
+    label: 'Degraded',
+    icon: AlertTriangle,
+    text: 'text-amber-600 dark:text-amber-400',
+    badge: 'border-amber-500/25 bg-amber-500/8 text-amber-700 dark:text-amber-300',
+    dot: 'bg-amber-500',
+    bar: 'bg-gradient-to-r from-amber-500 to-orange-400',
+  },
+  down: {
+    label: 'Down',
+    icon: XCircle,
+    text: 'text-destructive',
+    badge: 'border-destructive/25 bg-destructive/8 text-destructive',
+    dot: 'bg-destructive',
+    bar: 'bg-destructive',
+  },
+  unknown: {
+    label: 'Unknown',
+    icon: AlertCircle,
+    text: 'text-muted-foreground',
+    badge: 'border-border bg-muted/50 text-muted-foreground',
+    dot: 'bg-muted-foreground',
+    bar: 'bg-muted',
+  },
+};
+
+const getTone = (s: string) => TONE[(s as StatusTone) in TONE ? (s as StatusTone) : 'unknown'];
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const tone = getTone(status);
+  return (
+    <Badge variant="outline" className={cn('gap-1.5 border px-2.5 py-1 text-xs font-medium', tone.badge)}>
+      <tone.icon className="h-3.5 w-3.5" />
+      {tone.label}
+    </Badge>
+  );
+};
+
+const ServiceIcon = ({ name }: { name: string }) => {
+  if (name === 'Database') return <Database className="h-5 w-5" />;
+  if (name === 'Authentication') return <Shield className="h-5 w-5" />;
+  return <Server className="h-5 w-5" />;
+};
 
 const StatusPage = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  const { data: status, isLoading, error, refetch } = useQuery({
+  const { data: status, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['appStatus'],
     queryFn: getCachedAppStatus,
-    refetchInterval: autoRefresh ? 30000 : false,
+    refetchInterval: autoRefresh ? 30_000 : false,
     refetchOnWindowFocus: true,
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'operational':
-        return 'text-emerald-500';
-      case 'degraded':
-        return 'text-amber-500';
-      case 'down':
-        return 'text-rose-500';
-      default:
-        return 'text-zinc-400';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'operational':
-        return <CheckCircle className="h-6 w-6 text-emerald-500" />;
-      case 'degraded':
-        return <AlertTriangle className="h-6 w-6 text-amber-500" />;
-      case 'down':
-        return <XCircle className="h-6 w-6 text-rose-500" />;
-      default:
-        return <AlertCircle className="h-6 w-6 text-zinc-400" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'operational':
-        return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20 transition-all duration-300">Operational</Badge>;
-      case 'degraded':
-        return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20 transition-all duration-300">Degraded</Badge>;
-      case 'down':
-        return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500/20 transition-all duration-300">Down</Badge>;
-      default:
-        return <Badge variant="secondary" className="opacity-50">Unknown</Badge>;
-    }
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="relative">
-          <div className="absolute inset-0 blur-3xl bg-blue-500/20 rounded-full animate-pulse"></div>
-          <div className="relative flex flex-col items-center gap-4">
-            <RefreshCw className="h-12 w-12 animate-spin text-blue-500" />
-            <span className="text-xl font-medium text-zinc-400 tracking-tight">Synchronizing System Status...</span>
-          </div>
+      <div className="flex min-h-screen items-center justify-center surface-main px-4">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-medium text-muted-foreground">Checking system status…</p>
         </div>
       </div>
     );
@@ -86,243 +112,239 @@ const StatusPage = () => {
 
   if (error || !status) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
-        <Card className="max-w-md bg-zinc-900 border-zinc-800 shadow-2xl shadow-rose-900/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-rose-500 text-2xl">
-              <XCircle className="h-8 w-8" />
-              Connection Failed
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <p className="text-zinc-400 leading-relaxed text-center">
-              We encountered an issue while attempting to retrieve the real-time system status. Please verify your connection and try again.
-            </p>
-            <Button onClick={() => refetch()} className="w-full h-12 bg-zinc-100 text-zinc-950 hover:bg-zinc-200 font-bold transition-all transform hover:scale-[1.02]">
-              <RefreshCw className="h-5 w-5 mr-3" />
-              Reconnect Now
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen items-center justify-center surface-main p-4">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center shadow-lg">
+          <XCircle className="mx-auto h-10 w-10 text-destructive" />
+          <h2 className="mt-4 text-lg font-bold text-foreground">Status unavailable</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The latest health check could not be loaded. Retry once your connection is available.
+          </p>
+          <Button onClick={() => refetch()} className="mt-6 w-full cursor-pointer">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
 
+  const overallTone = getTone(status.overall);
+  const successRate = Math.max(0, 100 - status.metrics.errorRate);
+  const updatedAgo = formatDistanceToNow(new Date(status.lastUpdated));
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 selection:bg-blue-500/30">
-      {/* Background blobs for premium feel */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full"></div>
-        <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] bg-purple-600/10 blur-[120px] rounded-full"></div>
-        <div className="absolute -bottom-[10%] left-[20%] w-[45%] h-[45%] bg-emerald-600/10 blur-[120px] rounded-full"></div>
-      </div>
+    <div className="min-h-screen surface-main">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Header Section */}
-        <div className="flex flex-col items-center text-center mb-16 space-y-6">
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/20 shadow-lg shadow-blue-500/5 group hover:scale-110 transition-transform duration-500">
-            <Shield className="h-10 w-10 text-blue-500 group-hover:rotate-12 transition-transform" />
-          </div>
-
-          <div className="space-y-2">
-            <h1 className="text-5xl md:text-6xl font-black tracking-tight bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent">
-              System Fidelity
-            </h1>
-            <p className="text-zinc-400 text-lg md:text-xl font-light tracking-wide max-w-2xl">
-              Live observability and performance orchestrations for ABSpider security engine.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
-            <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-zinc-900 border border-zinc-800 shadow-xl">
-              {getStatusIcon(status.overall)}
-              <span className={`text-lg font-bold tracking-tight ${getStatusColor(status.overall)}`}>
-                Global Status: {status.overall.toUpperCase()}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 p-1 rounded-full bg-zinc-900 border border-zinc-800">
-              <Button variant="ghost" size="sm" onClick={() => refetch()} className="rounded-full h-10 w-10 p-0 hover:bg-zinc-800">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              <div className="h-4 w-[1px] bg-zinc-800 mx-1"></div>
-              <button
-                onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${autoRefresh ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-500'}`}
-              >
-                <div className={`w-2 h-2 rounded-full animate-pulse ${autoRefresh ? 'bg-emerald-500' : 'bg-zinc-600'}`}></div>
-                Auto-Live: {autoRefresh ? 'ON' : 'OFF'}
-              </button>
-            </div>
-          </div>
-
-          <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest pt-4">
-            Last Telemetry Node Sync: {formatDistanceToNow(new Date(status.lastUpdated))} ago
-          </p>
+        {/* Top nav */}
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <Button variant="ghost" size="sm" asChild className="cursor-pointer gap-1.5 text-muted-foreground">
+            <Link to="/">
+              <ArrowLeft className="h-4 w-4" />
+              ABSpider
+            </Link>
+          </Button>
+          <Badge variant="outline" className="border-primary/20 bg-primary/8 text-primary text-xs">
+            Public telemetry
+          </Badge>
         </div>
 
-        {/* Global Performance Pulse */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        {/* Hero status banner */}
+        <div className="mb-8 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div className="grid lg:grid-cols-[1fr_320px]">
+            {/* Left */}
+            <div className="relative overflow-hidden p-8">
+              <div className="absolute inset-0 dot-grid opacity-40" aria-hidden="true" />
+              <div className="relative space-y-4">
+                <div className="flex items-center gap-3">
+                  <Bug className="h-6 w-6 text-primary" />
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground">ABSpider Status</h1>
+                </div>
+                <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+                  Service health, scan engine readiness, and live telemetry for the ABSpider environment.
+                </p>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-2">
+                    <span className={cn('h-2 w-2 rounded-full', overallTone.dot)} />
+                    Updated {updatedAgo} ago
+                  </span>
+                  <span className="hidden h-3 w-px bg-border sm:block" />
+                  <span>{autoRefresh ? 'Refreshing every 30s' : 'Auto-refresh paused'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right - overall status */}
+            <div className="flex flex-col justify-center gap-5 border-t border-border bg-muted/20 p-8 lg:border-l lg:border-t-0">
+              <div className={cn('inline-flex w-fit items-center gap-2 rounded-xl border px-3.5 py-1.5 text-sm font-semibold', overallTone.badge)}>
+                <overallTone.icon className="h-4 w-4" />
+                {overallTone.label}
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Confidence index</p>
+                <p className="mt-1 text-5xl font-black tracking-tight text-foreground">{successRate.toFixed(1)}%</p>
+                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-border">
+                  <div
+                    className={cn('h-full rounded-full transition-all duration-700', overallTone.bar)}
+                    style={{ width: `${Math.min(100, successRate)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => refetch()}
+                  className="h-8 w-8 cursor-pointer"
+                  aria-label="Refresh"
+                >
+                  <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={autoRefresh ? 'default' : 'outline'}
+                  onClick={() => setAutoRefresh((v) => !v)}
+                  className="cursor-pointer"
+                >
+                  <span className={cn('mr-1.5 h-1.5 w-1.5 rounded-full', autoRefresh ? 'bg-primary-foreground' : 'bg-muted-foreground')} />
+                  Auto-refresh {autoRefresh ? 'on' : 'off'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Metric strip */}
+        <div className="mb-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
           {[
-            { label: 'Network Uptime', value: `${status.metrics.uptime}%`, icon: TrendingUp, color: 'emerald' },
-            { label: 'Fleet Throughput', value: status.metrics.totalScans.toLocaleString(), icon: Activity, color: 'blue' },
-            { label: 'Active Sessions', value: status.metrics.activeScans, icon: Zap, color: 'purple' },
-            { label: 'Latency Mean', value: `${Math.round(status.metrics.avgResponseTime)}s`, icon: Clock, color: 'amber' }
-          ].map((metric, idx) => {
-            const Icon = metric.icon;
-            return (
-              <Card key={idx} className="group overflow-hidden bg-zinc-900/50 backdrop-blur-xl border-zinc-800 hover:border-zinc-700 transition-all duration-300">
-                <CardContent className="p-6 relative">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-zinc-500 tracking-wider uppercase">{metric.label}</p>
-                      <p className={`text-4xl font-black tracking-tighter ${metric.color === 'emerald' ? 'text-emerald-500' :
-                          metric.color === 'blue' ? 'text-blue-500' :
-                            metric.color === 'purple' ? 'text-purple-500' :
-                              'text-amber-500'
-                        }`}>{metric.value}</p>
-                    </div>
-                    <Icon className={`h-8 w-8 text-zinc-700 transition-colors`} />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+            { icon: TrendingUp, label: 'Uptime', value: `${status.metrics.uptime}%`, sub: 'current model' },
+            { icon: Activity, label: 'Total scans', value: status.metrics.totalScans.toLocaleString(), sub: 'recorded jobs' },
+            { icon: Zap, label: 'Active scans', value: status.metrics.activeScans.toLocaleString(), sub: 'running now' },
+            { icon: Clock, label: 'Avg scan time', value: `${Math.round(status.metrics.avgResponseTime)}s`, sub: 'recent completed' },
+          ].map((m) => (
+            <div key={m.label} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">{m.label}</p>
+                  <p className="mt-1.5 text-3xl font-black tracking-tight text-foreground">{m.value}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{m.sub}</p>
+                </div>
+                <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                  <m.icon className="h-4 w-4" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          {/* Infrastructure Matrix */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Server className="h-6 w-6 text-blue-500" />
-              <h2 className="text-2xl font-bold tracking-tight">Core Infrastructure</h2>
-            </div>
-
-            <div className="grid gap-4">
-              {status.services.map((service, index) => (
-                <div key={index} className="group relative p-6 rounded-2xl bg-zinc-900/30 backdrop-blur-md border border-zinc-800 hover:bg-zinc-900/50 transition-all duration-300">
-                  <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-zinc-800 group-hover:bg-zinc-700 transition-colors">
-                        {service.name === 'Database' && <Database className="h-6 w-6 text-zinc-400 group-hover:text-blue-400" />}
-                        {service.name === 'Authentication' && <Shield className="h-6 w-6 text-zinc-400 group-hover:text-indigo-400" />}
+        {/* Services + modules */}
+        <div className="mb-8 grid gap-6 lg:grid-cols-2">
+          {/* Core infrastructure */}
+          <Card className="border-border bg-card shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Server className="h-4 w-4 text-primary" />
+                Core infrastructure
+              </CardTitle>
+              <CardDescription className="text-xs">Database and authentication health.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {status.services.map((service) => (
+                <div key={service.name} className="rounded-xl border border-border bg-background/50 p-4 transition-colors hover:border-primary/25">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 rounded-lg bg-primary/10 p-1.5 text-primary">
+                        <ServiceIcon name={service.name} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold">{service.name}</h3>
-                        <p className="text-sm text-zinc-500 font-medium">{service.details}</p>
+                        <p className="text-sm font-semibold text-foreground">{service.name}</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{service.details}</p>
+                        {service.error && <p className="mt-1 text-xs text-destructive">{service.error}</p>}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      {getStatusBadge(service.status)}
-                      {service.responseTime && (
-                        <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest flex items-center gap-1">
-                          <Zap className="h-3 w-3" />
-                          {Math.round(service.responseTime)}ms
-                        </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <StatusBadge status={service.status} />
+                      {service.responseTime !== undefined && (
+                        <span className="text-[11px] text-muted-foreground">{Math.round(service.responseTime)}ms</span>
                       )}
                     </div>
                   </div>
                 </div>
               ))}
-            </div>
-          </section>
+            </CardContent>
+          </Card>
 
-          {/* Engine Sub-systems */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Bug className="h-6 w-6 text-purple-500" />
-              <h2 className="text-2xl font-bold tracking-tight">Sub-system Clusters</h2>
-            </div>
-
-            <div className="grid gap-4">
-              {status.modules.map((module, index) => (
-                <div key={index} className="group p-6 rounded-2xl bg-zinc-900/30 backdrop-blur-md border border-zinc-800 hover:bg-zinc-900/50 transition-all duration-300">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-bold group-hover:text-purple-400 transition-colors">{module.name}</h3>
-                      <p className="text-sm text-zinc-500 leading-relaxed">{module.description}</p>
-                    </div>
-                    {getStatusBadge(module.status)}
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-4 mt-auto">
-                    <div className="flex flex-wrap gap-2">
-                      {module.dependencies.slice(0, 3).map((dep, depIndex) => (
-                        <span key={depIndex} className="text-[10px] font-mono px-2 py-1 rounded bg-zinc-800 text-zinc-500 uppercase">
-                          {dep}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-[10px] font-mono text-zinc-600 uppercase">
-                      Validated {formatDistanceToNow(new Date(module.lastTested))} ago
+          {/* Scan engine */}
+          <Card className="border-border bg-card shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Bug className="h-4 w-4 text-primary" />
+                Scan engine
+              </CardTitle>
+              <CardDescription className="text-xs">Module readiness and dependency checks.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              {status.modules.map((mod) => (
+                <div key={mod.name} className="rounded-xl border border-border bg-background/50 p-4 transition-colors hover:border-primary/25">
+                  <div className="flex items-start justify-between gap-2">
+                    <StatusBadge status={mod.status} />
+                    <span className="text-[10px] font-medium text-muted-foreground">
+                      {formatDistanceToNow(new Date(mod.lastTested))} ago
                     </span>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-foreground">{mod.name}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{mod.description}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {mod.dependencies.slice(0, 3).map((dep) => (
+                      <span key={dep} className="rounded-md border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">
+                        {dep}
+                      </span>
+                    ))}
                   </div>
                 </div>
               ))}
-            </div>
-          </section>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Global Telemetry Card */}
-        <Card className="mt-16 bg-gradient-to-br from-zinc-900 to-zinc-950 border-zinc-800 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
-            <Activity className="h-64 w-64 -mr-20 -mt-20" />
-          </div>
-          <CardHeader className="relative">
-            <CardTitle className="flex items-center gap-3 text-3xl font-black italic tracking-tighter">
-              <Zap className="h-8 w-8 text-amber-500" />
-              TELEMETRY_DUMP
+        {/* Telemetry */}
+        <Card className="mb-8 border-border bg-card shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Gauge className="h-4 w-4 text-primary" />
+              Telemetry summary
             </CardTitle>
-            <CardDescription className="text-zinc-500 text-lg uppercase tracking-widest font-mono">
-              Aggregate ecosystem analytics • last 24h
-            </CardDescription>
+            <CardDescription className="text-xs">Aggregate scan activity from the current status service.</CardDescription>
           </CardHeader>
-          <CardContent className="relative py-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="space-y-2 text-center">
-                <p className="text-zinc-500 text-sm font-mono tracking-widest uppercase">Fleet Userbase</p>
-                <p className="text-5xl font-black text-white tracking-tighter">{status.metrics.totalUsers.toLocaleString()}</p>
-                <p className="text-xs text-zinc-700 font-mono">Verified Entities</p>
-              </div>
-
-              <div className="space-y-4 text-center">
-                <div className="relative inline-block">
-                  <div className="absolute inset-0 blur-2xl bg-emerald-500/20"></div>
-                  <p className="relative text-zinc-500 text-sm font-mono tracking-widest uppercase mb-2">Confidence Index</p>
-                  <p className="relative text-6xl font-black text-emerald-500 tracking-tighter leading-none">
-                    {(100 - status.metrics.errorRate).toFixed(1)}%
-                  </p>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[
+                { label: 'Users with scans', value: status.metrics.totalUsers.toLocaleString(), sub: 'from user scan records' },
+                { label: 'Success rate', value: `${Math.max(0, 100 - status.metrics.errorRate).toFixed(1)}%`, sub: 'completed vs failed, 24h' },
+                { label: 'Error rate', value: `${status.metrics.errorRate.toFixed(1)}%`, sub: 'failed scans, 24h' },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl border border-border bg-background/50 p-5 transition-colors hover:border-primary/25">
+                  <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
+                  <p className="mt-2 text-3xl font-black tracking-tight text-foreground">{item.value}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{item.sub}</p>
                 </div>
-                <p className="text-xs text-zinc-700 font-mono uppercase tracking-widest underline decoration-emerald-900/30">Succesful Payload Delivery</p>
-              </div>
-
-              <div className="space-y-2 text-center text-zinc-800">
-                <p className="text-zinc-500 text-sm font-mono tracking-widest uppercase">Anomalous Spike</p>
-                <p className="text-5xl font-black tracking-tighter">{status.metrics.errorRate.toFixed(1)}%</p>
-                <p className="text-xs text-zinc-700 font-mono">Fault Incidence Rate</p>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* System Footer */}
-        <footer className="mt-20 pt-12 border-t border-zinc-900 text-center space-y-4">
-          <div className="flex items-center justify-center gap-8 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-            <div className="h-10 w-32 bg-zinc-800/50 rounded flex items-center justify-center font-black text-zinc-600 tracking-tighter">SUPABASE</div>
-            <div className="h-10 w-32 bg-zinc-800/50 rounded flex items-center justify-center font-black text-zinc-600 tracking-tighter">VERCEL.EDGE</div>
-            <div className="h-10 w-32 bg-zinc-800/50 rounded flex items-center justify-center font-black text-zinc-600 tracking-tighter">LUCIDE.CORE</div>
-          </div>
-          <p className="text-zinc-600 font-mono text-xs tracking-widest uppercase">
-            &copy; 2026 ABSpider Intelligent Reconnaissance. All telemetry points encrypted.
-          </p>
-          <div className="flex items-center justify-center gap-6 text-zinc-500">
-            <a href="#" className="hover:text-white transition-colors">Incident History</a>
-            <span className="text-zinc-800">•</span>
-            <a href="mailto:ops@abspider.com" className="hover:text-white transition-colors font-mono text-xs">ops@abspider.com</a>
-          </div>
+        {/* Footer */}
+        <footer className="flex flex-col gap-2 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>ABSpider status is updated from live service checks where available.</span>
+          <a href="mailto:ops@abspider.com" className="font-medium text-primary transition-colors hover:text-primary/80">
+            ops@abspider.com
+          </a>
         </footer>
       </div>
+
+      <BackToTop />
     </div>
   );
 };

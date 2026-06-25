@@ -1,129 +1,103 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+﻿import { ArrowRight, BookOpen, Github, LockKeyhole, ScrollText, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Zap, CheckCircle, Star } from 'lucide-react';
-import { getCachedLandingStats } from '@/services/landingStatsService';
 
-const CTASection = () => {
-  const [userCount, setUserCount] = React.useState<number>(1250);
+const TRUST = [
+  { icon: LockKeyhole, title: 'Authorization-first', body: 'Scan language and CLI framing enforce authorized testing at every step.' },
+  { icon: Github, title: 'Open source', body: 'Scanner logic, payloads, and reporting code are fully inspectable on GitHub.' },
+  { icon: ScrollText, title: 'Evidence over guesswork', body: 'Every finding includes response status, exposed paths, and module-specific detail.' },
+];
 
-  React.useEffect(() => {
-    const loadUserCount = async () => {
-      try {
-        const stats = await getCachedLandingStats();
-        setUserCount(stats.totalUsers);
-      } catch (error) {
-        console.error('Failed to load user count:', error);
-      }
-    };
-    loadUserCount();
-  }, []);
-  const benefits = [
-    'Start scanning in under 30 seconds',
-    'No credit card required for free tier',
-    'Access to all core features',
-    'Export detailed PDF reports'
-  ];
-
-  return (
-    <section className="py-24 bg-gradient-to-b from-background to-muted/20 relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Badge */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-            <Star className="h-4 w-4 text-blue-600 dark:text-blue-400 animate-pulse" />
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-              Join 100+ Security Professionals
-            </span>
-          </div>
-        </div>
-
-        {/* Main Heading */}
-        <div className="space-y-6 mb-12">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
-            <span className="block text-foreground">Ready to Uncover</span>
-            <span className="block bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              Hidden Intelligence?
-            </span>
+const CTASection = ({ onOpenLogin }: { onOpenLogin: () => void }) => (
+  <section id="security" className="landing-section bg-background py-28">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Trust trio */}
+      <div className="landing-reveal mb-20">
+        <div className="mb-10 max-w-xl">
+          <span className="text-sm font-semibold uppercase tracking-widest text-primary">Trust model</span>
+          <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+            Professional by being precise about what we do.
           </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-            Start your first comprehensive web reconnaissance scan today. 
-            Discover what others can't see in just minutes.
-          </p>
         </div>
-
-        {/* Benefits List */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12 max-w-2xl mx-auto">
-          {benefits.map((benefit, index) => (
-            <div 
-              key={index}
-              className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-blue-500/5 to-cyan-500/5 border border-blue-500/10"
-            >
-              <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-              <span className="text-sm font-medium text-foreground">{benefit}</span>
+        <div data-gsap="stagger-grid" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {TRUST.map((t) => (
+            <div key={t.title} className="landing-card rounded-2xl border border-border bg-muted/25 p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <t.icon className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="mt-5 text-base font-bold text-foreground">{t.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t.body}</p>
             </div>
           ))}
         </div>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-          <Button 
-            size="lg" 
-            asChild
-            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-primary/30 px-8 py-6 text-lg font-semibold group transition-all duration-300 hover:shadow-xl hover:shadow-primary/40 hover:scale-105"
-          >
-            <Link to="/login">
-              <Zap className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-              Start Free Scan Now
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
-            </Link>
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="px-8 py-6 text-lg font-semibold border-2 hover:bg-muted/50 group transition-all duration-300"
-          >
-            View Live Demo
-          </Button>
-        </div>
-
-        {/* Trust Indicators */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Free forever plan</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>No setup required</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Cancel anytime</span>
-            </div>
-          </div>
-          
-          <div className="text-xs text-muted-foreground">
-            Trusted by cybersecurity teams
-          </div>
-        </div>
-
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-10 w-4 h-4 bg-blue-500/20 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-        <div className="absolute top-40 right-20 w-3 h-3 bg-cyan-500/20 rounded-full animate-bounce" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-20 left-20 w-5 h-5 bg-emerald-500/20 rounded-full animate-bounce" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-40 right-10 w-2 h-2 bg-purple-500/20 rounded-full animate-bounce" style={{ animationDelay: '0.5s' }} />
       </div>
-    </section>
-  );
-};
+
+      {/* Big CTA banner */}
+      <div className="landing-reveal relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-blue-600 to-cyan-600 p-px">
+        <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-gradient-to-br from-primary/90 via-blue-600/90 to-cyan-600/90 px-8 py-14 text-white sm:px-12 sm:py-16">
+          {/* decorative blobs */}
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute -bottom-20 left-1/3 h-80 w-80 rounded-full bg-white/8 blur-3xl" aria-hidden="true" />
+
+          <div className="relative grid items-center gap-10 lg:grid-cols-[1fr_auto]">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium">
+                <Terminal className="h-4 w-4" />
+                GUI and CLI - same coverage target
+              </div>
+              <h2 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+                Start with a scoped scan.<br />Keep the evidence.
+              </h2>
+              <p className="max-w-xl text-base leading-relaxed text-blue-100">
+                ABSpider is strongest as a repeatable first-pass recon system: document what exists, confirm what's exposed, and hand clear remediation notes to the people who own the service.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button size="lg" onClick={onOpenLogin}
+                  className="h-12 cursor-pointer bg-white px-6 text-base font-bold text-primary hover:bg-white/90 shadow-lg">
+                  Open scanner
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                  className="h-12 cursor-pointer border-white/30 bg-white/10 px-6 text-base font-semibold text-white backdrop-blur hover:bg-white/20 hover:text-white"
+                >
+                  <a href="https://www.npmjs.com/package/abspider" target="_blank" rel="noreferrer">
+                    Install CLI
+                  </a>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  asChild
+                  className="h-12 cursor-pointer px-6 text-base font-semibold text-white hover:bg-white/10 hover:text-white"
+                >
+                  <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noreferrer">
+                    <BookOpen className="mr-2 h-5 w-5" />
+                    Read the docs
+                  </a>
+                </Button>
+              </div>
+            </div>
+
+            {/* Side stats */}
+            <div className="hidden flex-col gap-4 lg:flex">
+              {[
+                { val: '35', lbl: 'recon modules' },
+                { val: 'MIT', lbl: 'open source license' },
+                { val: '100%', lbl: 'browser-side scanning' },
+              ].map((s) => (
+                <div key={s.lbl} className="rounded-2xl border border-white/20 bg-white/10 p-5 text-center backdrop-blur-sm">
+                  <div className="text-3xl font-black text-white">{s.val}</div>
+                  <div className="mt-1 text-xs font-medium text-blue-100">{s.lbl}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
 
 export default CTASection;
