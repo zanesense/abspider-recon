@@ -87,7 +87,7 @@ Most public web attacks start with **the same recon**: a DNS lookup, a certifica
 
 It is built on a clear split:
 
-- 🖥️ **Dashboard** — a Vite + React + Supabase app with a polished UI, magic-link auth, persisted scan history, JSON/PDF report export, and per-user settings.
+- 🖥️ **Dashboard** — a Vite + React + Supabase app with email/password and magic-link auth, remembered sessions, persisted scan history, JSON/PDF report export, and per-user settings.
 - 💻 **CLI** — a Node.js ESM script that runs the same recon modules from the terminal, with bounded payload counts, request delays, and thread controls. No Supabase session required.
 
 Both surfaces share the same scanner engine. Pick whichever fits the engagement.
@@ -100,11 +100,12 @@ Both surfaces share the same scanner engine. Pick whichever fits the engagement.
 - 🧠 **Three scan styles** — `conservative`, `adaptive` (default), and `aggressive` — for both dashboard and CLI workflows.
 - 🛡️ **Bounded by design** — every active module has explicit payload counts, request delays, and concurrency limits. Nothing fires blindly.
 - 💻 **Local CLI** — run the full scanner from your terminal with `npx abspider <target>`, or `npm run cli -- <target>` for local development.
-- 🔐 **Passwordless auth** — Supabase magic-link sign-in protects dashboard history; the CLI runs without any account.
+- 🔐 **Flexible auth** — Supabase email/password and magic-link sign-in protect dashboard history; "Remember me" keeps sessions across browser restarts, while unchecked sessions are cleared after the browser session ends.
 - 📊 **Per-user scan history** — Supabase PostgreSQL with row-level security, plus per-user API keys, preferences, and Discord webhook config.
 - 📥 **JSON + PDF reports** — export a dashboard scan as JSON, a styled PDF (`jsPDF` + `jspdf-autotable`), or DOCX.
 - 🧩 **Optional third-party intel** — Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit, and Discord webhooks plug in when you bring your own keys.
-- 🔀 **Smart proxy routing** — CORS-friendly third-party APIs use direct browser requests, while target-site probes can still fall back to the FastAPI proxy.
+- 🔀 **Smart proxy routing** — CORS-friendly third-party APIs use direct browser requests, while target-site probes can fall back to the Vercel `/api/proxy` function or the FastAPI proxy in Docker/self-hosted deployments.
+- 📚 **Bundled documentation site** — the static docs in `docs/` are served at `/docs/` in development and copied into `dist/docs/` during production builds.
 - 🐳 **Container-ready** — production `Dockerfile` (Nginx), `Dockerfile.backend` (FastAPI proxy), and dev `Dockerfile.dev` (Vite) ship in the repo; `docker compose` orchestrates the full stack.
 - ⏱️ **Graceful shutdown** — `Ctrl+C` aborts the CLI cleanly, preserves partial results, and finishes writing any `--output` JSON.
 - 🧪 **Strict pipeline** — ESLint 9, strict TypeScript, Vitest, and `npm audit` (production only) run in CI on every push and PR.
@@ -177,7 +178,7 @@ flowchart TD
 
 Key design choices:
 
-- **Browser-first dashboard** — the dashboard does the work in the browser using a small `requestManager` and per-module backoff. A FastAPI backend at `/api/proxy` is available for CORS-limited flows when you run the backend or Docker stack.
+- **Browser-first dashboard** — the dashboard does the work in the browser using a small `requestManager` and per-module backoff. The Vercel `/api/proxy` function is available in hosted deployments, and the FastAPI proxy is available when you run the backend or Docker stack.
 - **Direct API calls when supported** — CORS-enabled providers such as Google DNS, crt.sh, RDAP, Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit, ipapi, and ip-api bypass `/api/proxy` so JSON responses are not replaced by proxy HTML or gateway errors.
 - **Bounded active modules** — every active module reads payloads from `src/payloads/*.json` and respects the per-mode cap, delay, and concurrency settings.
 - **Deterministic payloads** — the JSON payload files are version-controlled. You can audit, extend, or replace them without touching the runner.
@@ -193,7 +194,11 @@ abspider-recon/
 │   ├── main.py                       # FastAPI CORS proxy at /api/proxy
 │   └── requirements.txt              # Python backend dependencies
 │
+├── api/
+│   └── proxy.ts                      # Vercel serverless proxy at /api/proxy
+│
 ├── docs/
+│   ├── index.html                    # Static documentation site served at /docs/
 │   └── wiki/                         # Supplemental user, configuration, legal guides
 │
 ├── packages/
@@ -349,7 +354,7 @@ npm run cli -- example.com
 npm run build
 ```
 
-`npm run build` runs the strict TypeScript project references (`tsc -b`) and then `vite build`, producing a static bundle in `dist/`. Serve `dist/` from any static host, or use the production Docker image. Browser-side CORS fallback requires the FastAPI proxy at `/api/proxy`.
+`npm run build` runs the strict TypeScript project references (`tsc -b`) and then `vite build`, producing a static bundle in `dist/` and copying the documentation site into `dist/docs/`. Serve `dist/` from any static host, or use the production Docker image. Browser-side CORS fallback uses Vercel `api/proxy.ts` on Vercel and the FastAPI proxy in Docker/self-hosted deployments.
 
 ---
 
@@ -420,11 +425,14 @@ npm run dev
 
 Then:
 
-1. Sign in with a Supabase magic link (no password to remember).
-2. Open **Settings** and add any optional API keys and your Discord webhook.
-3. Start a scan from the **New Scan** page by entering a target.
-4. Watch per-module progress and review the structured results.
-5. Export the report as **JSON**, **PDF**, or **DOCX** from the **Reports** page.
+1. Sign in with email/password or a Supabase magic link. Leave **Remember me** checked to keep the session across browser restarts; uncheck it for a browser-session-only login.
+2. On your first dashboard visit, review the beta/dev-stage notice and use the GitHub links to star the repo or report bugs.
+3. Open **Settings** and add any optional API keys and your Discord webhook.
+4. Start a scan from the **New Scan** page by entering a target.
+5. Watch per-module progress and review the structured results.
+6. Export the report as **JSON**, **PDF**, or **DOCX** from the **Reports** page.
+
+The landing page always remains available at `/`. If an authenticated user clicks **Sign in** or **Open scanner**, the app sends them to `/dashboard`; it does not auto-redirect merely because they visit the landing page.
 
 ### Local CLI
 
@@ -460,7 +468,7 @@ Operational notes:
 
 There are two ways to consume ABSpider Recon programmatically:
 
-1. **The FastAPI proxy** at `GET` or `POST /api/proxy?url=<encoded>` — for browser-side CORS fallback when the backend is running.
+1. **The same-origin proxy** at `GET` or `POST /api/proxy?url=<encoded>` — for browser-side CORS fallback through Vercel `api/proxy.ts` or the FastAPI backend.
 2. **The CLI JSON output** — pipe `--json` into `jq` or another tool for automations.
 
 See [🔌 API Reference](#-api-reference) for full details.
@@ -557,9 +565,9 @@ sequenceDiagram
 
 ### `GET /api/proxy`
 
-A FastAPI proxy used by the dashboard when direct browser requests fail because of CORS or target-side restrictions. The implementation lives in [`backend/main.py`](backend/main.py), and the frontend calls it through the same-origin `/api/proxy` path.
+A same-origin proxy used by the dashboard when direct browser requests fail because of CORS or target-side restrictions. Vercel deployments use [`api/proxy.ts`](api/proxy.ts); Docker and local backend deployments use [`backend/main.py`](backend/main.py). The frontend always calls the same `/api/proxy` path.
 
-In local development, Vite proxies `/api/*` to `http://localhost:8000`. In Docker production, Nginx proxies `/api/*` to the `backend` service. Static-only hosts, including the current Vercel static deployment, do not provide this backend unless you deploy it separately.
+In local development, Vite proxies `/api/*` to `http://localhost:8000` when the FastAPI backend is running. In Docker production, Nginx proxies `/api/*` to the `backend` service. On Vercel, `api/proxy.ts` is deployed as the project function for the same route.
 
 **Request**
 
@@ -577,8 +585,9 @@ GET /api/proxy?url=https%3A%2F%2Fexample.com%2Frobots.txt
 
 - Target response body and status code with permissive CORS headers.
 - `400 Bad Request` if `url` is missing or is not HTTP/HTTPS.
-- `504 Gateway Timeout` when the upstream request times out.
+- `504 Gateway Timeout` from the FastAPI backend when the upstream request times out.
 - `500 Internal Server Error` on other upstream failures.
+- Successful proxy responses include `X-ABSpider-Proxy` and `X-ABSpider-Target-URL` so the browser can reject misrouted SPA fallback responses instead of parsing them as scan evidence.
 
 **CORS**
 
@@ -663,14 +672,15 @@ The same finding in the dashboard renders as a card with a "Recheck" button, an 
 ABSpider Recon now has two runtime pieces:
 
 - a static Vite SPA built into `dist/`
-- an optional FastAPI backend that serves `/api/proxy` for browser-side CORS fallback
+- a same-origin `/api/proxy` implementation: Vercel uses `api/proxy.ts`, while Docker/self-hosted stacks can use the FastAPI backend
+- a static documentation site copied from `docs/` into `dist/docs/` and served at `/docs/`
 
 The Vite dev server (`npm run dev`, port `5000`) is for local development only. Production paths should serve the built `dist/` bundle.
 
 | Path | Frontend | `/api/proxy` support |
 | --- | --- | --- |
 | **Docker production** | `dist/` served by Nginx on container port `8080` | ✅ FastAPI `backend` service on port `8000`, proxied by Nginx |
-| **Vercel static hosting** | `dist/` built by Vite | ❌ Not bundled; deploy the FastAPI backend separately if you need proxy fallback |
+| **Vercel static hosting** | `dist/` built by Vite, with `dist/docs/` at `/docs/` | ✅ `api/proxy.ts` deployed by Vercel |
 | **Self-hosted Node/static** | `dist/` served by `serve` or any static host | ❌ Not bundled; run `backend/main.py` separately and route `/api/*` to it |
 | **Docker development** | Vite dev server on port `5000` | ✅ when `backend` is started alongside `dev` |
 
@@ -681,7 +691,9 @@ Vercel reads [`vercel.json`](vercel.json) and runs the production frontend pipel
 - `installCommand`: `npm ci`
 - `buildCommand`: `npm run build` (which is `tsc -b && vite build`)
 - `outputDirectory`: `dist/`
-- SPA rewrites: every path that does not match a static asset falls through to `/index.html`.
+- `/docs` rewrites: `/docs`, `/docs/`, and `/docs/*` resolve to the static documentation copied into `dist/docs/`.
+- `/api/proxy`: `api/proxy.ts` is deployed as the same-origin Vercel function for browser-side CORS fallback.
+- SPA rewrites: every other path that does not match a static asset falls through to `/index.html`.
 
 ```bash
 # Install the Vercel CLI if you do not have it
@@ -697,7 +709,7 @@ In the Vercel project settings, add:
 - `VITE_SUPABASE_ANON_KEY`
 - Configure optional API keys and Discord webhooks from the dashboard **Settings** page after deployment
 
-The current Vercel config does not deploy `backend/main.py`. Direct browser requests still work for CORS-friendly targets, and the CLI is not affected by browser CORS restrictions.
+The current Vercel config does not deploy `backend/main.py`; it uses `api/proxy.ts` for `/api/proxy` instead. Direct browser requests still work for CORS-friendly targets, and the CLI is not affected by browser CORS restrictions.
 
 ### Docker production
 
@@ -759,7 +771,7 @@ npm run build
 # Upload the contents of dist/ to your static host
 ```
 
-Static hosts serve the dashboard only. Use the CLI for server-side scans, or deploy the FastAPI proxy separately and configure your host to route `/api/*` to it.
+Static hosts serve the dashboard and bundled `/docs/` site. Use the CLI for server-side scans, or deploy a compatible proxy separately and configure your host to route `/api/*` to it.
 
 ---
 ## 🗺️ Roadmap
@@ -828,7 +840,7 @@ Please open an issue first if your change is large or design-related.
 | CLI active modules are too noisy | Default mode is `adaptive`; payload counts and delays are tuned for a balance. | Lower `--payloads`, raise `--delay`, or pass `--mode conservative`. |
 | CLI scan is too slow | Mode is `aggressive` and threads are high. | Use `--mode conservative`, lower `--threads`, choose `--port-profile web`, or disable CT lookup with `--no-ct`. |
 | CLI reports a Cloudflare or WAF challenge | The target is behind a CDN/WAF that returned a challenge page. | Results describe the edge challenge instead of the origin. Use an authorized allowlist, staging host, or provider-approved testing path. |
-| Browser scan hits CORS limitations | The target rejects cross-origin requests from the dashboard. | Run the FastAPI backend and use `/api/proxy`, or use the CLI for server-side requests. |
+| Browser scan hits CORS limitations | The target rejects cross-origin requests from the dashboard. | Use the same-origin `/api/proxy` path where available, run the FastAPI backend for self-hosting, or use the CLI for server-side requests. |
 | Port checks fail with permission or network errors | Local firewall or network policy is blocking outbound TCP. | Run from a network that allows outbound TCP checks and verify local firewall rules. |
 | Docker production serves a blank page | Required `VITE_*` env vars were not provided at build time. | Rebuild the image with the env vars set, or inject them through your platform's build settings. |
 | `cp` fails on Windows PowerShell | `cp` is not a native cmdlet. | Use `Copy-Item .env.example .env` instead. |

@@ -5,6 +5,7 @@ import {
   Eye, EyeOff, Bug, ArrowRight, Zap, ShieldCheck, Link2, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +35,25 @@ interface Props {
   onClose: () => void;
 }
 
+interface EyeToggleProps {
+  showPassword: boolean;
+  onToggle: () => void;
+}
+
+const EyeToggle = ({ showPassword, onToggle }: EyeToggleProps) => (
+  <button
+    type="button"
+    tabIndex={-1}
+    onClick={onToggle}
+    className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-blue-200/70 transition-colors hover:text-white"
+  >
+    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+  </button>
+);
+
+const REMEMBER_SESSION_KEY = 'abspider-remember-session';
+const SESSION_ACTIVE_KEY = 'abspider-session-active';
+
 export default function ModernLogin({ open, onClose }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,15 +63,9 @@ export default function ModernLogin({ open, onClose }: Props) {
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
   const [currentTab, setCurrentTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem(REMEMBER_SESSION_KEY) !== 'false');
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Redirect if already logged in
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate('/dashboard');
-    });
-  }, [navigate]);
 
   // Close on Escape
   useEffect(() => {
@@ -79,7 +93,12 @@ export default function ModernLogin({ open, onClose }: Props) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      if (data.session) { toast({ title: "Welcome back!" }); navigate('/dashboard'); }
+      if (data.session) {
+        localStorage.setItem(REMEMBER_SESSION_KEY, rememberMe ? 'true' : 'false');
+        sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+        toast({ title: "Welcome back!" });
+        navigate('/dashboard');
+      }
     } catch (err: any) { setMessage(err.message); setMessageType('error'); }
     finally { setLoading(false); }
   };
@@ -92,7 +111,12 @@ export default function ModernLogin({ open, onClose }: Props) {
     try {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
-      if (data.session) { toast({ title: "Account created!" }); navigate('/dashboard'); }
+      if (data.session) {
+        localStorage.setItem(REMEMBER_SESSION_KEY, rememberMe ? 'true' : 'false');
+        sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+        toast({ title: "Account created!" });
+        navigate('/dashboard');
+      }
       else { setMessage("Check your email to confirm your account."); setMessageType('info'); setCurrentTab("login"); }
     } catch (err: any) { setMessage(err.message); setMessageType('error'); }
     finally { setLoading(false); }
@@ -118,13 +142,6 @@ export default function ModernLogin({ open, onClose }: Props) {
     } catch (err: any) { setMessage(err.message); setMessageType('error'); }
     finally { setLoading(false); }
   };
-
-  const EyeToggle = () => (
-    <button type="button" tabIndex={-1} onClick={() => setShowPassword(v => !v)}
-      className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-blue-200/70 transition-colors hover:text-white">
-      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-    </button>
-  );
 
   return (
     <div
@@ -173,9 +190,18 @@ export default function ModernLogin({ open, onClose }: Props) {
                   <Label htmlFor="lp-password-login" className="text-sm font-semibold text-white">Password</Label>
                   <div className="relative">
                     <Input id="lp-password-login" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required className="h-12 rounded-xl border-slate-700 bg-transparent pr-12 text-base text-blue-100 placeholder:text-blue-200/60 focus-visible:ring-blue-500" />
-                    <EyeToggle />
+                    <EyeToggle showPassword={showPassword} onToggle={() => setShowPassword(v => !v)} />
                   </div>
                 </div>
+                <label htmlFor="lp-remember-login" className="flex cursor-pointer items-center gap-2 text-sm font-medium text-blue-100/80">
+                  <Checkbox
+                    id="lp-remember-login"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    className="border-blue-200/40 data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
+                  />
+                  Remember me
+                </label>
                 <Button type="submit" disabled={loading} className="h-12 w-full cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-semibold text-white shadow-xl shadow-blue-950/40 hover:from-blue-500 hover:to-cyan-500">
                   {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</> : <>Sign in<ArrowRight className="ml-2 h-4 w-4" /></>}
                 </Button>
@@ -196,7 +222,7 @@ export default function ModernLogin({ open, onClose }: Props) {
                   <Label htmlFor="lp-pw-signup" className="text-sm font-semibold text-white">Password</Label>
                   <div className="relative">
                     <Input id="lp-pw-signup" type={showPassword ? "text" : "password"} placeholder="Create a strong password" value={password} onChange={e => setPassword(e.target.value)} required className="h-12 rounded-xl border-slate-700 bg-transparent pr-12 text-base text-blue-100 placeholder:text-blue-200/60 focus-visible:ring-blue-500" />
-                    <EyeToggle />
+                    <EyeToggle showPassword={showPassword} onToggle={() => setShowPassword(v => !v)} />
                   </div>
                   {password.length > 0 && (
                     <div className="space-y-1 pt-1">
@@ -218,6 +244,15 @@ export default function ModernLogin({ open, onClose }: Props) {
                     )}
                   </div>
                 </div>
+                <label htmlFor="lp-remember-signup" className="flex cursor-pointer items-center gap-2 text-sm font-medium text-blue-100/80">
+                  <Checkbox
+                    id="lp-remember-signup"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    className="border-blue-200/40 data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
+                  />
+                  Remember me
+                </label>
                 <Button type="submit" disabled={loading || !pwMatch || pwStrength.value < 75} className="h-12 w-full cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-semibold text-white shadow-xl shadow-blue-950/40 hover:from-blue-500 hover:to-cyan-500">
                   {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : <>Create account<ArrowRight className="ml-2 h-4 w-4" /></>}
                 </Button>

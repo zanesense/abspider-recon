@@ -41,7 +41,7 @@
                         <span class="eyebrow">v2.0.1 · Professional Web Reconnaissance</span>
                         <h1>ABSpider Recon Documentation</h1>
                         <p class="sub">
-                            A unified, browser-based reconnaissance dashboard and CLI for security professionals, penetration testers, and bug bounty hunters. 21+ modules, bounded payload execution, and a zero-backend architecture — built for speed and trust.
+                            A unified, browser-based reconnaissance dashboard and CLI for security professionals, penetration testers, and bug bounty hunters. 35 modules, bounded payload execution, public legal pages, and bundled documentation at <code>/docs/</code> — built for speed and trust.
                         </p>
                         <div class="cta-row">
                             <a href="getting-started.html" class="btn btn-primary">
@@ -62,7 +62,7 @@
                     <div class="grid-4" style="margin: 3rem 0;">
                         <div class="metric">
                             <div class="label">Recon Modules</div>
-                            <div class="value">21+</div>
+                            <div class="value">35</div>
                             <div class="sub">Passive, active, utility</div>
                         </div>
                         <div class="metric">
@@ -101,9 +101,9 @@
                     <div class="grid-2">
                         <div class="card-static">
                             <h3 style="margin-top:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#67e8f9" stroke-width="2" style="vertical-align:-3px;margin-right:6px"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Dashboard</h3>
-                            <p>A Vite + React + Supabase app with a polished UI, magic-link auth, persisted scan history, JSON/PDF/DOCX report export, and per-user settings. The browser is the only client — there is no custom backend to operate.</p>
+                            <p>A Vite + React + Supabase app with a polished UI, email/password and magic-link auth, remember-me session control, a first-dashboard beta notice with GitHub issue links, persisted scan history, JSON/PDF/DOCX report export, and per-user settings. The browser is the primary client; Vercel and Docker provide same-origin proxy options for CORS-limited probes.</p>
                             <ul>
-                                <li>21 recon modules with a unified card UI</li>
+                                <li>35 recon modules with a unified card UI</li>
                                 <li>Smart scan modes (conservative / adaptive / aggressive)</li>
                                 <li>Notification center with Discord webhooks</li>
                                 <li>Supabase row-level security for every table</li>
@@ -141,7 +141,7 @@
                         <div class="feature-card">
                             <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div>
                             <h3>CORS-aware</h3>
-                            <p>A tiered request pipeline: direct fetch, then a Vercel Edge proxy at <code>api/proxy.ts</code> for browser-side CORS bypasses.</p>
+                            <p>A tiered request pipeline: direct fetch, then same-origin <code>/api/proxy</code> via Vercel <code>api/proxy.ts</code> or the FastAPI backend in Docker/self-hosted deployments.</p>
                         </div>
                         <div class="feature-card">
                             <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
@@ -234,7 +234,7 @@
                 <div class="footer-grid">
                     <div>
                         <h4>ABSpider Recon</h4>
-                        <p>Professional web reconnaissance platform for security professionals. Built with a zero-backend architecture and an adaptive scan engine.</p>
+                        <p>Professional web reconnaissance platform for security professionals. Built with a browser-first dashboard, same-origin proxy support, and an adaptive scan engine.</p>
                     </div>
                     <div>
                         <h4>Documentation</h4>

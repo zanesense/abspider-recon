@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, History, Zap, AlertTriangle, CheckCircle, Bug, TrendingUp, Clock, AlertCircle, Activity, FileText } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { PlusCircle, History, Zap, AlertTriangle, CheckCircle, Bug, TrendingUp, Clock, AlertCircle, Activity, FileText, Github, Star } from 'lucide-react';
 import RecentScans from '@/components/RecentScans';
 import { getScanHistory } from '@/services/scanService';
 import { Badge } from '@/components/ui/badge';
@@ -14,12 +14,29 @@ import APIKeyStatusCard from '@/components/APIKeyStatusCard';
 import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard';
 import AppHeader from '@/components/AppHeader';
 import { useInitialNotifications } from '@/hooks/useInitialNotifications';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+const BETA_NOTICE_STORAGE_KEY = 'abspider-beta-notice-seen';
 
 const DashboardPage = () => {
-  const { toast } = useToast();
+  const [showBetaNotice, setShowBetaNotice] = useState(
+    () => localStorage.getItem(BETA_NOTICE_STORAGE_KEY) !== 'true'
+  );
 
   // Initialize notifications
   useInitialNotifications();
+
+  const dismissBetaNotice = () => {
+    localStorage.setItem(BETA_NOTICE_STORAGE_KEY, 'true');
+    setShowBetaNotice(false);
+  };
 
   const { data: scans = [], refetch } = useQuery({
     queryKey: ['scanHistory'],
@@ -37,6 +54,51 @@ const DashboardPage = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
+      <Dialog open={showBetaNotice} onOpenChange={(open) => {
+        if (open) {
+          setShowBetaNotice(true);
+          return;
+        }
+
+        dismissBetaNotice();
+      }}>
+        <DialogContent className="max-w-xl border-border bg-card text-card-foreground shadow-2xl">
+          <DialogHeader className="space-y-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Bug className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-2xl">ABSpider is still in beta</DialogTitle>
+            <DialogDescription className="text-sm leading-6 text-muted-foreground">
+              ABSpider is in an active beta/dev stage. We are continuously working to improve scan accuracy, dashboard stability, reports, and module coverage.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm leading-6 text-foreground">
+            If ABSpider helps your workflow, please star the repository. If you find a bug, inaccurate module result, broken UI state, or missing edge case, report it on GitHub so it can be tracked and fixed.
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-between sm:space-x-0">
+            <Button variant="outline" onClick={dismissBetaNotice}>
+              Continue
+            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="secondary" asChild>
+                <a href="https://github.com/zanesense/abspider-recon/issues" target="_blank" rel="noreferrer">
+                  <Github className="mr-2 h-4 w-4" />
+                  Report issue
+                </a>
+              </Button>
+              <Button asChild>
+                <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noreferrer">
+                  <Star className="mr-2 h-4 w-4" />
+                  Star repo
+                </a>
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AppHeader 
         title="Dashboard" 
         subtitle="Overview of your reconnaissance activities"

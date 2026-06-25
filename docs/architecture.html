@@ -63,7 +63,7 @@
 <span class="lvl-0">External</span>
   <span class="lvl-1">├─ Targets and intel sources (DNS, RDAP, CT logs, …)</span>
   <span class="lvl-1">├─ Supabase (auth, RLS-scoped storage, settings)</span>
-  <span class="lvl-1">├─ Vercel Edge proxy (api/proxy.ts — CORS bypass)</span>
+  <span class="lvl-1">├─ /api/proxy (Vercel api/proxy.ts or FastAPI backend/main.py)</span>
   <span class="lvl-1">└─ Third-party APIs (Shodan, VirusTotal, …) — optional</span>
   <span class="lvl-2">│</span>
   <span class="lvl-2">▼</span>
@@ -88,14 +88,17 @@
                     </ul>
 
                     <h2 id="routing">Routing &amp; navigation</h2>
-                    <p>Routes are split into two categories: <strong>public</strong> (marketing &amp; status) and <strong>protected</strong> (any feature that requires an active Supabase session).</p>
+                    <p>Routes are split into two categories: <strong>public</strong> (marketing, legal, docs, and status) and <strong>protected</strong> (any feature that requires an active Supabase session).</p>
                     <div class="table-wrap">
                         <table>
                             <thead><tr><th>Path</th><th>Component</th><th>Access</th><th>Purpose</th></tr></thead>
                             <tbody>
                                 <tr><td><code>/</code></td><td><code>LandingPage</code></td><td>Public</td><td>Marketing site and project overview</td></tr>
                                 <tr><td><code>/status</code></td><td><code>StatusPage</code></td><td>Public</td><td>System health and API availability</td></tr>
-                                <tr><td><code>/login</code></td><td><code>ModernLogin</code></td><td>Public</td><td>Magic-link authentication entry</td></tr>
+                                <tr><td><code>/terms</code></td><td><code>LegalPage</code></td><td>Public</td><td>Terms of use</td></tr>
+                                <tr><td><code>/privacy</code></td><td><code>LegalPage</code></td><td>Public</td><td>Privacy policy</td></tr>
+                                <tr><td><code>/docs/</code></td><td>Static docs site</td><td>Public</td><td>Documentation copied from <code>docs/</code> into <code>dist/docs/</code></td></tr>
+                                <tr><td><code>/login</code></td><td><code>Navigate</code></td><td>Public</td><td>Redirects to landing page; login is shown as a modal</td></tr>
                                 <tr><td><code>/app</code></td><td><code>Index</code></td><td>Public*</td><td>Redirect logic based on session</td></tr>
                                 <tr><td><code>/dashboard</code></td><td><code>DashboardPage</code></td><td>Protected</td><td>Primary authenticated overview</td></tr>
                                 <tr><td><code>/new-scan</code></td><td><code>NewScan</code></td><td>Protected</td><td>Scan configuration and initiation</td></tr>
@@ -115,6 +118,12 @@
                         <li>It subscribes to <code>onAuthStateChange</code> so a sign-out in another tab (or an expired session) immediately redirects to <code>/login</code>.</li>
                     </ol>
                     <p>While checking, the component renders a <code>Loader2</code> spinner to prevent content flicker. Protected pages are nested inside a single catch-all <code>*</code> route that mounts the persistent layout, so the sidebar and footer do not re-mount when navigating between protected views.</p>
+
+                    <h3>Landing and session behavior</h3>
+                    <p>The landing page at <code>/</code> is always available, even for authenticated users. Clicking <em>Sign in</em> or <em>Open scanner</em> checks <code>supabase.auth.getSession()</code>: authenticated users go to <code>/dashboard</code>, while unauthenticated users see the <code>ModernLogin</code> modal.</p>
+                    <p>The login modal supports email/password, sign-up, and magic-link flows. The <em>Remember me</em> option writes <code>abspider-remember-session</code> to <code>localStorage</code> and a per-tab <code>abspider-session-active</code> marker to <code>sessionStorage</code>; unchecked sessions are cleared after a browser-session restart.</p>
+                    <p><code>DashboardPage</code> shows a one-time beta/dev-stage dialog after the user's first dashboard entry. Dismissal is stored in <code>localStorage</code> under <code>abspider-beta-notice-seen</code>, while the dialog links users to GitHub for starring the repository and reporting bugs.</p>
+                    <p><code>ThemeContext</code> persists the last valid <code>light</code> or <code>dark</code> choice in <code>localStorage</code> under <code>abspider-theme</code>. Invalid values fall back to dark mode until the user toggles again.</p>
 
                     <h2 id="sidebar-layout">Sidebar layout &amp; composition</h2>
                     <p>Once authenticated, every page renders inside the same layout shell: <code>AppSidebar</code> + <code>SidebarInset</code> + <code>Footer</code>. The sidebar is wired to TanStack Query to surface live stats from scan history.</p>
@@ -187,19 +196,19 @@
                     <p>Browser-side CORS limits are bypassed with a tiered approach:</p>
                     <ol>
                         <li><strong>Direct fetch</strong> — attempt a standard <code>fetch</code> with browser-like headers.</li>
-                        <li><strong>Vercel Edge proxy</strong> — if direct fetch fails (CORS or Cloudflare), route through <code>api/proxy.ts</code>.</li>
+                        <li><strong>Same-origin proxy</strong> — if direct fetch fails (CORS or Cloudflare), route through <code>/api/proxy</code>. Vercel handles that path with <code>api/proxy.ts</code>; Docker/local backend deployments route it to FastAPI.</li>
                         <li><strong>Cloudflare bypass helpers</strong> — small set of <code>cloudflareBypass.ts</code> heuristics that may unblock a target without actually evading controls.</li>
                     </ol>
 
-                    <h3>The Vercel Edge proxy</h3>
-                    <p>The handler at <code>api/proxy.ts:1</code> is a 92-line Vercel Edge Function that:</p>
+                    <h3>The same-origin proxy</h3>
+                    <p>The Vercel handler at <code>api/proxy.ts:1</code> and the FastAPI handler at <code>backend/main.py</code> share the same contract:</p>
                     <ol>
                         <li>Reads <code>?url=</code> from the query string and validates it with <code>new URL()</code>.</li>
                         <li>Forwards a curated set of request headers (the <code>allowedHeaders</code> allowlist) to avoid issues.</li>
                         <li>Sets a Chrome User-Agent if one was not provided.</li>
                         <li>Returns the response body with permissive CORS headers and the upstream status code.</li>
                     </ol>
-                    <p>The proxy itself responds to <code>OPTIONS</code> preflight with <code>Allow: GET, POST, OPTIONS</code>. Use it only for hosts you are authorized to test — it is not a generic web proxy.</p>
+                    <p>The proxy responds to <code>OPTIONS</code> preflight with <code>Allow: GET, POST, OPTIONS</code>, exposes <code>X-ABSpider-Proxy</code> and <code>X-ABSpider-Target-URL</code>, and lets the frontend reject misrouted SPA fallback responses before scanner modules parse them as target evidence. Use it only for hosts you are authorized to test — it is not a generic web proxy.</p>
 
                     <h2 id="config-templates">Scan configuration &amp; templates</h2>
                     <p>The <em>New Scan</em> page uses <code>react-hook-form</code> and <code>zod</code> to validate user input before a scan starts. Users can save their configurations as templates in <code>localStorage</code> for quick reuse.</p>
@@ -249,11 +258,11 @@
                     </div>
 
                     <h2 id="auth">Authentication flow</h2>
-                    <p>Authentication is handled entirely by Supabase Auth via <strong>magic links</strong> — there are no passwords.</p>
+                    <p>Authentication is handled by Supabase Auth with email/password and magic-link flows.</p>
                     <ol>
-                        <li>User enters their email on <code>/login</code>.</li>
-                        <li>Supabase sends a single-use link to that address.</li>
-                        <li>The user clicks the link, which lands on the SPA with a recovery code in the URL.</li>
+                        <li>User opens the login modal from the public landing page.</li>
+                        <li>They sign in with email/password or request a Supabase one-time magic link.</li>
+                        <li>The <em>Remember me</em> option controls whether the session survives a browser restart.</li>
                         <li>The <code>RequireAuth</code> guard picks up the session via <code>onAuthStateChange</code> and grants access to protected routes.</li>
                     </ol>
                     <p>Sessions are JWTs managed by Supabase. The default expiry is 7 days; the SPA listens for <code>SIGNED_OUT</code> events and forces a redirect if a session is lost in another tab.</p>
@@ -264,8 +273,8 @@
                         <table>
                             <thead><tr><th>Path</th><th>Front-end served from</th><th><code>api/proxy</code> supported?</th></tr></thead>
                             <tbody>
-                                <tr><td><strong>Vercel</strong> (recommended)</td><td><code>dist/</code> built by Vite</td><td>✅ — Vercel Edge Function</td></tr>
-                                <tr><td><strong>Docker production</strong></td><td><code>dist/</code> served by Nginx</td><td>❌ — proxy not bundled in the image</td></tr>
+                                <tr><td><strong>Vercel</strong> (recommended)</td><td><code>dist/</code> built by Vite, including <code>dist/docs/</code></td><td>✅ — Vercel <code>api/proxy.ts</code></td></tr>
+                                <tr><td><strong>Docker production</strong></td><td><code>dist/</code> served by Nginx</td><td>✅ — FastAPI backend proxied by Nginx</td></tr>
                                 <tr><td><strong>Self-hosted Node</strong></td><td><code>dist/</code> served by <code>serve</code></td><td>❌ — host the proxy separately</td></tr>
                                 <tr><td><strong>Static host</strong> (S3, Caddy, Netlify, …)</td><td><code>dist/</code> uploaded as-is</td><td>❌ — bring your own runtime</td></tr>
                             </tbody>
@@ -289,7 +298,7 @@
 │   ├── lib/              <span class="lvl-3"># Shared utilities</span>
 │   ├── pages/            <span class="lvl-3"># React Router pages</span>
 │   ├── payloads/         <span class="lvl-3"># SQLi, XSS, and LFI payload JSON files</span>
-│   ├── services/         <span class="lvl-3"># 21 recon modules + scan orchestrator + reports</span>
+│   ├── services/         <span class="lvl-3"># 35 recon modules + scan orchestrator + reports</span>
 │   ├── shims/            <span class="lvl-3"># Type shims</span>
 │   ├── utils/            <span class="lvl-3"># cn(), formatters, small helpers</span>
 │   ├── App.tsx           <span class="lvl-3"># Providers, router, app shell</span>
@@ -313,7 +322,7 @@
                         </a>
                         <a href="api-reference.html" class="card" style="text-decoration:none;">
                             <h3 style="margin-top:0; color: var(--text-1);">API Reference</h3>
-                            <p class="text-mute" style="margin:0;">The Vercel Edge proxy contract and the CLI JSON output shape.</p>
+                            <p class="text-mute" style="margin:0;">The same-origin proxy contract and the CLI JSON output shape.</p>
                         </a>
                         <a href="cli.html" class="card" style="text-decoration:none;">
                             <h3 style="margin-top:0; color: var(--text-1);">CLI Reference</h3>

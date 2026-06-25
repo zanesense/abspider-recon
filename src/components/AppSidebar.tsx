@@ -53,7 +53,7 @@ export function AppSidebar() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
   
   const menuItems = [
     { title: 'Dashboard', icon: Home, href: '/dashboard' },

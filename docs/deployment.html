@@ -34,7 +34,7 @@
                     <header class="page-hero">
                         <div class="crumb">Operations · Production</div>
                         <h1>Deployment</h1>
-                        <p class="lede">ABSpider Recon is a static Vite SPA plus a Vercel Edge function at <code>api/proxy.ts</code>. <strong>Every supported deployment path serves the production bundle in <code>dist/</code> — never the Vite dev server.</strong> The Vite dev server (<code>npm run dev</code>, port <code>5000</code>) is for local development only and is not exposed by any of the recipes below.</p>
+                        <p class="lede">ABSpider Recon is a static Vite SPA, bundled documentation site at <code>/docs/</code>, and same-origin proxy support through Vercel <code>api/proxy.ts</code> or the FastAPI backend. <strong>Every supported deployment path serves the production bundle in <code>dist/</code> — never the Vite dev server.</strong> The Vite dev server (<code>npm run dev</code>, port <code>5000</code>) is for local development only and is not exposed by any of the recipes below.</p>
                     </header>
 
                     <h2 id="at-a-glance">Paths at a glance</h2>
@@ -44,20 +44,20 @@
                             <tbody>
                                 <tr>
                                     <td><strong>Vercel</strong> (recommended)</td>
-                                    <td><code>dist/</code> built by Vite</td>
+                                    <td><code>dist/</code> built by Vite, including <code>dist/docs/</code></td>
                                     <td>✅ — Vercel Edge Function</td>
                                     <td>Production, zero-config, automatic previews</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Docker production</strong></td>
                                     <td><code>dist/</code> served by Nginx</td>
-                                    <td>❌ — proxy not bundled in the image</td>
+                                    <td>✅ — FastAPI backend service proxied by Nginx</td>
                                     <td>Self-hosted behind your own infra</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Docker development</strong></td>
                                     <td>Vite dev server on :5000</td>
-                                    <td>n/a</td>
+                                    <td>✅ — when started with the backend service</td>
                                     <td>Local containerized dev only</td>
                                 </tr>
                                 <tr>
@@ -82,8 +82,9 @@
                         <li><strong>installCommand:</strong> <code>npm ci</code></li>
                         <li><strong>buildCommand:</strong> <code>npm run build</code> (which is <code>tsc -b &amp;&amp; vite build</code>)</li>
                         <li><strong>outputDirectory:</strong> <code>dist/</code></li>
-                        <li><strong>SPA rewrites:</strong> every path that does not match a static asset falls through to <code>/index.html</code> (so deep links like <code>/dashboard</code> and <code>/scan/:id</code> work after a refresh).</li>
-                        <li><strong>Edge function:</strong> <code>api/proxy.ts</code> is auto-deployed as a Vercel Edge Function.</li>
+                        <li><strong>Docs rewrites:</strong> <code>/docs</code>, <code>/docs/</code>, and <code>/docs/*</code> resolve to the static documentation copied into <code>dist/docs/</code>.</li>
+                        <li><strong>SPA rewrites:</strong> every other path that does not match a static asset falls through to <code>/index.html</code> (so deep links like <code>/dashboard</code> and <code>/scan/:id</code> work after a refresh).</li>
+                        <li><strong>Proxy function:</strong> <code>api/proxy.ts</code> is auto-deployed as the same-origin <code>/api/proxy</code> function.</li>
                     </ul>
 
                     <div class="code-block" data-lang="bash"><span class="c-com"># Install the Vercel CLI if you do not have it</span>
@@ -115,7 +116,7 @@ vercel</div>
                         <li><strong>builder</strong> — runs the strict TS build (<code>tsc -b</code>) and then <code>vite build</code>, producing <code>dist/</code>.</li>
                         <li><strong>runner</strong> — a lightweight <code>nginx:alpine</code> image that serves <code>dist/</code> on container port <code>8080</code>.</li>
                     </ol>
-                    <p>The Vite dev server is never started inside the image.</p>
+                    <p>The Vite dev server is never started inside the image. Docker Compose starts the FastAPI <code>backend</code> service and Nginx proxies <code>/api/*</code> to it.</p>
 
                     <div class="code-block" data-lang="bash"><span class="c-com"># Build and run the production image (profile: app)</span>
 docker compose up --build app</div>
@@ -125,14 +126,14 @@ docker compose up --build app</div>
 curl -sI http://localhost:3000 | grep -i server</div>
 
                     <h3>Nginx config</h3>
-                    <p><code>nginx.conf</code> ensures SPA routing works by falling back to <code>index.html</code> for unknown paths.</p>
+                    <p><code>nginx.conf</code> proxies <code>/api/*</code> to the backend and ensures SPA routing works by falling back to <code>index.html</code> for unknown paths.</p>
                     <div class="code-block" data-lang="nginx"><span class="c-key">location</span> / {
   <span class="c-key">try_files</span> $uri $uri/ /index.html;
 }</div>
 
                     <h2 id="docker-dev">Docker development</h2>
                     <p>This is the only path that runs the Vite dev server, and it is <strong>opt-in</strong> via a Compose profile.</p>
-                    <div class="code-block" data-lang="bash">docker compose --profile dev up --build dev</div>
+                    <div class="code-block" data-lang="bash">docker compose --profile dev up --build backend dev</div>
                     <p>Open <a href="http://localhost:5000" target="_blank" rel="noopener">http://localhost:5000</a>. Hot module replacement and full source maps are enabled inside the container.</p>
 
                     <div class="callout callout-warn">
@@ -152,7 +153,7 @@ VITE_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co \
 VITE_SUPABASE_ANON_KEY=replace-with-your-supabase-anon-key \
 PORT=5000 \
 npm start</div>
-                    <p><code>PORT</code> defaults to <code>5000</code> if unset. The <code>api/proxy.ts</code> function is not bundled — host it separately (Vercel, Cloudflare Workers, Netlify Edge, or a small Node wrapper) or drop the proxy feature from your deployment.</p>
+                    <p><code>PORT</code> defaults to <code>5000</code> if unset. The Vercel <code>api/proxy.ts</code> function is not bundled by <code>serve</code>; run <code>backend/main.py</code> separately and route <code>/api/*</code> to it if this deployment needs browser-side CORS fallback.</p>
 
                     <h2 id="static">Static host (S3, Caddy, Netlify, Cloudflare Pages, …)</h2>
                     <p>Any host that can serve static files works. The only caveat is the proxy: if your static host does not have edge functions, run the dashboard without the proxy and rely on direct CORS-friendly targets or the CLI.</p>
@@ -160,7 +161,7 @@ npm start</div>
 <span class="c-com"># Upload the contents of dist/ to your static host</span></div>
 
                     <h3>Porting the proxy</h3>
-                    <p>If your host supports edge functions (Cloudflare Workers, Netlify Edge Functions, Deno Deploy, Lambda@Edge), you can port the 92-line <code>api/proxy.ts</code> handler verbatim. The handler:</p>
+                    <p>If your host supports edge functions (Cloudflare Workers, Netlify Edge Functions, Deno Deploy, Lambda@Edge), you can port the <code>api/proxy.ts</code> handler. The handler:</p>
                     <ol>
                         <li>Reads <code>?url=</code> from the query string and validates it with <code>new URL()</code>.</li>
                         <li>Forwards a curated set of <code>allowedHeaders</code> from the original request.</li>

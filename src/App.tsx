@@ -9,6 +9,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
 import LandingPage from "@/pages/LandingPage";
 import StatusPage from "@/pages/StatusPage";
+import LegalPage from "@/pages/LegalPage";
 import ModernLogin from "@/components/ModernLogin";
 import NotFound from "@/pages/NotFound";
 import NewScan from "@/pages/NewScan";
@@ -77,6 +78,8 @@ function App() {
                 <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/status" element={<StatusPage />} />
+                <Route path="/terms" element={<LegalPage kind="terms" />} />
+                <Route path="/privacy" element={<LegalPage kind="privacy" />} />
                 <Route path="/app" element={<Index />} />
                 <Route path="/login" element={<Navigate to="/" replace />} />
                 

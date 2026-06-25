@@ -47,7 +47,7 @@
                     <div class="grid-2">
                         <div class="card-static">
                             <h3 style="margin-top:0;">🖥️ Dashboard (web app)</h3>
-                            <p>The full GUI with magic-link auth, persistent scan history, and multi-format reports. Requires a Supabase project. Best for interactive assessments and team use.</p>
+                            <p>The full GUI with email/password or magic-link auth, optional remembered sessions, persistent scan history, and multi-format reports. Requires a Supabase project. Best for interactive assessments and team use.</p>
                             <p class="text-mute" style="margin-bottom:0;"><a href="#dashboard-install">Jump to dashboard setup →</a></p>
                         </div>
                         <div class="card-static">
@@ -208,7 +208,8 @@ abspider example.com --modules virustotal</div>
 
                     <h3>Dashboard walkthrough</h3>
                     <ol class="steps">
-                        <li><strong>Sign in</strong><p>Click the magic-link login, enter your email, and click the link Supabase sends you.</p></li>
+                        <li><strong>Sign in</strong><p>Use email/password or request a magic link. Keep <em>Remember me</em> checked to persist the session across browser restarts, or uncheck it for a browser-session-only login.</p></li>
+                        <li><strong>Review the beta notice</strong><p>The first dashboard visit shows a beta/dev-stage dialog with links to star the repository or report bugs on GitHub. After dismissal, it is stored locally and will not repeat unless browser storage is cleared.</p></li>
                         <li><strong>Open New Scan</strong><p>From the sidebar, click <em>New Scan</em>.</p></li>
                         <li><strong>Enter the target</strong><p>Use a base domain like <code>example.com</code> or a full URL like <code>https://staging.example.com</code>. Subdomains are also accepted.</p></li>
                         <li><strong>Pick a mode</strong><p>Choose <em>Conservative</em> for low-noise recon, <em>Adaptive</em> (default) for a balance, or <em>Aggressive</em> for the full module set.</p></li>
@@ -235,7 +236,7 @@ abspider example.com --modules dns,sslTls --json --pretty</div>
                     <div class="grid-2">
                         <a href="modules.html" class="card" style="text-decoration:none;">
                             <h3 style="margin-top:0; color: var(--text-1);">Recon Modules</h3>
-                            <p class="text-mute" style="margin:0;">Browse the 21+ modules, their CLI flags, and what data they return.</p>
+                            <p class="text-mute" style="margin:0;">Browse the 35 modules, their CLI flags, and what data they return.</p>
                         </a>
                         <a href="configuration.html" class="card" style="text-decoration:none;">
                             <h3 style="margin-top:0; color: var(--text-1);">Configuration</h3>

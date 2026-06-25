@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Reference — ABSpider Recon</title>
-    <meta name="description" content="The Vercel Edge proxy contract at api/proxy.ts, the Supabase schema, and the CLI JSON output shape.">
+    <meta name="description" content="The same-origin /api/proxy contract, the Supabase schema, and the CLI JSON output shape.">
     <link rel="stylesheet" href="assets/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,11 +34,11 @@
                     <header class="page-hero">
                         <div class="crumb">Reference · Programmatic</div>
                         <h1>API Reference</h1>
-                        <p class="lede">Two surfaces expose ABSpider Recon programmatically: the Vercel Edge proxy at <code>api/proxy.ts</code> (for browser-side CORS bypass) and the CLI JSON output (for everything else). The Supabase schema is documented at the bottom of this page.</p>
+                        <p class="lede">Two surfaces expose ABSpider Recon programmatically: the same-origin <code>/api/proxy</code> contract (Vercel <code>api/proxy.ts</code> or FastAPI <code>backend/main.py</code>) and the CLI JSON output. The Supabase schema is documented at the bottom of this page.</p>
                     </header>
 
-                    <h2 id="proxy">Vercel Edge proxy</h2>
-                    <p>The handler in <a href="https://github.com/zanesense/abspider-recon/blob/main/api/proxy.ts" target="_blank" rel="noopener"><code>api/proxy.ts:1</code></a> is a 92-line Vercel Edge Function that forwards browser requests to a target URL with permissive CORS headers. Use it to bypass browser CORS for targets that reject cross-origin requests.</p>
+                    <h2 id="proxy">Same-origin proxy</h2>
+                    <p>The Vercel handler in <a href="https://github.com/zanesense/abspider-recon/blob/main/api/proxy.ts" target="_blank" rel="noopener"><code>api/proxy.ts:1</code></a> and the FastAPI handler in <code>backend/main.py</code> forward browser requests to a target URL with permissive CORS headers. Use this path to bypass browser CORS for targets you are authorized to test.</p>
 
                     <h3>Endpoint</h3>
                     <div class="code-block" data-lang="http">GET /api/proxy?url=&lt;encoded-target-url&gt;</div>
@@ -104,6 +104,9 @@
                     <div class="code-block" data-lang="http">Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, POST, OPTIONS
 Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Expose-Headers: X-ABSpider-Proxy, X-ABSpider-Target-URL
+X-ABSpider-Proxy: vercel | fastapi
+X-ABSpider-Target-URL: https://example.com/robots.txt
 <span class="c-com"># All upstream response headers are also passed through</span></div>
 
                     <h3>Example</h3>
@@ -126,7 +129,7 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
                     <p>The dashboard's <code>corsProxy.ts</code> module implements a three-tier fallback. Each tier is tried in order, with bounded retries.</p>
                     <ol>
                         <li><strong>Direct fetch</strong> — attempts a standard <code>fetch()</code> with browser-like headers. Works for the majority of targets that return permissive CORS headers.</li>
-                        <li><strong>Vercel Edge proxy</strong> — if direct fetch fails (CORS error or Cloudflare challenge), the request is routed through <code>api/proxy</code>.</li>
+                        <li><strong>Same-origin proxy</strong> — if direct fetch fails (CORS error or Cloudflare challenge), the request is routed through <code>/api/proxy</code>. The client requires the ABSpider proxy marker or rejects app-shell fallback HTML before any scan module parses it.</li>
                         <li><strong>Cloudflare bypass helpers</strong> — small set of <code>cloudflareBypass.ts</code> heuristics that may unblock a target. <em>Detection only</em> — the module never evades controls.</li>
                     </ol>
 

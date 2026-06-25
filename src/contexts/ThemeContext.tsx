@@ -9,11 +9,13 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const getStoredTheme = (): Theme => {
+  const stored = localStorage.getItem('abspider-theme');
+  return stored === 'light' || stored === 'dark' ? stored : 'dark';
+};
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('abspider-theme');
-    return (stored as Theme) || 'dark';
-  });
+  const [theme, setTheme] = useState<Theme>(getStoredTheme);
 
   useEffect(() => {
     const root = window.document.documentElement;

@@ -154,7 +154,8 @@ supabase db push
                     <h3>Theme &amp; appearance</h3>
                     <ul>
                         <li>Theme: <code>light</code> or <code>dark</code></li>
-                        <li>Default landing route after sign-in</li>
+                        <li>Remembered light/dark theme in <code>localStorage</code></li>
+                        <li>Remember-me session preference for browser restart behavior</li>
                         <li>Animation intensity (full / reduced — respects <code>prefers-reduced-motion</code>)</li>
                     </ul>
 
@@ -308,7 +309,7 @@ supabase db push
                     </div>
 
                     <h2 id="cors">CORS bypass configuration</h2>
-                    <p>The dashboard uses a tiered request pipeline. Configure fallback proxies in case the Vercel Edge proxy is unavailable.</p>
+                    <p>The dashboard uses a tiered request pipeline. Vercel uses <code>api/proxy.ts</code>; Docker/local backend deployments use the FastAPI proxy at the same <code>/api/proxy</code> route.</p>
                     <div class="code-block" data-lang="json">{
   <span class="c-key">"primaryProxy"</span>: <span class="c-str">"https://abspider-recon.vercel.app/api/proxy?url="</span>,
   <span class="c-key">"fallbackProxies"</span>: [

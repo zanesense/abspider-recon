@@ -8,6 +8,7 @@ const NAV = [
   { label: 'Features', href: '#features' },
   { label: 'Workflow', href: '#how-it-works' },
   { label: 'Stats', href: '#stats' },
+  { label: 'Docs', href: '/docs/', isExternal: true },
   { label: 'Status', href: '/status', isRoute: true },
 ];
 
@@ -44,7 +45,12 @@ const LandingHeader = ({ onOpenLogin }: Props) => {
 
         <nav className="hidden items-center gap-1 md:flex">
           {NAV.map((item) =>
-            item.isRoute ? (
+            item.isExternal ? (
+              <a key={item.label} href={item.href}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground">
+                {item.label}
+              </a>
+            ) : item.isRoute ? (
               <Link key={item.label} to={item.href}
                 className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground">
                 {item.label}
@@ -82,7 +88,12 @@ const LandingHeader = ({ onOpenLogin }: Props) => {
         <div className="border-t border-border bg-background/98 px-4 py-4 md:hidden">
           <div className="space-y-1">
             {NAV.map((item) =>
-              item.isRoute ? (
+              item.isExternal ? (
+                <a key={item.label} href={item.href} onClick={() => setOpen(false)}
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+                  {item.label}
+                </a>
+              ) : item.isRoute ? (
                 <Link key={item.label} to={item.href} onClick={() => setOpen(false)}
                   className="block rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
                   {item.label}

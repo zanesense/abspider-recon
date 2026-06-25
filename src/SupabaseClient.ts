@@ -9,6 +9,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+const REMEMBER_SESSION_KEY = 'abspider-remember-session';
+const SESSION_ACTIVE_KEY = 'abspider-session-active';
+
+if (localStorage.getItem(REMEMBER_SESSION_KEY) === 'false' && !sessionStorage.getItem(SESSION_ACTIVE_KEY)) {
+  supabase.auth.signOut({ scope: 'local' });
+}
+
 // Automatically clear stale/revoked refresh tokens to prevent repeated 400 errors.
 // When the token refresh fails (SIGNED_OUT due to invalid refresh token),
 // sign out cleanly so the client doesn't keep retrying with a bad token.
@@ -17,4 +24,4 @@ supabase.auth.onAuthStateChange((event, session) => {
     // Token refresh was attempted but resulted in no session — clear storage
     supabase.auth.signOut({ scope: 'local' });
   }
-});
+});

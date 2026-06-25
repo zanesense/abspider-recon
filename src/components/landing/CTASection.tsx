@@ -72,7 +72,7 @@ const CTASection = ({ onOpenLogin }: { onOpenLogin: () => void }) => (
                   asChild
                   className="h-12 cursor-pointer px-6 text-base font-semibold text-white hover:bg-white/10 hover:text-white"
                 >
-                  <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noreferrer">
+                  <a href="/docs/">
                     <BookOpen className="mr-2 h-5 w-5" />
                     Read the docs
                   </a>
