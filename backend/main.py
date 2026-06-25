@@ -1,3 +1,7 @@
+import collections
+import ipaddress
+import socket
+import time
 import httpx
 from urllib.parse import urlparse
 from fastapi import FastAPI, Query, Request
@@ -16,41 +20,110 @@ ALLOWED_HEADERS = {
 
 DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
+ALLOWED_ORIGINS = {
+    "https://abspider.zanesense.dev",
+    "http://localhost:5000",
+    "http://localhost:3000",
+    "http://localhost:5173",
+}
+
 ALLOWED_TARGET_HOSTS = {
     "api.example.com",
     "example.com",
 }
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Expose-Headers": "X-ABSpider-Proxy, X-ABSpider-Target-URL",
-    "X-ABSpider-Proxy": "fastapi",
-}
+BLOCKED_HOSTNAMES = {"localhost", "169.254.169.254", "metadata.google.internal", "metadata.internal"}
+
+RATE_LIMIT_WINDOW = 60
+RATE_LIMIT_MAX = 120
+_rate_limit_buckets: dict[str, list[float]] = collections.defaultdict(list)
+
+
+def get_cors_headers(origin: str) -> dict:
+    allow_origin = origin if origin in ALLOWED_ORIGINS else "null"
+    return {
+        "Access-Control-Allow-Origin": allow_origin,
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Expose-Headers": "X-ABSpider-Proxy, X-ABSpider-Target-URL",
+        "Vary": "Origin",
+        "X-ABSpider-Proxy": "fastapi",
+    }
+
+
+def _is_private_ip(host: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return (
+        ip.is_loopback
+        or ip.is_private
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_unspecified
+    )
+
+
+def is_ssrf_target(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname or ""
+        if host in BLOCKED_HOSTNAMES:
+            return True
+        if _is_private_ip(host):
+            return True
+        try:
+            addrs = socket.getaddrinfo(host, None, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM)
+            for addr in addrs:
+                ip_str = addr[4][0]
+                if _is_private_ip(ip_str):
+                    return True
+        except OSError:
+            return True
+        return False
+    except Exception:
+        return True
 
 
 @app.options("/api/proxy")
-async def proxy_options():
-    return Response(status_code=200, headers=CORS_HEADERS)
+async def proxy_options(request: Request):
+    origin = request.headers.get("origin", "")
+    return Response(status_code=204, headers=get_cors_headers(origin))
 
 
 @app.api_route("/api/proxy", methods=["GET", "POST"])
 async def proxy_handler(request: Request, url: str = Query(...)):
-    parsed_url = urlparse(url)
-    if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+    origin = request.headers.get("origin", "")
+    cors = get_cors_headers(origin)
+
+    if not url.startswith(("http://", "https://")):
         return JSONResponse(
             status_code=400,
-            content={"error": "Invalid URL. Must be an absolute http(s) URL"},
-            headers=CORS_HEADERS,
+            content={"error": "Invalid URL. Must start with http:// or https://"},
+            headers=cors,
         )
 
-    if parsed_url.hostname.lower() not in ALLOWED_TARGET_HOSTS:
+    if is_ssrf_target(url):
         return JSONResponse(
             status_code=400,
-            content={"error": "Target host is not allowed"},
-            headers=CORS_HEADERS,
+            content={"error": "Target URL is not allowed"},
+            headers=cors,
         )
+
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    timestamps = _rate_limit_buckets[client_ip]
+    cutoff = now - RATE_LIMIT_WINDOW
+    while timestamps and timestamps[0] < cutoff:
+        timestamps.pop(0)
+    if len(timestamps) >= RATE_LIMIT_MAX:
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Rate limit exceeded. Try again later."},
+            headers=cors,
+        )
+    timestamps.append(now)
 
     headers = {}
     for key, value in request.headers.items():
@@ -76,7 +149,7 @@ async def proxy_handler(request: Request, url: str = Query(...)):
             resp_headers.pop("content-encoding", None)
             resp_headers.pop("content-length", None)
             resp_headers.pop("transfer-encoding", None)
-            resp_headers.update(CORS_HEADERS)
+            resp_headers.update(cors)
             resp_headers["X-ABSpider-Target-URL"] = url
 
             return Response(
@@ -88,11 +161,11 @@ async def proxy_handler(request: Request, url: str = Query(...)):
             return JSONResponse(
                 status_code=504,
                 content={"error": "Request timed out"},
-                headers=CORS_HEADERS,
+                headers=cors,
             )
-        except Exception as e:
+        except Exception:
             return JSONResponse(
                 status_code=500,
-                content={"error": "Failed to fetch target URL", "details": str(e)},
-                headers=CORS_HEADERS,
+                content={"error": "Failed to fetch target URL"},
+                headers=cors,
             )

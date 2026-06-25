@@ -1,6 +1,24 @@
 // This service now uses the FastAPI proxy at /api/proxy
 // to reliably bypass CORS restrictions and ensure accurate results.
 
+const isInternalTarget = (url: string): boolean => {
+  try {
+    const hostname = new URL(url).hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return true;
+    const parts = hostname.split('.').map(Number);
+    if (parts.length === 4 && !parts.some(isNaN)) {
+      const [a, b] = parts;
+      if (a === 10 || a === 127) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 169 && b === 254) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+};
+
 const CLOUDFLARE_BYPASS_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -30,39 +48,44 @@ export class CORSBypass {
     const errors: string[] = [];
 
     // 1. Try direct fetch first (Optimization)
-    try {
-      console.log(`[CORS Bypass] Attempting direct fetch: ${url}`);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+    // Skip direct fetch for internal/private IPs — route through SSRF-protected proxy
+    if (!skipProxy && isInternalTarget(url)) {
+      console.log(`[CORS Bypass] Internal target detected, skipping direct fetch: ${url}`);
+    } else {
+      try {
+        console.log(`[CORS Bypass] Attempting direct fetch: ${url}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-      const response = await fetch(url, {
-        method,
-        headers: skipProxy ? headers : {
-          ...CLOUDFLARE_BYPASS_HEADERS,
-          ...headers,
-        },
-        body,
-        signal: controller.signal,
-        mode: 'cors',
-        credentials: 'omit',
-      });
+        const response = await fetch(url, {
+          method,
+          headers: skipProxy ? headers : {
+            ...CLOUDFLARE_BYPASS_HEADERS,
+            ...headers,
+          },
+          body,
+          signal: controller.signal,
+          mode: 'cors',
+          credentials: 'omit',
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (skipProxy || response.ok || (response.status >= 200 && response.status < 400)) {
-        console.log(`[CORS Bypass] ✓ Direct fetch successful`);
-        return response;
-      }
+        if (skipProxy || response.ok || (response.status >= 200 && response.status < 400)) {
+          console.log(`[CORS Bypass] ✓ Direct fetch successful`);
+          return response;
+        }
 
-      // Check if blocked by Cloudflare or other protection
-      if (response.status === 403 || response.status === 503) {
-        console.log(`[CORS Bypass] Forbidden/Service Unavailable detected (likely protection), switching to proxy...`);
-      }
-    } catch (error: any) {
-      errors.push(`Direct: ${error.message}`);
-      console.log(`[CORS Bypass] Direct fetch failed: ${error.message}`);
-      if (skipProxy) {
-        throw new Error(`Direct fetch failed and proxy is disabled. Errors: ${errors.join(' | ')}`, { cause: error });
+        // Check if blocked by Cloudflare or other protection
+        if (response.status === 403 || response.status === 503) {
+          console.log(`[CORS Bypass] Forbidden/Service Unavailable detected (likely protection), switching to proxy...`);
+        }
+      } catch (error: any) {
+        errors.push(`Direct: ${error.message}`);
+        console.log(`[CORS Bypass] Direct fetch failed: ${error.message}`);
+        if (skipProxy) {
+          throw new Error(`Direct fetch failed and proxy is disabled. Errors: ${errors.join(' | ')}`, { cause: error });
+        }
       }
     }
 
@@ -175,45 +198,50 @@ export async function fetchWithBypass(
   };
 
   // Try direct fetch
-  try {
-    console.log(`[fetchWithBypass] Attempting direct fetch: ${url}`);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+  // Skip direct fetch for internal/private IPs — route through SSRF-protected proxy
+  if (skipProxy || !isInternalTarget(url)) {
+    try {
+      console.log(`[fetchWithBypass] Attempting direct fetch: ${url}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    if (signal) {
-      signal.addEventListener('abort', () => controller.abort());
+      if (signal) {
+        signal.addEventListener('abort', () => controller.abort());
+      }
+
+      const response = await fetch(url, {
+        method,
+        headers: skipProxy ? headers : {
+          ...CLOUDFLARE_BYPASS_HEADERS,
+          ...headers,
+        },
+        body,
+        signal: controller.signal,
+        mode: 'cors',
+        credentials: 'omit',
+      });
+
+      clearTimeout(timeoutId);
+
+      if (skipProxy || response.ok || (response.status >= 200 && response.status < 400)) {
+        console.log(`[fetchWithBypass] ✓ Direct fetch successful`);
+        return { response, metadata };
+      }
+
+      // Check if we should try proxy
+      if (response.status === 403 || response.status === 503) {
+        console.log(`[fetchWithBypass] Protection detected, switching to proxy...`);
+      }
+
+    } catch (error: any) {
+      errors.push(`Direct: ${error.message}`);
+      console.log(`[fetchWithBypass] Direct fetch failed: ${error.message}`);
+      if (skipProxy) {
+        throw new Error(`Direct fetch failed and proxy is disabled. Errors: ${errors.join(' | ')}`, { cause: error });
+      }
     }
-
-    const response = await fetch(url, {
-      method,
-      headers: skipProxy ? headers : {
-        ...CLOUDFLARE_BYPASS_HEADERS,
-        ...headers,
-      },
-      body,
-      signal: controller.signal,
-      mode: 'cors',
-      credentials: 'omit',
-    });
-
-    clearTimeout(timeoutId);
-
-    if (skipProxy || response.ok || (response.status >= 200 && response.status < 400)) {
-      console.log(`[fetchWithBypass] ✓ Direct fetch successful`);
-      return { response, metadata };
-    }
-
-    // Check if we should try proxy
-    if (response.status === 403 || response.status === 503) {
-      console.log(`[fetchWithBypass] Protection detected, switching to proxy...`);
-    }
-
-  } catch (error: any) {
-    errors.push(`Direct: ${error.message}`);
-    console.log(`[fetchWithBypass] Direct fetch failed: ${error.message}`);
-    if (skipProxy) {
-      throw new Error(`Direct fetch failed and proxy is disabled. Errors: ${errors.join(' | ')}`, { cause: error });
-    }
+  } else {
+    console.log(`[fetchWithBypass] Internal target detected, skipping direct fetch: ${url}`);
   }
 
   // Try backend proxy

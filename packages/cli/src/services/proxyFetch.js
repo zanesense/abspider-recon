@@ -80,7 +80,6 @@ function createTunnel(proxyParsed, targetHost, targetPort, timeoutMs) {
       path: `${targetHost}:${targetPort}`,
       headers: { Host: `${targetHost}:${targetPort}` },
       timeout: timeoutMs,
-      rejectUnauthorized: false,
     });
 
     req.on('connect', (res, socket) => {
@@ -115,7 +114,6 @@ function directRequest(urlStr, options = {}) {
         method: options.method || 'GET',
         headers: buildRequestHeaders(options),
         timeout: options.timeout || 30000,
-        rejectUnauthorized: false,
       },
       (res) => {
         const chunks = [];
@@ -151,7 +149,6 @@ function proxyRequest(urlStr, options = {}) {
           headers: buildRequestHeaders(options),
           socket,
           createConnection: () => socket,
-          rejectUnauthorized: false,
           timeout: timeoutMs,
         }, (res) => {
           const chunks = [];

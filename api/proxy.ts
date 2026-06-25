@@ -1,3 +1,5 @@
+import dns from 'node:dns/promises';
+
 const ALLOWED_HEADERS = new Set([
   'accept',
   'accept-encoding',
@@ -7,20 +9,74 @@ const ALLOWED_HEADERS = new Set([
   'user-agent',
 ]);
 
-const DEFAULT_UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const BLOCKED_HOSTNAMES = new Set([
+  'localhost',
+  '169.254.169.254',
+  'metadata.google.internal',
+  'metadata.internal',
+]);
 
-const CORS_HEADERS: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 120;
+const rateLimitBuckets = new Map<string, number[]>();
+
+const isPrivateIP = (ip: string): boolean => {
+  if (ip === '::1' || ip === '0:0:0:0:0:0:0:1') return true;
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(isNaN)) return false;
+  const [a, b] = parts;
+  if (a === 10 || a === 127 || (a === 169 && b === 254)) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  return false;
+};
+
+const isPrivateIPv6 = (ip: string): boolean => {
+  const lower = ip.toLowerCase();
+  if (lower === '::1' || lower === '0:0:0:0:0:0:0:1') return true;
+  if (lower.startsWith('fc') || lower.startsWith('fd')) return true;
+  if (lower.startsWith('fe80')) return true;
+  return false;
+};
+
+const isSSRFTarget = async (url: URL): Promise<boolean> => {
+  const host = url.hostname;
+  if (BLOCKED_HOSTNAMES.has(host)) return true;
+  if (isPrivateIP(host) || isPrivateIPv6(host)) return true;
+  try {
+    const addresses = await dns.resolve(host, 'ANY');
+    for (const addr of addresses) {
+      if (addr.type === 'A' && isPrivateIP(addr.value)) return true;
+      if (addr.type === 'AAAA' && isPrivateIPv6(addr.value)) return true;
+    }
+  } catch {
+    return true;
+  }
+  return false;
+};
+
+const ALLOWED_ORIGINS = new Set([
+  'https://abspider.zanesense.dev',
+  'http://localhost:5000',
+  'http://localhost:3000',
+  'http://localhost:5173',
+]);
+
+const getCorsHeaders = (origin: string): Record<string, string> => ({
+  'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'null',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Expose-Headers': 'X-ABSpider-Proxy, X-ABSpider-Target-URL',
+  'Vary': 'Origin',
   'X-ABSpider-Proxy': 'vercel',
-};
+});
 
-const sendJson = (response: any, status: number, payload: unknown) => {
+const DEFAULT_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+const sendJson = (response: any, status: number, payload: unknown, origin = '') => {
   response.status(status);
-  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+  for (const [key, value] of Object.entries(getCorsHeaders(origin))) {
     response.setHeader(key, value);
   }
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -28,9 +84,12 @@ const sendJson = (response: any, status: number, payload: unknown) => {
 };
 
 export default async function handler(request: any, response: any) {
+  const origin = String(request.headers['origin'] || '');
+  const clientIp = String(request.headers['x-forwarded-for'] || request.socket?.remoteAddress || 'unknown');
+
   if (request.method === 'OPTIONS') {
     response.status(204);
-    for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    for (const [key, value] of Object.entries(getCorsHeaders(origin))) {
       response.setHeader(key, value);
     }
     response.end();
@@ -38,13 +97,26 @@ export default async function handler(request: any, response: any) {
   }
 
   if (request.method !== 'GET' && request.method !== 'POST') {
-    sendJson(response, 405, { error: 'Method not allowed' });
+    sendJson(response, 405, { error: 'Method not allowed' }, origin);
     return;
   }
 
+  const now = Date.now();
+  const timestamps = rateLimitBuckets.get(clientIp) || [];
+  const cutoff = now - RATE_LIMIT_WINDOW_MS;
+  while (timestamps.length > 0 && timestamps[0] < cutoff) {
+    timestamps.shift();
+  }
+  if (timestamps.length >= RATE_LIMIT_MAX) {
+    sendJson(response, 429, { error: 'Rate limit exceeded. Try again later.' }, origin);
+    return;
+  }
+  timestamps.push(now);
+  rateLimitBuckets.set(clientIp, timestamps);
+
   const rawUrl = Array.isArray(request.query?.url) ? request.query.url[0] : request.query?.url;
   if (!rawUrl || typeof rawUrl !== 'string') {
-    sendJson(response, 400, { error: 'Missing url query parameter' });
+    sendJson(response, 400, { error: 'Missing url query parameter' }, origin);
     return;
   }
 
@@ -52,12 +124,17 @@ export default async function handler(request: any, response: any) {
   try {
     targetUrl = new URL(rawUrl);
   } catch {
-    sendJson(response, 400, { error: 'Invalid URL' });
+    sendJson(response, 400, { error: 'Invalid URL' }, origin);
     return;
   }
 
   if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
-    sendJson(response, 400, { error: 'Invalid URL. Must start with http:// or https://' });
+    sendJson(response, 400, { error: 'Invalid URL. Must start with http:// or https://' }, origin);
+    return;
+  }
+
+  if (await isSSRFTarget(targetUrl)) {
+    sendJson(response, 400, { error: 'Target URL is not allowed' }, origin);
     return;
   }
 
@@ -79,6 +156,7 @@ export default async function handler(request: any, response: any) {
       redirect: 'follow',
     });
 
+    const corsHeaders = getCorsHeaders(origin);
     response.status(upstream.status);
     upstream.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
@@ -87,15 +165,14 @@ export default async function handler(request: any, response: any) {
       }
       response.setHeader(key, value);
     });
-    for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    for (const [key, value] of Object.entries(corsHeaders)) {
       response.setHeader(key, value);
     }
     response.setHeader('X-ABSpider-Target-URL', targetUrl.toString());
     response.send(new Uint8Array(await upstream.arrayBuffer()));
-  } catch (error: any) {
+  } catch {
     sendJson(response, 500, {
       error: 'Failed to fetch target URL',
-      details: error?.message || String(error),
-    });
+    }, origin);
   }
 }
