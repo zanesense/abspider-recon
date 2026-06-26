@@ -31,6 +31,9 @@ test-results
 blob-report
 .nyc_output
 
+# Agent/local analysis output
+.bug-hunter/
+
 # Environment files (never commit real secrets)
 .env
 .env.*
@@ -71,7 +74,13 @@ supabase/.temp
 # Python (FastAPI backend)
 __pycache__
 *.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
 .venv
+venv/
+env/
 *.egg-info
 
 # Docker/runtime scratch files
