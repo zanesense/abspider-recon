@@ -284,6 +284,8 @@ const MODULE_ALIASES = {
   wordpress: 'wordpress',
   ddos: 'ddosFirewall',
   ddosfirewall: 'ddosFirewall',
+  waf: 'ddosFirewall',
+  wafprotection: 'ddosFirewall',
   port: 'ports',
   ports: 'ports',
   vt: 'virustotal',
@@ -439,7 +441,7 @@ Options:
   --threads <number>     Max concurrent port/subdomain checks. Default comes from --mode.
   --timeout <ms>         HTTP/socket timeout. Default: 10000.
   --payloads <number>    Max payloads per active injection check. Default comes from --mode.
-  --ddos-requests <n>    Bounded DDoS/WAF probe request count. Default comes from --mode.
+  --ddos-requests <n>    Bounded WAF protection probe request count. Default comes from --mode.
   --delay <ms>           Delay between active payload requests. Default comes from --mode.
   --subdomain-limit <n>  Max DNS wordlist subdomains to check. Default comes from --mode.
   --no-ct                Disable crt.sh certificate transparency lookup.

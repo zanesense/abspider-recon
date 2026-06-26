@@ -136,7 +136,7 @@ Both surfaces share the same scanner engine. Pick whichever fits the engagement.
 | WordPress | ✅ | `wordpress` | Active | Checks common WordPress paths (`/wp-login.php`, `/wp-json/`, `/xmlrpc.php`). |
 | Broken Links | ✅ | `brokenLinks` | Active | Walks discovered links and reports unreachable ones. |
 | CORS | ✅ | `corsMisconfig` | Active | Tests wildcard or reflected arbitrary-origin CORS responses. |
-| DDoS / WAF | ✅ | `ddosFirewall` | Active | Sends a bounded sequence of HEAD requests and records rate-limit signals. |
+| WAF Protection | ✅ | `ddosFirewall` | Active | Sends a bounded sequence of HEAD requests and records WAF/CDN and rate-limit signals. |
 | CDN Detection | ✅ | `cdnDetection` | Passive | Identifies CDN providers via response headers and CNAME records. |
 | Cloud Provider | ✅ | `cloudProvider` | Passive | Detects cloud hosting provider via headers and DNS. |
 | Email Security | ✅ | `emailSecurity` | Passive | SPF/DKIM/DMARC record analysis and security scoring. |

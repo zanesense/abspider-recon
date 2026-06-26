@@ -197,7 +197,7 @@
                     <ol>
                         <li><strong>Direct fetch</strong> — attempt a standard <code>fetch</code> with browser-like headers.</li>
                         <li><strong>Same-origin proxy</strong> — if direct fetch fails (CORS or Cloudflare), route through <code>/api/proxy</code>. Vercel handles that path with <code>api/proxy.ts</code>; Docker/local backend deployments route it to FastAPI.</li>
-                        <li><strong>Cloudflare bypass helpers</strong> — small set of <code>cloudflareBypass.ts</code> heuristics that may unblock a target without actually evading controls.</li>
+                        <li><strong>WAF challenge helpers</strong> — small set of <code>wafChallengeService.ts</code> heuristics that may unblock a target without evading controls.</li>
                     </ol>
 
                     <h3>The same-origin proxy</h3>

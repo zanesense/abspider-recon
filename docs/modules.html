@@ -71,7 +71,7 @@
                                 <tr><td>WordPress</td><td style="text-align:center;">✅</td><td><code>wordpress</code></td><td><span class="badge badge-active">Active</span></td><td>Checks common WordPress paths (<code>/wp-login.php</code>, <code>/wp-json/</code>, <code>/xmlrpc.php</code>).</td></tr>
                                 <tr><td>Broken Links</td><td style="text-align:center;">✅</td><td><code>brokenLinks</code></td><td><span class="badge badge-active">Active</span></td><td>Walks discovered links and reports unreachable ones.</td></tr>
                                 <tr><td>CORS</td><td style="text-align:center;">✅</td><td><code>corsMisconfig</code></td><td><span class="badge badge-active">Active</span></td><td>Tests wildcard or reflected arbitrary-origin CORS responses.</td></tr>
-                                <tr><td>DDoS / WAF</td><td style="text-align:center;">✅</td><td><code>ddosFirewall</code></td><td><span class="badge badge-active">Active</span></td><td>Sends a bounded sequence of HEAD requests and records rate-limit signals.</td></tr>
+                                <tr><td>WAF Protection</td><td style="text-align:center;">✅</td><td><code>ddosFirewall</code></td><td><span class="badge badge-active">Active</span></td><td>Sends a bounded sequence of HEAD requests and records WAF/CDN and rate-limit signals.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -270,7 +270,7 @@
                     </ul>
                     <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: corsMisconfig</span></p>
 
-                    <h3 id="ddos-waf">DDoS / WAF Detection</h3>
+                    <h3 id="ddos-waf">WAF Protection Detection</h3>
                     <p>Sends a bounded sequence of HEAD requests and records rate-limit signals without performing a real flood.</p>
                     <ul>
                         <li>Identifies Cloudflare, Sucuri, Akamai, AWS WAF, and generic challenge pages</li>

@@ -25,7 +25,7 @@ ABSpider Recon CLI is a Node.js command-line tool for authorized web reconnaissa
 - Passive reconnaissance for site metadata, headers, DNS, MX, WHOIS/RDAP, GeoIP, subnet data, SSL/TLS, SEO, technology stack, reverse IP, and subdomains.
 - Active scanning for open ports, SQL injection indicators, reflected XSS, local file inclusion indicators, WordPress paths, broken links, CORS behavior, and bounded WAF/rate-limit checks.
 - Multiple scan modes: `conservative`, `adaptive`, and `aggressive`.
-- Module selection with aliases such as `ssl`, `tech`, `sqli`, `wp`, `cors`, and `ddos`.
+- Module selection with aliases such as `ssl`, `tech`, `sqli`, `wp`, `cors`, and `waf`.
 - JSON output support for automation and reporting.
 - Optional result export to a file.
 - Graceful shutdown with `Ctrl+C`, preserving partial results.
@@ -172,7 +172,7 @@ abspider example.com --aggressive
 | `wordpress`     | Checks common WordPress indicator paths.                                         |
 | `brokenLinks`   | Extracts links and validates them with HEAD requests.                            |
 | `corsMisconfig` | Tests CORS behavior with a controlled external origin.                           |
-| `ddosFirewall`  | Sends a bounded number of HEAD requests to detect rate limiting or WAF behavior. |
+| `ddosFirewall`  | Sends a bounded number of HEAD requests to detect WAF/CDN and rate-limit behavior. |
 
 ## Module Aliases
 
@@ -188,7 +188,7 @@ You can use aliases with `--modules`.
 | `cors`, `corsmisconfig`       | `corsMisconfig` |
 | `sqli`, `sql`, `sqlinjection` | `sqlinjection`  |
 | `wp`, `wordpress`             | `wordpress`     |
-| `ddos`, `ddosfirewall`        | `ddosFirewall`  |
+| `waf`, `wafprotection`, `ddos`, `ddosfirewall` | `ddosFirewall`  |
 | `port`, `ports`               | `ports`         |
 | `vt`, `virustotal`            | `virustotal`    |
 | `reverse`, `reverseip`        | `reverseip`     |

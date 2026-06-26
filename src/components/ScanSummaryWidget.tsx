@@ -79,7 +79,7 @@ const ScanSummaryWidget = ({ scan, securityGrade }: ScanSummaryWidgetProps) => {
             ) : (
               <ShieldOff className="h-8 w-8 text-red-500 mb-2" />
             )}
-            <p className="text-sm text-muted-foreground">DDoS/WAF</p>
+            <p className="text-sm text-muted-foreground">WAF Protection</p>
             <p className={`text-2xl font-bold ${ddosFirewallDetected ? 'text-green-500' : 'text-red-500'}`}>
               {ddosFirewallDetected ? 'Detected' : 'None'}
             </p>

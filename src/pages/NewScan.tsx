@@ -1005,7 +1005,7 @@ const NewScan = () => {
                       onCheckedChange={(checked) => setValue('ddosFirewall', checked as boolean)}
                     />
                     <label htmlFor="ddosFirewall" className="text-sm text-foreground cursor-pointer">
-                      <span className="font-medium">DDoS Firewall Test</span> - Detect WAF/DDoS protection
+                      <span className="font-medium">WAF Protection Check</span> - Detect WAF/CDN protection and rate-limit signals
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">

@@ -60,10 +60,10 @@ const getSecurityRecommendations = (scan: Scan): string[] => {
     recommendations.push('• Regular security audits and updates');
   }
 
-  // DDoS Firewall recommendations
+  // WAF protection recommendations
   if (scan.results.ddosFirewall?.firewallDetected) {
-    recommendations.push('INFO: DDoS/WAF Protection Detected');
-    recommendations.push('• Verify the configuration of your DDoS protection and WAF.');
+    recommendations.push('INFO: WAF Protection Detected');
+    recommendations.push('• Verify the configuration of your WAF/CDN protection.');
     recommendations.push('• Ensure rules are up-to-date and effective against common attack vectors.');
     recommendations.push('• Regularly review logs for suspicious activity.');
   }
@@ -263,7 +263,7 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
       ['Local File Inclusion (LFI)', lfiVulns.toString(), lfiVulns > 0 ? 'CRITICAL' : 'SAFE', lfiVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['CORS Misconfiguration', corsMisconfigVulns.toString(), corsMisconfigVulns > 0 ? 'CRITICAL' : 'SAFE', corsMisconfigVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['WordPress Security', wpVulns.toString(), wpVulns > 0 ? 'HIGH' : 'SAFE', wpVulns > 0 ? 'Update and secure' : 'No issues found'],
-      ['DDoS/WAF Detection', ddosFirewallDetected.toString(), ddosFirewallDetected > 0 ? 'INFO' : 'N/A', ddosFirewallDetected > 0 ? 'Protection detected' : 'No protection detected'],
+      ['WAF Protection', ddosFirewallDetected.toString(), ddosFirewallDetected > 0 ? 'INFO' : 'N/A', ddosFirewallDetected > 0 ? 'Protection detected' : 'No protection detected'],
       ['VirusTotal Malicious', virustotalMalicious.toString(), virustotalMalicious > 0 ? 'HIGH' : 'SAFE', virustotalMalicious > 0 ? 'Investigate reputation' : 'No malicious activity'],
       ['SSL Certificate Expired', sslTlsExpired.toString(), sslTlsExpired > 0 ? 'CRITICAL' : 'VALID', sslTlsExpired > 0 ? 'Renew certificate immediately' : 'Certificate is valid'],
       ['Broken Links', brokenLinksCount.toString(), brokenLinksCount > 0 ? 'MEDIUM' : 'SAFE', brokenLinksCount > 0 ? 'Review and fix links' : 'No broken links found'],
@@ -694,7 +694,7 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
     });
   }
 
-  // DDoS Firewall Results
+  // WAF protection results
   if (scan.results.ddosFirewall?.tested) {
     doc.addPage();
     yPosition = 20;
@@ -704,11 +704,11 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('DDoS: DDoS Firewall Test Results', 14, yPosition);
+    doc.text('WAF: WAF Protection Check Results', 14, yPosition);
     yPosition += 15;
 
     const ddosData = [
-      ['Firewall Detected', scan.results.ddosFirewall.firewallDetected ? 'Yes' : 'No'],
+      ['WAF Detected', scan.results.ddosFirewall.firewallDetected ? 'Yes' : 'No'],
       ['WAF/CDN Detected', scan.results.ddosFirewall.wafDetected || 'N/A'],
       ['Total Requests', scan.results.ddosFirewall.totalRequests.toString()],
       ['Successful Requests', scan.results.ddosFirewall.successfulRequests.toString()],
@@ -1038,7 +1038,7 @@ export const generateCsvReport = (scan: Scan, returnContent: boolean = false): s
   csvContent += `Local File Inclusion (LFI),${escapeCsv(lfiVulns)},${escapeCsv(lfiVulns > 0 ? 'CRITICAL' : 'SAFE')}\n`;
   csvContent += `CORS Misconfiguration,${escapeCsv(corsMisconfigVulns)},${escapeCsv(corsMisconfigVulns > 0 ? 'CRITICAL' : 'SAFE')}\n`;
   csvContent += `WordPress Security,${escapeCsv(wpVulns)},${escapeCsv(wpVulns > 0 ? 'HIGH' : 'SAFE')}\n`;
-  csvContent += `DDoS/WAF Detection,${escapeCsv(ddosFirewallDetected)},${escapeCsv(ddosFirewallDetected > 0 ? 'INFO' : 'N/A')}\n`;
+  csvContent += `WAF Protection,${escapeCsv(ddosFirewallDetected)},${escapeCsv(ddosFirewallDetected > 0 ? 'INFO' : 'N/A')}\n`;
   csvContent += `VirusTotal Malicious,${escapeCsv(virustotalMalicious)},${escapeCsv(virustotalMalicious > 0 ? 'HIGH' : 'SAFE')}\n`;
   csvContent += `SSL Certificate Expired,${escapeCsv(sslTlsExpired)},${escapeCsv(sslTlsExpired > 0 ? 'CRITICAL' : 'VALID')}\n`;
   csvContent += `Broken Links,${escapeCsv(brokenLinksCount)},${escapeCsv(brokenLinksCount > 0 ? 'MEDIUM' : 'SAFE')}\n`;

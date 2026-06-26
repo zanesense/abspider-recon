@@ -23,7 +23,7 @@ import XSSVulnerabilities from '@/components/XSSVulnerabilities';
 import LFIVulnerabilities from '@/components/LFIVulnerabilities';
 import WordPressInfo from '@/components/WordPressInfo';
 import SEOInfo from '@/components/SEOInfo';
-import DDoSFirewallResults from '@/components/DDoSFirewallResults';
+import WAFProtectionResults from '@/components/WAFProtectionResults';
 import VirusTotalResults from '@/components/VirusTotalResults';
 import SslTlsResults from '@/components/SslTlsResults';
 import TechStackInfo from '@/components/TechStackInfo';
@@ -496,8 +496,8 @@ const ScanResults = () => {
                 isTested={scan.config.brokenLinks} 
                 moduleError={getModuleError('brokenLinks')} 
               />
-              <DDoSFirewallResults 
-                ddosFirewall={scan.results.ddosFirewall} 
+              <WAFProtectionResults
+                wafProtection={scan.results.ddosFirewall}
                 isTested={scan.config.ddosFirewall} 
                 moduleError={getModuleError('ddosFirewall')} 
               />

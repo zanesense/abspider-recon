@@ -14,7 +14,7 @@ import { performXSSScan, XSSScanResult } from './xssScanService';
 import { performLFIScan, LFIScanResult } from './lfiScanService';
 import { performWordPressScan, WordPressScanResult } from './wordpressService';
 import { performSEOAnalysis, SEOAnalysis } from './seoService';
-import { performDDoSFirewallTest, DDoSFirewallResult } from './ddosFirewallService';
+import { performWAFProtectionCheck, WAFProtectionResult } from './wafProtectionService';
 import { performVirusTotalScan, VirusTotalResult } from './virustotalService';
 import { performSslTlsAnalysis, SslTlsResult } from './sslTlsService';
 import { performTechStackFingerprinting, TechStackResult } from './techStackService';
@@ -108,7 +108,7 @@ export interface ScanResults {
   cloudProvider?: CloudProviderResult;
   emailSecurity?: EmailSecurityResult;
   cookieAudit?: CookieAuditResult;
-  ddosFirewall?: DDoSFirewallResult;
+  ddosFirewall?: WAFProtectionResult;
   virustotal?: VirusTotalResult;
   sslTls?: SslTlsResult;
   techStack?: TechStackResult;
@@ -535,7 +535,7 @@ const runScan = async (
               currentScan.results.seo = moduleResult;
               break;
             case 'ddosFirewall':
-              moduleResult = await performDDoSFirewallTest(config.target, currentDdosRequests, requestManager.getMinRequestInterval(), requestManager);
+              moduleResult = await performWAFProtectionCheck(config.target, currentDdosRequests, requestManager.getMinRequestInterval(), requestManager);
               currentScan.results.ddosFirewall = moduleResult;
               break;
             case 'virustotal':

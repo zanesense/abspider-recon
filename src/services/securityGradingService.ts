@@ -79,7 +79,7 @@ export const calculateSecurityGrade = (scan: Scan): number => {
     grade -= Math.min(outdatedTech * 0.5, 1); // Cap at 1 point
   }
 
-  // Bonus for DDoS/WAF detection (indicates some protection)
+  // Bonus for WAF/CDN protection detection.
   if (scan.results.ddosFirewall?.firewallDetected) {
     grade += 0.5;
   }

@@ -106,7 +106,7 @@ Choose specific reconnaissance modules:
 - ☐ CORS Misconfiguration
 - ☐ VirusTotal Scan
 - ☐ Broken Link Checker
-- ☐ DDoS Firewall Detection
+- ☐ WAF Protection Detection
 
 **Utility Modules**:
 - ☐ Subnet Calculator

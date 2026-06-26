@@ -165,7 +165,7 @@ ABSpider Recon provides a comprehensive suite of reconnaissance and security ana
 - Redirect chain detection
 - Response time measurement
 
-#### DDoS Firewall Detection
+#### WAF Protection Detection
 - WAF identification (Cloudflare, Sucuri, etc.)
 - Rate limiting detection
 - Challenge page recognition

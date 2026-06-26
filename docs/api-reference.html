@@ -130,7 +130,7 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
                     <ol>
                         <li><strong>Direct fetch</strong> — attempts a standard <code>fetch()</code> with browser-like headers. Works for the majority of targets that return permissive CORS headers.</li>
                         <li><strong>Same-origin proxy</strong> — if direct fetch fails (CORS error or Cloudflare challenge), the request is routed through <code>/api/proxy</code>. The client requires the ABSpider proxy marker or rejects app-shell fallback HTML before any scan module parses it.</li>
-                        <li><strong>Cloudflare bypass helpers</strong> — small set of <code>cloudflareBypass.ts</code> heuristics that may unblock a target. <em>Detection only</em> — the module never evades controls.</li>
+                        <li><strong>WAF challenge helpers</strong> — small set of <code>wafChallengeService.ts</code> heuristics that may unblock a target. <em>Detection only</em> — the module never evades controls.</li>
                     </ol>
 
                     <h2 id="cli-json">CLI JSON output</h2>
@@ -231,7 +231,7 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
                                 <tr><td><code>500</code></td><td>proxy</td><td>Upstream fetch failed or invalid URL</td><td>Verify the URL parses with <code>new URL()</code> and the target is reachable.</td></tr>
                                 <tr><td><code>429</code></td><td>upstream</td><td>Rate-limited by the target</td><td>Reduce scan frequency, enable proxy rotation.</td></tr>
                                 <tr><td><code>401 / 403</code></td><td>upstream</td><td>Target requires auth or blocks automated clients</td><td>Use a different request profile or obtain authorization.</td></tr>
-                                <tr><td>Network error</td><td>client</td><td>Cloudflare or WAF challenge</td><td>The dashboard's <code>cloudflareBypass</code> heuristics may help; otherwise use the CLI.</td></tr>
+                                <tr><td>Network error</td><td>client</td><td>Cloudflare or WAF challenge</td><td>The dashboard's <code>wafChallengeService</code> heuristics may help; otherwise use the CLI.</td></tr>
                             </tbody>
                         </table>
                     </div>

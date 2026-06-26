@@ -151,7 +151,7 @@ const ScanStatus = ({ scan }: ScanStatusProps) => {
     cloudProvider: 'Cloud Provider',
     emailSecurity: 'Email Security',
     cookieAudit: 'Cookie Audit',
-    ddosFirewall: 'DDoS Firewall',
+    ddosFirewall: 'WAF Protection',
     virustotal: 'VirusTotal',
     sslTls: 'SSL/TLS',
     techStack: 'Tech Stack',
