@@ -151,6 +151,9 @@ export const isInternalIP = (ip: string): boolean => {
   if (isIPv6(ip)) {
     if (ip.startsWith('fc00:') || ip.startsWith('fd')) return true; // fc00::/7
     if (ip === '::1') return true; // IPv6 localhost
+    // Check IPv4-mapped IPv6 (::ffff:x.x.x.x)
+    const v4Mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+    if (v4Mapped) return isInternalIP(v4Mapped[1]);
   }
 
   return false;

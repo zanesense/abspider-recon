@@ -49,15 +49,14 @@ export class RequestManager {
     
     this.activeRequests.set(requestId, abortController);
 
-    const metrics: RequestMetrics = {
-      startTime: Date.now(),
-      isError: false, // Default to no error
-    };
-    this.requestMetrics.set(requestId, metrics);
-
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
+      const metrics: RequestMetrics = {
+        startTime: Date.now(),
+        isError: false,
+      };
+      this.requestMetrics.set(requestId, metrics);
       if (this.isAborted() || abortController.signal.aborted) {
         throw new Error('Request aborted by scan controller');
       }
