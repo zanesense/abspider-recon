@@ -900,9 +900,10 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
 };
 
 // DOCX helpers
+const boldPara = (text: string) => new Paragraph({ children: [new TextRun({ text, bold: true })] });
 const kvRow = (key: string, val: string) => new TableRow({
   children: [
-    new TableCell({ children: [new Paragraph({ text: key, bold: true })], width: { size: 4000, type: WidthType.DXA } }),
+    new TableCell({ children: [boldPara(key)], width: { size: 4000, type: WidthType.DXA } }),
     new TableCell({ children: [new Paragraph({ text: val })], width: { size: 12000, type: WidthType.DXA } }),
   ],
 });
@@ -950,13 +951,13 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
     children.push(h2('Vulnerability Summary'));
     children.push(new Table({
       rows: [
-        new TableRow({ children: ['Vulnerability Type', 'Count', 'Severity'].map(h => new TableCell({ children: [new Paragraph({ text: h, bold: true })] })) }),
+        new TableRow({ children: ['Vulnerability Type', 'Count', 'Severity'].map(h => new TableCell({ children: [boldPara(h)] })) }),
         ...[[sqlVulns, 'SQL Injection', sqlVulns > 0 ? 'CRITICAL' : 'SAFE'],
           [xssVulns, 'XSS', xssVulns > 0 ? 'CRITICAL' : 'SAFE'],
           [lfiVulns, 'LFI', lfiVulns > 0 ? 'CRITICAL' : 'SAFE'],
           [corsVulns, 'CORS Misconfiguration', corsVulns > 0 ? 'CRITICAL' : 'SAFE'],
           [wpVulns, 'WordPress', wpVulns > 0 ? 'HIGH' : 'SAFE']].map(([count, label, sev]) =>
-            new TableRow({ children: [label, String(count), sev].map(c => new TableCell({ children: [new Paragraph({ text: c })] })) })
+            new TableRow({ children: [label, String(count), sev].map((c: string) => new TableCell({ children: [new Paragraph({ text: c })] })) })
           ),
       ],
       width: { size: 16000, type: WidthType.DXA },
@@ -969,7 +970,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
     children.push(h2(title));
     children.push(new Table({
       rows: [
-        new TableRow({ children: cols.map(c => new TableCell({ children: [new Paragraph({ text: c, bold: true })] })) }),
+        new TableRow({ children: cols.map(c => new TableCell({ children: [boldPara(c)] })) }),
         ...vulns.map(v => new TableRow({ children: mapFn(v).map(c => new TableCell({ children: [new Paragraph({ text: c })] })) })),
       ],
       width: { size: 16000, type: WidthType.DXA },
@@ -1001,7 +1002,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
     children.push(h2('Technology Stack'));
     children.push(new Table({
       rows: [
-        new TableRow({ children: ['Name', 'Category', 'Version', 'Confidence'].map(c => new TableCell({ children: [new Paragraph({ text: c, bold: true })] })) }),
+        new TableRow({ children: ['Name', 'Category', 'Version', 'Confidence'].map(c => new TableCell({ children: [boldPara(c)] })) }),
         ...scan.results.techStack.technologies.map((t: any) =>
           new TableRow({ children: [t.name, t.category || 'N/A', t.version || 'N/A', t.confidence ? `${(t.confidence * 100).toFixed(0)}%` : 'N/A'].map(c => new TableCell({ children: [new Paragraph({ text: c })] })) })
         ),
@@ -1081,7 +1082,7 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
     children.push(h2(`Broken Links (${scan.results.brokenLinks.brokenLinks.length})`));
     children.push(new Table({
       rows: [
-        new TableRow({ children: ['URL', 'Status', 'Type', 'Source'].map(c => new TableCell({ children: [new Paragraph({ text: c, bold: true })] })) }),
+        new TableRow({ children: ['URL', 'Status', 'Type', 'Source'].map(c => new TableCell({ children: [boldPara(c)] })) }),
         ...scan.results.brokenLinks.brokenLinks.map((l: any) =>
           new TableRow({ children: [l.url?.substring(0, 100) || 'N/A', String(l.status), l.isInternal ? 'Internal' : 'External', l.sourcePage?.substring(0, 80) || 'N/A'].map(c => new TableCell({ children: [new Paragraph({ text: c })] })) })
         ),
