@@ -147,7 +147,13 @@ export class RequestManager {
   }
 
   private async rateLimit(url: string): Promise<void> {
-    const domain = new URL(url).hostname;
+    let domain: string;
+    try {
+      domain = new URL(url).hostname;
+    } catch {
+      // Relative URL or unparseable string — use the raw value as a bucket key
+      domain = url;
+    }
     const lastRequest = this.rateLimiter.get(domain) || 0;
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequest;

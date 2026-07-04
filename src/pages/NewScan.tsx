@@ -190,24 +190,33 @@ const NewScan = () => {
   const totalModules = SCAN_MODULE_KEYS.length;
 
   const handleSaveTemplate = () => {
-    const template = {
-      name: formData.scanName || `Template-${Date.now()}`,
-      config: formData,
-      createdAt: new Date().toISOString()
-    };
-    
-    const savedTemplates = JSON.parse(localStorage.getItem('scan-templates') || '[]');
-    savedTemplates.push(template);
-    localStorage.setItem('scan-templates', JSON.stringify(savedTemplates));
+    try {
+      const template = {
+        name: formData.scanName || `Template-${Date.now()}`,
+        config: formData,
+        createdAt: new Date().toISOString()
+      };
+      const savedTemplates = JSON.parse(localStorage.getItem('scan-templates') || '[]');
+      savedTemplates.push(template);
+      localStorage.setItem('scan-templates', JSON.stringify(savedTemplates));
+    } catch {
+      toast({ title: 'Save Failed', description: 'Could not save template to local storage.', variant: 'destructive' });
+    }
   };
 
   const handleLoadTemplate = () => {
-    const savedTemplates = JSON.parse(localStorage.getItem('scan-templates') || '[]');
-    if (savedTemplates.length > 0) {
+    try {
+      const raw = localStorage.getItem('scan-templates');
+      if (!raw) return;
+      const savedTemplates = JSON.parse(raw);
+      if (!Array.isArray(savedTemplates) || savedTemplates.length === 0) return;
       const latestTemplate = savedTemplates[savedTemplates.length - 1];
+      if (!latestTemplate?.config || typeof latestTemplate.config !== 'object') return;
       Object.keys(latestTemplate.config).forEach(key => {
         setValue(key as keyof ScanFormValues, latestTemplate.config[key]);
       });
+    } catch {
+      toast({ title: 'Load Failed', description: 'Saved template is corrupted and could not be loaded.', variant: 'destructive' });
     }
   };
 
@@ -309,13 +318,14 @@ const NewScan = () => {
       Object.keys(config).forEach(key => {
         setValue(key as keyof ScanFormValues, config[key as keyof typeof config]);
       });
-      
+
       // Set smart scan mode
       setValue('smartScanMode', mode);
-      
-      // Submit the form with smart scan configuration
-      const scanData = { ...formData, ...config, smartScanMode: mode };
-      handleSubmit(() => onSubmit(scanData as ScanFormValues))();
+
+      // Submit through the normal validation pipeline so Zod runs on the merged values.
+      // We cannot pass scanData directly because handleSubmit re-reads the form state
+      // after setValue calls — the merged values are already in the form at this point.
+      handleSubmit(onSubmit)();
       
     } catch (error: any) {
       toast({

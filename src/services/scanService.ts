@@ -726,8 +726,6 @@ export const resumeScan = async (id: string) => {
 
   const newController = new AbortController();
   const newRequestManager = createRequestManager(newController);
-  
-  activeScans.set(id, { controller: newController, promise: Promise.resolve(), requestManager: newRequestManager });
 
   const updatedScan: Scan = { 
     ...scan, 
@@ -737,7 +735,11 @@ export const resumeScan = async (id: string) => {
   await upsertScanToDatabase(updatedScan);
 
   console.log(`[ScanService] Resuming scan ${id}.`);
-  await runScan(updatedScan.id, updatedScan.config, newController, newRequestManager);
+
+  // Store the actual promise so stopScan/skipModule can observe it
+  const scanPromise = runScan(updatedScan.id, updatedScan.config, newController, newRequestManager);
+  activeScans.set(id, { controller: newController, promise: scanPromise, requestManager: newRequestManager });
+  await scanPromise;
 };
 
 export const skipCurrentModule = async (id: string) => {

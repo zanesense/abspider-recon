@@ -30,12 +30,25 @@ function attachAuth(url: string, headers: Record<string, string>, provider: stri
   return { url, headers };
 }
 
+const ALLOWED_ORIGINS = new Set([
+  'https://abspider.zanesense.dev',
+  'http://localhost:5000',
+  'http://localhost:3000',
+  'http://localhost:5173',
+]);
+
 export default async function handler(request: any, response: any) {
+  const origin = String(request.headers.origin || '');
   const setCors = () => {
-    response.setHeader('Access-Control-Allow-Origin', request.headers.origin || '*');
+    // Never fall back to '*' on an authenticated endpoint — reflect only known origins
+    response.setHeader(
+      'Access-Control-Allow-Origin',
+      ALLOWED_ORIGINS.has(origin) ? origin : 'null',
+    );
     response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     response.setHeader('Access-Control-Allow-Credentials', 'true');
+    if (ALLOWED_ORIGINS.has(origin)) response.setHeader('Vary', 'Origin');
   };
   setCors();
 
@@ -67,7 +80,13 @@ export default async function handler(request: any, response: any) {
     return;
   }
 
-  const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+  let body: any;
+  try {
+    body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+  } catch {
+    response.status(400).json({ error: 'Invalid JSON body' });
+    return;
+  }
   if (!body || !body.provider || !body.url) {
     response.status(400).json({ error: 'provider and url are required' });
     return;
