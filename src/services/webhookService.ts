@@ -21,7 +21,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
 
     const embed = {
       title: 'ABSpider Reconnaissance Update',
-      description: `Scan **${scan.target}** has been **${scan.status.toUpperCase()}**`, // Updated description
+      description: `Scan **${scan.target}** has been **${(scan.status || 'unknown').toUpperCase()}**`,
       color: embedColor,
       fields: [
         {

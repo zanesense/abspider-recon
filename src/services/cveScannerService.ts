@@ -47,7 +47,7 @@ const CVE_DATABASE: CVERecord[] = [
   { id: 'CVE-2024-31238', technology: 'Cloudflare', versionRange: '<2024.3', severity: 'Medium', description: 'HTTP/2 rapid reset bypass' },
 ];
 
-const parseVersion = (v: string): number[] => v.split('.').map(n => parseInt(n, 10) || 0);
+const parseVersion = (v: string): number[] => v.replace(/-.*$/, '').split('.').map(n => parseInt(n, 10) || 0);
 
 const versionInRange = (current: string, range: string): boolean => {
   const op = range[0];

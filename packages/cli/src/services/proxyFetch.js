@@ -39,7 +39,8 @@ function decompressBuffer(buffer, encoding) {
     if (enc === 'gzip' || enc === 'x-gzip') return zlib.gunzipSync(buffer);
     if (enc === 'deflate') return zlib.inflateSync(buffer);
     if (enc === 'br') return zlib.brotliDecompressSync(buffer);
-  } catch {
+  } catch (e) {
+    console.warn('[ProxyFetch] Decompression failed:', e.message);
   }
   return buffer;
 }
