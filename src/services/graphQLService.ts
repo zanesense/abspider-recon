@@ -85,7 +85,7 @@ export const performGraphQLScan = async (target: string, requestManager: Request
 
         endpoints.push(ep);
       }
-    } catch {
+    } catch (err) {
       // Also try GET request for graphiql
       if (path.includes('graphiql') || path.includes('explorer')) {
         try {
@@ -100,7 +100,7 @@ export const performGraphQLScan = async (target: string, requestManager: Request
               });
             }
           }
-        } catch { /* ignore */ }
+        } catch { /* ignore - not a GraphQL endpoint */ }
       }
     }
   }

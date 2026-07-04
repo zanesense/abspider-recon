@@ -109,7 +109,7 @@ export const performWAFProtectionCheck = async (
         }
 
         const duration = Date.now() - startTime;
-        const text = await response.text();
+        const text = await response.clone().text().catch(() => '').then(t => t.slice(0, 4096));
 
         responses.push({ status: response.status, duration, headers: response.headers, text });
         result.successfulRequests++;

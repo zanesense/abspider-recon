@@ -141,55 +141,50 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
   const virustotalMalicious = (scan.results.virustotal?.maliciousVotes || 0) > 0 ? 1 : 0;
   const sslTlsExpired = (scan.results.sslTls?.isExpired) ? 1 : 0;
   const brokenLinksCount = (scan.results.brokenLinks?.brokenLinks?.length || 0) > 0 ? 1 : 0;
-  const totalVulns = sqlVulns + xssVulns + lfiVulns + corsMisconfigVulns + wpVulns + ddosFirewallDetected + virustotalMalicious + sslTlsExpired + brokenLinksCount;
+  const openRedirectVulns = scan.results.openRedirect?.vulnerableCount || 0;
+  const gitExposed = scan.results.gitExposure?.totalExposed || 0;
+  const s3Open = scan.results.s3Bucket?.openBuckets || 0;
+  const cveFound = scan.results.cveScanner?.totalFound || 0;
+  const graphQLOpen = scan.results.graphQL?.openEndpoints || 0;
+  const csrfUnprotected = scan.results.csrfDetection?.formsWithoutToken || 0;
+  const emailHarvested = scan.results.emailHarvesting?.totalEmails || 0;
+  const totalVulns = sqlVulns + xssVulns + lfiVulns + corsMisconfigVulns + wpVulns + ddosFirewallDetected + virustotalMalicious + sslTlsExpired + brokenLinksCount + openRedirectVulns + gitExposed + s3Open + cveFound + graphQLOpen + csrfUnprotected + (emailHarvested > 0 ? 1 : 0);
 
-  // Modern Header with gradient effect
-  doc.setFillColor(6, 182, 212);
-  doc.rect(0, 0, 210, 50, 'F');
-  
-  // Accent bar
-  doc.setFillColor(8, 145, 178);
-  doc.rect(0, 0, 210, 3, 'F');
-  
-  doc.setFontSize(36);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.text('ABSpider Recon', 14, 24);
-  
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Comprehensive Security Assessment Report', 14, 34);
-  
-  doc.setFontSize(9);
-  doc.text(`Generated: ${new Date().toLocaleString()} | Classification: CONFIDENTIAL`, 14, 44);
-  
-  yPosition = 60;
+  // Cover Page
+  doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 297, 'F');
+  doc.setFillColor(6, 182, 212); doc.rect(0, 100, 210, 4, 'F');
+  doc.setFontSize(44); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+  doc.text('ABSpider Recon', 14, 60);
+  doc.setFontSize(18); doc.setFont('helvetica', 'normal'); doc.setTextColor(148, 163, 184);
+  doc.text('Comprehensive Security Assessment Report', 14, 78);
+  doc.setFontSize(11); doc.setTextColor(100, 116, 139);
+  doc.text(`Target: ${scan.target}`, 14, 130);
+  doc.text(`Scan ID: ${scan.id}`, 14, 142);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 154);
+  doc.text(`Classification: CONFIDENTIAL`, 14, 166);
+  doc.setFillColor(6, 182, 212); doc.rect(14, 175, 50, 3, 'F');
+  if (scan.securityGrade) { doc.setFontSize(28); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.text(`${scan.securityGrade.toFixed(1)}/10`, 14, 205); doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(148, 163, 184); doc.text('Security Grade', 14, 218); }
 
-  // Executive Summary with modern design
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, yPosition, 182, 50, 3, 3, 'F');
-  
-  doc.setFillColor(6, 182, 212);
-  doc.roundedRect(14, yPosition, 182, 8, 3, 3, 'F');
-  
-  doc.setFontSize(12);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.text('EXECUTIVE SUMMARY', 20, yPosition + 6);
-  
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text(`Target Domain: ${scan.target}`, 20, yPosition + 18);
-  doc.text(`Scan ID: ${scan.id}`, 20, yPosition + 25);
-  doc.text(`Timestamp: ${new Date(scan.timestamp).toLocaleString()}`, 20, yPosition + 32);
-  
+  // Executive Summary
+  doc.addPage();
+  doc.setFillColor(6, 182, 212); doc.rect(0, 0, 210, 3, 'F');
+  doc.setFontSize(24); doc.setTextColor(15, 23, 42); doc.setFont('helvetica', 'bold');
+  doc.text('Executive Summary', 14, 25);
+  doc.setFillColor(226, 232, 240); doc.rect(14, 30, 182, 0.5, 'F');
+  yPosition = 40;
+  doc.setFontSize(10); doc.setTextColor(71, 85, 105); doc.setFont('helvetica', 'normal');
+  doc.text(`Target Domain: ${scan.target}`, 14, yPosition); yPosition += 7;
+  doc.text(`Scan ID: ${scan.id}`, 14, yPosition); yPosition += 7;
+  doc.text(`Timestamp: ${new Date(scan.timestamp).toLocaleString()}`, 14, yPosition); yPosition += 7;
+
+  // Duration and Status
   if (scan.elapsedMs) {
     const seconds = Math.floor(scan.elapsedMs / 1000);
     const minutes = Math.floor(seconds / 60);
     const timeStr = minutes > 0 ? `${minutes}m ${seconds % 60}s` : `${seconds}s`;
-    doc.text(`Duration: ${timeStr}`, 20, yPosition + 39);
+    doc.text(`Duration: ${timeStr}`, 14, yPosition); yPosition += 7;
   }
+  yPosition += 5;
   
   let statusColor;
   switch (scan.status) {
@@ -266,10 +261,17 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
       ['Local File Inclusion (LFI)', lfiVulns.toString(), lfiVulns > 0 ? 'CRITICAL' : 'SAFE', lfiVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['CORS Misconfiguration', corsMisconfigVulns.toString(), corsMisconfigVulns > 0 ? 'CRITICAL' : 'SAFE', corsMisconfigVulns > 0 ? 'Immediate action required' : 'No issues found'],
       ['WordPress Security', wpVulns.toString(), wpVulns > 0 ? 'HIGH' : 'SAFE', wpVulns > 0 ? 'Update and secure' : 'No issues found'],
+      ['Open Redirect', openRedirectVulns.toString(), openRedirectVulns > 0 ? 'HIGH' : 'SAFE', openRedirectVulns > 0 ? 'Review redirect logic' : 'No issues found'],
+      ['Git Exposure', gitExposed.toString(), gitExposed > 0 ? 'CRITICAL' : 'SAFE', gitExposed > 0 ? 'Remove exposed .git files' : 'No exposure detected'],
+      ['Open S3 Buckets', s3Open.toString(), s3Open > 0 ? 'HIGH' : 'SAFE', s3Open > 0 ? 'Restrict bucket access' : 'No open buckets'],
+      ['CVE Matches', cveFound.toString(), cveFound > 0 ? 'HIGH' : 'SAFE', cveFound > 0 ? 'Apply patches' : 'No CVEs detected'],
+      ['GraphQL Exposure', graphQLOpen.toString(), graphQLOpen > 0 ? 'MEDIUM' : 'SAFE', graphQLOpen > 0 ? 'Disable introspection' : 'No exposure'],
+      ['CSRF (no token)', csrfUnprotected.toString(), csrfUnprotected > 0 ? 'MEDIUM' : 'SAFE', csrfUnprotected > 0 ? 'Add CSRF tokens' : 'All forms protected'],
       ['WAF Protection', ddosFirewallDetected.toString(), ddosFirewallDetected > 0 ? 'INFO' : 'N/A', ddosFirewallDetected > 0 ? 'Protection detected' : 'No protection detected'],
       ['VirusTotal Malicious', virustotalMalicious.toString(), virustotalMalicious > 0 ? 'HIGH' : 'SAFE', virustotalMalicious > 0 ? 'Investigate reputation' : 'No malicious activity'],
       ['SSL Certificate Expired', sslTlsExpired.toString(), sslTlsExpired > 0 ? 'CRITICAL' : 'VALID', sslTlsExpired > 0 ? 'Renew certificate immediately' : 'Certificate is valid'],
       ['Broken Links', brokenLinksCount.toString(), brokenLinksCount > 0 ? 'MEDIUM' : 'SAFE', brokenLinksCount > 0 ? 'Review and fix links' : 'No broken links found'],
+      ['Emails Harvested', emailHarvested.toString(), emailHarvested > 0 ? 'MEDIUM' : 'SAFE', emailHarvested > 0 ? 'Review exposed emails' : 'No emails harvested'],
     ];
     
     autoTable(doc, {
@@ -876,6 +878,228 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
     }
   }
 
+  // Whois Information
+  if (scan.results.whois) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(107, 114, 128); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text('WHOIS: Domain Registration Information', 14, yPosition); yPosition += 15;
+    const w = scan.results.whois;
+    autoTable(doc, { startY: yPosition, body: [
+      ['Domain', w.domain], ['Registrar', w.registrar || 'N/A'], ['Created', w.created || 'N/A'],
+      ['Expires', w.expires || 'N/A'], ['Updated', w.updated || 'N/A'], ['DNSSEC', w.dnssec || 'N/A'],
+      ['Status', w.status || 'N/A'], ['Nameservers', w.nameservers?.join(', ') || 'N/A'],
+      ['Registrant Org', w.registrant?.organization || 'N/A'], ['Registrant Country', w.registrant?.country || 'N/A'],
+    ], theme: 'striped', styles: { fontSize: 9 } });
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // Reverse IP
+  if (scan.results.reverseip?.domains?.length) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(249, 115, 22); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`REVERSE IP: Domains on ${scan.results.reverseip.ip} (${scan.results.reverseip.totalDomains})`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['Domain', 'Title', 'Web Server', 'CMS', 'Cloudflare']],
+      body: scan.results.reverseip.domains.map((d: any) => [d.domain, d.title || 'N/A', d.webServer || 'N/A', d.cms || 'N/A', d.cloudflare ? 'Yes' : 'No']),
+      theme: 'grid', headStyles: { fillColor: [249, 115, 22], fontStyle: 'bold' }, styles: { fontSize: 8 } });
+  }
+
+  // Email Security
+  if (scan.results.emailSecurity) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(30, 64, 175); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text('EMAIL: Email Security (SPF/DKIM/DMARC)', 14, yPosition); yPosition += 15;
+    const es = scan.results.emailSecurity;
+    autoTable(doc, { startY: yPosition, body: [
+      ['Domain', es.domain], ['Overall Score', `${es.overallScore}/10`],
+      ['SPF Record', es.spf?.exists ? (es.spf.valid ? 'Valid' : 'Invalid') : 'Missing'],
+      ['SPF Raw', es.spf?.raw?.substring(0, 120) || 'N/A'],
+      ['DKIM Selectors', es.dkim?.filter((k: any) => k.exists).map((k: any) => k.selector).join(', ') || 'None found'],
+      ['DMARC Record', es.dmarc?.exists ? (es.dmarc.valid ? 'Valid' : 'Invalid') : 'Missing'],
+      ['DMARC Policy', es.dmarc?.policy || 'N/A'],
+    ], theme: 'striped', styles: { fontSize: 9 } });
+  }
+
+  // JavaScript Analysis
+  if (scan.results.jsInspection?.files?.length) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(251, 191, 36); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(0, 0, 0); doc.setFont('helvetica', 'bold');
+    doc.text(`JS ANALYSIS: ${scan.results.jsInspection.totalFiles} Files (${scan.results.jsInspection.totalEndpoints} endpoints, ${scan.results.jsInspection.totalApiKeys} keys)`, 14, yPosition); yPosition += 15;
+    for (const file of scan.results.jsInspection.files) {
+      if (yPosition > 240) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(8); doc.setTextColor(0, 0, 0); doc.setFont('helvetica', 'bold');
+      doc.text(`${file.url.substring(0, 180)} (${(file.size / 1024).toFixed(1)} KB)`, 14, yPosition); yPosition += 4;
+      doc.setFont('helvetica', 'normal');
+      if (file.endpoints?.length) { doc.text(`  Endpoints: ${file.endpoints.slice(0, 5).join(', ')}${file.endpoints.length > 5 ? '...' : ''}`, 18, yPosition); yPosition += 4; }
+      if (file.apiKeys?.length) { doc.text(`  API Keys: ${file.apiKeys.slice(0, 3).join(', ')}${file.apiKeys.length > 3 ? '...' : ''}`, 18, yPosition); yPosition += 4; }
+      yPosition += 2;
+    }
+  }
+
+  // S3 Buckets
+  if (scan.results.s3Bucket?.buckets?.length) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(220, 38, 38); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`S3 BUCKETS: ${scan.results.s3Bucket.openBuckets} open of ${scan.results.s3Bucket.totalChecked} checked`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['Bucket', 'Accessible', 'Listing', 'Status']],
+      body: scan.results.s3Bucket.buckets.map((b: any) => [b.name, b.accessible ? 'Yes' : 'No', b.listing ? 'Yes' : 'No', String(b.statusCode)]),
+      theme: 'grid', headStyles: { fillColor: [220, 38, 38], fontStyle: 'bold' }, styles: { fontSize: 8 } });
+  }
+
+  // Git Exposure
+  if (scan.results.gitExposure?.files?.length) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(185, 28, 28); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`GIT EXPOSURE: ${scan.results.gitExposure.totalExposed} exposed (${scan.results.gitExposure.criticalExposed} critical)`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['Path', 'Exposed', 'Status']],
+      body: scan.results.gitExposure.files.map((f: any) => [f.path, f.exposed ? 'Yes' : 'No', String(f.statusCode)]),
+      theme: 'grid', headStyles: { fillColor: [185, 28, 28], fontStyle: 'bold' }, styles: { fontSize: 8 } });
+  }
+
+  // Open Redirect
+  if (scan.results.openRedirect?.vulnerableCount > 0) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(234, 88, 12); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`OPEN REDIRECT: ${scan.results.openRedirect.vulnerableCount} vulnerable of ${scan.results.openRedirect.totalTested} tested`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['Parameter', 'Redirects To', 'Status']],
+      body: scan.results.openRedirect.tests.filter((t: any) => t.vulnerable).map((t: any) => [t.param, t.redirectedTo || 'N/A', String(t.statusCode)]),
+      theme: 'grid', headStyles: { fillColor: [234, 88, 12], fontStyle: 'bold' }, styles: { fontSize: 8 } });
+  }
+
+  // CVE Scanner
+  if (scan.results.cveScanner?.totalFound > 0) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(127, 29, 29); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`CVE SCANNER: ${scan.results.cveScanner.totalFound} potential CVEs found`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['CVE ID', 'Technology', 'Severity', 'Description']],
+      body: scan.results.cveScanner.matches.map((m: any) => [m.cveId, m.technology, m.severity, m.description.substring(0, 100)]),
+      theme: 'grid', headStyles: { fillColor: [127, 29, 29], fontStyle: 'bold' }, styles: { fontSize: 7 } });
+  }
+
+  // GraphQL
+  if (scan.results.graphQL?.totalEndpoints > 0) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(88, 28, 135); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`GRAPHQL: ${scan.results.graphQL.totalEndpoints} endpoints (${scan.results.graphQL.openEndpoints} open, introspection: ${scan.results.graphQL.introspectionEnabled ? 'ENABLED' : 'Disabled'})`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['Path', 'Accessible', 'Introspection']],
+      body: scan.results.graphQL.endpoints.map((e: any) => [e.path, e.accessible ? 'Yes' : 'No', e.introspectionOpen ? 'Open' : 'Closed']),
+      theme: 'grid', headStyles: { fillColor: [88, 28, 135], fontStyle: 'bold' }, styles: { fontSize: 8 } });
+  }
+
+  // Rate Limit
+  if (scan.results.rateLimit) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(234, 179, 8); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(0, 0, 0); doc.setFont('helvetica', 'bold');
+    doc.text('RATE LIMIT: Rate Limiting Analysis', 14, yPosition); yPosition += 15;
+    const rl = scan.results.rateLimit;
+    autoTable(doc, { startY: yPosition, body: [
+      ['Rate Limited', rl.rateLimited ? 'Yes' : 'No'], ['Requests Sent', String(rl.requestsSent)], ['Requests Blocked', String(rl.requestsBlocked)],
+      ['Details', rl.details || 'N/A'],
+    ], theme: 'striped', styles: { fontSize: 9 } });
+  }
+
+  // CSRF Detection
+  if (scan.results.csrfDetection?.totalForms > 0) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(180, 83, 9); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`CSRF: ${scan.results.csrfDetection.formsWithoutToken} forms without CSRF token of ${scan.results.csrfDetection.totalForms}`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['Form Action', 'Method', 'Has CSRF Token']],
+      body: scan.results.csrfDetection.forms.map((f: any) => [f.action || 'N/A', f.method.toUpperCase(), f.hasCSRFToken ? 'Yes' : 'No']),
+      theme: 'grid', headStyles: { fillColor: [180, 83, 9], fontStyle: 'bold' }, styles: { fontSize: 8 } });
+  }
+
+  // CDN Detection
+  if (scan.results.cdnDetection?.detectedCount > 0) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(30, 58, 138); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`CDN: ${scan.results.cdnDetection.detectedCount} CDN(s) detected`, 14, yPosition); yPosition += 15;
+    scan.results.cdnDetection.cdns.filter((c: any) => c.detected).forEach((c: any) => {
+      if (yPosition > 260) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont('helvetica', 'bold');
+      doc.text(`• ${c.name}`, 14, yPosition); yPosition += 4;
+      c.evidence?.forEach((e: string) => {
+        if (yPosition > 270) { doc.addPage(); yPosition = 20; }
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(`  ${e.substring(0, 180)}`, 18, yPosition); yPosition += 3;
+      });
+      yPosition += 2;
+    });
+  }
+
+  // Cloud Provider Detection
+  if (scan.results.cloudProvider?.detectedCount > 0) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(22, 78, 99); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`CLOUD: ${scan.results.cloudProvider.detectedCount} provider(s) detected`, 14, yPosition); yPosition += 15;
+    scan.results.cloudProvider.providers.filter((p: any) => p.detected).forEach((p: any) => {
+      if (yPosition > 260) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont('helvetica', 'bold');
+      doc.text(`• ${p.name}`, 14, yPosition); yPosition += 4;
+      p.evidence?.forEach((e: string) => {
+        if (yPosition > 270) { doc.addPage(); yPosition = 20; }
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(`  ${e.substring(0, 180)}`, 18, yPosition); yPosition += 3;
+      });
+      yPosition += 2;
+    });
+  }
+
+  // Robots & Sitemap
+  if (scan.results.robotsSitemap) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(75, 85, 99); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    const rs = scan.results.robotsSitemap;
+    doc.text(`ROBOTS: robots.txt ${rs.robots?.exists ? 'found' : 'not found'} | Sitemap ${rs.sitemap?.exists ? `(${rs.sitemap.count} URLs)` : 'not found'}`, 14, yPosition); yPosition += 15;
+    if (rs.robots?.disallowedPaths?.length) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Disallowed Paths:', 14, yPosition); yPosition += 5;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+      rs.robots.disallowedPaths.forEach((p: string) => { if (yPosition > 270) { doc.addPage(); yPosition = 20; } doc.text(`  ${p}`, 18, yPosition); yPosition += 3; });
+      yPosition += 3;
+    }
+    if (rs.sitemap?.urls?.length) {
+      if (yPosition > 250) { doc.addPage(); yPosition = 20; }
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text(`Sitemap URLs (${rs.sitemap.count}):`, 14, yPosition); yPosition += 5;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+      rs.sitemap.urls.slice(0, 20).forEach((u: string) => { if (yPosition > 270) { doc.addPage(); yPosition = 20; } doc.text(`  ${u.substring(0, 180)}`, 18, yPosition); yPosition += 3; });
+      if (rs.sitemap.urls.length > 20) { if (yPosition > 270) { doc.addPage(); yPosition = 20; } doc.text(`  ... and ${rs.sitemap.urls.length - 20} more`, 18, yPosition); }
+    }
+  }
+
+  // Cookie Audit
+  if (scan.results.cookieAudit?.cookies?.length) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(147, 51, 234); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    const ca = scan.results.cookieAudit;
+    doc.text(`COOKIES: ${ca.totalCount} total (${ca.insecureCookies} insecure, ${ca.httpOnlyCount} HttpOnly, ${ca.sameSiteCount} SameSite)`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['Name', 'Secure', 'HttpOnly', 'SameSite', 'Issues']],
+      body: ca.cookies.map((c: any) => [c.name, c.secure ? 'Yes' : 'No', c.httpOnly ? 'Yes' : 'No', c.sameSite || 'N/A', c.issues?.join('; ')?.substring(0, 80) || 'None']),
+      theme: 'grid', headStyles: { fillColor: [147, 51, 234], fontStyle: 'bold' }, styles: { fontSize: 7 } });
+  }
+
+  // Email Harvesting
+  if (scan.results.emailHarvesting?.emails?.length) {
+    doc.addPage(); yPosition = 20;
+    doc.setFillColor(239, 68, 68); doc.rect(0, yPosition - 5, 210, 10, 'F');
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
+    doc.text(`EMAIL HARVEST: ${scan.results.emailHarvesting.totalEmails} emails found (${scan.results.emailHarvesting.uniqueDomains?.length || 0} domains)`, 14, yPosition); yPosition += 15;
+    autoTable(doc, { startY: yPosition, head: [['Email', 'Source']],
+      body: scan.results.emailHarvesting.emails.slice(0, 50).map((e: any) => [e.email, e.source || 'N/A']),
+      theme: 'grid', headStyles: { fillColor: [239, 68, 68], fontStyle: 'bold' }, styles: { fontSize: 7 } });
+  }
+
   // Footer on every page
   const pageCount = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
@@ -1141,6 +1365,109 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
     if (ssl.fingerprintSha256) children.push(para(`SHA256 Fingerprint: ${ssl.fingerprintSha256}`));
   }
 
+  // Whois
+  if (scan.results.whois) {
+    const w = scan.results.whois;
+    children.push(h2('Whois Information'));
+    children.push(kvTable([['Domain', w.domain], ['Registrar', w.registrar || 'N/A'], ['Created', w.created || 'N/A'], ['Expires', w.expires || 'N/A'], ['Nameservers', w.nameservers?.join(', ') || 'N/A'], ['DNSSEC', w.dnssec || 'N/A']]));
+  }
+
+  // Reverse IP
+  if (scan.results.reverseip?.domains?.length) {
+    children.push(h2(`Reverse IP (${scan.results.reverseip.totalDomains} domains on ${scan.results.reverseip.ip})`));
+    scan.results.reverseip.domains.forEach((d: any) => children.push(bullet(`${d.domain}${d.title ? ` — ${d.title}` : ''}${d.webServer ? ` (${d.webServer})` : ''}`)));
+  }
+
+  // Email Security
+  if (scan.results.emailSecurity) {
+    const es = scan.results.emailSecurity;
+    children.push(h2('Email Security'));
+    children.push(kvTable([['Domain', es.domain], ['Score', `${es.overallScore}/10`], ['SPF', es.spf?.exists ? (es.spf.valid ? 'Valid' : 'Invalid') : 'Missing'], ['DMARC', es.dmarc?.exists ? `${es.dmarc.policy || 'Present'}${es.dmarc.valid ? '' : ' (Invalid)'}` : 'Missing']]));
+  }
+
+  // JS Analysis
+  if (scan.results.jsInspection?.files?.length) {
+    children.push(h2(`JavaScript Analysis (${scan.results.jsInspection.totalFiles} files, ${scan.results.jsInspection.totalEndpoints} endpoints, ${scan.results.jsInspection.totalApiKeys} keys)`));
+    scan.results.jsInspection.files.forEach((f: any) => children.push(bullet(`${f.url}${f.endpoints?.length ? ` — ${f.endpoints.slice(0, 3).join(', ')}` : ''}`)));
+  }
+
+  // S3 Buckets
+  if (scan.results.s3Bucket?.buckets?.length) {
+    children.push(h2(`S3 Buckets (${scan.results.s3Bucket.openBuckets} open of ${scan.results.s3Bucket.totalChecked})`));
+    scan.results.s3Bucket.buckets.forEach((b: any) => children.push(bullet(`${b.name} — ${b.accessible ? 'Accessible' : 'Not accessible'}${b.listing ? ' (listing enabled)' : ''}`)));
+  }
+
+  // Git Exposure
+  if (scan.results.gitExposure?.files?.length) {
+    children.push(h2(`Git Exposure (${scan.results.gitExposure.totalExposed} exposed, ${scan.results.gitExposure.criticalExposed} critical)`));
+    scan.results.gitExposure.files.filter((f: any) => f.exposed).forEach((f: any) => children.push(bullet(`${f.path} (HTTP ${f.statusCode})`)));
+  }
+
+  // Open Redirect
+  if (scan.results.openRedirect?.vulnerableCount > 0) {
+    children.push(h2(`Open Redirect (${scan.results.openRedirect.vulnerableCount} vulnerable)`));
+    scan.results.openRedirect.tests.filter((t: any) => t.vulnerable).forEach((t: any) => children.push(bullet(`?${t.param}= → ${t.redirectedTo || 'N/A'}`)));
+  }
+
+  // CVE Scanner
+  if (scan.results.cveScanner?.totalFound > 0) {
+    children.push(h2(`CVE Scanner (${scan.results.cveScanner.totalFound} matches)`));
+    scan.results.cveScanner.matches.forEach((m: any) => children.push(bullet(`${m.cveId} — ${m.technology} (${m.severity}): ${m.description?.substring(0, 120)}`)));
+  }
+
+  // GraphQL
+  if (scan.results.graphQL?.totalEndpoints > 0) {
+    children.push(h2(`GraphQL (${scan.results.graphQL.totalEndpoints} endpoints, introspection: ${scan.results.graphQL.introspectionEnabled ? 'ENABLED' : 'Disabled'})`));
+    scan.results.graphQL.endpoints.forEach((e: any) => children.push(bullet(`${e.path} — ${e.accessible ? 'Accessible' : 'Not accessible'}${e.introspectionOpen ? ' (introspection open)' : ''}`)));
+  }
+
+  // Rate Limit
+  if (scan.results.rateLimit) {
+    const rl = scan.results.rateLimit;
+    children.push(h2('Rate Limit'));
+    children.push(kvTable([['Rate Limited', rl.rateLimited ? 'Yes' : 'No'], ['Requests Sent', String(rl.requestsSent)], ['Blocked', String(rl.requestsBlocked)], ['Details', rl.details || 'N/A']]));
+  }
+
+  // CSRF
+  if (scan.results.csrfDetection?.totalForms > 0) {
+    children.push(h2(`CSRF Detection (${scan.results.csrfDetection.formsWithoutToken} unprotected forms of ${scan.results.csrfDetection.totalForms})`));
+    scan.results.csrfDetection.forms.filter((f: any) => !f.hasCSRFToken).forEach((f: any) => children.push(bullet(`${f.action || 'N/A'} (${f.method})`)));
+  }
+
+  // CDN
+  if (scan.results.cdnDetection?.detectedCount > 0) {
+    children.push(h2(`CDN Detection (${scan.results.cdnDetection.detectedCount} detected)`));
+    scan.results.cdnDetection.cdns.filter((c: any) => c.detected).forEach((c: any) => children.push(bullet(`${c.name}${c.evidence?.length ? ` — ${c.evidence[0]?.substring(0, 100)}` : ''}`)));
+  }
+
+  // Cloud Provider
+  if (scan.results.cloudProvider?.detectedCount > 0) {
+    children.push(h2(`Cloud Provider (${scan.results.cloudProvider.detectedCount} detected)`));
+    scan.results.cloudProvider.providers.filter((p: any) => p.detected).forEach((p: any) => children.push(bullet(`${p.name}${p.evidence?.length ? ` — ${p.evidence[0]?.substring(0, 100)}` : ''}`)));
+  }
+
+  // Robots & Sitemap
+  if (scan.results.robotsSitemap) {
+    const rs = scan.results.robotsSitemap;
+    children.push(h2('Robots & Sitemap'));
+    children.push(kvTable([['robots.txt', rs.robots?.exists ? 'Found' : 'Not found'], ['Sitemap', rs.sitemap?.exists ? `Found (${rs.sitemap.count} URLs)` : 'Not found']]));
+    if (rs.robots?.disallowedPaths?.length) { children.push(h3('Disallowed Paths')); rs.robots.disallowedPaths.forEach((p: string) => children.push(bullet(p))); }
+  }
+
+  // Cookie Audit
+  if (scan.results.cookieAudit?.cookies?.length) {
+    const ca = scan.results.cookieAudit;
+    children.push(h2(`Cookie Audit (${ca.totalCount} cookies, ${ca.insecureCookies} insecure)`));
+    ca.cookies.forEach((c: any) => children.push(bullet(`${c.name}${c.secure ? ' [Secure]' : ' [Insecure]'}${c.httpOnly ? ' [HttpOnly]' : ''}${c.sameSite ? ` [${c.sameSite}]` : ''}${c.issues?.length ? ` — ${c.issues[0]}` : ''}`)));
+  }
+
+  // Email Harvesting
+  if (scan.results.emailHarvesting?.emails?.length) {
+    children.push(h2(`Email Harvesting (${scan.results.emailHarvesting.totalEmails} emails found)`));
+    scan.results.emailHarvesting.emails.slice(0, 30).forEach((e: any) => children.push(bullet(`${e.email}${e.source ? ` (${e.source})` : ''}`)));
+    if (scan.results.emailHarvesting.emails.length > 30) children.push(para(`... and ${scan.results.emailHarvesting.emails.length - 30} more`));
+  }
+
   const doc = new Document({
     sections: [{ children }],
   });
@@ -1356,6 +1683,112 @@ export const generateMarkdownReport = (scan: Scan, returnContent: boolean = fals
     ])}`;
   }
 
+  // Whois
+  if (scan.results.whois) {
+    const w = scan.results.whois;
+    md += `## Whois Information\n\n${mdKv([['Domain', w.domain], ['Registrar', w.registrar || 'N/A'], ['Created', w.created || 'N/A'], ['Expires', w.expires || 'N/A'], ['Nameservers', w.nameservers?.join(', ') || 'N/A'], ['DNSSEC', w.dnssec || 'N/A']])}`;
+  }
+
+  // Reverse IP
+  if (scan.results.reverseip?.domains?.length) {
+    md += `## Reverse IP (${scan.results.reverseip.totalDomains} domains on ${scan.results.reverseip.ip})\n\n`;
+    scan.results.reverseip.domains.forEach((d: any) => { md += `- ${d.domain}${d.title ? ` — ${d.title}` : ''}${d.webServer ? ` (${d.webServer})` : ''}\n`; });
+    md += '\n';
+  }
+
+  // Email Security
+  if (scan.results.emailSecurity) {
+    const es = scan.results.emailSecurity;
+    md += `## Email Security\n\n${mdKv([['Domain', es.domain], ['Score', `${es.overallScore}/10`], ['SPF', es.spf?.exists ? (es.spf.valid ? 'Valid' : 'Invalid') : 'Missing'], ['DMARC', es.dmarc?.exists ? `${es.dmarc.policy || 'Present'}${es.dmarc.valid ? '' : ' (Invalid)'}` : 'Missing']])}`;
+  }
+
+  // JS Analysis
+  if (scan.results.jsInspection?.files?.length) {
+    md += `## JavaScript Analysis (${scan.results.jsInspection.totalFiles} files, ${scan.results.jsInspection.totalEndpoints} endpoints, ${scan.results.jsInspection.totalApiKeys} keys)\n\n`;
+    scan.results.jsInspection.files.forEach((f: any) => { md += `- ${f.url}${f.endpoints?.length ? ` — ${f.endpoints.slice(0, 3).join(', ')}` : ''}\n`; });
+    md += '\n';
+  }
+
+  // S3 Buckets
+  if (scan.results.s3Bucket?.buckets?.length) {
+    md += `## S3 Buckets (${scan.results.s3Bucket.openBuckets} open of ${scan.results.s3Bucket.totalChecked})\n\n`;
+    scan.results.s3Bucket.buckets.forEach((b: any) => { md += `- ${b.name} — ${b.accessible ? 'Accessible' : 'Not accessible'}${b.listing ? ' (listing enabled)' : ''}\n`; });
+    md += '\n';
+  }
+
+  // Git Exposure
+  if (scan.results.gitExposure?.files?.length) {
+    md += `## Git Exposure (${scan.results.gitExposure.totalExposed} exposed, ${scan.results.gitExposure.criticalExposed} critical)\n\n`;
+    scan.results.gitExposure.files.filter((f: any) => f.exposed).forEach((f: any) => { md += `- ${f.path} (HTTP ${f.statusCode})\n`; });
+    md += '\n';
+  }
+
+  // Open Redirect
+  if (scan.results.openRedirect?.vulnerableCount > 0) {
+    md += `## Open Redirect (${scan.results.openRedirect.vulnerableCount} vulnerable)\n\n`;
+    scan.results.openRedirect.tests.filter((t: any) => t.vulnerable).forEach((t: any) => { md += `- ?${t.param}= → ${t.redirectedTo || 'N/A'}\n`; });
+    md += '\n';
+  }
+
+  // CVE Scanner
+  if (scan.results.cveScanner?.totalFound > 0) {
+    md += `## CVE Scanner (${scan.results.cveScanner.totalFound} matches)\n\n`;
+    md += mdTable(['CVE ID', 'Technology', 'Severity', 'Description'], scan.results.cveScanner.matches.map((m: any) => [m.cveId, m.technology, m.severity, m.description?.substring(0, 120) || '']));
+  }
+
+  // GraphQL
+  if (scan.results.graphQL?.totalEndpoints > 0) {
+    md += `## GraphQL (${scan.results.graphQL.totalEndpoints} endpoints, introspection: ${scan.results.graphQL.introspectionEnabled ? 'ENABLED' : 'Disabled'})\n\n`;
+    md += mdTable(['Path', 'Accessible', 'Introspection'], scan.results.graphQL.endpoints.map((e: any) => [e.path, e.accessible ? 'Yes' : 'No', e.introspectionOpen ? 'Open' : 'Closed']));
+  }
+
+  // Rate Limit
+  if (scan.results.rateLimit) {
+    const rl = scan.results.rateLimit;
+    md += `## Rate Limit\n\n${mdKv([['Rate Limited', rl.rateLimited ? 'Yes' : 'No'], ['Requests Sent', String(rl.requestsSent)], ['Blocked', String(rl.requestsBlocked)], ['Details', rl.details || 'N/A']])}`;
+  }
+
+  // CSRF
+  if (scan.results.csrfDetection?.totalForms > 0) {
+    md += `## CSRF Detection (${scan.results.csrfDetection.formsWithoutToken} unprotected forms of ${scan.results.csrfDetection.totalForms})\n\n`;
+    scan.results.csrfDetection.forms.filter((f: any) => !f.hasCSRFToken).forEach((f: any) => { md += `- ${f.action || 'N/A'} (${f.method})\n`; });
+    md += '\n';
+  }
+
+  // CDN
+  if (scan.results.cdnDetection?.detectedCount > 0) {
+    md += `## CDN Detection (${scan.results.cdnDetection.detectedCount} detected)\n\n`;
+    scan.results.cdnDetection.cdns.filter((c: any) => c.detected).forEach((c: any) => { md += `- **${c.name}**: ${c.evidence?.join(', ') || 'Detected'}\n`; });
+    md += '\n';
+  }
+
+  // Cloud Provider
+  if (scan.results.cloudProvider?.detectedCount > 0) {
+    md += `## Cloud Provider (${scan.results.cloudProvider.detectedCount} detected)\n\n`;
+    scan.results.cloudProvider.providers.filter((p: any) => p.detected).forEach((p: any) => { md += `- **${p.name}**: ${p.evidence?.join(', ') || 'Detected'}\n`; });
+    md += '\n';
+  }
+
+  // Robots & Sitemap
+  if (scan.results.robotsSitemap) {
+    const rs = scan.results.robotsSitemap;
+    md += `## Robots & Sitemap\n\n${mdKv([['robots.txt', rs.robots?.exists ? 'Found' : 'Not found'], ['Sitemap', rs.sitemap?.exists ? `Found (${rs.sitemap.count} URLs)` : 'Not found']])}`;
+    if (rs.robots?.disallowedPaths?.length) { md += `### Disallowed Paths\n\n`; rs.robots.disallowedPaths.forEach((p: string) => { md += `- ${p}\n`; }); md += '\n'; }
+  }
+
+  // Cookie Audit
+  if (scan.results.cookieAudit?.cookies?.length) {
+    const ca = scan.results.cookieAudit;
+    md += `## Cookie Audit (${ca.totalCount} cookies, ${ca.insecureCookies} insecure)\n\n`;
+    md += mdTable(['Name', 'Secure', 'HttpOnly', 'SameSite', 'Issues'], ca.cookies.map((c: any) => [c.name, c.secure ? 'Yes' : 'No', c.httpOnly ? 'Yes' : 'No', c.sameSite || 'N/A', c.issues?.join('; ')?.substring(0, 100) || 'None']));
+  }
+
+  // Email Harvesting
+  if (scan.results.emailHarvesting?.emails?.length) {
+    md += `## Email Harvesting (${scan.results.emailHarvesting.totalEmails} emails found)\n\n`;
+    md += mdTable(['Email', 'Source'], scan.results.emailHarvesting.emails.slice(0, 50).map((e: any) => [e.email, e.source || 'N/A']));
+  }
+
   if (returnContent) {
     return md;
   } else {
@@ -1424,6 +1857,107 @@ export const generateCsvReport = (scan: Scan, returnContent: boolean = false): s
   csvVulnSection('CORS Misconfiguration', scan.results.corsMisconfig?.vulnerabilities || [], ['Severity', 'Type', 'Origin Tested', 'Evidence'], v => [v.severity.toUpperCase(), v.type?.replace(/_/g, ' ') || 'N/A', v.originTested || 'N/A', v.evidence || 'N/A']);
   csvVulnSection('WordPress', scan.results.wordpress?.vulnerabilities || [], ['Severity', 'Type', 'Description'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.description || 'N/A']);
   csvVulnSection('Broken Links', scan.results.brokenLinks?.brokenLinks || [], ['URL', 'Status', 'Type', 'Source Page'], v => [v.url || 'N/A', String(v.status), v.isInternal ? 'Internal' : 'External', v.sourcePage || 'N/A']);
+
+  // Missing module sections
+  const csvKv = (label: string, rows: [string, string][]) => {
+    csvContent += `${label}\n`;
+    rows.forEach(([k, v]) => { csvContent += `${escapeCsv(k)},${escapeCsv(v)}\n`; });
+    csvContent += '\n';
+  };
+
+  if (scan.results.whois) {
+    const w = scan.results.whois;
+    csvKv('Whois Information', [['Domain', w.domain], ['Registrar', w.registrar || 'N/A'], ['Created', w.created || 'N/A'], ['Expires', w.expires || 'N/A'], ['Nameservers', w.nameservers?.join('; ') || 'N/A']]);
+  }
+
+  if (scan.results.reverseip?.domains?.length) {
+    csvContent += `Reverse IP (${scan.results.reverseip.ip})\n`;
+    csvContent += `Domain,Title,WebServer,CMS,Cloudflare\n`;
+    scan.results.reverseip.domains.forEach((d: any) => { csvContent += `${escapeCsv(d.domain)},${escapeCsv(d.title || 'N/A')},${escapeCsv(d.webServer || 'N/A')},${escapeCsv(d.cms || 'N/A')},${d.cloudflare ? 'Yes' : 'No'}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.emailSecurity) {
+    const es = scan.results.emailSecurity;
+    csvKv('Email Security', [['Domain', es.domain], ['Score', `${es.overallScore}/10`], ['SPF', es.spf?.exists ? (es.spf.valid ? 'Valid' : 'Invalid') : 'Missing'], ['DMARC', es.dmarc?.exists ? (es.dmarc.valid ? 'Valid' : 'Invalid') : 'Missing']]);
+  }
+
+  if (scan.results.jsInspection?.files?.length) {
+    csvContent += `JS Analysis\nFile,Size(KB),Endpoints,API Keys\n`;
+    scan.results.jsInspection.files.forEach((f: any) => { csvContent += `${escapeCsv(f.url)},${(f.size / 1024).toFixed(1)},${escapeCsv(f.endpoints?.join('; ') || '')},${escapeCsv(f.apiKeys?.join('; ') || '')}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.s3Bucket?.buckets?.length) {
+    csvContent += `S3 Buckets\nBucket,Accessible,Listing,Status\n`;
+    scan.results.s3Bucket.buckets.forEach((b: any) => { csvContent += `${escapeCsv(b.name)},${b.accessible ? 'Yes' : 'No'},${b.listing ? 'Yes' : 'No'},${b.statusCode}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.gitExposure?.files?.length) {
+    csvContent += `Git Exposure\nPath,Exposed,Status\n`;
+    scan.results.gitExposure.files.forEach((f: any) => { csvContent += `${escapeCsv(f.path)},${f.exposed ? 'Yes' : 'No'},${f.statusCode}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.openRedirect?.vulnerableCount > 0) {
+    csvContent += `Open Redirect\nParameter,Redirects To,Status\n`;
+    scan.results.openRedirect.tests.filter((t: any) => t.vulnerable).forEach((t: any) => { csvContent += `${escapeCsv(t.param)},${escapeCsv(t.redirectedTo || 'N/A')},${t.statusCode}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.cveScanner?.totalFound > 0) {
+    csvContent += `CVE Scanner\nCVE ID,Technology,Severity,Description\n`;
+    scan.results.cveScanner.matches.forEach((m: any) => { csvContent += `${escapeCsv(m.cveId)},${escapeCsv(m.technology)},${escapeCsv(m.severity)},${escapeCsv(m.description)}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.graphQL?.totalEndpoints > 0) {
+    csvContent += `GraphQL\nPath,Accessible,Introspection\n`;
+    scan.results.graphQL.endpoints.forEach((e: any) => { csvContent += `${escapeCsv(e.path)},${e.accessible ? 'Yes' : 'No'},${e.introspectionOpen ? 'Open' : 'Closed'}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.rateLimit) {
+    const rl = scan.results.rateLimit;
+    csvKv('Rate Limit', [['Rate Limited', rl.rateLimited ? 'Yes' : 'No'], ['Requests Sent', String(rl.requestsSent)], ['Blocked', String(rl.requestsBlocked)], ['Details', rl.details || 'N/A']]);
+  }
+
+  if (scan.results.csrfDetection?.totalForms > 0) {
+    csvContent += `CSRF Detection\nForm Action,Method,Has Token\n`;
+    scan.results.csrfDetection.forms.forEach((f: any) => { csvContent += `${escapeCsv(f.action || 'N/A')},${escapeCsv(f.method)},${f.hasCSRFToken ? 'Yes' : 'No'}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.cdnDetection?.detectedCount > 0) {
+    csvContent += `CDN Detection\nName,Evidence\n`;
+    scan.results.cdnDetection.cdns.filter((c: any) => c.detected).forEach((c: any) => { csvContent += `${escapeCsv(c.name)},${escapeCsv(c.evidence?.join('; ') || '')}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.cloudProvider?.detectedCount > 0) {
+    csvContent += `Cloud Provider\nName,Evidence\n`;
+    scan.results.cloudProvider.providers.filter((p: any) => p.detected).forEach((p: any) => { csvContent += `${escapeCsv(p.name)},${escapeCsv(p.evidence?.join('; ') || '')}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.robotsSitemap) {
+    const rs = scan.results.robotsSitemap;
+    csvKv('Robots & Sitemap', [['robots.txt', rs.robots?.exists ? 'Found' : 'Not found'], ['Sitemap', rs.sitemap?.exists ? `Found (${rs.sitemap.count} URLs)` : 'Not found']]);
+    if (rs.robots?.disallowedPaths?.length) { rs.robots.disallowedPaths.forEach((p: string) => { csvContent += `Disallowed Path,${escapeCsv(p)}\n`; }); csvContent += '\n'; }
+  }
+
+  if (scan.results.cookieAudit?.cookies?.length) {
+    csvContent += `Cookie Audit\nName,Secure,HttpOnly,SameSite,Issues\n`;
+    scan.results.cookieAudit.cookies.forEach((c: any) => { csvContent += `${escapeCsv(c.name)},${c.secure ? 'Yes' : 'No'},${c.httpOnly ? 'Yes' : 'No'},${escapeCsv(c.sameSite || 'N/A')},${escapeCsv(c.issues?.join('; ') || 'None')}\n`; });
+    csvContent += '\n';
+  }
+
+  if (scan.results.emailHarvesting?.emails?.length) {
+    csvContent += `Email Harvesting\nEmail,Source,Context\n`;
+    scan.results.emailHarvesting.emails.slice(0, 50).forEach((e: any) => { csvContent += `${escapeCsv(e.email)},${escapeCsv(e.source || 'N/A')},${escapeCsv(e.context || 'N/A')}\n`; });
+    csvContent += '\n';
+  }
 
   if (returnContent) {
     return csvContent;
