@@ -13,6 +13,8 @@ export interface APIKeys {
 export const getAPIKeys = async (): Promise<APIKeys> => {
   try {
     const keys = await fetchAPIKeys();
+    // Defensive: fetchAPIKeys should always return an object, but guard anyway
+    if (!keys || typeof keys !== 'object' || Array.isArray(keys)) return {};
     return keys as APIKeys;
   } catch (error: any) {
     console.error('[API Keys] Failed to load from backend:', error.message);

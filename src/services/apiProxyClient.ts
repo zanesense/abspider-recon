@@ -21,7 +21,10 @@ export async function fetchAPIKeys(): Promise<Record<string, string>> {
     console.error('[API Proxy] Failed to fetch API keys:', resp.status, await resp.text().catch(() => ''));
     return {};
   }
-  return resp.json();
+  const data = await resp.json();
+  // Guard: server could return null or a non-object (e.g. on misconfiguration); treat as empty
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return {};
+  return data as Record<string, string>;
 }
 
 export async function saveAPIKeysToBackend(keys: Record<string, string>): Promise<void> {

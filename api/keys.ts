@@ -7,14 +7,18 @@ const adminClient = supabaseUrl && serviceRoleKey
   ? createClient(supabaseUrl, serviceRoleKey)
   : null;
 
-async function authenticate(request: any): Promise<{ user: any; status: number; body: any } | null> {
+type AuthError = { user: null; status: number; body: any };
+type AuthSuccess = { user: NonNullable<any>; status: null; body: null };
+
+async function authenticate(request: any): Promise<AuthError | AuthSuccess> {
   const auth = request.headers.authorization || '';
   if (!auth.startsWith('Bearer ')) return { user: null, status: 401, body: { error: 'Missing Authorization header' } };
   const token = auth.slice(7);
   if (!adminClient) return { user: null, status: 500, body: { error: 'Server misconfigured' } };
   const { data: { user }, error } = await adminClient.auth.getUser(token);
   if (error || !user) return { user: null, status: 401, body: { error: 'Invalid or expired token' } };
-  return { user, status: 200, body: null };
+  // Success: return user with null status/body so the caller can distinguish
+  return { user, status: null, body: null };
 }
 
 export default async function handler(request: any, response: any) {
@@ -31,18 +35,19 @@ export default async function handler(request: any, response: any) {
     return;
   }
 
-  const auth = await authenticate(request);
-  if (auth) {
-    response.status(auth.status).json(auth.body);
-    return;
-  }
-
   if (!adminClient) {
     response.status(500).json({ error: 'Server misconfigured' });
     return;
   }
 
-  const { user } = auth!;
+  const auth = await authenticate(request);
+  if (!auth.user) {
+    // status is always set when user is null
+    response.status(auth.status as number).json(auth.body);
+    return;
+  }
+
+  const { user } = auth;
 
   if (request.method === 'GET') {
     const { data, error } = await adminClient
