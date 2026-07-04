@@ -1,4 +1,4 @@
-import { useToast } from '@/hooks/use-toast';
+import { fetchWithBypass } from './corsProxy';
 
 export interface ScanTarget {
   url: string;
@@ -81,11 +81,9 @@ export class SmartScanManager {
 
     try {
       const startTime = Date.now();
-      const response = await fetch(this.target.url, {
+      const { response } = await fetchWithBypass(this.target.url, {
         method: 'HEAD',
-        headers: {
-          'User-Agent': 'ABSpider/1.0 (Security Scanner)',
-        }
+        timeout: 10000,
       });
 
       const responseTime = Date.now() - startTime;

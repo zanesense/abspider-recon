@@ -4,9 +4,25 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 ## Unreleased
 
+### Added
+
+- **Reports now include all 35 scan modules** — PDF, DOCX, Markdown, and CSV exports cover every module result: Whois, Reverse IP, Email Security, JS Analysis, S3 Buckets, Git Exposure, Open Redirect, CVE Scanner, GraphQL, Rate Limit, CSRF, CDN/Cloud Provider detection, Robots & Sitemap, Cookie Audit, and Email Harvesting.
+- **Vercel serverless functions for `/api/keys`** — `api/keys.ts` (GET/POST) and `api/keys/proxy.ts` (POST) handle API key management and provider proxying without requiring the FastAPI backend, fixing `405` errors on Vercel deployments.
+- **PDF cover page** — dark-themed cover sheet with target info, scan ID, timestamp, and security grade before the executive summary.
+
 ### Changed
 
+- **PDF vulnerability summary** — expanded from 9 to 16 rows, covering all vulnerability-related modules with severity and action columns.
 - Moved release history out of `README.md` into this standalone changelog.
+
+### Fixed
+
+- **X-Forwarded-For rate-limit spoofing** — `api/proxy.ts` no longer trusts the client-supplied `X-Forwarded-For` header for rate-limit bucketing, using only `socket.remoteAddress`.
+- **AbortSignal listener leak in proxy path** — `corsProxy.ts` now cleans up the `signal.abort` listener with `{ once: true }` on the backend proxy fallback path.
+- **Raw fetch in smart scan** — `smartScanService.ts` now uses `fetchWithBypass` instead of raw `fetch()`, so CORS-protected targets are properly handled during initial recon.
+- **Empty catches in GraphQL scanner** — `graphQLService.ts` error handlers now log the caught exception instead of silently swallowing it.
+- **Full body read in WAF protection** — `wafProtectionService.ts` truncates response bodies to 4 KB before pattern matching, preventing OOM on large responses.
+- **Null scan.status in webhook** — `webhookService.ts` adds a null guard before calling `.toUpperCase()` on `scan.status`.
 - Updated README architecture and deployment notes to describe the current FastAPI `/api/proxy` backend, Docker Compose stack, and static Vercel deployment behavior.
 - Documented smart proxy routing: CORS-enabled third-party APIs now bypass the FastAPI proxy while target-site probes can still use proxy fallback.
 - Fixed the root `npm run cli` script to call `packages/cli/scripts/abspider-cli.mjs`.

@@ -84,7 +84,7 @@ const sendJson = (response: any, status: number, payload: unknown, origin = '') 
 
 export default async function handler(request: any, response: any) {
   const origin = String(request.headers['origin'] || '');
-  const clientIp = String(request.socket?.remoteAddress || request.headers['x-forwarded-for'] || 'unknown');
+  const clientIp = String(request.socket?.remoteAddress || 'unknown');
 
   if (request.method === 'OPTIONS') {
     response.status(204);

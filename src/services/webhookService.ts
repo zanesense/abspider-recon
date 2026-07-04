@@ -31,7 +31,7 @@ export const sendDiscordWebhook = async (scan: Scan) => {
         },
         {
           name: 'Status',
-          value: scan.status.toUpperCase(),
+          value: (scan.status || 'unknown').toUpperCase(),
           inline: true,
         },
         {
