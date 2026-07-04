@@ -1,6 +1,7 @@
 import asyncio
 import collections
 import ipaddress
+import os
 import socket
 import time
 import httpx
@@ -9,6 +10,21 @@ from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse, Response
 
 app = FastAPI(title="ABSpider Proxy API")
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_REST_URL = f"{SUPABASE_URL}/rest/v1"
+SUPABASE_AUTH_URL = f"{SUPABASE_URL}/auth/v1"
+
+PROVIDER_AUTH = {
+    "shodan": {"type": "query", "param": "key"},
+    "virustotal": {"type": "header", "header": "x-apikey"},
+    "securitytrails": {"type": "header", "header": "APIKEY"},
+    "builtwith": {"type": "query", "param": "key"},
+    "opencage": {"type": "query", "param": "key"},
+    "hunterio": {"type": "query", "param": "api_key"},
+    "clearbit": {"type": "header", "header": "Authorization", "prefix": "Bearer "},
+}
 
 ALLOWED_HEADERS = {
     "accept",
@@ -184,3 +200,162 @@ async def proxy_handler(request: Request, url: str = Query(...)):
                 content={"error": "Failed to fetch target URL"},
                 headers=cors,
             )
+
+
+# ---------------------------------------------------------------------------
+# Secure API key proxy — keys never reach the browser
+# ---------------------------------------------------------------------------
+
+async def _supabase_get_user(token: str) -> dict | None:
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        return None
+    async with httpx.AsyncClient() as c:
+        resp = await c.get(
+            f"{SUPABASE_AUTH_URL}/user",
+            headers={"Authorization": f"Bearer {token}", "apikey": SUPABASE_SERVICE_ROLE_KEY},
+        )
+        return resp.json() if resp.status_code == 200 else None
+
+
+async def _supabase_get_keys(user_id: str) -> dict:
+    if not SUPABASE_URL:
+        return {}
+    async with httpx.AsyncClient() as c:
+        resp = await c.get(
+            f"{SUPABASE_REST_URL}/user_api_keys",
+            params={"user_id": f"eq.{user_id}"},
+            headers={"Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}", "apikey": SUPABASE_SERVICE_ROLE_KEY},
+        )
+        rows = resp.json()
+        return rows[0].get("api_keys", {}) if isinstance(rows, list) and rows else {}
+
+
+async def _supabase_upsert_keys(user_id: str, api_keys: dict) -> bool:
+    if not SUPABASE_URL:
+        return False
+    async with httpx.AsyncClient() as c:
+        resp = await c.post(
+            f"{SUPABASE_REST_URL}/user_api_keys",
+            json={"user_id": user_id, "api_keys": api_keys},
+            headers={
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                "Prefer": "resolution=merge-duplicates",
+            },
+        )
+        return resp.status_code in (200, 201)
+
+
+def _authenticate_user(user: dict | None, cors: dict) -> JSONResponse | None:
+    if user is None:
+        return JSONResponse(status_code=401, content={"error": "Invalid or expired token"}, headers=cors)
+    return None
+
+
+def _attach_auth(url: str, headers: dict, provider: str, api_key: str) -> tuple[str, dict]:
+    config = PROVIDER_AUTH.get(provider)
+    if not config:
+        return url, headers
+    if config["type"] == "header":
+        prefix = config.get("prefix", "")
+        headers[config["header"]] = f"{prefix}{api_key}"
+    elif config["type"] == "query":
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}{config['param']}={api_key}"
+    return url, headers
+
+
+@app.options("/api/keys")
+@app.options("/api/keys/proxy")
+async def keys_options(request: Request):
+    origin = request.headers.get("origin", "")
+    return Response(status_code=204, headers=get_cors_headers(origin))
+
+
+def _bearer_token(request: Request) -> str | None:
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None
+    return auth.removeprefix("Bearer ")
+
+
+@app.get("/api/keys")
+async def get_api_keys(request: Request):
+    origin = request.headers.get("origin", "")
+    cors = get_cors_headers(origin)
+    token = _bearer_token(request)
+    if not token:
+        return JSONResponse(status_code=401, content={"error": "Missing Authorization header"}, headers=cors)
+    user = await _supabase_get_user(token)
+    err = _authenticate_user(user, cors)
+    if err:
+        return err
+    keys = await _supabase_get_keys(user["id"])
+    return JSONResponse(content=keys, headers=cors)
+
+
+@app.post("/api/keys")
+async def save_api_keys(request: Request):
+    origin = request.headers.get("origin", "")
+    cors = get_cors_headers(origin)
+    token = _bearer_token(request)
+    if not token:
+        return JSONResponse(status_code=401, content={"error": "Missing Authorization header"}, headers=cors)
+    user = await _supabase_get_user(token)
+    err = _authenticate_user(user, cors)
+    if err:
+        return err
+    body = await request.json()
+    ok = await _supabase_upsert_keys(user["id"], body)
+    if not ok:
+        return JSONResponse(status_code=500, content={"error": "Failed to save API keys"}, headers=cors)
+    return JSONResponse(content={"ok": True}, headers=cors)
+
+
+@app.post("/api/keys/proxy")
+async def proxy_api_key_request(request: Request):
+    origin = request.headers.get("origin", "")
+    cors = get_cors_headers(origin)
+    token = _bearer_token(request)
+    if not token:
+        return JSONResponse(status_code=401, content={"error": "Missing Authorization header"}, headers=cors)
+    user = await _supabase_get_user(token)
+    err = _authenticate_user(user, cors)
+    if err:
+        return err
+
+    body = await request.json()
+    provider = body.get("provider")
+    target_url = body.get("url")
+    method = body.get("method", "GET")
+    req_headers = dict(body.get("headers") or {})
+    req_body = body.get("body")
+
+    if not provider or not target_url:
+        return JSONResponse(status_code=400, content={"error": "provider and url are required"}, headers=cors)
+    if provider not in PROVIDER_AUTH:
+        return JSONResponse(status_code=400, content={"error": f"Unknown provider: {provider}"}, headers=cors)
+
+    # Allow caller to provide an explicit key (e.g. for testing a new key before saving)
+    api_key = body.get("api_key")
+    if not api_key:
+        keys = await _supabase_get_keys(user["id"])
+        api_key = keys.get(provider)
+        if not api_key:
+            return JSONResponse(status_code=400, content={"error": f"API key not configured for {provider}"}, headers=cors)
+
+    target_url, req_headers = _attach_auth(target_url, req_headers, provider, api_key)
+    req_headers.setdefault("User-Agent", DEFAULT_UA)
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            resp = await client.request(method=method, url=target_url, headers=req_headers, content=req_body)
+            resp_headers = dict(resp.headers)
+            for hop in ("content-encoding", "transfer-encoding", "content-length"):
+                resp_headers.pop(hop, None)
+            resp_headers.update(cors)
+            return Response(content=resp.content, status_code=resp.status_code, headers=resp_headers)
+        except httpx.TimeoutException:
+            return JSONResponse(status_code=504, content={"error": "Upstream request timed out"}, headers=cors)
+        except Exception:
+            return JSONResponse(status_code=502, content={"error": "Upstream request failed"}, headers=cors)

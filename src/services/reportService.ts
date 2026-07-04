@@ -1,7 +1,10 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver'; // For saving DOCX files
+import {
+  Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
+  Table, TableRow, TableCell, WidthType, BorderStyle,
+} from 'docx';
+import { saveAs } from 'file-saver';
 import { Scan } from './scanService';
 
 const getSecurityRecommendations = (scan: Scan): string[] => {
@@ -896,56 +899,252 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
   }
 };
 
+// DOCX helpers
+const kvRow = (key: string, val: string) => new TableRow({
+  children: [
+    new TableCell({ children: [new Paragraph({ text: key, bold: true })], width: { size: 4000, type: WidthType.DXA } }),
+    new TableCell({ children: [new Paragraph({ text: val })], width: { size: 12000, type: WidthType.DXA } }),
+  ],
+});
+const h2 = (text: string) => new Paragraph({ text, heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 100 } });
+const h3 = (text: string) => new Paragraph({ text, heading: HeadingLevel.HEADING_3, spacing: { before: 200, after: 80 } });
+const para = (text: string) => new Paragraph({ text, spacing: { after: 60 } });
+const kvTable = (rows: [string, string][]) => new Table({
+  rows: rows.map(([k, v]) => kvRow(k, v)),
+  width: { size: 16000, type: WidthType.DXA },
+});
+const bullet = (text: string) => new Paragraph({
+  text, bullet: { level: 0 }, spacing: { after: 40 },
+});
+const noBorder: any = { style: BorderStyle.NONE, size: 0 };
+
 export const generateDocxReport = async (scan: Scan, returnContent: boolean = false): Promise<string | void> => {
   const recommendations = getSecurityRecommendations(scan);
-  const doc = new Document({
-    sections: [{
-      children: [
-        new Paragraph({
-          text: 'ABSpider Recon Dashboard',
-          heading: HeadingLevel.TITLE,
-          alignment: AlignmentType.CENTER,
-        }),
-        new Paragraph({
-          text: 'Comprehensive Security Assessment Report',
-          heading: HeadingLevel.HEADING_1, // Corrected to HEADING_1
-          alignment: AlignmentType.CENTER,
-        }),
-        new Paragraph({
-          text: `Generated: ${new Date().toLocaleString()} | Classification: CONFIDENTIAL`,
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          text: 'Executive Summary',
-          heading: HeadingLevel.HEADING_2, // Corrected to HEADING_2
-          spacing: { after: 100 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({ text: `Target Domain: ${scan.target}`, break: 1 }),
-            new TextRun({ text: `Scan ID: ${scan.id}`, break: 1 }),
-            new TextRun({ text: `Timestamp: ${new Date(scan.timestamp).toLocaleString()}`, break: 1 }),
-            new TextRun({ text: `Status: ${scan.status.toUpperCase()}`, break: 1 }), // Updated status
-            new TextRun({ text: `Security Grade: ${scan.securityGrade?.toFixed(1) || 'N/A'}/10`, break: 1 }),
-          ],
-          spacing: { after: 200 },
-        }),
-        ...(recommendations.length > 0 ? [
-          new Paragraph({
-            text: 'Security Recommendations',
-            heading: HeadingLevel.HEADING_2, // Corrected to HEADING_2
-            spacing: { after: 100 },
-          }),
-          ...recommendations.map(rec => new Paragraph({ text: rec })),
-        ] : []),
-        // Add more sections as needed for DOCX
+  const children: any[] = [
+    new Paragraph({ text: 'ABSpider Recon Dashboard', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
+    new Paragraph({ text: 'Comprehensive Security Assessment Report', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+    new Paragraph({ text: `Generated: ${new Date().toLocaleString()} | Classification: CONFIDENTIAL`, alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
+    h2('Executive Summary'),
+    kvTable([
+      ['Target Domain', scan.target],
+      ['Scan ID', scan.id],
+      ['Timestamp', new Date(scan.timestamp).toLocaleString()],
+      ['Status', scan.status.toUpperCase()],
+      ['Duration', scan.elapsedMs ? `${Math.floor(scan.elapsedMs / 60000)}m ${Math.floor((scan.elapsedMs % 60000) / 1000)}s` : 'N/A'],
+      ['Security Grade', `${scan.securityGrade?.toFixed(1) || 'N/A'}/10`],
+    ]),
+  ];
+
+  if (recommendations.length > 0) {
+    children.push(h2('Security Recommendations'));
+    recommendations.forEach(r => children.push(bullet(r)));
+  }
+
+  // Vulnerability Summary
+  const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
+  const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
+  const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
+  const corsVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0;
+  const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
+  if (sqlVulns + xssVulns + lfiVulns + corsVulns + wpVulns > 0) {
+    children.push(h2('Vulnerability Summary'));
+    children.push(new Table({
+      rows: [
+        new TableRow({ children: ['Vulnerability Type', 'Count', 'Severity'].map(h => new TableCell({ children: [new Paragraph({ text: h, bold: true })] })) }),
+        ...[[sqlVulns, 'SQL Injection', sqlVulns > 0 ? 'CRITICAL' : 'SAFE'],
+          [xssVulns, 'XSS', xssVulns > 0 ? 'CRITICAL' : 'SAFE'],
+          [lfiVulns, 'LFI', lfiVulns > 0 ? 'CRITICAL' : 'SAFE'],
+          [corsVulns, 'CORS Misconfiguration', corsVulns > 0 ? 'CRITICAL' : 'SAFE'],
+          [wpVulns, 'WordPress', wpVulns > 0 ? 'HIGH' : 'SAFE']].map(([count, label, sev]) =>
+            new TableRow({ children: [label, String(count), sev].map(c => new TableCell({ children: [new Paragraph({ text: c })] })) })
+          ),
       ],
-    }],
+      width: { size: 16000, type: WidthType.DXA },
+    }));
+  }
+
+  // Vulnerability details
+  const vulnSection = (title: string, vulns: any[], cols: string[], mapFn: (v: any) => string[]) => {
+    if (!vulns.length) return;
+    children.push(h2(title));
+    children.push(new Table({
+      rows: [
+        new TableRow({ children: cols.map(c => new TableCell({ children: [new Paragraph({ text: c, bold: true })] })) }),
+        ...vulns.map(v => new TableRow({ children: mapFn(v).map(c => new TableCell({ children: [new Paragraph({ text: c })] })) })),
+      ],
+      width: { size: 16000, type: WidthType.DXA },
+    }));
+  };
+  vulnSection('SQL Injection Vulnerabilities', scan.results.sqlinjection?.vulnerabilities || [], ['Severity', 'Type', 'Parameter', 'Payload'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || 'N/A', v.payload?.substring(0, 100) || 'N/A']);
+  vulnSection('XSS Vulnerabilities', scan.results.xss?.vulnerabilities || [], ['Severity', 'Type', 'Location', 'Payload'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || v.location || 'N/A', v.payload?.substring(0, 100) || 'N/A']);
+  vulnSection('LFI Vulnerabilities', scan.results.lfi?.vulnerabilities || [], ['Severity', 'Type', 'Parameter', 'Payload'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || 'N/A', v.payload?.substring(0, 100) || 'N/A']);
+  vulnSection('CORS Misconfigurations', scan.results.corsMisconfig?.vulnerabilities || [], ['Severity', 'Type', 'Origin'], v => [v.severity.toUpperCase(), v.type?.replace(/_/g, ' ') || 'N/A', v.originTested || 'N/A']);
+  vulnSection('WordPress Issues', scan.results.wordpress?.vulnerabilities || [], ['Severity', 'Type', 'Description'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.description || 'N/A']);
+
+  // Site Information
+  if (scan.results.siteInfo) {
+    const s = scan.results.siteInfo;
+    children.push(h2('Site Information'));
+    children.push(kvTable([
+      ['Title', s.title || 'N/A'],
+      ['IP Address', s.ip || 'N/A'],
+      ['Web Server', s.webServer || 'N/A'],
+      ['CMS', s.cms || 'None detected'],
+      ['Cloudflare', s.cloudflare ? 'Yes' : 'No'],
+      ['Status Code', String(s.statusCode ?? 'N/A')],
+      ['Response Time', s.responseTime ? `${s.responseTime}ms` : 'N/A'],
+    ]));
+  }
+
+  // Technology Stack
+  if (scan.results.techStack?.technologies?.length) {
+    children.push(h2('Technology Stack'));
+    children.push(new Table({
+      rows: [
+        new TableRow({ children: ['Name', 'Category', 'Version', 'Confidence'].map(c => new TableCell({ children: [new Paragraph({ text: c, bold: true })] })) }),
+        ...scan.results.techStack.technologies.map((t: any) =>
+          new TableRow({ children: [t.name, t.category || 'N/A', t.version || 'N/A', t.confidence ? `${(t.confidence * 100).toFixed(0)}%` : 'N/A'].map(c => new TableCell({ children: [new Paragraph({ text: c })] })) })
+        ),
+      ],
+      width: { size: 16000, type: WidthType.DXA },
+    }));
+  }
+
+  // Security Headers
+  if (scan.results.headers?.securityHeaders) {
+    children.push(h2('Security Headers'));
+    const hdrs = scan.results.headers.securityHeaders;
+    children.push(para(`Grade: ${hdrs.grade || 'N/A'}`));
+    if (hdrs.present?.length) {
+      children.push(h3('Present Headers'));
+      hdrs.present.forEach((h: any) => children.push(bullet(`${h.name}: ${h.secure ? 'Secure' : 'Needs improvement'}`)));
+    }
+    if (hdrs.missing?.length) {
+      children.push(h3('Missing Headers'));
+      hdrs.missing.forEach((h: any) => children.push(bullet(`${h.name} (${h.severity.toUpperCase()}): ${h.recommendation}`)));
+    }
+  }
+
+  // GeoIP
+  if (scan.results.geoip) {
+    const g = scan.results.geoip;
+    children.push(h2('GeoIP Information'));
+    children.push(kvTable([
+      ['IP', g.ip || 'N/A'],
+      ['Country', g.country || 'N/A'],
+      ['City', g.city || 'N/A'],
+      ['Region', g.region || 'N/A'],
+      ['Timezone', g.timezone || 'N/A'],
+      ['ISP', g.isp || 'N/A'],
+      ['ASN', g.asn || 'N/A'],
+      ['Coordinates', g.latitude && g.longitude ? `${g.latitude}, ${g.longitude}` : 'N/A'],
+    ]));
+  }
+
+  // DNS Records
+  if (scan.results.dns) {
+    children.push(h2('DNS Records'));
+    const types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
+    for (const type of types) {
+      const records = scan.results.dns.records[type as keyof typeof scan.results.dns.records];
+      if (records?.length) {
+        children.push(h3(`${type} Records`));
+        records.forEach((r: any) => children.push(bullet(`${r.value}${r.ttl ? ` (TTL: ${r.ttl})` : ''}`)));
+      }
+    }
+  }
+
+  // Subdomains
+  if (scan.results.subdomains?.subdomains?.length) {
+    children.push(h2(`Subdomains (${scan.results.subdomains.subdomains.length})`));
+    scan.results.subdomains.subdomains.forEach(s => children.push(bullet(s)));
+  }
+
+  // SEO Analysis
+  if (scan.results.seo) {
+    const seo = scan.results.seo;
+    children.push(h2('SEO Analysis'));
+    children.push(kvTable([
+      ['HTTP Code', String(seo.httpCode)],
+      ['Title', seo.title],
+      ['Load Time', `${seo.loadTime}ms`],
+      ['Page Size', `${(seo.pageSize / 1024).toFixed(2)} KB`],
+      ['Images', String(seo.imageCount)],
+      ['Total Links', String(seo.linkCount.total)],
+      ['Internal Links', String(seo.linkCount.internal)],
+      ['External Links', String(seo.linkCount.external)],
+    ]));
+  }
+
+  // Broken Links
+  if (scan.results.brokenLinks?.brokenLinks?.length) {
+    children.push(h2(`Broken Links (${scan.results.brokenLinks.brokenLinks.length})`));
+    children.push(new Table({
+      rows: [
+        new TableRow({ children: ['URL', 'Status', 'Type', 'Source'].map(c => new TableCell({ children: [new Paragraph({ text: c, bold: true })] })) }),
+        ...scan.results.brokenLinks.brokenLinks.map((l: any) =>
+          new TableRow({ children: [l.url?.substring(0, 100) || 'N/A', String(l.status), l.isInternal ? 'Internal' : 'External', l.sourcePage?.substring(0, 80) || 'N/A'].map(c => new TableCell({ children: [new Paragraph({ text: c })] })) })
+        ),
+      ],
+      width: { size: 16000, type: WidthType.DXA },
+    }));
+  }
+
+  // WAF Protection
+  if (scan.results.ddosFirewall?.tested) {
+    const waf = scan.results.ddosFirewall;
+    children.push(h2('WAF Protection'));
+    children.push(kvTable([
+      ['WAF Detected', waf.firewallDetected ? 'Yes' : 'No'],
+      ['Total Requests', String(waf.totalRequests)],
+      ['Successful', String(waf.successfulRequests)],
+      ['Failed', String(waf.failedRequests)],
+    ]));
+    if (waf.indicators?.length) {
+      children.push(h3('Detection Indicators'));
+      waf.indicators.forEach((i: string) => children.push(bullet(i)));
+    }
+  }
+
+  // VirusTotal
+  if (scan.results.virustotal?.tested) {
+    const vt = scan.results.virustotal;
+    children.push(h2('VirusTotal'));
+    children.push(kvTable([
+      ['Domain', vt.domain],
+      ['Reputation', String(vt.reputation ?? 'N/A')],
+      ['Malicious Votes', String(vt.maliciousVotes ?? '0')],
+      ['Harmless Votes', String(vt.harmlessVotes ?? '0')],
+      ['Last Analysis', vt.lastAnalysisDate ? new Date(vt.lastAnalysisDate).toLocaleString() : 'N/A'],
+    ]));
+    if (vt.detectedUrls?.length) {
+      children.push(h3('Detected URLs'));
+      vt.detectedUrls.forEach((u: any) => children.push(bullet(`${u.url} (${u.positives}/${u.total})`)));
+    }
+  }
+
+  // SSL/TLS
+  if (scan.results.sslTls?.tested) {
+    const ssl = scan.results.sslTls;
+    children.push(h2('SSL/TLS'));
+    children.push(kvTable([
+      ['Domain', ssl.domain],
+      ['Issuer', ssl.certificateIssuer || 'N/A'],
+      ['Valid From', ssl.validFrom || 'N/A'],
+      ['Valid To', ssl.validTo || 'N/A'],
+      ['Status', ssl.isExpired ? 'Expired' : 'Valid'],
+      ['Days Until Expiry', String(ssl.daysUntilExpiry ?? 'N/A')],
+    ]));
+    if (ssl.commonNames?.length) children.push(para(`Common Names: ${ssl.commonNames.join(', ')}`));
+    if (ssl.altNames?.length) children.push(para(`Alternative Names: ${ssl.altNames.join(', ')}`));
+    if (ssl.fingerprintSha256) children.push(para(`SHA256 Fingerprint: ${ssl.fingerprintSha256}`));
+  }
+
+  const doc = new Document({
+    sections: [{ children }],
   });
 
   const buffer = await Packer.toBuffer(doc);
-  // Fix TS2322: Ensure we get a standard ArrayBuffer from the Buffer
   const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
   const blob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
@@ -960,52 +1159,206 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
   }
 };
 
+function mdTable(headers: string[], rows: string[][]): string {
+  const h = `| ${headers.join(' | ')} |\n| ${headers.map(() => '---').join(' | ')} |\n`;
+  return h + rows.map(r => `| ${r.join(' | ')} |`).join('\n') + '\n\n';
+}
+
+function mdKv(rows: [string, string][]): string {
+  return rows.map(([k, v]) => `- **${k}:** ${v}`).join('\n') + '\n\n';
+}
+
 export const generateMarkdownReport = (scan: Scan, returnContent: boolean = false): string | void => {
   const recommendations = getSecurityRecommendations(scan);
-  let markdown = `# ABSpider Recon Dashboard - Security Assessment Report\n\n`;
-  markdown += `**Target Domain:** ${scan.target}\n`;
-  markdown += `**Scan ID:** ${scan.id}\n`;
-  markdown += `**Generated:** ${new Date().toLocaleString()}\n`;
-  markdown += `**Status:** ${scan.status.toUpperCase()}\n`; // Updated status
-  markdown += `**Security Grade:** ${scan.securityGrade?.toFixed(1) || 'N/A'}/10\n\n`;
+  let md = `# ABSpider Recon Dashboard — Security Assessment Report\n\n`;
+  md += `**Target:** ${scan.target} | **Scan ID:** ${scan.id} | **Generated:** ${new Date().toLocaleString()}\n\n`;
+  md += `**Status:** ${scan.status.toUpperCase()} | **Grade:** ${scan.securityGrade?.toFixed(1) || 'N/A'}/10`;
+  if (scan.elapsedMs) md += ` | **Duration:** ${Math.floor(scan.elapsedMs / 60000)}m ${Math.floor((scan.elapsedMs % 60000) / 1000)}s`;
+  md += '\n\n---\n\n';
 
-  markdown += `## Executive Summary\n\n`;
-  markdown += `This report summarizes the reconnaissance and security assessment performed by ABSpider Recon Dashboard on \`${scan.target}\`.\n\n`;
-  markdown += `The scan was initiated on ${new Date(scan.timestamp).toLocaleString()} and completed with a status of **${scan.status.toUpperCase()}**.\n\n`;
-  markdown += `Overall Security Grade: **${scan.securityGrade?.toFixed(1) || 'N/A'}/10**.\n\n`;
+  md += `## Executive Summary\n\n`;
+  md += mdKv([
+    ['Target Domain', scan.target],
+    ['Scan ID', scan.id],
+    ['Timestamp', new Date(scan.timestamp).toLocaleString()],
+    ['Status', scan.status.toUpperCase()],
+    ['Security Grade', `${scan.securityGrade?.toFixed(1) || 'N/A'}/10`],
+    ['Classification', 'CONFIDENTIAL'],
+  ]);
 
   if (recommendations.length > 0) {
-    markdown += `## Security Recommendations\n\n`;
-    recommendations.forEach(rec => {
-      markdown += `- ${rec}\n`;
-    });
-    markdown += '\n';
+    md += `## Security Recommendations\n\n`;
+    recommendations.forEach(r => { md += `- ${r}\n`; });
+    md += '\n';
   }
 
-  // Add more sections as needed for Markdown
-  // Example: Vulnerability Summary
   const sqlVulns = scan.results.sqlinjection?.vulnerabilities?.length || 0;
   const xssVulns = scan.results.xss?.vulnerabilities?.length || 0;
   const lfiVulns = scan.results.lfi?.vulnerabilities?.length || 0;
-  const corsMisconfigVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0;
+  const corsVulns = scan.results.corsMisconfig?.vulnerabilities?.length || 0;
   const wpVulns = scan.results.wordpress?.vulnerabilities?.length || 0;
+  const total = sqlVulns + xssVulns + lfiVulns + corsVulns + wpVulns;
 
-  if (sqlVulns > 0 || xssVulns > 0 || lfiVulns > 0 || corsMisconfigVulns > 0 || wpVulns > 0) {
-    markdown += `## Vulnerability Overview\n\n`;
-    markdown += `| Vulnerability Type        | Count |\n`;
-    markdown += `|---------------------------|-------|\n`;
-    if (sqlVulns > 0) markdown += `| SQL Injection             | ${sqlVulns}    |\n`;
-    if (xssVulns > 0) markdown += `| XSS Vulnerabilities       | ${xssVulns}    |\n`;
-    if (lfiVulns > 0) markdown += `| LFI Vulnerabilities       | ${lfiVulns}    |\n`;
-    if (corsMisconfigVulns > 0) markdown += `| CORS Misconfiguration     | ${corsMisconfigVulns}    |\n`;
-    if (wpVulns > 0) markdown += `| WordPress Issues          | ${wpVulns}    |\n`;
-    markdown += '\n';
+  if (total > 0) {
+    md += `## Vulnerability Summary\n\n`;
+    md += mdTable(['Vulnerability Type', 'Count', 'Severity'], [
+      ['SQL Injection', String(sqlVulns), sqlVulns > 0 ? 'CRITICAL' : 'SAFE'],
+      ['Cross-Site Scripting (XSS)', String(xssVulns), xssVulns > 0 ? 'CRITICAL' : 'SAFE'],
+      ['Local File Inclusion (LFI)', String(lfiVulns), lfiVulns > 0 ? 'CRITICAL' : 'SAFE'],
+      ['CORS Misconfiguration', String(corsVulns), corsVulns > 0 ? 'CRITICAL' : 'SAFE'],
+      ['WordPress Security', String(wpVulns), wpVulns > 0 ? 'HIGH' : 'SAFE'],
+    ]);
+  }
+
+  // Vulnerability details
+  const vulnMdSection = (title: string, vulns: any[], headers: string[], mapFn: (v: any) => string[]) => {
+    if (!vulns.length) return;
+    md += `## ${title}\n\n`;
+    md += mdTable(headers, vulns.map(mapFn));
+  };
+  vulnMdSection('SQL Injection Vulnerabilities', scan.results.sqlinjection?.vulnerabilities || [], ['Severity', 'Type', 'Parameter', 'Payload', 'Evidence'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || 'N/A', v.payload?.substring(0, 120) || '', v.evidence?.substring(0, 120) || 'N/A']);
+  vulnMdSection('XSS Vulnerabilities', scan.results.xss?.vulnerabilities || [], ['Severity', 'Type', 'Location', 'Payload'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || v.location || 'N/A', v.payload?.substring(0, 120) || '']);
+  vulnMdSection('LFI Vulnerabilities', scan.results.lfi?.vulnerabilities || [], ['Severity', 'Type', 'Parameter', 'Payload', 'Confidence'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || 'N/A', v.payload?.substring(0, 120) || '', v.confidence ? `${(v.confidence * 100).toFixed(0)}%` : 'N/A']);
+  vulnMdSection('CORS Misconfigurations', scan.results.corsMisconfig?.vulnerabilities || [], ['Severity', 'Type', 'Origin', 'Evidence'], v => [v.severity.toUpperCase(), v.type?.replace(/_/g, ' ') || 'N/A', v.originTested || 'N/A', v.evidence?.substring(0, 120) || 'N/A']);
+  vulnMdSection('WordPress Issues', scan.results.wordpress?.vulnerabilities || [], ['Severity', 'Type', 'Description'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.description?.substring(0, 120) || 'N/A']);
+
+  // Site Information
+  if (scan.results.siteInfo) {
+    const s = scan.results.siteInfo;
+    md += `## Site Information\n\n${mdKv([
+      ['Title', s.title || 'N/A'],
+      ['IP Address', s.ip || 'N/A'],
+      ['Web Server', s.webServer || 'N/A'],
+      ['CMS', s.cms || 'None detected'],
+      ['Cloudflare', s.cloudflare ? 'Yes' : 'No'],
+      ['Status Code', String(s.statusCode ?? 'N/A')],
+      ['Response Time', s.responseTime ? `${s.responseTime}ms` : 'N/A'],
+      ['Technologies', scan.results.techStack?.technologies?.map((t: any) => t.name).join(', ') || 'None detected'],
+    ])}`;
+  }
+
+  // Tech Stack
+  if (scan.results.techStack?.technologies?.length) {
+    md += `## Technology Stack\n\n`;
+    md += mdTable(['Name', 'Category', 'Version', 'Confidence'], scan.results.techStack.technologies.map((t: any) => [t.name, t.category || 'N/A', t.version || 'N/A', t.confidence ? `${(t.confidence * 100).toFixed(0)}%` : 'N/A']));
+  }
+
+  // Security Headers
+  if (scan.results.headers?.securityHeaders) {
+    const hdrs = scan.results.headers.securityHeaders;
+    md += `## Security Headers\n\n**Grade:** ${hdrs.grade || 'N/A'}\n\n`;
+    if (hdrs.present?.length) {
+      md += `### Present Headers\n\n`;
+      hdrs.present.forEach((h: any) => { md += `- **${h.name}:** ${h.secure ? '✓ Secure' : 'Needs improvement'}\n`; });
+      md += '\n';
+    }
+    if (hdrs.missing?.length) {
+      md += `### Missing Headers\n\n`;
+      hdrs.missing.forEach((h: any) => { md += `- **${h.name}** (${h.severity.toUpperCase()}): ${h.recommendation}\n`; });
+      md += '\n';
+    }
+  }
+
+  // GeoIP
+  if (scan.results.geoip) {
+    const g = scan.results.geoip;
+    md += `## GeoIP Information\n\n${mdKv([
+      ['IP', g.ip || 'N/A'], ['Country', g.country || 'N/A'], ['City', g.city || 'N/A'],
+      ['Region', g.region || 'N/A'], ['Timezone', g.timezone || 'N/A'], ['ISP', g.isp || 'N/A'],
+      ['ASN', g.asn || 'N/A'],
+      ['Coordinates', g.latitude && g.longitude ? `${g.latitude}, ${g.longitude}` : 'N/A'],
+    ])}`;
+  }
+
+  // DNS Records
+  if (scan.results.dns) {
+    md += `## DNS Records\n\n`;
+    const types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
+    for (const type of types) {
+      const records = scan.results.dns.records[type as keyof typeof scan.results.dns.records];
+      if (records?.length) {
+        md += `### ${type} Records\n\n`;
+        md += mdTable(['Value', 'TTL'], records.map((r: any) => [r.value, String(r.ttl ?? 'N/A')]));
+      }
+    }
+  }
+
+  // Subdomains
+  if (scan.results.subdomains?.subdomains?.length) {
+    md += `## Subdomains (${scan.results.subdomains.subdomains.length})\n\n`;
+    scan.results.subdomains.subdomains.forEach((s: string, i: number) => { md += `${i + 1}. ${s}\n`; });
+    md += '\n';
+  }
+
+  // SEO
+  if (scan.results.seo) {
+    const seo = scan.results.seo;
+    md += `## SEO Analysis\n\n${mdKv([
+      ['HTTP Code', String(seo.httpCode)], ['Title', seo.title], ['Load Time', `${seo.loadTime}ms`],
+      ['Page Size', `${(seo.pageSize / 1024).toFixed(2)} KB`], ['Images', String(seo.imageCount)],
+      ['Total Links', String(seo.linkCount.total)], ['Internal Links', String(seo.linkCount.internal)],
+      ['External Links', String(seo.linkCount.external)],
+    ])}`;
+  }
+
+  // Broken Links
+  if (scan.results.brokenLinks?.brokenLinks?.length) {
+    md += `## Broken Links (${scan.results.brokenLinks.brokenLinks.length})\n\n`;
+    md += mdTable(['URL', 'Status', 'Type', 'Source Page'], scan.results.brokenLinks.brokenLinks.map((l: any) => [
+      l.url?.substring(0, 100) || 'N/A', String(l.status), l.isInternal ? 'Internal' : 'External',
+      l.sourcePage?.substring(0, 80) || 'N/A',
+    ]));
+  }
+
+  // WAF
+  if (scan.results.ddosFirewall?.tested) {
+    const waf = scan.results.ddosFirewall;
+    md += `## WAF Protection\n\n${mdKv([
+      ['WAF Detected', waf.firewallDetected ? 'Yes' : 'No'],
+      ['Total Requests', String(waf.totalRequests)], ['Successful', String(waf.successfulRequests)],
+      ['Failed', String(waf.failedRequests)],
+    ])}`;
+    if (waf.indicators?.length) {
+      md += `### Detection Indicators\n\n`;
+      waf.indicators.forEach((i: string) => { md += `- ${i}\n`; });
+      md += '\n';
+    }
+  }
+
+  // VirusTotal
+  if (scan.results.virustotal?.tested) {
+    const vt = scan.results.virustotal;
+    md += `## VirusTotal\n\n${mdKv([
+      ['Domain', vt.domain], ['Reputation', String(vt.reputation ?? 'N/A')],
+      ['Malicious Votes', String(vt.maliciousVotes ?? '0')],
+      ['Harmless Votes', String(vt.harmlessVotes ?? '0')],
+      ['Last Analysis', vt.lastAnalysisDate ? new Date(vt.lastAnalysisDate).toLocaleString() : 'N/A'],
+      ['Registrar', vt.registrar || 'N/A'], ['Categories', vt.categories?.join(', ') || 'N/A'],
+    ])}`;
+    if (vt.detectedUrls?.length) {
+      md += `### Detected URLs\n\n`;
+      md += mdTable(['URL', 'Detections'], vt.detectedUrls.map((u: any) => [u.url?.substring(0, 100) || 'N/A', `${u.positives}/${u.total}`]));
+    }
+  }
+
+  // SSL/TLS
+  if (scan.results.sslTls?.tested) {
+    const ssl = scan.results.sslTls;
+    md += `## SSL/TLS\n\n${mdKv([
+      ['Domain', ssl.domain], ['Issuer', ssl.certificateIssuer || 'N/A'],
+      ['Valid From', ssl.validFrom || 'N/A'], ['Valid To', ssl.validTo || 'N/A'],
+      ['Status', ssl.isExpired ? 'Expired' : 'Valid'],
+      ['Days Until Expiry', String(ssl.daysUntilExpiry ?? 'N/A')],
+      ['Common Names', ssl.commonNames?.join(', ') || 'N/A'],
+      ['Alternative Names', ssl.altNames?.join(', ') || 'N/A'],
+      ['SHA256 Fingerprint', ssl.fingerprintSha256 || 'N/A'],
+    ])}`;
   }
 
   if (returnContent) {
-    return markdown;
+    return md;
   } else {
-    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
     try {
       saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.md`);
     } catch (e) {
@@ -1056,16 +1409,20 @@ export const generateCsvReport = (scan: Scan, returnContent: boolean = false): s
   csvContent += `Broken Links,${escapeCsv(brokenLinksCount)},${escapeCsv(brokenLinksCount > 0 ? 'MEDIUM' : 'SAFE')}\n`;
   csvContent += `\n`;
 
-  // Add more detailed module summaries if needed, e.g., for SQLi vulnerabilities
-  if (sqlVulns > 0) {
-    csvContent += `SQL Injection Details\n`;
-    csvContent += `Severity,Type,Parameter,Payload,Evidence\n`;
-    scan.results.sqlinjection?.vulnerabilities?.forEach(vuln => {
-      csvContent += `${escapeCsv(vuln.severity.toUpperCase())},${escapeCsv(vuln.type || 'N/A')},${escapeCsv(vuln.parameter || 'N/A')},${escapeCsv(vuln.payload)},${escapeCsv(vuln.evidence || 'N/A')}\n`;
-    });
-    csvContent += `\n`;
-  }
-  // Repeat for XSS, LFI, etc.
+  // Vulnerability detail sections
+  const csvVulnSection = (label: string, vulns: any[], cols: string[], mapFn: (v: any) => string[]) => {
+    if (!vulns.length) return;
+    csvContent += `${label} Details\n`;
+    csvContent += cols.join(',') + '\n';
+    vulns.forEach(v => { csvContent += mapFn(v).map(escapeCsv).join(',') + '\n'; });
+    csvContent += '\n';
+  };
+  csvVulnSection('SQL Injection', scan.results.sqlinjection?.vulnerabilities || [], ['Severity', 'Type', 'Parameter', 'Payload', 'Evidence'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || 'N/A', v.payload, v.evidence || 'N/A']);
+  csvVulnSection('XSS', scan.results.xss?.vulnerabilities || [], ['Severity', 'Type', 'Location', 'Payload', 'Evidence'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || v.location || 'N/A', v.payload, v.evidence || 'N/A']);
+  csvVulnSection('LFI', scan.results.lfi?.vulnerabilities || [], ['Severity', 'Type', 'Parameter', 'Payload', 'Confidence', 'Indicator'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.parameter || 'N/A', v.payload, String(v.confidence ?? 'N/A'), v.indicator || 'N/A']);
+  csvVulnSection('CORS Misconfiguration', scan.results.corsMisconfig?.vulnerabilities || [], ['Severity', 'Type', 'Origin Tested', 'Evidence'], v => [v.severity.toUpperCase(), v.type?.replace(/_/g, ' ') || 'N/A', v.originTested || 'N/A', v.evidence || 'N/A']);
+  csvVulnSection('WordPress', scan.results.wordpress?.vulnerabilities || [], ['Severity', 'Type', 'Description'], v => [v.severity.toUpperCase(), v.type || 'N/A', v.description || 'N/A']);
+  csvVulnSection('Broken Links', scan.results.brokenLinks?.brokenLinks || [], ['URL', 'Status', 'Type', 'Source Page'], v => [v.url || 'N/A', String(v.status), v.isInternal ? 'Internal' : 'External', v.sourcePage || 'N/A']);
 
   if (returnContent) {
     return csvContent;

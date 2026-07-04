@@ -1,6 +1,7 @@
 import { extractDomain } from './apiUtils';
 import { RequestManager } from './requestManager'; // Import RequestManager
 import { APIKeys } from './apiKeyService'; // Import APIKeys interface
+import { proxyProviderAPI } from './apiProxyClient';
 
 export interface PortResult {
   port: number;
@@ -195,8 +196,8 @@ export const scanCommonPorts = async (
     if (shodanKey && ipAddress) {
       try {
         console.log('[Port Scan] Attempting Shodan API lookup...');
-        const shodanApiUrl = `https://api.shodan.io/shodan/host/${ipAddress}?key=${shodanKey}`;
-        const shodanResponse = await requestManager.fetch(shodanApiUrl, { timeout: 15000, skipProxy: true }); // Use requestManager
+        const shodanApiUrl = `https://api.shodan.io/shodan/host/${ipAddress}`;
+        const shodanResponse = await proxyProviderAPI('shodan', shodanApiUrl);
 
         if (shodanResponse.ok) {
           const shodanData = await shodanResponse.json();

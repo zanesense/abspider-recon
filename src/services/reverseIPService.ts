@@ -2,6 +2,7 @@ import { extractDomain, normalizeUrl } from './apiUtils';
 import { RequestManager } from './requestManager';
 import { APIKeys } from './apiKeyService';
 import { fetchJSONWithBypass, fetchWithBypass } from './corsProxy';
+import { proxyProviderJSON } from './apiProxyClient';
 
 export interface DiscoveredDomain {
   domain: string;
@@ -121,12 +122,7 @@ export const performReverseIPLookup = async (target: string, requestManager: Req
       try {
         console.log('[Reverse IP] Attempting SecurityTrails API lookup...');
         const apiUrl = `https://api.securitytrails.com/v1/ips/${result.ip}/domains`;
-        const { data: stData } = await fetchJSONWithBypass(apiUrl, {
-          headers: { 'APIKEY': securitytrailsKey },
-          timeout: 15000,
-          signal: requestManager.getAbortSignal(),
-          skipProxy: true,
-        });
+        const stData = await proxyProviderJSON('securitytrails', apiUrl);
 
         if (stData.records && stData.records.length > 0) {
           rawDiscoveredDomains = stData.records.map((record: any) => record.hostname);
