@@ -209,7 +209,7 @@ export async function fetchWithBypass(
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       if (signal) {
-        signal.addEventListener('abort', () => controller.abort());
+        signal.addEventListener('abort', () => controller.abort(), { once: true });
       }
 
       const response = await fetch(url, {

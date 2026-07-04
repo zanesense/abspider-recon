@@ -26,6 +26,11 @@ export const makeRequest = async (
 ): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const externalSignal = options.signal;
+
+  if (externalSignal) {
+    externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
 
   const requestUrl = useProxy && proxyList.length > 0 
     ? `${getNextProxy()}/${url}` 

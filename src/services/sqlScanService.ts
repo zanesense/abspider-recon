@@ -107,7 +107,7 @@ const testTimeBased = async (url: string, requestManager: RequestManager): Promi
     return { vulnerable: duration >= expectedDelay - 500, duration };
   } catch (error: any) {
     const duration = Date.now() - startTime;
-    if (error.message.includes('Request aborted') && duration >= expectedDelay - 500) {
+    if ((error.name === 'AbortError' || error.message.includes('aborted')) && duration >= expectedDelay - 500) {
       return { vulnerable: true, duration };
     }
     return { vulnerable: false, duration };
