@@ -57,6 +57,10 @@ export default async function handler(request: any, response: any) {
       .single();
 
     if (error) {
+      // PGRST116 = no rows found — that's fine, user just hasn't saved keys yet
+      if (error.code !== 'PGRST116') {
+        console.error('[API Keys] GET failed:', error.code, error.message);
+      }
       response.status(200).json({});
       return;
     }
@@ -65,35 +69,30 @@ export default async function handler(request: any, response: any) {
   }
 
   if (request.method === 'POST') {
-    const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
-    if (!body || typeof body !== 'object') {
+    let body: any;
+    try {
+      body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+    } catch {
+      response.status(400).json({ error: 'Invalid JSON body' });
+      return;
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
       response.status(400).json({ error: 'Invalid body' });
       return;
     }
 
-    const { data: existing } = await adminClient
+    // Use upsert (INSERT … ON CONFLICT DO UPDATE) — atomic, no race condition.
+    const { error } = await adminClient
       .from('user_api_keys')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
+      .upsert(
+        { user_id: user.id, api_keys: body, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' },
+      );
 
-    if (existing) {
-      const { error } = await adminClient
-        .from('user_api_keys')
-        .update({ api_keys: body })
-        .eq('user_id', user.id);
-      if (error) {
-        response.status(500).json({ error: 'Failed to save API keys' });
-        return;
-      }
-    } else {
-      const { error } = await adminClient
-        .from('user_api_keys')
-        .insert({ user_id: user.id, api_keys: body });
-      if (error) {
-        response.status(500).json({ error: 'Failed to save API keys' });
-        return;
-      }
+    if (error) {
+      console.error('[API Keys] Upsert failed:', error.code, error.message, error.details);
+      response.status(500).json({ error: 'Failed to save API keys', detail: error.message });
+      return;
     }
 
     response.status(200).json({ ok: true });
