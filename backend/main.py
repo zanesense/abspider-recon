@@ -1,9 +1,10 @@
+import asyncio
 import collections
 import ipaddress
 import socket
 import time
 import httpx
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse, Response
 
@@ -65,7 +66,7 @@ def _is_private_ip(host: str) -> bool:
     )
 
 
-def is_ssrf_target(url: str) -> bool:
+async def is_ssrf_target(url: str) -> bool:
     try:
         parsed = urlparse(url)
         host = parsed.hostname or ""
@@ -74,7 +75,8 @@ def is_ssrf_target(url: str) -> bool:
         if _is_private_ip(host):
             return True
         try:
-            addrs = socket.getaddrinfo(host, None, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM)
+            loop = asyncio.get_running_loop()
+            addrs = await loop.getaddrinfo(host, None, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM)
             for addr in addrs:
                 ip_str = addr[4][0]
                 if _is_private_ip(ip_str):
@@ -104,7 +106,7 @@ async def proxy_handler(request: Request, url: str = Query(...)):
             headers=cors,
         )
 
-    if is_ssrf_target(url):
+    if await is_ssrf_target(url):
         return JSONResponse(
             status_code=400,
             content={"error": "Target URL is not allowed"},
@@ -133,17 +135,31 @@ async def proxy_handler(request: Request, url: str = Query(...)):
     if "user-agent" not in {k.lower() for k in headers}:
         headers["User-Agent"] = DEFAULT_UA
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+    async with httpx.AsyncClient(follow_redirects=False, timeout=30.0) as client:
         try:
             body = await request.body() if request.method != "GET" else None
             method = request.method
+            current_url = url
 
-            response = await client.request(
-                method=method,
-                url=url,
-                headers=headers,
-                content=body,
-            )
+            for _ in range(5):
+                response = await client.request(
+                    method=method,
+                    url=current_url,
+                    headers=headers,
+                    content=body,
+                )
+                if response.status_code < 300 or response.status_code >= 400:
+                    break
+                location = response.headers.get("location")
+                if not location:
+                    break
+                current_url = urljoin(current_url, location)
+                if await is_ssrf_target(current_url):
+                    return JSONResponse(
+                        status_code=400,
+                        content={"error": "Redirect target URL is not allowed"},
+                        headers=cors,
+                    )
 
             resp_headers = dict(response.headers)
             resp_headers.pop("content-encoding", None)
