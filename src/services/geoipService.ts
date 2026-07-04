@@ -1,6 +1,7 @@
 import { extractDomain } from './apiUtils';
-import { RequestManager } from './requestManager'; // Import RequestManager
-import { APIKeys } from './apiKeyService'; // Import APIKeys interface
+import { RequestManager } from './requestManager';
+import { APIKeys } from './apiKeyService';
+import { proxyProviderJSON } from './apiProxyClient';
 
 export interface GeoIPResult {
   ip: string;
@@ -121,11 +122,8 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
     const opencageKey = effectiveApiKeys.opencage;
     if (opencageKey && result.latitude && result.longitude) {
       try {
-        const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${result.latitude}+${result.longitude}&key=${opencageKey}`;
-        const opencageResponse = await requestManager.fetch(opencageUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
-
-        if (opencageResponse.ok) {
-          const data = await opencageResponse.json();
+        const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${result.latitude}+${result.longitude}`;
+        const data = await proxyProviderJSON('opencage', opencageUrl);
 
           if (data.results && data.results.length > 0) {
             const location = data.results[0];
@@ -172,7 +170,6 @@ export const performGeoIPLookup = async (target: string, requestManager: Request
 
             console.log(`[GeoIP] ✓ Enhanced with OpenCage data`);
           }
-        }
       } catch {
         console.warn('[GeoIP] OpenCage enhancement failed');
       }

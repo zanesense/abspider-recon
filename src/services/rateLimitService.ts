@@ -47,7 +47,7 @@ export const performRateLimitTest = async (target: string, requestManager: Reque
         }
       }
     } catch {
-      requestsBlocked++;
+      // Network errors are not rate limiting — just skip
     }
   }
 

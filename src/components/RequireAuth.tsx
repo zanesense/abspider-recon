@@ -13,13 +13,22 @@ export default function RequireAuth({ children }: Props) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let cancelled = false;
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setLoading(false);
-
-      if (!session) {
-        navigate("/login");
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (cancelled) return;
+        const session = data?.session ?? null;
+        setSession(session);
+        setLoading(false);
+        if (!session) {
+          navigate("/login");
+        }
+      } catch {
+        if (!cancelled) {
+          setLoading(false);
+          navigate("/login");
+        }
       }
     };
 
@@ -33,6 +42,7 @@ export default function RequireAuth({ children }: Props) {
     });
 
     return () => {
+      cancelled = true;
       authListener.subscription.unsubscribe();
     };
   }, [navigate]);

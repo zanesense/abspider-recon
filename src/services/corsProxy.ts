@@ -1,10 +1,13 @@
 // This service now uses the FastAPI proxy at /api/proxy
 // to reliably bypass CORS restrictions and ensure accurate results.
 
+const INTERNAL_HOSTNAME_SUFFIXES = ['.internal', '.local', '.corp', '.lan', '.intranet', '.private'];
+
 const isInternalTarget = (url: string): boolean => {
   try {
-    const hostname = new URL(url).hostname;
+    const hostname = new URL(url).hostname.toLowerCase();
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return true;
+    if (INTERNAL_HOSTNAME_SUFFIXES.some(s => hostname.endsWith(s))) return true;
     const parts = hostname.split('.').map(Number);
     if (parts.length === 4 && !parts.some(isNaN)) {
       const [a, b] = parts;
@@ -206,7 +209,7 @@ export async function fetchWithBypass(
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       if (signal) {
-        signal.addEventListener('abort', () => controller.abort());
+        signal.addEventListener('abort', () => controller.abort(), { once: true });
       }
 
       const response = await fetch(url, {

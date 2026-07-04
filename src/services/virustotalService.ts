@@ -2,6 +2,7 @@ import { extractDomain } from './apiUtils';
 import { RequestManager } from './requestManager';
 import { APIKeys } from './apiKeyService';
 import { fetchJSONWithBypass } from './corsProxy';
+import { proxyProviderJSON } from './apiProxyClient';
 
 export interface VirusTotalResult {
   tested: boolean;
@@ -41,15 +42,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
     // Get domain report
     try {
       const domainReportUrl = `https://www.virustotal.com/api/v3/domains/${domain}`;
-      const { data: domainData } = await fetchJSONWithBypass(domainReportUrl, {
-        headers: {
-          'x-apikey': virustotalKey,
-          'Accept': 'application/json',
-        },
-        timeout: 15000,
-        signal: requestManager.getAbortSignal(),
-        skipProxy: true,
-      });
+      const domainData = await proxyProviderJSON('virustotal', domainReportUrl);
 
       if (domainData.data) {
         const attributes = domainData.data.attributes;
@@ -78,15 +71,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
     // Get detected URLs (if any)
     try {
       const detectedUrlsUrl = `https://www.virustotal.com/api/v3/domains/${domain}/detected_urls`;
-      const { data: urlsData } = await fetchJSONWithBypass(detectedUrlsUrl, {
-        headers: {
-          'x-apikey': virustotalKey,
-          'Accept': 'application/json',
-        },
-        timeout: 15000,
-        signal: requestManager.getAbortSignal(),
-        skipProxy: true,
-      });
+      const urlsData = await proxyProviderJSON('virustotal', detectedUrlsUrl);
 
       if (urlsData.data && urlsData.data.length > 0) {
         result.detectedUrls = urlsData.data.map((item: any) => ({
@@ -111,15 +96,7 @@ export const performVirusTotalScan = async (target: string, requestManager: Requ
     // Get detected communicating files (if any)
     try {
       const communicatingFilesUrl = `https://www.virustotal.com/api/v3/domains/${domain}/communicating_files`;
-      const { data: filesData } = await fetchJSONWithBypass(communicatingFilesUrl, {
-        headers: {
-          'x-apikey': virustotalKey,
-          'Accept': 'application/json',
-        },
-        timeout: 15000,
-        signal: requestManager.getAbortSignal(),
-        skipProxy: true,
-      });
+      const filesData = await proxyProviderJSON('virustotal', communicatingFilesUrl);
 
       if (filesData.data && filesData.data.length > 0) {
         result.detectedCommunicatingFiles = filesData.data.map((item: any) => ({

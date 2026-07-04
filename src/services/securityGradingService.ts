@@ -4,24 +4,24 @@ export const calculateSecurityGrade = (scan: Scan): number => {
   let grade = 10; // Start with a perfect score
 
   // Deductions for critical vulnerabilities
-  if (scan.results.sqlinjection?.vulnerable && scan.results.sqlinjection.vulnerabilities.length > 0) {
+  if (scan.results.sqlinjection?.vulnerabilities?.length > 0) {
     grade -= 4; // Significant deduction for SQL Injection
   }
-  if (scan.results.xss?.vulnerable && scan.results.xss.vulnerabilities.length > 0) {
+  if (scan.results.xss?.vulnerabilities?.length > 0) {
     grade -= 3; // Significant deduction for XSS
   }
-  if (scan.results.lfi?.vulnerable && scan.results.lfi.vulnerabilities.length > 0) {
+  if (scan.results.lfi?.vulnerabilities?.length > 0) {
     grade -= 3; // Significant deduction for LFI
   }
-  if (scan.results.corsMisconfig?.vulnerable && scan.results.corsMisconfig.vulnerabilities.length > 0) {
+  if (scan.results.corsMisconfig?.vulnerabilities?.length > 0) {
     grade -= 3; // Significant deduction for CORS Misconfiguration
   }
 
   // Deductions for high/medium vulnerabilities
-  if (scan.results.wordpress?.vulnerabilities && scan.results.wordpress.vulnerabilities.length > 0) {
-    // Deduct more for critical WP issues, less for medium
-    const criticalWPVulns = scan.results.wordpress.vulnerabilities.filter(v => v.severity === 'high').length;
-    grade -= Math.min(criticalWPVulns * 1.5, 3); // Cap at 3 points
+  if (scan.results.wordpress?.vulnerabilities?.length > 0) {
+    // Deduct more for high severity WP issues, less for medium
+    const highWPVulns = scan.results.wordpress.vulnerabilities.filter(v => v.severity === 'high').length;
+    grade -= Math.min(highWPVulns * 1.5, 3); // Cap at 3 points
   }
 
   // Deductions for missing security headers

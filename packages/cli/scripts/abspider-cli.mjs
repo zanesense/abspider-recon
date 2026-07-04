@@ -1792,6 +1792,14 @@ const cveVersionInRange = (current, range) => {
   const op = range[0];
   const curParts = parseCveVersion(current);
   const rangeParts = parseCveVersion(range.substring(1));
+
+  if (op === '~') {
+    for (let i = 0; i < rangeParts.length - 1; i++) {
+      if ((curParts[i] || 0) !== rangeParts[i]) return false;
+    }
+    return (curParts[rangeParts.length - 1] || 0) >= rangeParts[rangeParts.length - 1];
+  }
+
   for (let index = 0; index < Math.max(curParts.length, rangeParts.length); index += 1) {
     const currentPart = curParts[index] || 0;
     const rangePart = rangeParts[index] || 0;
@@ -1799,10 +1807,9 @@ const cveVersionInRange = (current, range) => {
       if (op === '<') return currentPart < rangePart;
       if (op === '>') return currentPart > rangePart;
       if (op === '=') return false;
-      if (op === '~') return currentPart <= rangePart && curParts[0] === rangeParts[0];
     }
   }
-  return op === '=' || op === '<' || op === '~';
+  return op === '=' || op === '<';
 };
 
 const runCveScanner = async (target, options, cache) => {
@@ -2645,7 +2652,7 @@ const formatEvents = (events = []) => events
 const detectProtection = (response, body = '') => {
   const headers = Object.fromEntries(response.headers.entries());
   const server = String(headers.server || '').toLowerCase();
-  const text = `${JSON.stringify(headers)}\n${body}`.toLowerCase();
+  const text = `${JSON.stringify(headers)}\n${typeof body === 'string' ? body.slice(0, 100_000) : ''}`.toLowerCase();
   const providers = [];
   if (server.includes('cloudflare') || headers['cf-ray'] || headers['cf-cache-status'] || text.includes('cloudflare')) providers.push('Cloudflare');
   if (headers['x-sucuri-id'] || text.includes('sucuri')) providers.push('Sucuri');
@@ -3251,8 +3258,12 @@ const checkPort = (host, port, timeoutMs) => new Promise((resolve) => {
 
 const loadPayloads = async (filename, limit) => {
   const file = new URL(`../src/payloads/${filename}`, import.meta.url);
-  const payloads = JSON.parse(await fs.readFile(file, 'utf8'));
-  return payloads.slice(0, limit);
+  try {
+    const payloads = JSON.parse(await fs.readFile(file, 'utf8'));
+    return payloads.slice(0, limit);
+  } catch (e) {
+    throw new Error(`Failed to load payload file: ${filename}`);
+  }
 };
 
 const moduleNamePayloadFile = (moduleName) => {

@@ -1,7 +1,8 @@
 import { extractDomain } from './apiUtils';
-import { fetchWithBypass, fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
-import { RequestManager } from './requestManager'; // Import RequestManager
-import { APIKeys } from './apiKeyService'; // Import APIKeys interface
+import { fetchWithBypass, fetchJSONWithBypass } from './corsProxy';
+import { RequestManager } from './requestManager';
+import { APIKeys } from './apiKeyService';
+import { proxyProviderJSON } from './apiProxyClient';
 
 export interface WhoisResult {
   domain: string;
@@ -37,12 +38,8 @@ export const performWhoisLookup = async (target: string, requestManager: Request
     if (securitytrailsKey) {
       try {
         const apiUrl = `https://api.securitytrails.com/v1/domain/${domain}/whois`;
-        // Use fetchJSONWithBypass for SecurityTrails API, passing requestManager's signal
-        const { data, metadata } = await fetchJSONWithBypass(apiUrl, {
-          headers: { 'APIKEY': securitytrailsKey },
-          timeout: 15000,
-          signal: requestManager.getAbortSignal(),
-          skipProxy: true,
+        const data = await proxyProviderJSON('securitytrails', apiUrl, {
+          headers: { 'Accept': 'application/json' },
         });
 
         if (data.registrar) { // Check for a key indicator of success

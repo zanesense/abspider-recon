@@ -1,7 +1,8 @@
 import { normalizeUrl, extractDomain } from './apiUtils';
-import { fetchWithBypass, CORSBypassMetadata, fetchJSONWithBypass } from './corsProxy'; // Import fetchJSONWithBypass
-import { RequestManager } from './requestManager'; // Import RequestManager
-import { APIKeys } from './apiKeyService'; // Import APIKeys interface
+import { fetchWithBypass, CORSBypassMetadata, fetchJSONWithBypass } from './corsProxy';
+import { RequestManager } from './requestManager';
+import { APIKeys } from './apiKeyService';
+import { proxyProviderJSON } from './apiProxyClient';
 
 export interface SiteInfo {
   title?: string;
@@ -122,9 +123,8 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       if (builtwithKey) {
         try {
           console.log('[Site Info] Attempting BuiltWith API enrichment...');
-          const builtwithApiUrl = `https://api.builtwith.com/v1/api.json?key=${builtwithKey}&lookup=${domain}`;
-          // Use fetchJSONWithBypass for BuiltWith API, passing requestManager's signal
-          const { data: builtwithData, metadata: builtwithCorsMetadata } = await fetchJSONWithBypass(builtwithApiUrl, { timeout: 15000, signal: requestManager.getAbortSignal(), skipProxy: true });
+          const builtwithApiUrl = `https://api.builtwith.com/v1/api.json?lookup=${domain}`;
+          const builtwithData = await proxyProviderJSON('builtwith', builtwithApiUrl);
 
           if (builtwithData.Results && builtwithData.Results.length > 0) {
             // No longer adding to result.technologies here, as TechStackInfo handles it

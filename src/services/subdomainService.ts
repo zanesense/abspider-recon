@@ -2,6 +2,7 @@ import { extractDomain } from './apiUtils';
 import { fetchWithBypass } from './corsProxy'; // Import fetchWithBypass
 import { createRequestManager, RequestManager } from './requestManager'; // Import RequestManager
 import { APIKeys } from './apiKeyService'; // Import APIKeys interface
+import { proxyProviderJSON } from './apiProxyClient';
 
 export interface SubdomainResult {
   subdomains: string[];
@@ -166,21 +167,11 @@ export const enumerateSubdomainsSecurityTrails = async (domain: string, requestM
   console.log(`[Subdomain SecurityTrails] Querying SecurityTrails for ${domain}`);
   try {
     const apiUrl = `https://api.securitytrails.com/v1/domain/${domain}/subdomains`;
-    
-    // Use fetchWithBypass for SecurityTrails to handle CORS, passing requestManager's signal
-    const { response } = await fetchWithBypass(apiUrl, {
-      headers: { 'APIKEY': securitytrailsKey },
-      timeout: 15000,
-      signal: requestManager.getAbortSignal(),
-      skipProxy: true,
-    });
-
-    if (!response.ok) {
-      console.warn(`[Subdomain SecurityTrails] API failed with status ${response.status}`);
+    const data = await proxyProviderJSON('securitytrails', apiUrl);
+    if (!data.subdomains) {
+      console.warn(`[Subdomain SecurityTrails] API returned no subdomains`);
       return [];
     }
-
-    const data = await response.json();
     if (data.subdomains) {
       const subdomains = data.subdomains.map((sub: string) => `${sub}.${domain}`);
       console.log(`[Subdomain SecurityTrails] Found ${subdomains.length} subdomains from SecurityTrails`);

@@ -40,7 +40,7 @@ export const detectWafChallenge = async (url: string): Promise<WafChallenge> => 
 
   try {
     const response = await fetch(url, {
-      method: 'HEAD',
+      method: 'GET',
       headers: CHALLENGE_REQUEST_HEADERS,
     });
 

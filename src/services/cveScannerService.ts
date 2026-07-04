@@ -47,7 +47,7 @@ const CVE_DATABASE: CVERecord[] = [
   { id: 'CVE-2024-31238', technology: 'Cloudflare', versionRange: '<2024.3', severity: 'Medium', description: 'HTTP/2 rapid reset bypass' },
 ];
 
-const parseVersion = (v: string): number[] => v.split('.').map(n => parseInt(n, 10) || 0);
+const parseVersion = (v: string): number[] => v.replace(/-.*$/, '').split('.').map(n => parseInt(n, 10) || 0);
 
 const versionInRange = (current: string, range: string): boolean => {
   const op = range[0];
@@ -58,12 +58,12 @@ const versionInRange = (current: string, range: string): boolean => {
   for (let i = 0; i < Math.max(curParts.length, rangeParts.length); i++) {
     const c = curParts[i] || 0;
     const r = rangeParts[i] || 0;
-    if (op === '<') return c < r;
-    if (op === '>') return c > r;
-    if (op === '=') return c === r;
-    if (op === '~') return c <= r && (curParts[0] === rangeParts[0]);
+    if (op === '<') { if (c !== r) return c < r; }
+    else if (op === '>') { if (c !== r) return c > r; }
+    else if (op === '=') { if (c !== r) return false; }
+    else if (op === '~') return c <= r && (curParts[0] === rangeParts[0]);
   }
-  return false;
+  return true;
 };
 
 export interface CVEMatch {
@@ -148,7 +148,7 @@ export const performCVEScan = async (target: string, requestManager: RequestMana
   for (const cve of CVE_DATABASE) {
     const techVersion = techMap[cve.technology];
     if (techVersion) {
-      if (techVersion === 'detected' || (cve.versionRange && versionInRange(techVersion, cve.versionRange))) {
+      if (techVersion !== 'detected' && cve.versionRange && versionInRange(techVersion, cve.versionRange)) {
         matches.push({
           cveId: cve.id,
           technology: cve.technology,

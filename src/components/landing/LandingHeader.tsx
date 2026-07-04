@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Bug, Menu, X, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -12,9 +13,9 @@ const NAV = [
   { label: 'Status', href: '/status', isRoute: true },
 ];
 
-interface Props { onOpenLogin: () => void; }
+interface Props { user?: { email?: string; avatar_url?: string } | null; onOpenLogin: () => void; }
 
-const LandingHeader = ({ onOpenLogin }: Props) => {
+const LandingHeader = ({ user, onOpenLogin }: Props) => {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -68,7 +69,16 @@ const LandingHeader = ({ onOpenLogin }: Props) => {
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 cursor-pointer" aria-label="Toggle theme">
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="sm" onClick={onOpenLogin} className="cursor-pointer text-sm">Sign in</Button>
+          {user ? (
+            <Link to="/dashboard">
+              <Avatar className="h-8 w-8 cursor-pointer ring-2 ring-primary/30 transition-all hover:ring-primary/60">
+                <AvatarImage src={user.avatar_url} alt={user.email} />
+                <AvatarFallback>{(user.email?.[0] || 'U').toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={onOpenLogin} className="cursor-pointer text-sm">Sign in</Button>
+          )}
           <Button size="sm" onClick={onOpenLogin} className="cursor-pointer bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
             Open scanner
           </Button>
@@ -107,7 +117,18 @@ const LandingHeader = ({ onOpenLogin }: Props) => {
             )}
           </div>
           <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
-            <Button variant="outline" size="sm" onClick={() => { setOpen(false); onOpenLogin(); }} className="cursor-pointer">Sign in</Button>
+            {user ? (
+              <Link to="/dashboard" onClick={() => setOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={user.avatar_url} alt={user.email} />
+                  <AvatarFallback>{(user.email?.[0] || 'U').toUpperCase()}</AvatarFallback>
+                </Avatar>
+                Dashboard
+              </Link>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => { setOpen(false); onOpenLogin(); }} className="cursor-pointer">Sign in</Button>
+            )}
             <Button size="sm" onClick={() => { setOpen(false); onOpenLogin(); }} className="cursor-pointer font-semibold">Open scanner</Button>
           </div>
         </div>

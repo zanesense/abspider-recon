@@ -72,7 +72,7 @@ const checkLFISignature = (response: string): { found: boolean; pattern?: string
   const lowerResponse = response.toLowerCase();
   
   // High confidence for /etc/passwd structure
-  if (/[a-z_][a-z0-9_-]*:[x\*]:[\d]+:[\d]+:/i.test(response) && response.includes('/bin/bash')) {
+  if (/[a-z_][a-z0-9_-]*:[x\*]:[\d]+:[\d]+:/i.test(response)) {
     return {
       found: true,
       pattern: 'Unix password file format detected',

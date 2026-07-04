@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LandingHeader from '@/components/landing/LandingHeader';
 import HeroSection from '@/components/landing/HeroSection';
@@ -15,8 +15,20 @@ import { supabase } from '@/SupabaseClient';
 const LandingPage = () => {
   const landingRef = useRef<HTMLDivElement>(null);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [user, setUser] = useState<{ email?: string; avatar_url?: string } | null>(null);
   const navigate = useNavigate();
   useLandingGsap(landingRef);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser({
+          email: session.user.email,
+          avatar_url: session.user.user_metadata?.avatar_url,
+        });
+      }
+    });
+  }, []);
 
   const handleOpenScanner = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -29,7 +41,7 @@ const LandingPage = () => {
 
   return (
     <div ref={landingRef} className="min-h-screen bg-background">
-      <LandingHeader onOpenLogin={handleOpenScanner} />
+      <LandingHeader user={user} onOpenLogin={handleOpenScanner} />
       <main>
         <HeroSection onOpenLogin={handleOpenScanner} />
         <FeaturesSection />

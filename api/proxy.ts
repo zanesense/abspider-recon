@@ -4,7 +4,6 @@ const ALLOWED_HEADERS = new Set([
   'accept',
   'accept-encoding',
   'accept-language',
-  'authorization',
   'content-type',
   'user-agent',
 ]);
@@ -85,7 +84,7 @@ const sendJson = (response: any, status: number, payload: unknown, origin = '') 
 
 export default async function handler(request: any, response: any) {
   const origin = String(request.headers['origin'] || '');
-  const clientIp = String(request.headers['x-forwarded-for'] || request.socket?.remoteAddress || 'unknown');
+  const clientIp = String(request.socket?.remoteAddress || request.headers['x-forwarded-for'] || 'unknown');
 
   if (request.method === 'OPTIONS') {
     response.status(204);
@@ -149,12 +148,32 @@ export default async function handler(request: any, response: any) {
   }
 
   try {
-    const upstream = await fetch(targetUrl.toString(), {
+    let upstream = await fetch(targetUrl.toString(), {
       method: request.method,
       headers,
       body: request.method === 'GET' ? undefined : request.body,
-      redirect: 'follow',
+      redirect: 'manual',
     });
+
+    for (let i = 0; i < 5; i++) {
+      if (upstream.status >= 300 && upstream.status < 400) {
+        const location = upstream.headers.get('location');
+        if (!location) break;
+        const redirectUrl = new URL(location, targetUrl.toString());
+        if (await isSSRFTarget(redirectUrl)) {
+          sendJson(response, 400, { error: 'Redirect target URL is not allowed' }, origin);
+          return;
+        }
+        targetUrl = redirectUrl;
+        upstream = await fetch(targetUrl.toString(), {
+          method: request.method,
+          headers,
+          redirect: 'manual',
+        });
+      } else {
+        break;
+      }
+    }
 
     const corsHeaders = getCorsHeaders(origin);
     response.status(upstream.status);

@@ -53,6 +53,12 @@ export const performOpenRedirectCheck = async (target: string, requestManager: R
         // If redirect points to our external test URL or a different domain, it's vulnerable
         if (location.includes(TEST_EXTERNAL_URL) || (!location.startsWith('/') && !location.includes(domain))) {
           test.vulnerable = true;
+        } else if (location.includes(domain)) {
+          const redirectParam = REDIRECT_PARAMS.some(p => {
+            const regex = new RegExp(`[?&]${p}=https?://`, 'i');
+            return regex.test(location);
+          });
+          if (redirectParam) test.vulnerable = true;
         }
       }
 
@@ -66,7 +72,9 @@ export const performOpenRedirectCheck = async (target: string, requestManager: R
       }
 
       tests.push(test);
-    } catch { /* ignore */ }
+    } catch (e) {
+      console.warn(`[OpenRedirect] Error testing param ${param}:`, e);
+    }
   }
 
   return {
