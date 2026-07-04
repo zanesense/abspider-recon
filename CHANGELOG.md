@@ -12,6 +12,10 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 - Fixed the root `npm run cli` script to call `packages/cli/scripts/abspider-cli.mjs`.
 - Updated `Dockerfile.dev` to Node 20 to match the app, CI, and CLI requirements.
 - Removed stale Vite env examples for browser-bundled third-party API keys; dashboard API keys and Discord webhooks are configured per user in Settings.
+- **DOCX reports** now include full vulnerability tables (SQLi, XSS, LFI, CORS, WordPress), plus site info, tech stack, security headers, GeoIP, DNS records, subdomains, SEO, broken links, WAF, VirusTotal, and SSL/TLS sections.
+- **Markdown reports** now include all sections matching the PDF detail level, with formatted tables for every module.
+- **CSV reports** now export detailed rows for XSS, LFI, CORS, WordPress, and broken links in addition to the existing SQL injection details.
+- Landing page now shows a user avatar and **Dashboard** link when already logged in, replacing the **Sign in** button.
 
 ### Fixed
 
@@ -21,6 +25,32 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 - Corrected the dashboard module count to reflect 35 recon modules.
 - Added scan controls that let a user skip the currently running module and continue with the next module.
 - Fixed dashboard component/widget sizing so panels use responsive dimensions instead of fixed lengths.
+- **SSRF bypass via redirect following** — `proxy.ts` and `backend/main.py` now re-validate each redirect hop against blocked hostnames and private IPs instead of trusting the initial URL only.
+- **Blocking DNS in async handler** — replaced `socket.getaddrinfo()` with `asyncio.getaddrinfo()` in the backend to prevent event loop blocking under concurrent requests.
+- **Rate-limit spoofing via X-Forwarded-For** — the backend now prioritizes `socket.remoteAddress` over the client-supplied `X-Forwarded-For` header for rate-limit bucketing.
+- **Authorization header forwarded to upstreams** — removed `authorization` from the allowed header list in both `proxy.ts` and `backend/main.py` so user credentials are never leaked to arbitrary proxy targets.
+- **CVE scanner false negatives** — fixed `versionInRange()` to compare all semver segments instead of returning after the first segment, and skip CVEs when the detected version is unknown (`'detected'`) to avoid massive false positives.
+- **CVE scanner pre-release handling** — `parseVersion()` no longer strips pre-release identifiers, fixing version comparison for beta/rc releases.
+- **Null dereference in security grading** — added optional chaining on `vulnerabilities.length` to prevent `TypeError` crashes when a module is vulnerable but has no vulnerability array.
+- **Variable name mismatch in grading** — renamed `criticalWPVulns` to properly filter for `'critical'` severity instead of `'high'`.
+- **IPv4-mapped IPv6 SSRF bypass** — `isInternalIP()` now detects `::ffff:x.x.x.x` addresses as private, closing an SSRF bypass vector.
+- **Metrics reference corruption in retries** — each retry attempt now creates a fresh metrics object so `recentMetrics` contains per-attempt data instead of reused references.
+- **WAF challenge detection broken with HEAD** — changed detection method from `HEAD` to `GET` since HTTP HEAD responses must not include a body, making body-based WAF checks always fail.
+- **Rate-limit false positives from network errors** — `rateLimitService.ts` now only counts `429` responses as blocks, not DNS failures or timeouts.
+- **Open redirect detection gaps** — `openRedirectService.ts` now catches second-order redirects through same-domain gadgets and logs errors instead of swallowing them.
+- **Decompression errors swallowed** — `proxyFetch.js` no longer has an empty `catch` block, so decompression failures surface instead of causing opaque parse errors.
+- **Missing DNS resolution in CORS proxy** — `isInternalTarget()` does not require DNS; instead, SSRF protection is delegated to the backend proxy for any target it can't rule out by IP alone.
+- **Webhook crash on null status** — `webhookService.ts` adds a null guard before calling `.toUpperCase()` on `scan.status`.
+- **AbortSignal listener leak** — CORS proxy now removes `AbortSignal` event listeners on the success path to prevent accumulation.
+- **Signal override in apiUtils** — `makeRequest()` no longer silently overrides a caller-provided `signal` with its own `AbortController`, preserving cancellation support.
+- **Fragile SQLi time-based detection** — `sqlScanService.ts` uses a more robust check instead of matching a specific English error string.
+- **`/etc/passwd` detection gated on `/bin/bash`** — `lfiScanService.ts` no longer requires `/bin/bash` to detect `/etc/passwd`, covering systems using other shells.
+- **JSON.parse crash on corrupted file** — CLI report loading now wraps `JSON.parse` in a `try/catch` so a corrupt file yields a clean error instead of an unhandled exception.
+- **Unhandled download rejections** — wrapped `doc.save()` and `saveAs()` calls in `try/catch` so browser-blocked downloads don't cause unhandled promise rejections.
+- **RequireAuth network error crash** — added `try/catch` and a `cancelled` flag to the session check effect so network failures redirect to login instead of throwing.
+- **Semver tilde operator incorrect** — fixed `cveVersionInRange` tilde (`~`) logic to match correct semver semantics (`~X.Y.Z` locks all prior parts, last part is a minimum).
+- **Large body OOM in protection detection** — truncated the response body to 100 KB before string matching in `detectProtection()`.
+- **Third-party API keys exposed to browser** — added a backend proxy (`/api/keys` and `/api/keys/proxy`) so Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, and Clearbit keys never reach the browser. All seven provider API calls now route through the FastAPI backend, which attaches keys server-side. A new Supabase migration (`0004_secure_api_keys.sql`) restricts the `user_api_keys` table to `service_role` only, revoking direct client access.
 
 ## 2.1.3
 
