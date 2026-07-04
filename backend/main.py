@@ -15,7 +15,6 @@ ALLOWED_HEADERS = {
     "accept-encoding",
     "accept-language",
     "user-agent",
-    "authorization",
     "content-type",
 }
 

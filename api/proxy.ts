@@ -4,7 +4,6 @@ const ALLOWED_HEADERS = new Set([
   'accept',
   'accept-encoding',
   'accept-language',
-  'authorization',
   'content-type',
   'user-agent',
 ]);
