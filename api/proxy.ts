@@ -149,12 +149,32 @@ export default async function handler(request: any, response: any) {
   }
 
   try {
-    const upstream = await fetch(targetUrl.toString(), {
+    let upstream = await fetch(targetUrl.toString(), {
       method: request.method,
       headers,
       body: request.method === 'GET' ? undefined : request.body,
-      redirect: 'follow',
+      redirect: 'manual',
     });
+
+    for (let i = 0; i < 5; i++) {
+      if (upstream.status >= 300 && upstream.status < 400) {
+        const location = upstream.headers.get('location');
+        if (!location) break;
+        const redirectUrl = new URL(location, targetUrl.toString());
+        if (await isSSRFTarget(redirectUrl)) {
+          sendJson(response, 400, { error: 'Redirect target URL is not allowed' }, origin);
+          return;
+        }
+        targetUrl = redirectUrl;
+        upstream = await fetch(targetUrl.toString(), {
+          method: request.method,
+          headers,
+          redirect: 'manual',
+        });
+      } else {
+        break;
+      }
+    }
 
     const corsHeaders = getCorsHeaders(origin);
     response.status(upstream.status);
