@@ -3251,8 +3251,12 @@ const checkPort = (host, port, timeoutMs) => new Promise((resolve) => {
 
 const loadPayloads = async (filename, limit) => {
   const file = new URL(`../src/payloads/${filename}`, import.meta.url);
-  const payloads = JSON.parse(await fs.readFile(file, 'utf8'));
-  return payloads.slice(0, limit);
+  try {
+    const payloads = JSON.parse(await fs.readFile(file, 'utf8'));
+    return payloads.slice(0, limit);
+  } catch (e) {
+    throw new Error(`Failed to load payload file: ${filename}`);
+  }
 };
 
 const moduleNamePayloadFile = (moduleName) => {

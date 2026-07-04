@@ -888,7 +888,11 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
   if (returnContent) {
     return doc.output('datauristring'); // Return as Data URL for preview
   } else {
-    doc.save(`abspider-security-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`);
+    try {
+      doc.save(`abspider-security-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`);
+    } catch (e) {
+      console.warn('[Report] Failed to save PDF:', e);
+    }
   }
 };
 
@@ -948,7 +952,11 @@ export const generateDocxReport = async (scan: Scan, returnContent: boolean = fa
   if (returnContent) {
     return "DOCX reports are not directly previewable as text. Please download to view.";
   } else {
-    saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.docx`);
+    try {
+      saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.docx`);
+    } catch (e) {
+      console.warn('[Report] Failed to save DOCX:', e);
+    }
   }
 };
 
@@ -998,7 +1006,11 @@ export const generateMarkdownReport = (scan: Scan, returnContent: boolean = fals
     return markdown;
   } else {
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
-    saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.md`);
+    try {
+      saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.md`);
+    } catch (e) {
+      console.warn('[Report] Failed to save Markdown:', e);
+    }
   }
 };
 
@@ -1059,6 +1071,10 @@ export const generateCsvReport = (scan: Scan, returnContent: boolean = false): s
     return csvContent;
   } else {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-    saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.csv`);
+    try {
+      saveAs(blob, `abspider-report-${scan.target.replace(/[^a-z0-9]/gi, '-')}.csv`);
+    } catch (e) {
+      console.warn('[Report] Failed to save CSV:', e);
+    }
   }
 };
