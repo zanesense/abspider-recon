@@ -204,6 +204,13 @@ export const performXSSScan = async (target: string, requestManager: RequestMana
           const response = testResult.response;
           result.testedPayloads++;
 
+          // Skip reflection check on non-200 responses — error pages often echo
+          // back parameters in their body, producing false positives.
+          if (response.status !== 200) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+            continue;
+          }
+
           const text = await response.text();
           const reflection = checkReflection(text, payload);
 

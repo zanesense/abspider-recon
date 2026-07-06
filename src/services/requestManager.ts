@@ -7,7 +7,7 @@ interface RequestMetrics {
   status?: number;
   error?: string;
   corsMetadata?: CORSBypassMetadata;
-  isError: boolean; // Added for easier error rate calculation
+  isError: boolean;
 }
 
 interface RequestManagerOptions extends RequestInit {
@@ -17,13 +17,15 @@ interface RequestManagerOptions extends RequestInit {
   skipProxy?: boolean;
 }
 
+// Module-level rate limiter shared across all scans for domain-level throttling
+const _globalRateLimiter = new Map<string, number>();
+
 export class RequestManager {
   private activeRequests: Map<string, AbortController> = new Map();
   private requestMetrics: Map<string, RequestMetrics> = new Map();
-  private rateLimiter: Map<string, number> = new Map();
-  private minRequestInterval = 200; // Default minimum interval between requests
+  private minRequestInterval = 200;
   private recentMetrics: RequestMetrics[] = [];
-  private metricsBufferSize = 50; // Keep last 50 requests for performance calculation
+  private metricsBufferSize = 50;
   private moduleAbortController = new AbortController();
 
   public scanController?: AbortController; 
@@ -151,10 +153,9 @@ export class RequestManager {
     try {
       domain = new URL(url).hostname;
     } catch {
-      // Relative URL or unparseable string — use the raw value as a bucket key
       domain = url;
     }
-    const lastRequest = this.rateLimiter.get(domain) || 0;
+    const lastRequest = _globalRateLimiter.get(domain) || 0;
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequest;
 
@@ -163,7 +164,7 @@ export class RequestManager {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
 
-    this.rateLimiter.set(domain, Date.now());
+    _globalRateLimiter.set(domain, Date.now());
   }
 
   abortAll(): void {

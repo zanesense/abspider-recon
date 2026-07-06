@@ -21,12 +21,20 @@ async function authenticate(request: any): Promise<AuthError | AuthSuccess> {
   return { user, status: null, body: null };
 }
 
+const ALLOWED_ORIGINS_KEYS = new Set([
+  'https://abspider.zanesense.dev',
+  'http://localhost:5000',
+  'http://localhost:3000',
+  'http://localhost:5173',
+]);
+
 export default async function handler(request: any, response: any) {
+  const origin = request.headers.origin || '';
+  const allowOrigin = ALLOWED_ORIGINS_KEYS.has(origin) ? origin : 'null';
   const setCors = () => {
-    response.setHeader('Access-Control-Allow-Origin', request.headers.origin || '*');
+    response.setHeader('Access-Control-Allow-Origin', allowOrigin);
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    response.setHeader('Access-Control-Allow-Credentials', 'true');
   };
   setCors();
 

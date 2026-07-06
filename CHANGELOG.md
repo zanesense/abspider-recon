@@ -4,6 +4,24 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 ## Unreleased
 
+### Security
+
+- **SSRF DNS rebinding closed** — `backend/main.py` replaced `httpx` with `asyncio.open_connection` using pinned IPs from a single DNS resolution, eliminating the TOCTOU window between SSRF check and HTTP request. Redirect hops are also re-validated via `_resolve_and_pin()`.
+- **Rate-limiter race condition fixed** — per-IP rate limiting now uses `asyncio.Lock` to prevent concurrent requests from bypassing the bucket count check.
+- **Rate-limiter memory leak patched** — empty IP buckets are purged every 5 minutes to prevent unbounded dictionary growth under IP-rotation attacks.
+- **CORS origin reflection removed** — `api/keys.ts` now whitelists allowed origins instead of reflecting `Origin` verbatim with `Access-Control-Allow-Credentials`, preventing credential-bearing cross-origin reads.
+- **X-Forwarded-For rate-limit spoofing** — both `backend/main.py` and `api/proxy.ts` now use `X-Forwarded-For` (behind a trusted proxy) for rate-limit bucketing instead of relying solely on `client.host` / `socket.remoteAddress`.
+- **API key injection blocked** — `backend/main.py` now validates API keys for `\r`, `\n`, `\0` characters before embedding them in HTTP headers or query parameters.
+
+### Changed
+
+- **Cross-scan rate limiting** — `requestManager.ts` rate limiter moved from per-instance `Map` to a module-level `Map` shared across all scans, preventing scan restarts from resetting domain-level throttle state.
+- **CVE database refreshable** — `cveScannerService.ts` now supports remote CVE data via `CVE_DATABASE_URL` env var or `refreshCVEDatabase()`, with the hardcoded list as fallback.
+
+### Fixed
+
+- **XSS false positives from error pages** — `xssScanService.ts` skips reflection checks on non-200 responses, since error pages commonly echo parameters back regardless of actual reflection.
+
 ### Added
 
 - **Reports now include all 35 scan modules** — PDF, DOCX, Markdown, and CSV exports cover every module result: Whois, Reverse IP, Email Security, JS Analysis, S3 Buckets, Git Exposure, Open Redirect, CVE Scanner, GraphQL, Rate Limit, CSRF, CDN/Cloud Provider detection, Robots & Sitemap, Cookie Audit, and Email Harvesting.

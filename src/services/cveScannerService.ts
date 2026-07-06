@@ -9,7 +9,7 @@ interface CVERecord {
   description: string;
 }
 
-const CVE_DATABASE: CVERecord[] = [
+let CVE_DATABASE: CVERecord[] = [
   // WordPress
   { id: 'CVE-2024-44000', technology: 'WordPress', versionRange: '<6.6', severity: 'Critical', description: 'Unauthenticated RCE via template injection' },
   { id: 'CVE-2024-31245', technology: 'WordPress', versionRange: '<6.5.2', severity: 'High', description: 'Stored XSS in block editor' },
@@ -162,3 +162,30 @@ export const performCVEScan = async (target: string, requestManager: RequestMana
 
   return { matches, totalFound: matches.length, techStackChecked, techStackFound: techStackChecked.length > 0 };
 };
+
+let _cveLastRefreshed = Date.now();
+
+export function getCVELastRefreshed(): number {
+  return _cveLastRefreshed;
+}
+
+export async function refreshCVEDatabase(url?: string): Promise<void> {
+  const source = url || (typeof process !== 'undefined' && (process as any).env?.CVE_DATABASE_URL);
+  if (!source) return;
+  try {
+    const resp = await fetch(source);
+    if (!resp.ok) return;
+    const data: CVERecord[] = await resp.json();
+    if (Array.isArray(data) && data.length > 0) {
+      CVE_DATABASE = data;
+      _cveLastRefreshed = Date.now();
+    }
+  } catch {
+    // remote refresh failed, keep existing database
+  }
+}
+
+// Attempt one-time refresh from env var at import time (non-blocking)
+if (typeof process !== 'undefined' && (process as any).env?.CVE_DATABASE_URL) {
+  refreshCVEDatabase();
+}

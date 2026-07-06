@@ -2,7 +2,9 @@ import asyncio
 import collections
 import ipaddress
 import os
+import re
 import socket
+import ssl
 import time
 import httpx
 from urllib.parse import urljoin, urlparse
@@ -53,6 +55,9 @@ BLOCKED_HOSTNAMES = {"localhost", "169.254.169.254", "metadata.google.internal",
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX = 120
 _rate_limit_buckets: dict[str, list[float]] = collections.defaultdict(list)
+_rate_limit_locks: dict[str, asyncio.Lock] = collections.defaultdict(asyncio.Lock)
+_LAST_BUCKET_CLEANUP = time.monotonic()
+BUCKET_CLEANUP_INTERVAL = 300
 
 
 def get_cors_headers(origin: str) -> dict:
@@ -103,6 +108,150 @@ async def is_ssrf_target(url: str) -> bool:
         return True
 
 
+async def _resolve_and_pin(url: str) -> tuple[str, list[tuple]]:
+    """Resolve hostname to IPs, validate none are private, return safe addrs.
+
+    Raises ValueError if the target is blocked.
+    Returns (safe_ip, addrs) for the caller to connect directly (no TOCTOU).
+    """
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+
+    if host in BLOCKED_HOSTNAMES:
+        raise ValueError("Target URL is not allowed")
+    if _is_private_ip(host):
+        raise ValueError("Target URL is not allowed")
+
+    loop = asyncio.get_running_loop()
+    addrs = await loop.getaddrinfo(host, port, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM)
+    safe_ips = []
+    for fam, typ, pro, canon, sockaddr in addrs:
+        ip_str = sockaddr[0]
+        if _is_private_ip(ip_str) or ip_str in BLOCKED_HOSTNAMES:
+            raise ValueError("Target URL is not allowed")
+        safe_ips.append((fam, typ, pro, canon, sockaddr))
+    if not safe_ips:
+        raise ValueError("No resolvable IPs for target")
+    return safe_ips[0][4][0], safe_ips
+
+
+async def _http_fetch(
+    method: str, url: str, headers: dict, body: bytes | None = None, *,
+    timeout: float = 30.0
+) -> tuple[int, dict[str, str], bytes]:
+    """Make an HTTP request with pinned DNS (SSRF-safe via asyncio sockets)."""
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    is_https = parsed.scheme == "https"
+
+    safe_ip, _ = await _resolve_and_pin(url)
+
+    ssl_ctx = ssl.create_default_context() if is_https else None
+    server_hostname = host if is_https else None
+
+    try:
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(safe_ip, port, ssl=ssl_ctx, server_hostname=server_hostname),
+            timeout=timeout,
+        )
+    except Exception as e:
+        raise ConnectionError(f"Could not connect to {host} ({safe_ip}:{port})") from e
+
+    try:
+        path = parsed.path or "/"
+        if parsed.query:
+            path = f"{path}?{parsed.query}"
+
+        host_header = host
+        if (is_https and port != 443) or (not is_https and port != 80):
+            host_header = f"{host}:{port}"
+
+        req_headers = dict(headers)
+        req_headers.setdefault("Host", host_header)
+        req_headers.setdefault("Connection", "close")
+
+        req_line = f"{method} {path} HTTP/1.1\r\n"
+        hdrs = "".join(f"{k}: {v}\r\n" for k, v in req_headers.items())
+        req_bytes = req_line.encode() + hdrs.encode() + b"\r\n" + (body or b"")
+
+        writer.write(req_bytes)
+        await writer.drain()
+
+        # Read status line
+        status_line = b""
+        while True:
+            c = await asyncio.wait_for(reader.read(1), timeout=timeout)
+            if c == b"\n":
+                break
+            status_line += c
+        status_parts = status_line.decode("utf-8", errors="replace").strip().split(" ", 2)
+        status_code = int(status_parts[1]) if len(status_parts) >= 2 else 0
+
+        # Read headers
+        resp_headers = {}
+        transfer_encoding_chunked = False
+        content_length = -1
+        while True:
+            line_b = b""
+            while True:
+                c = await asyncio.wait_for(reader.read(1), timeout=timeout)
+                if c == b"\n":
+                    break
+                line_b += c
+            line = line_b.decode("utf-8", errors="replace").strip()
+            if not line:
+                break
+            if ":" in line:
+                k, v = line.split(":", 1)
+                resp_headers[k.strip().lower()] = v.strip()
+
+        te = resp_headers.get("transfer-encoding", "")
+        if "chunked" in te:
+            transfer_encoding_chunked = True
+        cl = resp_headers.get("content-length", "")
+        if cl:
+            content_length = int(cl)
+
+        # Read body
+        body_bytes = b""
+        if transfer_encoding_chunked:
+            while True:
+                chunk_size_line = b""
+                while True:
+                    c = await asyncio.wait_for(reader.read(1), timeout=timeout)
+                    if c == b"\n":
+                        break
+                    chunk_size_line += c
+                size_str = chunk_size_line.strip()
+                if not size_str:
+                    continue
+                chunk_size = int(size_str, 16)
+                if chunk_size == 0:
+                    break
+                chunk = await asyncio.wait_for(reader.readexactly(chunk_size), timeout=timeout)
+                body_bytes += chunk
+                await asyncio.wait_for(reader.readexactly(2), timeout=timeout)
+            while True:
+                line_b = b""
+                while True:
+                    c = await asyncio.wait_for(reader.read(1), timeout=timeout)
+                    if c == b"\n":
+                        break
+                    line_b += c
+                if not line_b.strip():
+                    break
+        elif content_length >= 0:
+            body_bytes = await asyncio.wait_for(reader.readexactly(content_length), timeout=timeout)
+        else:
+            body_bytes = await asyncio.wait_for(reader.read(), timeout=timeout)
+
+        return status_code, resp_headers, body_bytes
+    finally:
+        writer.close()
+
+
 @app.options("/api/proxy")
 async def proxy_options(request: Request):
     origin = request.headers.get("origin", "")
@@ -114,7 +263,8 @@ async def proxy_handler(request: Request, url: str = Query(...)):
     origin = request.headers.get("origin", "")
     cors = get_cors_headers(origin)
 
-    if not url.startswith(("http://", "https://")):
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
         return JSONResponse(
             status_code=400,
             content={"error": "Invalid URL. Must start with http:// or https://"},
@@ -128,19 +278,33 @@ async def proxy_handler(request: Request, url: str = Query(...)):
             headers=cors,
         )
 
-    client_ip = request.client.host if request.client else "unknown"
+    # Use X-Forwarded-For if behind a reverse proxy
+    forwarded = request.headers.get("x-forwarded-for")
+    client_ip = (forwarded.split(",")[0].strip() if forwarded
+                 else (request.client.host if request.client else "unknown"))
     now = time.time()
-    timestamps = _rate_limit_buckets[client_ip]
-    cutoff = now - RATE_LIMIT_WINDOW
-    while timestamps and timestamps[0] < cutoff:
-        timestamps.pop(0)
-    if len(timestamps) >= RATE_LIMIT_MAX:
-        return JSONResponse(
-            status_code=429,
-            content={"error": "Rate limit exceeded. Try again later."},
-            headers=cors,
-        )
-    timestamps.append(now)
+    lock = _rate_limit_locks[client_ip]
+    async with lock:
+        timestamps = _rate_limit_buckets[client_ip]
+        cutoff = now - RATE_LIMIT_WINDOW
+        while timestamps and timestamps[0] < cutoff:
+            timestamps.pop(0)
+        if len(timestamps) >= RATE_LIMIT_MAX:
+            return JSONResponse(
+                status_code=429,
+                content={"error": "Rate limit exceeded. Try again later."},
+                headers=cors,
+            )
+        timestamps.append(now)
+
+    # Periodic cleanup of empty buckets
+    global _LAST_BUCKET_CLEANUP
+    if time.monotonic() - _LAST_BUCKET_CLEANUP > BUCKET_CLEANUP_INTERVAL:
+        _LAST_BUCKET_CLEANUP = time.monotonic()
+        empty = [k for k, v in _rate_limit_buckets.items() if not v]
+        for k in empty:
+            del _rate_limit_buckets[k]
+            _rate_limit_locks.pop(k, None)
 
     headers = {}
     for key, value in request.headers.items():
@@ -150,56 +314,54 @@ async def proxy_handler(request: Request, url: str = Query(...)):
     if "user-agent" not in {k.lower() for k in headers}:
         headers["User-Agent"] = DEFAULT_UA
 
-    async with httpx.AsyncClient(follow_redirects=False, timeout=30.0) as client:
-        try:
-            body = await request.body() if request.method != "GET" else None
-            method = request.method
-            current_url = url
+    try:
+        body = await request.body() if request.method != "GET" else None
+        method = request.method
+        current_url = url
 
-            for _ in range(5):
-                response = await client.request(
-                    method=method,
-                    url=current_url,
-                    headers=headers,
-                    content=body,
+        for _ in range(5):
+            status_code, resp_headers, content = await _http_fetch(
+                method=method, url=current_url, headers=headers, body=body, timeout=30.0,
+            )
+            if status_code < 300 or status_code >= 400:
+                resp_headers.update(cors)
+                resp_headers["X-ABSpider-Target-URL"] = url
+                resp_headers.pop("content-encoding", None)
+                resp_headers.pop("content-length", None)
+                resp_headers.pop("transfer-encoding", None)
+                return Response(content=content, status_code=status_code, headers=resp_headers)
+
+            location = resp_headers.get("location")
+            if not location:
+                break
+            current_url = urljoin(current_url, location)
+            try:
+                await _resolve_and_pin(current_url)
+            except ValueError:
+                return JSONResponse(
+                    status_code=400,
+                    content={"error": "Redirect target URL is not allowed"},
+                    headers=cors,
                 )
-                if response.status_code < 300 or response.status_code >= 400:
-                    break
-                location = response.headers.get("location")
-                if not location:
-                    break
-                current_url = urljoin(current_url, location)
-                if await is_ssrf_target(current_url):
-                    return JSONResponse(
-                        status_code=400,
-                        content={"error": "Redirect target URL is not allowed"},
-                        headers=cors,
-                    )
 
-            resp_headers = dict(response.headers)
-            resp_headers.pop("content-encoding", None)
-            resp_headers.pop("content-length", None)
-            resp_headers.pop("transfer-encoding", None)
-            resp_headers.update(cors)
-            resp_headers["X-ABSpider-Target-URL"] = url
-
-            return Response(
-                content=response.content,
-                status_code=response.status_code,
-                headers=resp_headers,
-            )
-        except httpx.TimeoutException:
-            return JSONResponse(
-                status_code=504,
-                content={"error": "Request timed out"},
-                headers=cors,
-            )
-        except Exception:
-            return JSONResponse(
-                status_code=500,
-                content={"error": "Failed to fetch target URL"},
-                headers=cors,
-            )
+        resp_headers.pop("content-encoding", None)
+        resp_headers.pop("content-length", None)
+        resp_headers.pop("transfer-encoding", None)
+        resp_headers.update(cors)
+        resp_headers["X-ABSpider-Target-URL"] = url
+        return Response(content=content, status_code=status_code, headers=resp_headers)
+    except asyncio.TimeoutError:
+        return JSONResponse(
+            status_code=504,
+            content={"error": "Request timed out"},
+            headers=cors,
+        )
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to fetch target URL"},
+            headers=cors,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -250,6 +412,10 @@ def _authenticate_user(user: dict | None, cors: dict) -> JSONResponse | None:
     if user is None:
         return JSONResponse(status_code=401, content={"error": "Invalid or expired token"}, headers=cors)
     return None
+
+
+def _validate_api_key(key: str) -> bool:
+    return bool(key) and not re.search(r"[\r\n\0]", key)
 
 
 def _attach_auth(url: str, headers: dict, provider: str, api_key: str) -> tuple[str, dict]:
@@ -344,18 +510,23 @@ async def proxy_api_key_request(request: Request):
         if not api_key:
             return JSONResponse(status_code=400, content={"error": f"API key not configured for {provider}"}, headers=cors)
 
+    if not _validate_api_key(api_key):
+        return JSONResponse(status_code=400, content={"error": "Invalid API key"}, headers=cors)
+
     target_url, req_headers = _attach_auth(target_url, req_headers, provider, api_key)
     req_headers.setdefault("User-Agent", DEFAULT_UA)
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            resp = await client.request(method=method, url=target_url, headers=req_headers, content=req_body)
-            resp_headers = dict(resp.headers)
-            for hop in ("content-encoding", "transfer-encoding", "content-length"):
-                resp_headers.pop(hop, None)
-            resp_headers.update(cors)
-            return Response(content=resp.content, status_code=resp.status_code, headers=resp_headers)
-        except httpx.TimeoutException:
-            return JSONResponse(status_code=504, content={"error": "Upstream request timed out"}, headers=cors)
-        except Exception:
-            return JSONResponse(status_code=502, content={"error": "Upstream request failed"}, headers=cors)
+    try:
+        status_code, resp_headers, content = await _http_fetch(
+            method=method, url=target_url, headers=req_headers,
+            body=req_body.encode() if isinstance(req_body, str) else req_body,
+            timeout=30.0,
+        )
+        for hop in ("content-encoding", "transfer-encoding", "content-length"):
+            resp_headers.pop(hop, None)
+        resp_headers.update(cors)
+        return Response(content=content, status_code=status_code, headers=resp_headers)
+    except asyncio.TimeoutError:
+        return JSONResponse(status_code=504, content={"error": "Upstream request timed out"}, headers=cors)
+    except Exception:
+        return JSONResponse(status_code=502, content={"error": "Upstream request failed"}, headers=cors)
