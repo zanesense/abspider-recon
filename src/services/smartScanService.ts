@@ -2,12 +2,10 @@ import { fetchWithBypass } from './corsProxy';
 
 export interface ScanTarget {
   url: string;
-  responseTime: number;
   statusCode: number;
   serverHeader?: string;
   contentLength?: number;
   errorRate: number;
-  lastResponseTime: number;
 }
 
 export interface SmartScanConfig {
@@ -30,10 +28,8 @@ export class SmartScanManager {
   constructor(targetUrl: string, mode: 'conservative' | 'adaptive' | 'aggressive' = 'adaptive') {
     this.target = {
       url: targetUrl,
-      responseTime: 0,
       statusCode: 200,
       errorRate: 0,
-      lastResponseTime: 0
     };
 
     this.config = this.getConfigForMode(mode);
@@ -87,7 +83,6 @@ export class SmartScanManager {
       });
 
       const responseTime = Date.now() - startTime;
-      this.target.responseTime = responseTime;
       this.target.statusCode = response.status;
       this.target.serverHeader = response.headers.get('server') || undefined;
       this.target.contentLength = parseInt(response.headers.get('content-length') || '0');
@@ -165,8 +160,6 @@ export class SmartScanManager {
       this.requestHistory = this.requestHistory.slice(-50);
     }
 
-    this.target.lastResponseTime = responseTime;
-    
     // Calculate error rate from recent requests
     const recentRequests = this.requestHistory.slice(-20);
     this.target.errorRate = recentRequests.filter(r => !r.success).length / recentRequests.length;

@@ -54,7 +54,7 @@ export async function performWhoisLookup(target, options = {}) {
       const data = await res.json();
       if (data.entities && data.entities.length > 0) {
         const entity = data.entities[0];
-        if (entity.vcardArray && entity.vcardArray[1]) {
+        if (entity.vcardArray && entity.vcardArray.length > 1 && entity.vcardArray[1]) {
           for (const field of entity.vcardArray[1]) {
             if (field[0] === 'fn') {
               result.registrar = field[3];

@@ -493,7 +493,7 @@ const runScan = async (
           case 'subnet': {
             const ipForSubnet = currentScan.results.siteInfo?.ip ||
                                   currentScan.results.geoip?.ip ||
-                                  currentScan.results.dns?.records.A[0]?.value;
+                                  currentScan.results.dns?.records?.A?.[0]?.value;
             if (ipForSubnet) {
               moduleResult = calculateSubnet(ipForSubnet, 24);
               currentScan.results.subnet = moduleResult;
@@ -694,7 +694,12 @@ const runScan = async (
       };
       await upsertScanToDatabase(currentScan);
     } finally {
-      if (currentScan.status === 'completed' || currentScan.status === 'failed' || currentScan.status === 'stopped') {
+      try {
+        const finalScan = activeScans.has(scanId) ? await getScanById(scanId) : null;
+        if (finalScan && (finalScan.status === 'completed' || finalScan.status === 'failed' || finalScan.status === 'stopped')) {
+          activeScans.delete(scanId);
+        }
+      } catch {
         activeScans.delete(scanId);
       }
     }
@@ -708,7 +713,11 @@ export const pauseScan = async (id: string) => {
     const updatedScan: Scan = { 
       ...currentScan, 
       status: 'paused', 
-      progress: { ...currentScan.progress!, stage: 'Paused' },
+      progress: { 
+        ...currentScan.progress!,
+        current: Math.max(0, (currentScan.progress?.current || 1) - 1),
+        stage: 'Paused' 
+      },
       elapsedMs: Date.now() - currentScan.timestamp,
       completedAt: Date.now(),
     };

@@ -728,7 +728,7 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
     });
     yPosition = (doc as any).lastAutoTable.finalY + 10;
 
-    if (scan.results.ddosFirewall.indicators.length > 0) {
+    if (scan.results.ddosFirewall.indicators?.length > 0) {
       if (yPosition > 250) { doc.addPage(); yPosition = 20; }
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
@@ -742,7 +742,7 @@ export const generatePdfReport = (scan: Scan, returnContent: boolean = false): s
       yPosition += 5;
     }
 
-    if (scan.results.ddosFirewall.responseSummary.length > 0) {
+    if (scan.results.ddosFirewall.responseSummary?.length > 0) {
       if (yPosition > 250) { doc.addPage(); yPosition = 20; }
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);

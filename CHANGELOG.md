@@ -21,6 +21,13 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 ### Fixed
 
 - **XSS false positives from error pages** — `xssScanService.ts` skips reflection checks on non-200 responses, since error pages commonly echo parameters back regardless of actual reflection.
+- **Pause/resume skip bug** — `scanService.ts` pause now decrements `progress.current` by 1 so the aborted module is retried on resume instead of skipped.
+- **Stale scan state in finally block** — `scanService.ts` finally block now reloads the scan from DB before checking completion status.
+- **Subnet IP crash** — `scanService.ts` uses optional chaining (`?.`) on `dns.records.A` array access to prevent crash when DNS data is missing.
+- **PDF report crash on null ddosFirewall fields** — `reportService.ts` uses optional chaining on `indicators` and `responseSummary` arrays.
+- **Dead code removed** — `smartScanService.ts` stripped unused `responseTime` and `lastResponseTime` fields from `ScanTarget` interface.
+- **RDAP malformed response crash** — `whoisService.js` guards `vcardArray` length before access to prevent crash on incomplete responses.
+- **CLI module display crashes** — `abspider-cli.mjs` hardened 20+ unsafe `.length`, `.slice`, `.map` calls across all module display functions with null-safe defaults.
 
 ### Added
 

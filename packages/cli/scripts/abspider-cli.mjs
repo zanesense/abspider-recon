@@ -2265,9 +2265,9 @@ const renderDetails = (moduleName, result) => {
   if (moduleName === 'subdomains') {
     return [
       kv('Checked', data.checked),
-      kv('Found', data.found.length),
+      kv('Found', data.found?.length ?? 0),
       kv('Sources', data.sources ? Object.entries(data.sources).map(([name, count]) => `${name}:${count}`).join(', ') : 'dns'),
-      ...data.found.slice(0, 30).map((item) => kv(item.hostname, `${list(item.addresses)} (${item.source || 'dns'})`)),
+      ...(data.found ?? []).slice(0, 30).map((item) => kv(item.hostname, `${list(item.addresses)} (${item.source || 'dns'})`)),
     ];
   }
 
@@ -2354,9 +2354,9 @@ const renderDetails = (moduleName, result) => {
     return [
       kv('Injection points', list(data.injectionPoints?.map(formatInjectionPoint) || data.params)),
       kv('Requests tested', data.tested),
-      kv('Findings', data.findings.length),
+      kv('Findings', data.findings?.length ?? 0),
       kv('Request errors', data.errors?.length || 0),
-      ...data.findings.slice(0, 20).map((finding) => kv(
+      ...(data.findings ?? []).slice(0, 20).map((finding) => kv(
         `${finding.param} ${finding.severity || ''}`.trim(),
         `${finding.type || 'payload'} -> ${truncate(finding.payload, 90)} [${finding.status}] ${finding.indicator || ''}`,
       )),
@@ -2372,15 +2372,15 @@ const renderDetails = (moduleName, result) => {
       kv('Sensitive files', data.sensitiveFiles?.length || 0),
       kv('Vulnerabilities', data.vulnerabilities?.length || 0),
       ...(data.vulnerabilities?.map((finding) => kv(finding.severity, `${finding.title}: ${finding.description}`)) || []),
-      ...data.checks.map((check) => kv(check.path, check.error || `${check.status} ${check.ok ? 'reachable' : 'not reachable'}`)),
+      ...(data.checks ?? []).map((check) => kv(check.path, check.error || `${check.status} ${check.ok ? 'reachable' : 'not reachable'}`)),
     ]);
   }
 
   if (moduleName === 'brokenLinks') {
     return [
       kv('Checked', data.checked),
-      kv('Broken', data.broken.length),
-      ...data.broken.slice(0, 20).map((link) => kv(link.status || 'error', truncate(`${link.url}${link.error ? ` (${link.error})` : ''}`, 120))),
+      kv('Broken', data.broken?.length ?? 0),
+      ...(data.broken ?? []).slice(0, 20).map((link) => kv(link.status || 'error', truncate(`${link.url}${link.error ? ` (${link.error})` : ''}`, 120))),
     ];
   }
 
@@ -2410,15 +2410,15 @@ const renderDetails = (moduleName, result) => {
 
   if (moduleName === 'cdnDetection') {
     return [
-      kv('Detected', `${data.detectedCount}/${data.cdns.length}`),
-      ...data.cdns.filter((cdn) => cdn.detected).map((cdn) => kv(cdn.name, list(cdn.evidence, 4))),
+      kv('Detected', `${data.detectedCount}/${data.cdns?.length ?? 0}`),
+      ...(data.cdns ?? []).filter((cdn) => cdn.detected).map((cdn) => kv(cdn.name, list(cdn.evidence, 4))),
     ];
   }
 
   if (moduleName === 'cloudProvider') {
     return [
-      kv('Detected', `${data.detectedCount}/${data.providers.length}`),
-      ...data.providers.filter((provider) => provider.detected).map((provider) => kv(provider.name, list(provider.evidence, 4))),
+      kv('Detected', `${data.detectedCount}/${data.providers?.length ?? 0}`),
+      ...(data.providers ?? []).filter((provider) => provider.detected).map((provider) => kv(provider.name, list(provider.evidence, 4))),
     ];
   }
 
@@ -2438,7 +2438,7 @@ const renderDetails = (moduleName, result) => {
       kv('HttpOnly', data.httpOnlyCount),
       kv('SameSite', data.sameSiteCount),
       kv('With issues', data.insecureCookies),
-      ...data.cookies.slice(0, 12).map((cookie) => kv(cookie.name, cookie.issues?.length ? list(cookie.issues, 4) : 'ok')),
+      ...(data.cookies ?? []).slice(0, 12).map((cookie) => kv(cookie.name, cookie.issues?.length ? list(cookie.issues, 4) : 'ok')),
     ];
   }
 
@@ -2447,16 +2447,16 @@ const renderDetails = (moduleName, result) => {
       kv('Files with findings', data.totalFiles),
       kv('Endpoints', data.totalEndpoints),
       kv('API keys/tokens', data.totalApiKeys),
-      ...data.files.slice(0, 8).map((file) => kv(truncate(file.url, 60), `endpoints ${file.endpoints.length}, keys ${file.apiKeys.length}, paths ${file.internalPaths.length}`)),
+      ...(data.files ?? []).slice(0, 8).map((file) => kv(truncate(file.url, 60), `endpoints ${file.endpoints?.length ?? 0}, keys ${file.apiKeys?.length ?? 0}, paths ${file.internalPaths?.length ?? 0}`)),
     ];
   }
 
   if (moduleName === 's3Bucket') {
     return [
       kv('Checked', data.totalChecked),
-      kv('Accessible buckets', data.buckets.length),
+      kv('Accessible buckets', data.buckets?.length ?? 0),
       kv('Open listings', data.openBuckets),
-      ...data.buckets.slice(0, 20).map((bucket) => kv(bucket.name, `${bucket.statusCode}${bucket.listing ? ' listing enabled' : bucket.accessible ? ' exists/access denied' : ''}`)),
+      ...(data.buckets ?? []).slice(0, 20).map((bucket) => kv(bucket.name, `${bucket.statusCode}${bucket.listing ? ' listing enabled' : bucket.accessible ? ' exists/access denied' : ''}`)),
     ];
   }
 
@@ -2464,7 +2464,7 @@ const renderDetails = (moduleName, result) => {
     return [
       kv('Exposed files', data.totalExposed),
       kv('Critical exposed', data.criticalExposed),
-      ...data.files.slice(0, 20).map((file) => kv(file.path, `${file.statusCode}${file.preview ? ` ${truncate(file.preview.replace(/\s+/g, ' '), 80)}` : ''}`)),
+      ...(data.files ?? []).slice(0, 20).map((file) => kv(file.path, `${file.statusCode}${file.preview ? ` ${truncate(file.preview.replace(/\s+/g, ' '), 80)}` : ''}`)),
     ];
   }
 
@@ -2472,7 +2472,7 @@ const renderDetails = (moduleName, result) => {
     return [
       kv('Emails', data.totalEmails),
       kv('Domains', list(data.uniqueDomains, 8)),
-      ...data.emails.slice(0, 20).map((entry) => kv(entry.email, `${entry.source}${entry.context ? ` - ${truncate(entry.context, 70)}` : ''}`)),
+      ...(data.emails ?? []).slice(0, 20).map((entry) => kv(entry.email, `${entry.source}${entry.context ? ` - ${truncate(entry.context, 70)}` : ''}`)),
     ];
   }
 
@@ -2483,7 +2483,7 @@ const renderDetails = (moduleName, result) => {
       kv('Disallowed paths', list(data.robots.disallowedPaths, 12)),
       kv('Sitemaps', list(data.robots.sitemapLinks, 6)),
       kv('Sitemap URLs', data.sitemap.count),
-      ...data.sitemap.urls.slice(0, 10).map((url) => kv('URL', truncate(url, 100))),
+      ...(data.sitemap?.urls ?? []).slice(0, 10).map((url) => kv('URL', truncate(url, 100))),
     ];
   }
 
@@ -2491,7 +2491,7 @@ const renderDetails = (moduleName, result) => {
     return [
       kv('Tested', data.totalTested),
       kv('Vulnerable', data.vulnerableCount),
-      ...data.tests.filter((test) => test.vulnerable).slice(0, 12).map((test) => kv(test.param, `${test.statusCode} -> ${test.redirectedTo}`)),
+      ...(data.tests ?? []).filter((test) => test.vulnerable).slice(0, 12).map((test) => kv(test.param, `${test.statusCode} -> ${test.redirectedTo}`)),
     ];
   }
 
@@ -2499,7 +2499,7 @@ const renderDetails = (moduleName, result) => {
     return [
       kv('Tech found', data.techStackFound ? list(data.techStackChecked, 12) : 'none'),
       kv('CVE matches', data.totalFound),
-      ...data.matches.slice(0, 20).map((match) => kv(match.cveId, `${match.severity} ${match.technology}${match.version ? ` ${match.version}` : ''}: ${match.description}`)),
+      ...(data.matches ?? []).slice(0, 20).map((match) => kv(match.cveId, `${match.severity} ${match.technology}${match.version ? ` ${match.version}` : ''}: ${match.description}`)),
     ];
   }
 
@@ -2508,7 +2508,7 @@ const renderDetails = (moduleName, result) => {
       kv('Endpoints', data.totalEndpoints),
       kv('Open endpoints', data.openEndpoints),
       kv('Introspection', data.introspectionEnabled ? 'enabled' : 'not detected'),
-      ...data.endpoints.slice(0, 12).map((endpoint) => kv(endpoint.path, endpoint.introspectionOpen ? `introspection open (${endpoint.typeCount || 0} types)` : 'accessible')),
+      ...(data.endpoints ?? []).slice(0, 12).map((endpoint) => kv(endpoint.path, endpoint.introspectionOpen ? `introspection open (${endpoint.typeCount || 0} types)` : 'accessible')),
     ];
   }
 
@@ -2526,7 +2526,7 @@ const renderDetails = (moduleName, result) => {
     return [
       kv('Forms', data.totalForms),
       kv('Without token', data.formsWithoutToken),
-      ...data.forms.slice(0, 12).map((form) => kv(`${form.method} ${form.action}`, form.hasCSRFToken ? `token ${form.tokenField || 'present'}` : 'no token detected')),
+      ...(data.forms ?? []).slice(0, 12).map((form) => kv(`${form.method} ${form.action}`, form.hasCSRFToken ? `token ${form.tokenField || 'present'}` : 'no token detected')),
     ];
   }
 
@@ -2703,22 +2703,22 @@ const summarize = (moduleName, result) => {
   if (moduleName === 'headers') return `security ${data.security.score}/100 missing ${data.security.missing.length}`;
   if (moduleName === 'whois') return data.found ? `${data.registrar || data.status || 'found'}` : 'not found';
   if (moduleName === 'geoip') return [data.city, data.country, data.org || data.isp].filter(Boolean).join(', ') || 'no geo data';
-  if (moduleName === 'dns') return `A ${data.A.length} MX ${data.MX.length} NS ${data.NS.length}`;
-  if (moduleName === 'mx') return `${data.records.length} MX records`;
+  if (moduleName === 'dns') return `A ${data.A?.length ?? 0} MX ${data.MX?.length ?? 0} NS ${data.NS?.length ?? 0}`;
+  if (moduleName === 'mx') return `${data.records?.length ?? 0} MX records`;
   if (moduleName === 'subnet') return data.cidr || 'no subnet';
-  if (moduleName === 'subdomains') return `${data.found.length}/${data.checked} found`;
+  if (moduleName === 'subdomains') return `${data.found?.length ?? 0}/${data.checked || 0} found`;
   if (moduleName === 'reverseip') return `${data.domains?.length || 0} domains`;
   if (moduleName === 'virustotal') return data.stats ? JSON.stringify(data.stats) : 'not configured';
   if (moduleName === 'sslTls') return data.validTo ? `valid to ${data.validTo}` : 'no cert data';
   if (moduleName === 'techStack') {
     const source = data.builtWith?.ok ? `, BuiltWith ${data.builtWith.count || 0}` : '';
-    return `${data.detected.join(', ') || 'none detected'}${source}`;
+    return `${(data.detected ?? []).join(', ') || 'none detected'}${source}`;
   }
   if (moduleName === 'seo') return `h1 ${data.h1Count}, img missing alt ${data.imgWithoutAlt}`;
-  if (moduleName === 'ports') return `open ${data.filter((port) => port.open).map((port) => port.port).join(', ') || 'none'}`;
-  if (['sqlinjection', 'xss', 'lfi'].includes(moduleName)) return `${data.findings.length} findings / ${data.tested} tests`;
+  if (moduleName === 'ports') return `open ${Array.isArray(data) ? data.filter((port) => port.open).map((port) => port.port).join(', ') : 'none' || 'none'}`;
+  if (['sqlinjection', 'xss', 'lfi'].includes(moduleName)) return `${data.findings?.length ?? 0} findings / ${data.tested || 0} tests`;
   if (moduleName === 'wordpress') return data.isWordPress ? 'WordPress indicators found' : 'no WordPress indicators';
-  if (moduleName === 'brokenLinks') return `${data.broken.length}/${data.checked} broken`;
+  if (moduleName === 'brokenLinks') return `${data.broken?.length ?? 0}/${data.checked || 0} broken`;
   if (moduleName === 'corsMisconfig') return data.finding;
   if (moduleName === 'ddosFirewall') return `${data.rateLimited}/${data.requests} limited, avg ${data.avgResponseTimeMs}ms`;
   if (moduleName === 'cdnDetection') return `${data.detectedCount} CDN/WAF providers`;
