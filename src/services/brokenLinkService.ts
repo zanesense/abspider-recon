@@ -76,7 +76,8 @@ export const performBrokenLinkCheck = async (target: string, requestManager: Req
 
           try {
             const absoluteLink = new URL(link, currentUrl).href;
-            if (!visitedUrls.has(absoluteLink) && absoluteLink.includes(baseDomain)) { // Only crawl internal links
+            const linkHostname = new URL(absoluteLink).hostname;
+            if (!visitedUrls.has(absoluteLink) && (linkHostname === baseDomain || linkHostname.endsWith(`.${baseDomain}`))) { // Only crawl internal links
               linksToVisit.push({ url: absoluteLink, sourcePage: currentUrl });
             }
           } catch (e) {

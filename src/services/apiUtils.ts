@@ -154,7 +154,7 @@ export const isInternalIP = (ip: string): boolean => {
   // fc00::/7
   // ::1/128 (localhost)
   if (isIPv6(ip)) {
-    if (ip.startsWith('fc00:') || ip.startsWith('fd')) return true; // fc00::/7
+    if (/^f[cd][0-9a-f]{2}:|^fd/i.test(ip)) return true; // fc00::/7 ULA
     if (ip === '::1') return true; // IPv6 localhost
     // Check IPv4-mapped IPv6 (::ffff:x.x.x.x)
     const v4Mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);

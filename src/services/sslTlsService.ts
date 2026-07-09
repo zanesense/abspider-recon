@@ -56,8 +56,8 @@ export const performSslTlsAnalysis = async (target: string, requestManager: Requ
 
         // Extract common names and alt names
         const nameValues = latestCert.name_value ? latestCert.name_value.split('\n') : [];
-        result.commonNames = nameValues.filter((name: string) => name.startsWith(domain) && !name.startsWith('*'));
-        result.altNames = nameValues.filter((name: string) => name !== domain && name.endsWith(domain));
+        result.commonNames = nameValues.filter((name: string) => (name === domain || name.endsWith(`.${domain}`)) && !name.startsWith('*'));
+        result.altNames = nameValues.filter((name: string) => name !== domain && (name.endsWith(`.${domain}`) || name === domain));
 
         // Check expiry
         if (latestCert.not_after) {

@@ -86,6 +86,7 @@ export const performGraphQLScan = async (target: string, requestManager: Request
         endpoints.push(ep);
       }
     } catch (err) {
+      console.warn(`[GraphQL] POST to ${url} failed:`, err);
       // Also try GET request for graphiql
       if (path.includes('graphiql') || path.includes('explorer')) {
         try {
@@ -100,7 +101,7 @@ export const performGraphQLScan = async (target: string, requestManager: Request
               });
             }
           }
-        } catch { /* ignore - not a GraphQL endpoint */ }
+        } catch (getErr) { console.warn(`[GraphQL] GET ${url} not a GraphQL endpoint:`, getErr); }
       }
     }
   }

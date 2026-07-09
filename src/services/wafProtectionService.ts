@@ -96,20 +96,15 @@ export const performWAFProtectionCheck = async (
 
       const startTime = Date.now();
       try {
-        let response: Response;
-        let metadata: CORSBypassMetadata | undefined;
-
-        if (requestManager) {
-          response = await requestManager.fetch(url, { timeout: 5000 }); // Use requestManager
-        } else {
-          const fetchResult = await fetchWithBypass(url, { timeout: 5000 });
-          response = fetchResult.response;
-          metadata = fetchResult.metadata;
-          if (!result.corsMetadata) result.corsMetadata = metadata;
-        }
+        // ponytail: always use fetchWithBypass so CORS-restricted targets are reached
+        const fetchResult = await fetchWithBypass(url, { timeout: 5000 });
+        const response = fetchResult.response;
+        const metadata = fetchResult.metadata;
+        if (!result.corsMetadata) result.corsMetadata = metadata;
 
         const duration = Date.now() - startTime;
         const text = await response.clone().text().catch(() => '').then(t => t.slice(0, 4096));
+        // ponytail: reading full body for every WAF probe request would OOM on large pages; 4KB is enough for WAF patterns
 
         responses.push({ status: response.status, duration, headers: response.headers, text });
         result.successfulRequests++;

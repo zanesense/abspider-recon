@@ -73,13 +73,13 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       }
 
       // Extract meta description
-      const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+      const descMatch = html.match(/<meta[^>]*(?:(?:name=["']description["'][^>]*content=["']([^"']+)["'])|(?:content=["']([^"']+)["'][^>]*name=["']description["']))[^>]*>/i);
       if (descMatch) {
         result.meta = { ...result.meta, description: descMatch[1] };
       }
 
       // Extract meta keywords
-      const keywordsMatch = html.match(/<meta[^>]*name=["']keywords["'][^>]*content=["']([^"']+)["']/i);
+      const keywordsMatch = html.match(/<meta[^>]*(?:(?:name=["']keywords["'][^>]*content=["']([^"']+)["'])|(?:content=["']([^"']+)["'][^>]*name=["']keywords["']))[^>]*>/i);
       if (keywordsMatch) {
         result.meta = { ...result.meta, keywords: keywordsMatch[1] };
       }

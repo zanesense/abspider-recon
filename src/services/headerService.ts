@@ -183,7 +183,8 @@ export const performFullHeaderAnalysis = async (
     const cookies: HeaderAnalysisResult['cookies'] = [];
     const setCookieHeader = response.headers.get('set-cookie');
     if (setCookieHeader) {
-      const cookieStrings = setCookieHeader.split(/,(?=\s*[a-zA-Z0-9_]+=)/g); // Split by comma, but not if it's part of a date
+      // ponytail: split multi-cookie headers properly, avoiding comma-in-date false splits
+      const cookieStrings = setCookieHeader.split(/,(?=\s*[a-zA-Z0-9_][a-zA-Z0-9_]*=)/g);
       
       for (const cookieStr of cookieStrings) {
         const parts = cookieStr.split(';').map(s => s.trim());

@@ -61,7 +61,7 @@ export const performSEOAnalysis = async (target: string, requestManager: Request
     }
 
     // Extract meta description
-    const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+    const metaDescMatch = html.match(/<meta[^>]*(?:(?:name=["']description["'][^>]*content=["']([^"']+)["'])|(?:content=["']([^"']+)["'][^>]*name=["']description["']))[^>]*>/i);
     if (metaDescMatch) {
       result.metaDescription = metaDescMatch[1];
     }

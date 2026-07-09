@@ -4,6 +4,23 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 ## Unreleased
 
+### Fixed
+
+- **Broken link crawler scope** — `brokenLinkService.ts` now compares parsed hostnames instead of substring matching, preventing crawl of unintended external domains whose URL contains the target domain as a substring.
+- **IPv6 ULA detection for fc01-fcff** — `apiUtils.ts` IPv6 ULA check now covers the full `fc00::/7` range instead of only `fc00:` and `fd*` prefixes.
+- **Toast listener leak** — `use-toast.ts` listener registration no longer re-runs on every state change, preventing unbounded listener accumulation and stale-state bugs.
+- **crypto.randomUUID() crash on HTTP** — `NotificationContext.tsx` now falls back to a timestamp-based ID when `crypto.randomUUID()` is unavailable (non-HTTPS contexts).
+- **Semver `<`/`>` equality** — `cveScannerService.ts` versionInRange now returns `false` when all segments are equal for `<`/`>` operators instead of incorrectly matching patched versions.
+- **SSL altNames suffix matching** — `sslTlsService.ts` altName filtering uses exact match or `.domain` suffix instead of `startsWith`, preventing false-positive matches on unrelated domains.
+- **Meta tag attribute order** — `seoService.ts`, `siteInfoService.ts`, and `techStackService.ts` regexes now match meta tags regardless of `name`/`content` attribute order.
+- **WAF probe CORS bypass** — `wafProtectionService.ts` always uses `fetchWithBypass` so CORS-restricted targets are properly reached during WAF detection.
+- **GraphQL silent errors** — `graphQLService.ts` empty catch blocks now log caught exceptions instead of silently swallowing them.
+- **`as any` cast removed** — `statusService.ts` no longer casts `supabase.auth` to `any`, preserving type safety on `getSession()` calls.
+- **DMARC 'pc' tag removed** — `emailSecurityService.ts` no longer silently accepts the non-standard `pc` tag, parsing only the correct `pct` tag per RFC 7489.
+- **Progress bar overflow on skip** — `scanService.ts` now decrements the progress counter when a module is skipped, preventing >100% progress display.
+- **Cookie split comma-in-date** — `headerService.ts` cookie split regex now uses a safer pattern to avoid splitting on commas inside RFC 1123 date strings.
+- **Set-Cookie `requestManager` variable declarations** — Fixed `let`/`const` lint error in `wafProtectionService.ts`.
+
 ### Security
 
 - **SSRF DNS rebinding closed** — `backend/main.py` replaced `httpx` with `asyncio.open_connection` using pinned IPs from a single DNS resolution, eliminating the TOCTOU window between SSRF check and HTTP request. Redirect hops are also re-validated via `_resolve_and_pin()`.

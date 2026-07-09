@@ -139,7 +139,7 @@ export const performTechStackFingerprinting = async (target: string, requestMana
     }
 
     // Analyze Meta Generator
-    const metaGeneratorMatch = html.match(/<meta[^>]*name=["']generator["'][^>]*content=["']([^"']+)["']/i);
+    const metaGeneratorMatch = html.match(/<meta[^>]*(?:(?:name=["']generator["'][^>]*content=["']([^"']+)["'])|(?:content=["']([^"']+)["'][^>]*name=["']generator["']))[^>]*>/i);
     if (metaGeneratorMatch) {
       const generatorContent = metaGeneratorMatch[1].toLowerCase();
       for (const patternKey in TECHNOLOGY_PATTERNS.meta_generator.patterns) {

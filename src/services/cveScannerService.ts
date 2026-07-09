@@ -63,7 +63,7 @@ const versionInRange = (current: string, range: string): boolean => {
     else if (op === '=') { if (c !== r) return false; }
     else if (op === '~') return c <= r && (curParts[0] === rangeParts[0]);
   }
-  return true;
+  return op !== '<' && op !== '>';
 };
 
 export interface CVEMatch {

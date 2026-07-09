@@ -620,6 +620,7 @@ const runScan = async (
 
           if (activeScans.get(scanId)?.skipRequested) {
             delete (currentScan.results as Record<string, unknown>)[moduleName];
+            completedStages--; // ponytail: don't count skipped modules in progress
             currentScan = {
               ...currentScan,
               progress: {
@@ -639,6 +640,7 @@ const runScan = async (
         } catch (moduleError: any) {
           if (activeScans.get(scanId)?.skipRequested) {
             delete (currentScan.results as Record<string, unknown>)[moduleName];
+            completedStages--; // ponytail: don't count skipped modules in progress
             currentScan = {
               ...currentScan,
               progress: {

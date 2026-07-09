@@ -81,7 +81,7 @@ const testAuthService = async (): Promise<ServiceStatus> => {
   const startTime = Date.now();
   try {
     // Standard getSession check
-    const { data: { session }, error } = await (supabase.auth as any).getSession();
+    const { data: { session }, error } = await supabase.auth.getSession();
     const responseTime = Date.now() - startTime;
 
     if (error) {

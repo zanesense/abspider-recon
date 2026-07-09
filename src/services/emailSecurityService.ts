@@ -92,7 +92,7 @@ const parseDMARC = (record: string): DMARCRecord => {
   if (!policy) issues.push('No policy tag (p=) defined');
   else if (!['none', 'quarantine', 'reject'].includes(policy)) issues.push(`Unknown policy: ${policy}`);
 
-  const pct = tags['pc'] ? parseInt(tags['pc'], 10) : tags['pct'] ? parseInt(tags['pct'], 10) : undefined;
+  const pct = tags['pct'] ? parseInt(tags['pct'], 10) : undefined;
   if (pct !== undefined && (pct < 0 || pct > 100)) issues.push(`Invalid pct value: ${pct}`);
 
   if (!tags['rua'] && !tags['ruf']) issues.push('No reporting addresses (rua/ruf) configured');
