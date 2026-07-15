@@ -1,4 +1,5 @@
 import dns from 'node:dns/promises';
+import { Buffer } from 'node:buffer';
 
 const ALLOWED_HEADERS = new Set([
   'accept',
@@ -38,15 +39,15 @@ const isPrivateIPv6 = (ip: string): boolean => {
   return false;
 };
 
-const isSSRFTarget = async (url: URL): Promise<boolean> => {
+export const isSSRFTarget = async (url: URL): Promise<boolean> => {
   const host = url.hostname;
   if (BLOCKED_HOSTNAMES.has(host)) return true;
   if (isPrivateIP(host) || isPrivateIPv6(host)) return true;
   try {
-    const addresses = await dns.resolve(host, 'ANY');
+    const addresses = await dns.lookup(host, { all: true, verbatim: true });
     for (const addr of addresses) {
-      if (addr.type === 'A' && isPrivateIP(addr.value)) return true;
-      if (addr.type === 'AAAA' && isPrivateIPv6(addr.value)) return true;
+      if (addr.family === 4 && isPrivateIP(addr.address)) return true;
+      if (addr.family === 6 && isPrivateIPv6(addr.address)) return true;
     }
   } catch {
     return true;
@@ -207,7 +208,7 @@ export default async function handler(request: any, response: any) {
     if (upstreamServer) response.setHeader('X-ABSpider-Upstream-Server', upstreamServer);
     response.setHeader('X-ABSpider-Upstream-Headers', encodeURIComponent(JSON.stringify(upstreamHeaders)));
     response.setHeader('X-ABSpider-Target-URL', targetUrl.toString());
-    response.send(new Uint8Array(await upstream.arrayBuffer()));
+    response.send(Buffer.from(await upstream.arrayBuffer()));
   } catch {
     sendJson(response, 500, {
       error: 'Failed to fetch target URL',

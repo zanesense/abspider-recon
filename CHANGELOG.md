@@ -6,7 +6,7 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 ### Fixed
 
-- **Web proxy scan accuracy** — proxy-assisted `HEAD` requests now work on Vercel and FastAPI, indeterminate browser port failures report as filtered, target headers survive the proxy hop, and manual redirects remain visible to the open-redirect scanner.
+- **Web proxy scan accuracy** — proxy-assisted `HEAD` requests now work on Vercel and FastAPI, public targets no longer fail on unsupported DNS `ANY` queries, HTML is returned as bytes instead of JSON-serialized buffers, target headers survive the proxy hop, indeterminate browser port failures report as filtered, and manual redirects remain visible to the open-redirect scanner.
 - **Browser analysis results** — SEO now uses the native HTML parser, tech fingerprinting no longer crashes on reversed meta-generator attributes, and common React, Next.js, and Nuxt signatures are detected.
 - **Certificate and domain lookups** — crt.sh subdomain and SSL/TLS requests plus RDAP WHOIS requests now fall back through the same-origin proxy when browser CORS blocks direct access.
 - **Broken link crawler scope** — `brokenLinkService.ts` now compares parsed hostnames instead of substring matching, preventing crawl of unintended external domains whose URL contains the target domain as a substring.
