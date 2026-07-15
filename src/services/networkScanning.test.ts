@@ -8,6 +8,7 @@ import { enumerateSubdomainsCrtSh } from './subdomainService';
 import { hasCloudflareHeaders } from './cdnDetectionService';
 import { performMXLookup } from './mxService';
 import type { RequestManager } from './requestManager';
+import { RequestManager as RealRequestManager } from './requestManager';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -35,6 +36,26 @@ describe('proxy-assisted scanning', () => {
       String(url).startsWith('https://cloudflare-dns.com/dns-query?') &&
       (options?.headers as Record<string, string>).Accept === 'application/dns-json'
     )).toBe(true);
+  });
+
+  it('retries a timed-out request with a fresh abort signal', async () => {
+    let calls = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_url, options) => {
+      calls++;
+      if (calls > 1) return Promise.resolve(Response.json({ ok: true }));
+      return new Promise((_resolve, reject) => {
+        options?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+      });
+    });
+
+    const response = await new RealRequestManager().fetch('https://example.com/data', {
+      timeout: 5,
+      retries: 1,
+      retryDelay: 0,
+      skipProxy: true,
+    });
+    expect(await response.json()).toEqual({ ok: true });
+    expect(calls).toBe(2);
   });
 
   it('keeps target headers instead of Vercel headers', async () => {

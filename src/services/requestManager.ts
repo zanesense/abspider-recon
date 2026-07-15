@@ -47,19 +47,17 @@ export class RequestManager {
     } = options;
 
     const requestId = `${Date.now()}_${Math.random()}`;
-    const abortController = new AbortController();
-    
-    this.activeRequests.set(requestId, abortController);
-
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
+      const attemptController = new AbortController();
+      this.activeRequests.set(requestId, attemptController);
       const metrics: RequestMetrics = {
         startTime: Date.now(),
         isError: false,
       };
       this.requestMetrics.set(requestId, metrics);
-      if (this.isAborted() || abortController.signal.aborted) {
+      if (this.isAborted()) {
         throw new Error('Request aborted by scan controller');
       }
 
@@ -68,12 +66,12 @@ export class RequestManager {
       try {
         await this.rateLimit(url);
 
-        timeoutId = setTimeout(() => abortController.abort(), timeout);
+        timeoutId = setTimeout(() => attemptController.abort(), timeout);
         
         const combinedSignal = this.createCombinedSignal([
           this.scanController?.signal,
           this.moduleAbortController.signal,
-          abortController.signal,
+          attemptController.signal,
         ].filter(Boolean) as AbortSignal[]);
 
         const requestHeaders = (fetchOptions.headers as Record<string, string> || {});
@@ -105,9 +103,12 @@ export class RequestManager {
       } catch (error: any) {
         lastError = error;
 
-        if (error.name === 'AbortError' || this.isAborted()) {
+        if (this.isAborted()) {
           this.activeRequests.delete(requestId);
           throw new Error('Request aborted', { cause: error });
+        }
+        if (attemptController.signal.aborted) {
+          lastError = new Error(`Request timed out after ${timeout}ms`, { cause: error });
         }
 
         metrics.endTime = Date.now();

@@ -136,8 +136,7 @@ export class CORSBypass {
         console.log(`[CORS Bypass] ✓ Success with backend proxy`);
         return restoreUpstreamHeaders(response);
       } else {
-        const text = await response.text();
-        throw new Error(`Proxy returned status ${response.status}: ${text}`);
+        throw new Error(`Proxy returned status ${response.status}: ${await proxyErrorDetail(response)}`);
       }
 
     } catch (error: any) {
@@ -212,6 +211,15 @@ const restoreUpstreamHeaders = (response: Response) => {
   }
   Array.from(headers.keys()).filter(name => name.startsWith('x-abspider-')).forEach(name => headers.delete(name));
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+};
+
+const proxyErrorDetail = async (response: Response) => {
+  const text = await response.text();
+  if (response.headers.get('content-type')?.includes('text/html')) {
+    const title = text.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1].trim();
+    return title || 'Upstream returned an HTML error page';
+  }
+  return text.slice(0, 500);
 };
 
 /**
@@ -312,8 +320,7 @@ export async function fetchWithBypass(
       metadata.proxyUrl = '/api/proxy';
       return { response: restoreUpstreamHeaders(response), metadata };
     } else {
-      const errorText = await response.text();
-      throw new Error(`Proxy responded with ${response.status}: ${errorText}`);
+      throw new Error(`Proxy responded with ${response.status}: ${await proxyErrorDetail(response)}`);
     }
 
   } catch (error: any) {
