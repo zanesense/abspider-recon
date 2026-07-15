@@ -54,49 +54,24 @@ export const performSEOAnalysis = async (target: string, requestManager: Request
       loadTime,
     };
 
-    // Extract title
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (titleMatch) {
-      result.title = titleMatch[1].trim();
-    }
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    result.title = document.title.trim();
+    result.metaDescription = document.querySelector('meta[name="description" i]')?.getAttribute('content') || undefined;
+    result.h1Tags = Array.from(document.querySelectorAll('h1'), element => element.textContent?.trim() || '').filter(Boolean);
+    result.h2Tags = Array.from(document.querySelectorAll('h2'), element => element.textContent?.trim() || '').filter(Boolean);
+    result.imageCount = document.images.length;
 
-    // Extract meta description
-    const metaDescMatch = html.match(/<meta[^>]*(?:(?:name=["']description["'][^>]*content=["']([^"']+)["'])|(?:content=["']([^"']+)["'][^>]*name=["']description["']))[^>]*>/i);
-    if (metaDescMatch) {
-      result.metaDescription = metaDescMatch[1];
-    }
-
-    // Extract H1 tags
-    const h1Matches = html.matchAll(/<h1[^>]*>([^<]+)<\/h1>/gi);
-    for (const match of h1Matches) {
-      result.h1Tags.push(match[1].trim());
-    }
-
-    // Extract H2 tags
-    const h2Matches = html.matchAll(/<h2[^>]*>([^<]+)<\/h2>/gi);
-    for (const match of h2Matches) {
-      result.h2Tags.push(match[1].trim());
-    }
-
-    // Count images
-    const imgMatches = html.matchAll(/<img[^>]*>/gi);
-    result.imageCount = Array.from(imgMatches).length;
-
-    // Extract and analyze links
-    const linkMatches = html.matchAll(/<a[^>]*href=["']([^"']+)["']/gi);
-    for (const match of linkMatches) {
-      const href = match[1];
+    for (const link of document.querySelectorAll<HTMLAnchorElement>('a[href]')) {
+      const href = link.getAttribute('href') || '';
       result.allLinks.push(href);
-      
-      if (href.startsWith('http')) {
-        if (href.includes(domain)) {
-          result.linkCount.internal++;
-        } else {
-          result.linkCount.external++;
+
+      try {
+        const linkedUrl = new URL(href, url);
+        if (linkedUrl.protocol === 'http:' || linkedUrl.protocol === 'https:') {
+          if (linkedUrl.hostname === domain || linkedUrl.hostname.endsWith(`.${domain}`)) result.linkCount.internal++;
+          else result.linkCount.external++;
         }
-      } else if (href.startsWith('/') || href.startsWith('#') || !href.includes('://')) {
-        result.linkCount.internal++;
-      }
+      } catch { /* Ignore non-URL hrefs. */ }
 
       // Extract social links
       if (href.includes('facebook.com')) result.socialLinks.facebook = href;

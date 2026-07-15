@@ -42,18 +42,32 @@ interface FetchOptions {
   body?: string;
   timeout?: number;
   skipProxy?: boolean;
+  redirect?: RequestRedirect;
 }
+
+const proxyRequest = (url: string, headers: Record<string, string>, redirect?: RequestRedirect) => {
+  const params = new URLSearchParams({ url });
+  if (redirect === 'manual') params.set('redirect', 'manual');
+  const origin = Object.entries(headers).find(([key]) => key.toLowerCase() === 'origin')?.[1];
+  if (origin) params.set('origin', origin);
+  return {
+    url: `/api/proxy?${params}`,
+    headers: Object.fromEntries(Object.entries(headers).filter(([key]) => key.toLowerCase() !== 'origin')),
+  };
+};
+
+const hasTestOrigin = (headers: Record<string, string>) => Object.keys(headers).some(key => key.toLowerCase() === 'origin');
 
 export class CORSBypass {
 
   async fetch(url: string, options: FetchOptions = {}): Promise<Response> {
-    const { method = 'GET', headers = {}, body, timeout = 20000, skipProxy = false } = options;
+    const { method = 'GET', headers = {}, body, timeout = 20000, skipProxy = false, redirect } = options;
     const errors: string[] = [];
 
     // 1. Try direct fetch first (Optimization)
     // Skip direct fetch for internal/private IPs — route through SSRF-protected proxy
-    if (!skipProxy && isInternalTarget(url)) {
-      console.log(`[CORS Bypass] Internal target detected, skipping direct fetch: ${url}`);
+    if (!skipProxy && (isInternalTarget(url) || hasTestOrigin(headers))) {
+      console.log(`[CORS Bypass] Proxy-only request, skipping direct fetch: ${url}`);
     } else {
       try {
         console.log(`[CORS Bypass] Attempting direct fetch: ${url}`);
@@ -70,6 +84,7 @@ export class CORSBypass {
           signal: controller.signal,
           mode: 'cors',
           credentials: 'omit',
+          redirect,
         });
 
         clearTimeout(timeoutId);
@@ -104,24 +119,22 @@ export class CORSBypass {
 
       // Construct the proxy URL
       // We assume the app is running on same origin
-      const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+      const proxy = proxyRequest(url, headers, redirect);
 
-      const response = await fetch(proxyUrl, {
+      const response = await fetch(proxy.url, {
         method, // Pass the original method (GET, POST etc)
-        headers: {
-          ...headers, // Pass original headers
-          // We might want to remove some unsafe headers here if needed, but the proxy handles it too
-        },
+        headers: proxy.headers,
         body,
         signal: controller.signal,
+        redirect,
       });
 
       clearTimeout(timeoutId);
 
-      if (response.ok) {
+      if (response.ok || (redirect === 'manual' && response.status >= 300 && response.status < 400)) {
         await assertValidProxyResponse(response, url);
         console.log(`[CORS Bypass] ✓ Success with backend proxy`);
-        return response;
+        return restoreUpstreamHeaders(response);
       } else {
         const text = await response.text();
         throw new Error(`Proxy returned status ${response.status}: ${text}`);
@@ -184,6 +197,23 @@ const assertValidProxyResponse = async (response: Response, targetUrl: string) =
   }
 };
 
+const restoreUpstreamHeaders = (response: Response) => {
+  const headers = new Headers(response.headers);
+  const preserved = headers.get('x-abspider-upstream-headers');
+  const replaced = ['server', 'set-cookie', 'content-length', 'access-control-allow-origin', 'access-control-allow-methods', 'access-control-allow-headers', 'access-control-expose-headers'];
+  replaced.forEach(name => headers.delete(name));
+  if (preserved) {
+    try {
+      Object.entries(JSON.parse(decodeURIComponent(preserved))).forEach(([name, value]) => headers.set(name, String(value)));
+    } catch { /* Ignore malformed transport metadata. */ }
+  } else {
+    const upstreamServer = headers.get('x-abspider-upstream-server');
+    if (upstreamServer) headers.set('server', upstreamServer);
+  }
+  Array.from(headers.keys()).filter(name => name.startsWith('x-abspider-')).forEach(name => headers.delete(name));
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+};
+
 /**
  * Unified CORS bypass helper with metadata tracking
  * Tries direct fetch first, then falls back to backend proxy
@@ -192,17 +222,17 @@ export async function fetchWithBypass(
   url: string,
   options: FetchOptions & { signal?: AbortSignal } = {}
 ): Promise<FetchWithBypassResult> {
-  const { method = 'GET', headers = {}, body, timeout = 20000, signal, skipProxy = false } = options;
+  const { method = 'GET', headers = {}, body, timeout = 20000, signal, skipProxy = false, redirect } = options;
   const errors: string[] = [];
   const metadata: CORSBypassMetadata = {
     usedProxy: false,
-    attemptsDirect: true,
+    attemptsDirect: !hasTestOrigin(headers),
     attemptsViaProxy: 0,
   };
 
   // Try direct fetch
   // Skip direct fetch for internal/private IPs — route through SSRF-protected proxy
-  if (skipProxy || !isInternalTarget(url)) {
+  if (skipProxy || (!isInternalTarget(url) && !hasTestOrigin(headers))) {
     try {
       console.log(`[fetchWithBypass] Attempting direct fetch: ${url}`);
       const controller = new AbortController();
@@ -222,6 +252,7 @@ export async function fetchWithBypass(
         signal: controller.signal,
         mode: 'cors',
         credentials: 'omit',
+        redirect,
       });
 
       clearTimeout(timeoutId);
@@ -244,7 +275,7 @@ export async function fetchWithBypass(
       }
     }
   } else {
-    console.log(`[fetchWithBypass] Internal target detected, skipping direct fetch: ${url}`);
+    console.log(`[fetchWithBypass] Proxy-only request, skipping direct fetch: ${url}`);
   }
 
   // Try backend proxy
@@ -262,25 +293,24 @@ export async function fetchWithBypass(
       signal.addEventListener('abort', () => controller.abort(), { once: true });
     }
 
-    const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+    const proxy = proxyRequest(url, headers, redirect);
 
-    const response = await fetch(proxyUrl, {
+    const response = await fetch(proxy.url, {
       method,
-      headers: {
-        ...headers,
-      },
+      headers: proxy.headers,
       body,
       signal: controller.signal,
+      redirect,
     });
 
     clearTimeout(timeoutId);
 
-    if (response.ok) {
+    if (response.ok || (redirect === 'manual' && response.status >= 300 && response.status < 400)) {
       await assertValidProxyResponse(response, url);
       console.log(`[fetchWithBypass] ✓ Success with backend proxy`);
       metadata.usedProxy = true;
       metadata.proxyUrl = '/api/proxy';
-      return { response, metadata };
+      return { response: restoreUpstreamHeaders(response), metadata };
     } else {
       const errorText = await response.text();
       throw new Error(`Proxy responded with ${response.status}: ${errorText}`);

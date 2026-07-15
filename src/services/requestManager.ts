@@ -91,6 +91,7 @@ export class RequestManager {
           timeout,
           signal: combinedSignal,
           skipProxy,
+          redirect: fetchOptions.redirect,
         });
 
         metrics.endTime = Date.now();

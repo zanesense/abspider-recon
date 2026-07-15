@@ -63,9 +63,9 @@ const ALLOWED_ORIGINS = new Set([
 
 const getCorsHeaders = (origin: string): Record<string, string> => ({
   'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'null',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Expose-Headers': 'X-ABSpider-Proxy, X-ABSpider-Target-URL',
+  'Access-Control-Expose-Headers': 'X-ABSpider-Proxy, X-ABSpider-Target-URL, X-ABSpider-Upstream-Server, X-ABSpider-Upstream-Headers',
   'Vary': 'Origin',
   'X-ABSpider-Proxy': 'vercel',
 });
@@ -96,7 +96,7 @@ export default async function handler(request: any, response: any) {
     return;
   }
 
-  if (request.method !== 'GET' && request.method !== 'POST') {
+  if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'POST') {
     sendJson(response, 405, { error: 'Method not allowed' }, origin);
     return;
   }
@@ -138,6 +138,15 @@ export default async function handler(request: any, response: any) {
     return;
   }
 
+  const testOrigin = Array.isArray(request.query?.origin) ? request.query.origin[0] : request.query?.origin;
+  if (typeof testOrigin === 'string') {
+    if (testOrigin.length > 2048 || /[\r\n]/.test(testOrigin)) {
+      sendJson(response, 400, { error: 'Invalid origin' }, origin);
+      return;
+    }
+  }
+  const manualRedirect = request.query?.redirect === 'manual';
+
   const headers: Record<string, string> = {};
   for (const [key, value] of Object.entries(request.headers || {})) {
     const lowerKey = key.toLowerCase();
@@ -147,17 +156,18 @@ export default async function handler(request: any, response: any) {
   if (!Object.keys(headers).some((key) => key.toLowerCase() === 'user-agent')) {
     headers['User-Agent'] = DEFAULT_UA;
   }
+  if (typeof testOrigin === 'string') headers['Origin'] = testOrigin;
 
   try {
     let upstream = await fetch(targetUrl.toString(), {
       method: request.method,
       headers,
-      body: request.method === 'GET' ? undefined : request.body,
+      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
       redirect: 'manual',
     });
 
     for (let i = 0; i < 5; i++) {
-      if (upstream.status >= 300 && upstream.status < 400) {
+      if (!manualRedirect && upstream.status >= 300 && upstream.status < 400) {
         const location = upstream.headers.get('location');
         if (!location) break;
         const redirectUrl = new URL(location, targetUrl.toString());
@@ -177,10 +187,16 @@ export default async function handler(request: any, response: any) {
     }
 
     const corsHeaders = getCorsHeaders(origin);
+    const preservedHeaders = ['server', 'set-cookie', 'content-length', 'access-control-allow-origin', 'access-control-allow-methods', 'access-control-allow-headers', 'access-control-expose-headers'];
+    const upstreamHeaders = Object.fromEntries(preservedHeaders.flatMap(key => {
+      const value = upstream.headers.get(key);
+      return value === null ? [] : [[key, value]];
+    }));
+    const upstreamServer = upstream.headers.get('server');
     response.status(upstream.status);
     upstream.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
-      if (lowerKey === 'content-encoding' || lowerKey === 'content-length' || lowerKey === 'transfer-encoding') {
+      if (lowerKey === 'content-encoding' || lowerKey === 'content-length' || lowerKey === 'transfer-encoding' || lowerKey === 'set-cookie') {
         return;
       }
       response.setHeader(key, value);
@@ -188,6 +204,8 @@ export default async function handler(request: any, response: any) {
     for (const [key, value] of Object.entries(corsHeaders)) {
       response.setHeader(key, value);
     }
+    if (upstreamServer) response.setHeader('X-ABSpider-Upstream-Server', upstreamServer);
+    response.setHeader('X-ABSpider-Upstream-Headers', encodeURIComponent(JSON.stringify(upstreamHeaders)));
     response.setHeader('X-ABSpider-Target-URL', targetUrl.toString());
     response.send(new Uint8Array(await upstream.arrayBuffer()));
   } catch {

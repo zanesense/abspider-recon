@@ -145,19 +145,12 @@ const checkPort = async (domain: string, portInfo: { port: number; service: stri
         status: 'filtered' as const, // Could be filtered or just very slow
         service,
       };
-    } else if (error instanceof TypeError) {
-      // Network error, e.g., connection refused, host unreachable
-      console.log(`[Port Scan] Port ${port} is CLOSED (network error).`);
-      return {
-        port,
-        status: 'closed' as const,
-        service,
-      };
     } else {
-      console.warn(`[Port Scan] Unexpected error for port ${port}:`, error);
+      // Browsers intentionally hide whether failures are CORS, refused, or filtered.
+      console.log(`[Port Scan] Port ${port} could not be confirmed open.`);
       return {
         port,
-        status: 'closed' as const, // Default to closed for other errors
+        status: 'filtered' as const,
         service,
       };
     }

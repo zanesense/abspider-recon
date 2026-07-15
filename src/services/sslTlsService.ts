@@ -35,7 +35,6 @@ export const performSslTlsAnalysis = async (target: string, requestManager: Requ
     const { data: crtData } = await fetchJSONWithBypass(crtShUrl, {
       timeout: 15000,
       signal: requestManager.getAbortSignal(),
-      skipProxy: true,
     });
 
     if (Array.isArray(crtData) && crtData.length > 0) {

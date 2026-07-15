@@ -94,7 +94,7 @@ export const performWhoisLookup = async (target: string, requestManager: Request
     
     try {
       // Use fetchJSONWithBypass for RDAP, passing requestManager's signal
-      const { data: rdapData, metadata: rdapCorsMetadata } = await fetchJSONWithBypass(rdapUrl, { timeout: 15000, signal: requestManager.getAbortSignal(), skipProxy: true });
+      const { data: rdapData } = await fetchJSONWithBypass(rdapUrl, { timeout: 15000, signal: requestManager.getAbortSignal() });
       
       if (rdapData.entities && rdapData.entities.length > 0) {
         const entity = rdapData.entities[0];

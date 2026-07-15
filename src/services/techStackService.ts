@@ -67,6 +67,10 @@ const TECHNOLOGY_PATTERNS = {
     'wix.com': { name: 'Wix', confidence: 0.9, evidence: 'Wix.com domain' },
     'squarespace': { name: 'Squarespace', confidence: 0.9, evidence: 'Squarespace keyword' },
     'react-root': { name: 'React', confidence: 0.7, evidence: 'React root element' },
+    'data-reactroot': { name: 'React', confidence: 0.9, evidence: 'React root attribute' },
+    'id="__next"': { name: 'Next.js', confidence: 0.9, evidence: 'Next.js root element' },
+    '/_next/static/': { name: 'Next.js', confidence: 0.9, evidence: 'Next.js static assets' },
+    '/_nuxt/': { name: 'Nuxt', confidence: 0.9, evidence: 'Nuxt static assets' },
     'vue-app': { name: 'Vue.js', confidence: 0.7, evidence: 'Vue app element' },
     'angular': { name: 'Angular', confidence: 0.7, evidence: 'Angular attributes' },
     'google-analytics': { name: 'Google Analytics', confidence: 0.9, evidence: 'GA script' },
@@ -141,7 +145,8 @@ export const performTechStackFingerprinting = async (target: string, requestMana
     // Analyze Meta Generator
     const metaGeneratorMatch = html.match(/<meta[^>]*(?:(?:name=["']generator["'][^>]*content=["']([^"']+)["'])|(?:content=["']([^"']+)["'][^>]*name=["']generator["']))[^>]*>/i);
     if (metaGeneratorMatch) {
-      const generatorContent = metaGeneratorMatch[1].toLowerCase();
+      const generator = metaGeneratorMatch[1] || metaGeneratorMatch[2];
+      const generatorContent = generator.toLowerCase();
       for (const patternKey in TECHNOLOGY_PATTERNS.meta_generator.patterns) {
         if (generatorContent.includes(patternKey)) {
           const techInfo = (TECHNOLOGY_PATTERNS.meta_generator.patterns as any)[patternKey];
@@ -149,7 +154,7 @@ export const performTechStackFingerprinting = async (target: string, requestMana
             name: techInfo.name,
             category: TECHNOLOGY_PATTERNS.meta_generator.category,
             confidence: techInfo.confidence,
-            evidence: `Meta generator: ${metaGeneratorMatch[1]}`,
+            evidence: `Meta generator: ${generator}`,
           });
         }
       }

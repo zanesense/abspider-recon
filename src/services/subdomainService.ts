@@ -109,10 +109,10 @@ export const enumerateSubdomainsCrtSh = async (domain: string, requestManager: R
   console.log(`[Subdomain crt.sh] Querying certificate transparency logs for ${domain}`);
   
   try {
-    const crtShUrl = `https://crt.sh/?q=%.${domain}&output=json`;
+    const crtShUrl = `https://crt.sh/?q=${encodeURIComponent(`%.${domain}`)}&output=json`;
     
     // Use fetchWithBypass for crt.sh to handle CORS, passing requestManager's signal
-    const { response } = await fetchWithBypass(crtShUrl, { timeout: 20000, signal: requestManager.getAbortSignal(), skipProxy: true });
+    const { response } = await fetchWithBypass(crtShUrl, { timeout: 20000, signal: requestManager.getAbortSignal() });
     
     if (!response.ok) {
       console.warn(`[Subdomain crt.sh] Failed with status ${response.status}`);
@@ -138,7 +138,7 @@ export const enumerateSubdomainsCrtSh = async (domain: string, requestManager: R
           const names = cert.name_value.split('\n');
           for (const name of names) {
             const cleanName = name.trim().toLowerCase().replace(/^\*\./, '');
-            if (cleanName.endsWith(domain) && !cleanName.includes('*') && cleanName !== domain) {
+            if (cleanName.endsWith(`.${domain}`) && !cleanName.includes('*')) {
               subdomains.add(cleanName);
             }
           }

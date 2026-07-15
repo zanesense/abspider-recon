@@ -1,13 +1,14 @@
 import asyncio
 import collections
 import ipaddress
+import json
 import os
 import re
 import socket
 import ssl
 import time
 import httpx
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse, Response
 
@@ -64,9 +65,9 @@ def get_cors_headers(origin: str) -> dict:
     allow_origin = origin if origin in ALLOWED_ORIGINS else "null"
     return {
         "Access-Control-Allow-Origin": allow_origin,
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Expose-Headers": "X-ABSpider-Proxy, X-ABSpider-Target-URL",
+        "Access-Control-Expose-Headers": "X-ABSpider-Proxy, X-ABSpider-Target-URL, X-ABSpider-Upstream-Server, X-ABSpider-Upstream-Headers",
         "Vary": "Origin",
         "X-ABSpider-Proxy": "fastapi",
     }
@@ -258,8 +259,13 @@ async def proxy_options(request: Request):
     return Response(status_code=204, headers=get_cors_headers(origin))
 
 
-@app.api_route("/api/proxy", methods=["GET", "POST"])
-async def proxy_handler(request: Request, url: str = Query(...)):
+@app.api_route("/api/proxy", methods=["GET", "HEAD", "POST"])
+async def proxy_handler(
+    request: Request,
+    url: str = Query(...),
+    test_origin: str | None = Query(None, alias="origin"),
+    redirect: str | None = Query(None),
+):
     origin = request.headers.get("origin", "")
     cors = get_cors_headers(origin)
 
@@ -277,6 +283,9 @@ async def proxy_handler(request: Request, url: str = Query(...)):
             content={"error": "Target URL is not allowed"},
             headers=cors,
         )
+
+    if test_origin is not None and (len(test_origin) > 2048 or "\r" in test_origin or "\n" in test_origin):
+        return JSONResponse(status_code=400, content={"error": "Invalid origin"}, headers=cors)
 
     # Use X-Forwarded-For if behind a reverse proxy
     forwarded = request.headers.get("x-forwarded-for")
@@ -313,9 +322,11 @@ async def proxy_handler(request: Request, url: str = Query(...)):
 
     if "user-agent" not in {k.lower() for k in headers}:
         headers["User-Agent"] = DEFAULT_UA
+    if test_origin is not None:
+        headers["Origin"] = test_origin
 
     try:
-        body = await request.body() if request.method != "GET" else None
+        body = await request.body() if request.method not in ("GET", "HEAD") else None
         method = request.method
         current_url = url
 
@@ -323,12 +334,22 @@ async def proxy_handler(request: Request, url: str = Query(...)):
             status_code, resp_headers, content = await _http_fetch(
                 method=method, url=current_url, headers=headers, body=body, timeout=30.0,
             )
-            if status_code < 300 or status_code >= 400:
+            if status_code < 300 or status_code >= 400 or redirect == "manual":
+                preserved_names = (
+                    "server", "set-cookie", "content-length", "access-control-allow-origin",
+                    "access-control-allow-methods", "access-control-allow-headers", "access-control-expose-headers",
+                )
+                preserved = {name: resp_headers[name] for name in preserved_names if name in resp_headers}
+                upstream_server = resp_headers.get("server")
                 resp_headers.update(cors)
+                if upstream_server:
+                    resp_headers["X-ABSpider-Upstream-Server"] = upstream_server
+                resp_headers["X-ABSpider-Upstream-Headers"] = quote(json.dumps(preserved), safe="")
                 resp_headers["X-ABSpider-Target-URL"] = url
                 resp_headers.pop("content-encoding", None)
                 resp_headers.pop("content-length", None)
                 resp_headers.pop("transfer-encoding", None)
+                resp_headers.pop("set-cookie", None)
                 return Response(content=content, status_code=status_code, headers=resp_headers)
 
             location = resp_headers.get("location")
@@ -345,10 +366,20 @@ async def proxy_handler(request: Request, url: str = Query(...)):
                 )
 
         resp_headers.pop("content-encoding", None)
-        resp_headers.pop("content-length", None)
         resp_headers.pop("transfer-encoding", None)
+        preserved_names = (
+            "server", "set-cookie", "content-length", "access-control-allow-origin",
+            "access-control-allow-methods", "access-control-allow-headers", "access-control-expose-headers",
+        )
+        preserved = {name: resp_headers[name] for name in preserved_names if name in resp_headers}
+        upstream_server = resp_headers.get("server")
         resp_headers.update(cors)
+        if upstream_server:
+            resp_headers["X-ABSpider-Upstream-Server"] = upstream_server
+        resp_headers["X-ABSpider-Upstream-Headers"] = quote(json.dumps(preserved), safe="")
         resp_headers["X-ABSpider-Target-URL"] = url
+        resp_headers.pop("content-length", None)
+        resp_headers.pop("set-cookie", None)
         return Response(content=content, status_code=status_code, headers=resp_headers)
     except asyncio.TimeoutError:
         return JSONResponse(
