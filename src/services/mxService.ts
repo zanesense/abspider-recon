@@ -14,6 +14,20 @@ export interface MXLookupResult {
   dmarcRecord?: string;
 }
 
+const queryDNS = async (name: string, type: string, requestManager: RequestManager): Promise<any> => {
+  const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${type}`;
+  const response = await requestManager.fetch(url, {
+    timeout: 10000,
+    headers: { Accept: 'application/dns-json' },
+  });
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`DNS provider returned non-JSON content for ${type} ${name}`, { cause: error });
+  }
+};
+
 export const performMXLookup = async (target: string, requestManager: RequestManager): Promise<MXLookupResult> => {
   const domain = extractDomain(target);
   console.log(`[MX Lookup] Starting for ${domain}`);
@@ -23,9 +37,7 @@ export const performMXLookup = async (target: string, requestManager: RequestMan
     mxRecords: [],
   };
 
-  const mxUrl = `https://dns.google/resolve?name=${domain}&type=MX`;
-  const mxResponse = await requestManager.fetch(mxUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
-  const mxData = await mxResponse.json();
+  const mxData = await queryDNS(domain, 'MX', requestManager);
 
   if (mxData.Answer) {
     for (const record of mxData.Answer) {
@@ -33,9 +45,7 @@ export const performMXLookup = async (target: string, requestManager: RequestMan
       const priority = parseInt(parts[0]);
       const exchange = parts[1].replace(/\.$/, '');
 
-      const ipUrl = `https://dns.google/resolve?name=${exchange}&type=A`;
-      const ipResponse = await requestManager.fetch(ipUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
-      const ipData = await ipResponse.json();
+      const ipData = await queryDNS(exchange, 'A', requestManager);
       
       let ip: string | undefined;
       if (ipData.Answer && ipData.Answer.length > 0) {
@@ -47,9 +57,7 @@ export const performMXLookup = async (target: string, requestManager: RequestMan
     }
   }
 
-  const txtUrl = `https://dns.google/resolve?name=${domain}&type=TXT`;
-  const txtResponse = await requestManager.fetch(txtUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
-  const txtData = await txtResponse.json();
+  const txtData = await queryDNS(domain, 'TXT', requestManager);
 
   if (txtData.Answer) {
     for (const record of txtData.Answer) {
@@ -61,9 +69,7 @@ export const performMXLookup = async (target: string, requestManager: RequestMan
     }
   }
 
-  const dmarcUrl = `https://dns.google/resolve?name=_dmarc.${domain}&type=TXT`;
-  const dmarcResponse = await requestManager.fetch(dmarcUrl, { timeout: 10000, skipProxy: true }); // Use requestManager
-  const dmarcData = await dmarcResponse.json();
+  const dmarcData = await queryDNS(`_dmarc.${domain}`, 'TXT', requestManager);
 
   if (dmarcData.Answer && dmarcData.Answer.length > 0) {
     result.dmarcRecord = dmarcData.Answer[0].data.replace(/"/g, '');

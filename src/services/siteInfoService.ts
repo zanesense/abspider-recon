@@ -3,6 +3,7 @@ import { fetchWithBypass, CORSBypassMetadata, fetchJSONWithBypass } from './cors
 import { RequestManager } from './requestManager';
 import { APIKeys } from './apiKeyService';
 import { proxyProviderJSON } from './apiProxyClient';
+import { hasCloudflareHeaders } from './cdnDetectionService';
 
 export interface SiteInfo {
   title?: string;
@@ -92,9 +93,7 @@ export const performSiteInfoScan = async (target: string, requestManager: Reques
       }
 
       // Check for Cloudflare
-      const cfRay = response.headers.get('cf-ray');
-      const cfCache = response.headers.get('cf-cache-status');
-      if (cfRay || cfCache || html.includes('cloudflare')) {
+      if (hasCloudflareHeaders(response.headers)) {
         result.cloudflare = true;
         console.log(`[Site Info] Cloudflare detected`);
       }

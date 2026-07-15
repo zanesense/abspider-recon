@@ -3,6 +3,7 @@ import { RequestManager } from './requestManager';
 import { APIKeys } from './apiKeyService';
 import { fetchJSONWithBypass, fetchWithBypass } from './corsProxy';
 import { proxyProviderJSON } from './apiProxyClient';
+import { hasCloudflareHeaders } from './cdnDetectionService';
 
 export interface DiscoveredDomain {
   domain: string;
@@ -32,17 +33,7 @@ const fetchDomainDetails = async (domain: string, requestManager: RequestManager
     details.httpStatus = response.status;
 
     // Check for Cloudflare
-    const cfRay = response.headers.get('cf-ray');
-    const cfCache = response.headers.get('cf-cache-status');
-    if (cfRay || cfCache) { // Check headers first
-      details.cloudflare = true;
-    } else { // Fallback to body check if headers don't indicate Cloudflare
-      const clonedResponse = response.clone();
-      const text = await clonedResponse.text();
-      if (text.includes('cloudflare')) {
-        details.cloudflare = true;
-      }
-    }
+    details.cloudflare = hasCloudflareHeaders(response.headers);
 
     // Get headers for web server and technologies
     const server = response.headers.get('server');

@@ -7,8 +7,9 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 ### Fixed
 
 - **Web proxy scan accuracy** — proxy-assisted `HEAD` requests now work on Vercel and FastAPI, public targets no longer fail on unsupported DNS `ANY` queries, HTML is returned as bytes instead of JSON-serialized buffers, target headers survive the proxy hop, indeterminate browser port failures report as filtered, and manual redirects remain visible to the open-redirect scanner.
-- **Browser analysis results** — SEO now uses the native HTML parser, tech fingerprinting no longer crashes on reversed meta-generator attributes, and common React, Next.js, and Nuxt signatures are detected.
+- **Browser analysis results** — SEO now uses the native HTML parser, Cloudflare detection relies on response evidence instead of incidental body text, tech fingerprinting no longer crashes on reversed meta-generator attributes, and common React, Next.js, and Nuxt signatures are detected.
 - **Certificate and domain lookups** — crt.sh subdomain and SSL/TLS requests plus RDAP WHOIS requests now fall back through the same-origin proxy when browser CORS blocks direct access.
+- **MX lookups** — DNS queries now use Cloudflare's JSON DoH endpoint with proxy fallback, preventing HTML gateway responses from reaching the JSON parser.
 - **Broken link crawler scope** — `brokenLinkService.ts` now compares parsed hostnames instead of substring matching, preventing crawl of unintended external domains whose URL contains the target domain as a substring.
 - **IPv6 ULA detection for fc01-fcff** — `apiUtils.ts` IPv6 ULA check now covers the full `fc00::/7` range instead of only `fc00:` and `fd*` prefixes.
 - **Toast listener leak** — `use-toast.ts` listener registration no longer re-runs on every state change, preventing unbounded listener accumulation and stale-state bugs.

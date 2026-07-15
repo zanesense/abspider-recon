@@ -1,6 +1,12 @@
 import { extractDomain } from './apiUtils';
 import { RequestManager } from './requestManager';
 
+export const hasCloudflareHeaders = (headers: Headers): boolean => Boolean(
+  headers.get('cf-ray') ||
+  headers.get('cf-cache-status') ||
+  /^cloudflare(?:$|[\s/])/i.test(headers.get('server') || '')
+);
+
 const CDN_SIGNATURES: { name: string; headers?: Record<string, RegExp>; serverPattern?: RegExp; cnamePattern?: RegExp }[] = [
   {
     name: 'Cloudflare',

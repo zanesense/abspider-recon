@@ -5,11 +5,38 @@ vi.mock('./apiProxyClient', () => ({ proxyProviderAPI: vi.fn() }));
 import { fetchWithBypass } from './corsProxy';
 import { scanCommonPorts } from './portService';
 import { enumerateSubdomainsCrtSh } from './subdomainService';
+import { hasCloudflareHeaders } from './cdnDetectionService';
+import { performMXLookup } from './mxService';
 import type { RequestManager } from './requestManager';
 
 afterEach(() => vi.restoreAllMocks());
 
 describe('proxy-assisted scanning', () => {
+  it('does not treat a Cloudflare CDN asset URL as Cloudflare hosting', () => {
+    const html = '<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">';
+    expect(html).toContain('cloudflare');
+    expect(hasCloudflareHeaders(new Headers({ server: 'Microsoft-IIS/10.0' }))).toBe(false);
+    expect(hasCloudflareHeaders(new Headers({ server: 'cloudflare' }))).toBe(true);
+  });
+
+  it('uses JSON DNS responses for MX lookups instead of parsing HTML', async () => {
+    const requestManager = {
+      fetch: vi.fn(async (url: string) => {
+        const type = new URL(url).searchParams.get('type');
+        if (type === 'MX') return new Response(JSON.stringify({ Answer: [{ data: '10 mail.example.com.' }] }));
+        if (type === 'A') return new Response(JSON.stringify({ Answer: [{ data: '192.0.2.10' }] }));
+        return new Response(JSON.stringify({ Answer: [] }));
+      }),
+    } as unknown as RequestManager;
+
+    const result = await performMXLookup('example.com', requestManager);
+    expect(result.mxRecords).toEqual([{ priority: 10, exchange: 'mail.example.com', ip: '192.0.2.10' }]);
+    expect(vi.mocked(requestManager.fetch).mock.calls.every(([url, options]) =>
+      String(url).startsWith('https://cloudflare-dns.com/dns-query?') &&
+      (options?.headers as Record<string, string>).Accept === 'application/dns-json'
+    )).toBe(true);
+  });
+
   it('keeps target headers instead of Vercel headers', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockRejectedValueOnce(new TypeError('CORS blocked'))
