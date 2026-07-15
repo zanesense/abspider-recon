@@ -34,6 +34,7 @@ blob-report
 # Agent/local analysis output
 .bug-hunter/
 graphify-out/
+AGENTS.md
 
 # Environment files (never commit real secrets)
 .env
