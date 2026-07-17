@@ -51,17 +51,15 @@ export const performGitExposureCheck = async (target: string, requestManager: Re
       const url = `${baseUrl}${path}`;
       const response = await requestManager.fetch(url, { method: 'GET', timeout: 10000 });
 
-      if (response.status === 200 || response.status === 403) {
+      if (response.status === 200) {
         const exposed: ExposureFile = {
           path,
           exposed: true,
           statusCode: response.status,
         };
 
-        if (response.status === 200) {
-          const text = await response.text();
-          exposed.preview = text.substring(0, 200);
-        }
+        const text = await response.text();
+        exposed.preview = text.substring(0, 200);
 
         files.push(exposed);
         totalExposed++;

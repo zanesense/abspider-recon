@@ -17,6 +17,22 @@ const PROVIDER_AUTH: Record<string, { type: string; header?: string; param?: str
   clearbit: { type: 'header', header: 'Authorization', prefix: 'Bearer ' },
 };
 
+const PROVIDER_HOSTS: Record<string, string> = {
+  shodan: 'api.shodan.io',
+  virustotal: 'www.virustotal.com',
+  securitytrails: 'api.securitytrails.com',
+  builtwith: 'api.builtwith.com',
+  opencage: 'api.opencagedata.com',
+  hunterio: 'api.hunter.io',
+  clearbit: 'company.clearbit.com',
+};
+
+export const parseProviderUrl = (provider: string, value: string): URL => {
+  const url = new URL(value);
+  if (url.protocol !== 'https:' || url.hostname !== PROVIDER_HOSTS[provider]) throw new Error('Provider URL is not allowed');
+  return url;
+};
+
 function attachAuth(url: string, headers: Record<string, string>, provider: string, apiKey: string) {
   const config = PROVIDER_AUTH[provider];
   if (!config) return { url, headers };
@@ -111,19 +127,26 @@ export default async function handler(request: any, response: any) {
     }
   }
 
-  const targetUrl = body.url;
+  let targetUrl: URL;
+  try {
+    targetUrl = parseProviderUrl(body.provider, body.url);
+  } catch {
+    response.status(400).json({ error: 'Provider URL is not allowed' });
+    return;
+  }
   const method = body.method || 'GET';
   const reqHeaders: Record<string, string> = {};
   if (body.headers) Object.assign(reqHeaders, body.headers);
   reqHeaders['User-Agent'] = 'ABSpider/2.0';
 
-  const { url: finalUrl, headers: finalHeaders } = attachAuth(targetUrl, reqHeaders, body.provider, apiKey);
+  const { url: finalUrl, headers: finalHeaders } = attachAuth(targetUrl.toString(), reqHeaders, body.provider, apiKey);
 
   try {
     const resp = await fetch(finalUrl, {
       method,
       headers: finalHeaders,
       body: body.body || undefined,
+      redirect: 'error',
     });
 
     const respHeaders: Record<string, string> = {};

@@ -170,37 +170,17 @@ const testBooleanBlind = async (
     falseResponseStatus = falseResult.status;
     falseResponseLength = falseResponseText.length;
 
-    // Compare responses
-    // Heuristic 1: Different HTTP status codes
-    if (trueResponseStatus !== falseResponseStatus) {
+    const trueMatchesBaseline = baselineStatus > 0
+      && trueResponseStatus === baselineStatus
+      && trueResponseText === baselineResponseText;
+    const falseDiffersFromBaseline = falseResponseStatus !== baselineStatus
+      || falseResponseText !== baselineResponseText;
+    if (trueMatchesBaseline && falseDiffersFromBaseline) {
       return {
         vulnerable: true,
-        indicator: `Different HTTP status codes for TRUE (${trueResponseStatus}) vs FALSE (${falseResponseStatus}) conditions.`,
+        indicator: 'TRUE condition matches the baseline while FALSE condition differs.',
         confidence: 0.9,
-        evidence: `True status: ${trueResponseStatus}, False status: ${falseResponseStatus}`,
-      };
-    }
-
-    // Heuristic 2: Significant difference in content length
-    const lengthDiff = Math.abs(trueResponseLength - falseResponseLength);
-    const minSignificantLengthDiff = Math.max(50, baselineLength * 0.1); // At least 50 bytes or 10% of baseline
-    if (lengthDiff > minSignificantLengthDiff) {
-      return {
-        vulnerable: true,
-        indicator: `Significant content length difference for TRUE (${trueResponseLength} bytes) vs FALSE (${falseResponseLength} bytes) conditions.`,
-        confidence: 0.85,
-        evidence: `True length: ${trueResponseLength}, False length: ${falseResponseLength}, Baseline length: ${baselineLength}`,
-      };
-    }
-
-    // Heuristic 3: Different content (more robust than just length)
-    if (trueResponseText !== falseResponseText) {
-      // This is a strong indicator if length is similar but content differs
-      return {
-        vulnerable: true,
-        indicator: `Content differs for TRUE vs FALSE conditions.`,
-        confidence: 0.8,
-        evidence: `True response snippet: ${trueResponseText.substring(0, 100)}..., False response snippet: ${falseResponseText.substring(0, 100)}...`,
+        evidence: `Baseline/true status: ${baselineStatus}; false status: ${falseResponseStatus}; baseline/true length: ${baselineLength}; false length: ${falseResponseLength}`,
       };
     }
 

@@ -167,60 +167,23 @@ const testModules = async (): Promise<ModuleStatus[]> => {
 // Get system metrics
 const getSystemMetrics = async (): Promise<SystemMetrics> => {
   try {
-    // Get total users
-    const { count: totalUsers } = await supabase
-      .from('user_scans')
-      .select('user_id', { count: 'exact', head: true })
-      .not('user_id', 'is', null);
-
-    // Get total scans
-    const { count: totalScans } = await supabase
-      .from('user_scans')
-      .select('*', { count: 'exact', head: true });
-
-    // Get active scans
-    const { count: activeScans } = await supabase
-      .from('user_scans')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'running');
-
-    // Get average response time from recent scans
-    const { data: recentScans } = await supabase
-      .from('user_scans')
-      .select('elapsed_ms')
-      .eq('status', 'completed')
-      .not('elapsed_ms', 'is', null)
-      .order('completed_at', { ascending: false })
-      .limit(100);
-
-    let avgResponseTime = 45000; // Default 45 seconds
-    if (recentScans && recentScans.length > 0) {
-      const totalTime = recentScans.reduce((sum, scan) => sum + (scan.elapsed_ms || 0), 0);
-      avgResponseTime = totalTime / recentScans.length;
-    }
-
-    // Calculate error rate from recent scans
-    const { count: failedScans } = await supabase
-      .from('user_scans')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'failed')
-      .gte('timestamp', Date.now() - (24 * 60 * 60 * 1000)); // Last 24 hours
-
-    const { count: completedScans } = await supabase
-      .from('user_scans')
-      .select('*', { count: 'exact', head: true })
-      .in('status', ['completed', 'failed'])
-      .gte('timestamp', Date.now() - (24 * 60 * 60 * 1000)); // Last 24 hours
-
-    const errorRate = completedScans ? (failedScans || 0) / completedScans * 100 : 0;
+    const { data, error } = await supabase.rpc('get_public_status_metrics').single();
+    if (error) throw error;
+    const metrics = data as {
+      total_scans: number;
+      active_scans: number;
+      total_users: number;
+      avg_response_time: number;
+      error_rate: number;
+    } | null;
 
     return {
       uptime: 99.9, // Static uptime percentage
-      totalScans: totalScans || 0,
-      activeScans: activeScans || 0,
-      totalUsers: totalUsers || 0,
-      avgResponseTime: avgResponseTime / 1000, // Convert to seconds
-      errorRate
+      totalScans: Number(metrics?.total_scans || 0),
+      activeScans: Number(metrics?.active_scans || 0),
+      totalUsers: Number(metrics?.total_users || 0),
+      avgResponseTime: Number(metrics?.avg_response_time || 45),
+      errorRate: Number(metrics?.error_rate || 0)
     };
   } catch (error) {
     console.error('Error fetching system metrics:', error);

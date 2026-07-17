@@ -65,9 +65,18 @@ export const performOpenRedirectCheck = async (target: string, requestManager: R
       // Also check response body for meta/JS redirects
       if ([200, 302, 301, 307, 308].includes(response.status)) {
         const text = await response.text();
-        if (text.includes(TEST_EXTERNAL_URL)) {
+        const document = new DOMParser().parseFromString(text, 'text/html');
+        const metaRedirect = Array.from(document.querySelectorAll('meta[http-equiv]')).some((meta) =>
+          meta.getAttribute('http-equiv')?.toLowerCase() === 'refresh'
+          && meta.getAttribute('content')?.includes(TEST_EXTERNAL_URL)
+        );
+        const scriptRedirect = Array.from(document.scripts).some((script) =>
+          script.textContent?.includes(TEST_EXTERNAL_URL)
+          && /(?:window\.)?location(?:\.href)?\s*=|(?:window\.)?location\.(?:assign|replace)\s*\(/i.test(script.textContent)
+        );
+        if (metaRedirect || scriptRedirect) {
           test.vulnerable = true;
-          if (!test.redirectedTo) test.redirectedTo = '(body contains external URL)';
+          if (!test.redirectedTo) test.redirectedTo = '(body performs external redirect)';
         }
       }
 

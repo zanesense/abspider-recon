@@ -172,6 +172,9 @@ async def _http_fetch(
         req_headers = dict(headers)
         req_headers.setdefault("Host", host_header)
         req_headers.setdefault("Connection", "close")
+        req_headers["Accept-Encoding"] = "identity"
+        if body is not None:
+            req_headers["Content-Length"] = str(len(body))
 
         req_line = f"{method} {path} HTTP/1.1\r\n"
         hdrs = "".join(f"{k}: {v}\r\n" for k, v in req_headers.items())
@@ -217,7 +220,9 @@ async def _http_fetch(
 
         # Read body
         body_bytes = b""
-        if transfer_encoding_chunked:
+        if method == "HEAD" or 100 <= status_code < 200 or status_code in (204, 304):
+            body_bytes = b""
+        elif transfer_encoding_chunked:
             while True:
                 chunk_size_line = b""
                 while True:

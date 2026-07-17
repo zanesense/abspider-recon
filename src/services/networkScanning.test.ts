@@ -7,6 +7,9 @@ import { scanCommonPorts } from './portService';
 import { enumerateSubdomainsCrtSh } from './subdomainService';
 import { hasCloudflareHeaders } from './cdnDetectionService';
 import { performMXLookup } from './mxService';
+import { performCSRFDetection } from './csrfDetectionService';
+import { performGitExposureCheck } from './gitExposureService';
+import { performSQLScan } from './sqlScanService';
 import type { RequestManager } from './requestManager';
 import { RequestManager as RealRequestManager } from './requestManager';
 
@@ -131,5 +134,41 @@ describe('proxy-assisted scanning', () => {
     await expect(enumerateSubdomainsCrtSh('example.com', requestManager))
       .resolves.toEqual(['api.example.com']);
     expect(String(fetchMock.mock.calls[0][0])).toContain('q=%25.example.com');
+  });
+
+  it('does not report protected files as exposed', async () => {
+    const requestManager = {
+      fetch: vi.fn(async () => new Response('', { status: 403 })),
+    } as unknown as RequestManager;
+
+    const result = await performGitExposureCheck('example.com', requestManager);
+    expect(result.totalExposed).toBe(0);
+    expect(result.criticalExposed).toBe(0);
+  });
+
+  it('excludes GET forms from CSRF findings', async () => {
+    let calls = 0;
+    const requestManager = {
+      fetch: vi.fn(async () => new Response(calls++ === 0
+        ? '<form method="get"></form><form method="post"></form>'
+        : '', { status: calls === 1 ? 200 : 404 })),
+    } as unknown as RequestManager;
+
+    const result = await performCSRFDetection('example.com', requestManager);
+    expect(result.totalForms).toBe(2);
+    expect(result.formsWithoutToken).toBe(1);
+  });
+
+  it('does not infer blind SQL injection from unrelated dynamic responses', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('baseline'));
+    const requestManager = {
+      fetch: vi.fn()
+        .mockResolvedValueOnce(new Response('dynamic true'))
+        .mockResolvedValueOnce(new Response('dynamic false')),
+      getAbortSignal: () => undefined,
+    } as unknown as RequestManager;
+
+    const result = await performSQLScan('https://example.com/?id=1', requestManager, 0);
+    expect(result.vulnerable).toBe(false);
   });
 });

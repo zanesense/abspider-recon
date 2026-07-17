@@ -6,6 +6,10 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 ### Fixed
 
+- **Proxy protocol correctness** — FastAPI now requests identity encoding, frames request bodies with `Content-Length`, and skips body reads for `HEAD` and bodyless status responses.
+- **Scanner false positives** — Git exposure no longer treats `403` as exposed, blind SQL injection requires a baseline-matching true condition, GET forms are excluded from CSRF findings, and reflected URLs alone no longer count as open redirects.
+- **Pause status preservation** — aborted scan cleanup now preserves `paused` as well as `stopped`, preventing a paused scan from racing to `failed`.
+- **Public status telemetry** — aggregate scan metrics now come from a dedicated read-only database function and count distinct users instead of exposing viewer-specific RLS results.
 - **Web proxy scan accuracy** — proxy-assisted `HEAD` requests now work on Vercel and FastAPI, public targets no longer fail on unsupported DNS `ANY` queries, HTML is returned as bytes instead of JSON-serialized buffers, target headers survive the proxy hop, indeterminate browser port failures report as filtered, and manual redirects remain visible to the open-redirect scanner.
 - **Browser analysis results** — SEO now uses the native HTML parser, Cloudflare detection relies on response evidence instead of incidental body text, tech fingerprinting no longer crashes on reversed meta-generator attributes, and common React, Next.js, and Nuxt signatures are detected.
 - **Certificate and domain lookups** — crt.sh subdomain and SSL/TLS requests plus RDAP WHOIS requests now fall back through the same-origin proxy when browser CORS blocks direct access.
@@ -28,6 +32,8 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 ### Security
 
+- **Vercel proxy DNS rebinding closed** — outbound requests now connect through the public IP returned by validation instead of resolving the hostname a second time.
+- **Provider proxy destinations restricted** — authenticated API-key proxy requests now require HTTPS and the exact configured provider hostname, with redirects disabled.
 - **SSRF DNS rebinding closed** — `backend/main.py` replaced `httpx` with `asyncio.open_connection` using pinned IPs from a single DNS resolution, eliminating the TOCTOU window between SSRF check and HTTP request. Redirect hops are also re-validated via `_resolve_and_pin()`.
 - **Rate-limiter race condition fixed** — per-IP rate limiting now uses `asyncio.Lock` to prevent concurrent requests from bypassing the bucket count check.
 - **Rate-limiter memory leak patched** — empty IP buckets are purged every 5 minutes to prevent unbounded dictionary growth under IP-rotation attacks.

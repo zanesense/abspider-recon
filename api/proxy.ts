@@ -1,5 +1,7 @@
 import dns from 'node:dns/promises';
 import { Buffer } from 'node:buffer';
+import * as http from 'node:http';
+import * as https from 'node:https';
 
 const ALLOWED_HEADERS = new Set([
   'accept',
@@ -40,20 +42,56 @@ const isPrivateIPv6 = (ip: string): boolean => {
 };
 
 export const isSSRFTarget = async (url: URL): Promise<boolean> => {
-  const host = url.hostname;
-  if (BLOCKED_HOSTNAMES.has(host)) return true;
-  if (isPrivateIP(host) || isPrivateIPv6(host)) return true;
   try {
-    const addresses = await dns.lookup(host, { all: true, verbatim: true });
-    for (const addr of addresses) {
-      if (addr.family === 4 && isPrivateIP(addr.address)) return true;
-      if (addr.family === 6 && isPrivateIPv6(addr.address)) return true;
-    }
+    await resolvePublicTarget(url);
+    return false;
   } catch {
     return true;
   }
-  return false;
 };
+
+type ResolvedTarget = { url: URL; address: string; family: 4 | 6 };
+
+const resolvePublicTarget = async (url: URL): Promise<ResolvedTarget> => {
+  const host = url.hostname;
+  if (BLOCKED_HOSTNAMES.has(host) || isPrivateIP(host) || isPrivateIPv6(host)) {
+    throw new Error('Target URL is not allowed');
+  }
+  const addresses = await dns.lookup(host, { all: true, verbatim: true });
+  if (!addresses.length || addresses.some((addr) =>
+    addr.family === 4 ? isPrivateIP(addr.address) : isPrivateIPv6(addr.address)
+  )) throw new Error('Target URL is not allowed');
+  return { url, address: addresses[0].address, family: addresses[0].family as 4 | 6 };
+};
+
+const pinnedFetch = (target: ResolvedTarget, init: RequestInit): Promise<Response> => new Promise((resolve, reject) => {
+  const transport = target.url.protocol === 'https:' ? https : http;
+  const headers = { ...(init.headers as Record<string, string>), 'Accept-Encoding': 'identity' };
+  const req = transport.request(target.url, {
+    method: init.method,
+    headers,
+    lookup: (_hostname, _options, callback) => callback(null, target.address, target.family),
+  }, (upstream) => {
+    const chunks: Buffer[] = [];
+    upstream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    upstream.on('end', () => {
+      const responseHeaders = new Headers();
+      for (const [key, value] of Object.entries(upstream.headers)) {
+        if (Array.isArray(value)) value.forEach((item) => responseHeaders.append(key, item));
+        else if (value !== undefined) responseHeaders.set(key, value);
+      }
+      const hasBody = init.method !== 'HEAD' && ![204, 205, 304].includes(upstream.statusCode || 0);
+      resolve(new Response(hasBody ? Buffer.concat(chunks) : null, {
+        status: upstream.statusCode,
+        statusText: upstream.statusMessage,
+        headers: responseHeaders,
+      }));
+    });
+  });
+  req.on('error', reject);
+  if (init.body !== undefined && init.body !== null) req.write(init.body as any);
+  req.end();
+});
 
 const ALLOWED_ORIGINS = new Set([
   'https://abspider.zanesense.dev',
@@ -83,7 +121,7 @@ const sendJson = (response: any, status: number, payload: unknown, origin = '') 
   response.send(JSON.stringify(payload));
 };
 
-export default async function handler(request: any, response: any) {
+export default async function handler(request: any, response: any, fetchTarget = pinnedFetch) {
   const origin = String(request.headers['origin'] || '');
   const forwarded = String(request.headers['x-forwarded-for'] || '');
   const clientIp = forwarded ? forwarded.split(',')[0].trim() : String(request.socket?.remoteAddress || 'unknown');
@@ -134,7 +172,10 @@ export default async function handler(request: any, response: any) {
     return;
   }
 
-  if (await isSSRFTarget(targetUrl)) {
+  let resolvedTarget: ResolvedTarget;
+  try {
+    resolvedTarget = await resolvePublicTarget(targetUrl);
+  } catch {
     sendJson(response, 400, { error: 'Target URL is not allowed' }, origin);
     return;
   }
@@ -160,7 +201,7 @@ export default async function handler(request: any, response: any) {
   if (typeof testOrigin === 'string') headers['Origin'] = testOrigin;
 
   try {
-    let upstream = await fetch(targetUrl.toString(), {
+    let upstream = await fetchTarget(resolvedTarget, {
       method: request.method,
       headers,
       body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
@@ -172,12 +213,14 @@ export default async function handler(request: any, response: any) {
         const location = upstream.headers.get('location');
         if (!location) break;
         const redirectUrl = new URL(location, targetUrl.toString());
-        if (await isSSRFTarget(redirectUrl)) {
+        try {
+          resolvedTarget = await resolvePublicTarget(redirectUrl);
+        } catch {
           sendJson(response, 400, { error: 'Redirect target URL is not allowed' }, origin);
           return;
         }
         targetUrl = redirectUrl;
-        upstream = await fetch(targetUrl.toString(), {
+        upstream = await fetchTarget(resolvedTarget, {
           method: request.method,
           headers,
           redirect: 'manual',

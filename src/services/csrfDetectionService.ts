@@ -108,6 +108,6 @@ export const performCSRFDetection = async (target: string, requestManager: Reque
   return {
     forms,
     totalForms: forms.length,
-    formsWithoutToken: forms.filter(f => !f.hasCSRFToken).length,
+    formsWithoutToken: forms.filter(f => f.method !== 'GET' && !f.hasCSRFToken).length,
   };
 };

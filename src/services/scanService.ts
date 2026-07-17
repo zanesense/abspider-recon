@@ -202,6 +202,7 @@ const activeScans = new Map<string, {
   requestManager: RequestManager;
   currentModule?: string;
   skipRequested?: boolean;
+  pauseRequested?: boolean;
 }>();
 
 const upsertScanToDatabase = async (scan: Scan) => {
@@ -638,6 +639,7 @@ const runScan = async (
           await upsertScanToDatabase(currentScan);
 
         } catch (moduleError: any) {
+          if (activeScans.get(scanId)?.pauseRequested) throw moduleError;
           if (activeScans.get(scanId)?.skipRequested) {
             delete (currentScan.results as Record<string, unknown>)[moduleName];
             completedStages--; // ponytail: don't count skipped modules in progress
@@ -682,9 +684,10 @@ const runScan = async (
       
       const latestScanState = await getScanById(scanId);
       
-      if (latestScanState && latestScanState.status === 'stopped') {
-        console.log(`[ScanService] Scan ${scanId} was explicitly stopped. Not overwriting status to 'failed'.`);
-        throw error; 
+      const controlledStatus = activeScans.get(scanId)?.pauseRequested ? 'paused' : latestScanState?.status;
+      if (controlledStatus === 'stopped' || controlledStatus === 'paused') {
+        console.log(`[ScanService] Scan ${scanId} was explicitly ${controlledStatus}. Not overwriting status to 'failed'.`);
+        return;
       }
 
       currentScan = {
@@ -710,6 +713,7 @@ const runScan = async (
 export const pauseScan = async (id: string) => {
   const scanEntry = activeScans.get(id);
   if (scanEntry) {
+    scanEntry.pauseRequested = true;
     scanEntry.controller.abort();
     const currentScan = (await getScanById(id))!;
     const updatedScan: Scan = { 
