@@ -104,7 +104,7 @@ Both surfaces expose the same 35 module names and result categories, with browse
 - 📊 **Per-user scan history** — Supabase PostgreSQL with row-level security, plus per-user API keys, preferences, and Discord webhook config.
 - 📥 **JSON + PDF reports** — export a dashboard scan as JSON, a styled PDF (`jsPDF` + `jspdf-autotable`), or DOCX.
 - 🧩 **Optional third-party intel** — Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit, and Discord webhooks plug in when you bring your own keys.
-- 🔀 **Smart proxy routing** — browser requests try direct access where appropriate and fall back to the SSRF-protected Vercel or FastAPI proxy when CORS or upstream behavior requires it. Provider APIs that use private keys go through authenticated server-side endpoints.
+- 🔀 **Smart proxy routing** — browser requests try direct access where appropriate and fall back to the SSRF-protected FastAPI proxy when CORS or upstream behavior requires it. Provider APIs that use private keys go through authenticated server-side endpoints.
 - 📚 **Bundled documentation site** — the static docs in `docs/` are served at `/docs/` in development and copied into `dist/docs/` during production builds.
 - 🐳 **Container-ready** — production `Dockerfile` (Nginx), `Dockerfile.backend` (FastAPI proxy), and dev `Dockerfile.dev` (Vite) ship in the repo; `docker compose` orchestrates the full stack.
 - ⏱️ **Graceful shutdown** — `Ctrl+C` aborts the CLI cleanly, preserves partial results, and finishes writing any `--output` JSON.
@@ -158,7 +158,7 @@ Both surfaces expose the same 35 module names and result categories, with browse
 
 ## 🧠 How It Works
 
-ABSpider Recon is a Vite SPA backed by Supabase. Dashboard modules run in the browser and use same-origin serverless/FastAPI endpoints when browser networking is insufficient; the CLI has its own Node.js implementations with direct network access.
+ABSpider Recon is a Vite SPA backed by Supabase. Dashboard modules run in the browser and use same-origin FastAPI endpoints when browser networking is insufficient; the CLI has its own Node.js implementations with direct network access.
 
 ```mermaid
 flowchart TD
@@ -262,7 +262,7 @@ abspider-recon/
 | Auth and persistence | [Supabase](https://supabase.com/) Auth, PostgreSQL, Storage, Row Level Security |
 | Reports | [jsPDF](https://github.com/parallax/jsPDF), [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable), [docx](https://docx.js.org/) |
 | CLI | Node.js ≥ 20 ESM script using built-in `fetch`, `dns`, `net`, and `tls` |
-| Deployment | [Vercel](https://vercel.com/) SPA + Functions, [Docker](https://www.docker.com/) + Nginx + FastAPI, self-hosted static |
+| Deployment | [Vercel](https://vercel.com/) Services (Vite + FastAPI), [Docker](https://www.docker.com/) + Nginx + FastAPI, self-hosted static |
 | Linting | [ESLint 10](https://eslint.org/) + `typescript-eslint` |
 | Type checking | `tsc -b --noEmit` |
 | Testing | [Vitest 4](https://vitest.dev/) |
@@ -403,10 +403,10 @@ The CLI reads optional keys from your shell environment. It does not load `.env`
 
 | Variable | Used by |
 | --- | --- |
-| `VIRUSTOTAL_API_KEY` or `VITE_VIRUSTOTAL_API_KEY` | VirusTotal reputation module |
-| `SECURITYTRAILS_API_KEY` or `VITE_SECURITYTRAILS_API_KEY` | SecurityTrails WHOIS/subdomain enrichment |
-| `BUILTWITH_API_KEY` or `VITE_BUILTWITH_API_KEY` | BuiltWith technology enrichment |
-| `OPENCAGE_API_KEY` or `VITE_OPENCAGE_API_KEY` | OpenCage GeoIP enrichment |
+| `VIRUSTOTAL_API_KEY` | VirusTotal reputation module |
+| `SECURITYTRAILS_API_KEY` | SecurityTrails WHOIS/subdomain enrichment |
+| `BUILTWITH_API_KEY` | BuiltWith technology enrichment |
+| `OPENCAGE_API_KEY` | OpenCage GeoIP enrichment |
 
 ```bash
 export VIRUSTOTAL_API_KEY=<your-key>
@@ -694,7 +694,7 @@ Vercel reads [`vercel.json`](vercel.json) and deploys two Services:
 - `frontend`: the Vite app rooted at the repository root and routed at `/`.
 - `backend`: [`backend/main.py`](backend/main.py), routed at `/api`.
 - `/docs` rewrites: `/docs`, `/docs/`, and `/docs/*` resolve to the static documentation copied into `dist/docs/`.
-- SPA rewrites: every other path that does not match a static asset falls through to `/index.html`.
+- Native service routing sends `/api/*` to FastAPI and all other paths to the Vite frontend.
 
 Set the Vercel project's **Framework Preset** to **Services** before deploying. Vercel strips the `/api` service prefix before invoking FastAPI; the app registers matching internal aliases while retaining `/api/*` routes for Docker and local development.
 
@@ -840,7 +840,7 @@ Please open an issue first if your change is large or design-related.
 | --- | --- | --- |
 | Dashboard cannot load scans | Supabase migrations have not been applied, or `.env` has the wrong URL/anon key. | Run `supabase db push` (or apply the SQL files in order) and confirm `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. |
 | Sign-in works but no rows are visible | Row Level Security policies from `0002_rls_policies.sql` were not applied. | Re-apply migration `0002_rls_policies.sql` in the Supabase SQL Editor. |
-| VirusTotal module is skipped in the CLI | `VIRUSTOTAL_API_KEY` is not set. | `export VIRUSTOTAL_API_KEY=<your-key>` in your shell, or set `VITE_VIRUSTOTAL_API_KEY` for the dashboard. |
+| VirusTotal module is skipped in the CLI | `VIRUSTOTAL_API_KEY` is not set. | `export VIRUSTOTAL_API_KEY=<your-key>` in your shell; configure the dashboard key in **Settings**. |
 | CLI active modules are too noisy | Default mode is `adaptive`; payload counts and delays are tuned for a balance. | Lower `--payloads`, raise `--delay`, or pass `--mode conservative`. |
 | CLI scan is too slow | Mode is `aggressive` and threads are high. | Use `--mode conservative`, lower `--threads`, choose `--port-profile web`, or disable CT lookup with `--no-ct`. |
 | CLI reports a Cloudflare or WAF challenge | The target is behind a CDN/WAF that returned a challenge page. | Results describe the edge challenge instead of the origin. Use an authorized allowlist, staging host, or provider-approved testing path. |

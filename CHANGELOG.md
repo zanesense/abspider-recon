@@ -11,7 +11,8 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 ### Fixed
 
 - **Vercel proxy module outage** — pinned DNS lookups now honor Node's multi-address callback contract, restoring proxy-backed SEO, headers, site info, port checks, and other browser scan modules.
-- **Proxy protocol correctness** — FastAPI now requests identity encoding, frames request bodies with `Content-Length`, and skips body reads for `HEAD` and bodyless status responses.
+- **Proxy protocol correctness** — FastAPI now forces identity encoding without forwarding duplicate browser compression headers, frames request bodies with `Content-Length`, and skips body reads for `HEAD` and bodyless status responses.
+- **Vercel Services routing** — removed conflicting SPA rewrites so `/api/proxy` and `/api/keys*` reach FastAPI instead of returning the dashboard HTML or a platform `404`.
 - **Scanner false positives** — Git exposure no longer treats `403` as exposed, blind SQL injection requires a baseline-matching true condition, GET forms are excluded from CSRF findings, and reflected URLs alone no longer count as open redirects.
 - **Pause status preservation** — aborted scan cleanup now preserves `paused` as well as `stopped`, preventing a paused scan from racing to `failed`.
 - **Public status telemetry** — aggregate scan metrics now come from a dedicated read-only database function and count distinct users instead of exposing viewer-specific RLS results.

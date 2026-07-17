@@ -63,7 +63,7 @@
 <span class="lvl-0">External</span>
   <span class="lvl-1">├─ Targets and intel sources (DNS, RDAP, CT logs, …)</span>
   <span class="lvl-1">├─ Supabase (auth, RLS-scoped storage, settings)</span>
-  <span class="lvl-1">├─ /api/proxy (Vercel api/proxy.ts or FastAPI backend/main.py)</span>
+  <span class="lvl-1">├─ /api/proxy (FastAPI backend/main.py)</span>
   <span class="lvl-1">└─ Third-party APIs (Shodan, VirusTotal, …) — optional</span>
   <span class="lvl-2">│</span>
   <span class="lvl-2">▼</span>
@@ -196,12 +196,12 @@
                     <p>Browser-side CORS limits are bypassed with a tiered approach:</p>
                     <ol>
                         <li><strong>Direct fetch</strong> — attempt a standard <code>fetch</code> with browser-like headers.</li>
-                        <li><strong>Same-origin proxy</strong> — if direct fetch fails (CORS or Cloudflare), route through <code>/api/proxy</code>. Vercel handles that path with <code>api/proxy.ts</code>; Docker/local backend deployments route it to FastAPI.</li>
+                        <li><strong>Same-origin proxy</strong> — if direct fetch fails (CORS or Cloudflare), route through <code>/api/proxy</code>. Vercel Services, Docker, and local backend deployments route it to FastAPI.</li>
                         <li><strong>WAF challenge helpers</strong> — small set of <code>wafChallengeService.ts</code> heuristics that may unblock a target without evading controls.</li>
                     </ol>
 
                     <h3>The same-origin proxy</h3>
-                    <p>The Vercel handler at <code>api/proxy.ts:1</code> and the FastAPI handler at <code>backend/main.py</code> share the same contract:</p>
+                    <p>The FastAPI handler at <code>backend/main.py</code> provides the shared deployment contract:</p>
                     <ol>
                         <li>Reads <code>?url=</code> from the query string and validates it with <code>new URL()</code>.</li>
                         <li>Forwards a curated set of request headers (the <code>allowedHeaders</code> allowlist) to avoid issues.</li>
@@ -273,7 +273,7 @@
                         <table>
                             <thead><tr><th>Path</th><th>Front-end served from</th><th><code>api/proxy</code> supported?</th></tr></thead>
                             <tbody>
-                                <tr><td><strong>Vercel</strong> (recommended)</td><td><code>dist/</code> built by Vite, including <code>dist/docs/</code></td><td>✅ — Vercel <code>api/proxy.ts</code></td></tr>
+                                <tr><td><strong>Vercel</strong> (recommended)</td><td>Vite frontend service, including <code>dist/docs/</code></td><td>✅ — FastAPI backend service</td></tr>
                                 <tr><td><strong>Docker production</strong></td><td><code>dist/</code> served by Nginx</td><td>✅ — FastAPI backend proxied by Nginx</td></tr>
                                 <tr><td><strong>Self-hosted Node</strong></td><td><code>dist/</code> served by <code>serve</code></td><td>❌ — host the proxy separately</td></tr>
                                 <tr><td><strong>Static host</strong> (S3, Caddy, Netlify, …)</td><td><code>dist/</code> uploaded as-is</td><td>❌ — bring your own runtime</td></tr>
@@ -285,7 +285,7 @@
                     <h2 id="repo">Repository layout</h2>
                     <p>The high-level directory map. The dashboard code lives under <code>src/</code>; the published CLI lives under <code>packages/cli/</code>.</p>
                     <div class="diagram">abspider-recon/
-├── api/                  <span class="lvl-3"># Vercel Edge Runtime proxy</span>
+├── backend/              <span class="lvl-3"># FastAPI proxy and API-key service</span>
 ├── docs/                 <span class="lvl-3"># User-facing documentation site</span>
 ├── packages/
 │   └── cli/              <span class="lvl-3"># Published npm package "abspider"</span>

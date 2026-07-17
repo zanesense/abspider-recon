@@ -34,11 +34,11 @@
                     <header class="page-hero">
                         <div class="crumb">Reference · Programmatic</div>
                         <h1>API Reference</h1>
-                        <p class="lede">Two surfaces expose ABSpider Recon programmatically: the same-origin <code>/api/proxy</code> contract (Vercel <code>api/proxy.ts</code> or FastAPI <code>backend/main.py</code>) and the CLI JSON output. The Supabase schema is documented at the bottom of this page.</p>
+                        <p class="lede">Two surfaces expose ABSpider Recon programmatically: the same-origin FastAPI <code>/api/proxy</code> contract in <code>backend/main.py</code> and the CLI JSON output. The Supabase schema is documented at the bottom of this page.</p>
                     </header>
 
                     <h2 id="proxy">Same-origin proxy</h2>
-                    <p>The Vercel handler in <a href="https://github.com/zanesense/abspider-recon/blob/main/api/proxy.ts" target="_blank" rel="noopener"><code>api/proxy.ts:1</code></a> and the FastAPI handler in <code>backend/main.py</code> forward browser requests to a target URL with permissive CORS headers. Use this path to bypass browser CORS for targets you are authorized to test.</p>
+                    <p>The FastAPI handler in <code>backend/main.py</code> forwards browser requests to a target URL on Vercel, Docker, and local backend deployments. Use this path to bypass browser CORS for targets you are authorized to test.</p>
 
                     <h3>Endpoint</h3>
                     <div class="code-block" data-lang="http">GET /api/proxy?url=&lt;encoded-target-url&gt;</div>
@@ -220,7 +220,7 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
 <span class="c-key">✓</span> GET https://httpbin.org/status/418 returns 418</div>
 
                     <h2 id="rate-limits">Rate limits</h2>
-                    <p>There are no ABSpider-imposed rate limits on the proxy. The Vercel Edge function shares the platform's free-tier limits (100 GB-hours / month on the Hobby plan). For production deployments with sustained traffic, upgrade to Vercel Pro or run the function on a Cloudflare Worker.</p>
+                    <p>The proxy allows 120 requests per client address per 60 seconds and also remains subject to the hosting platform's function limits.</p>
 
                     <h2 id="errors">Error reference</h2>
                     <div class="table-wrap">

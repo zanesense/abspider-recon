@@ -109,10 +109,9 @@ npm install</div>
 <span class="c-key">VITE_SUPABASE_URL</span>=https://your-project-ref.supabase.co
 <span class="c-key">VITE_SUPABASE_ANON_KEY</span>=your-anon-key-here
 
-<span class="c-com"># Optional — see Configuration → Environment Variables</span>
-<span class="c-key">VITE_SHODAN_API_KEY</span>=
-<span class="c-key">VITE_VIRUSTOTAL_API_KEY</span>=
-<span class="c-key">VITE_DISCORD_WEBHOOK_URL</span>=</div>
+<span class="c-com"># Server-side only; required for dashboard API-key features</span>
+<span class="c-key">SUPABASE_SERVICE_ROLE_KEY</span>=your-service-role-key</div>
+                            <p>Configure provider API keys and Discord webhooks per user in dashboard <strong>Settings</strong>; never place them in <code>VITE_*</code> variables.</p>
                             <div class="callout callout-warn">
                                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
                                 <div>

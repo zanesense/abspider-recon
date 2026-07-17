@@ -34,7 +34,7 @@
                     <header class="page-hero">
                         <div class="crumb">Operations · Production</div>
                         <h1>Deployment</h1>
-                        <p class="lede">ABSpider Recon is a static Vite SPA, bundled documentation site at <code>/docs/</code>, and same-origin proxy support through Vercel <code>api/proxy.ts</code> or the FastAPI backend. <strong>Every supported deployment path serves the production bundle in <code>dist/</code> — never the Vite dev server.</strong> The Vite dev server (<code>npm run dev</code>, port <code>5000</code>) is for local development only and is not exposed by any of the recipes below.</p>
+                        <p class="lede">ABSpider Recon is a Vite SPA, bundled documentation site at <code>/docs/</code>, and FastAPI backend. Vercel deploys the frontend and backend as Services; Docker and local deployments use the same backend contract. <strong>Every supported production path serves the built frontend — never the Vite dev server.</strong></p>
                     </header>
 
                     <h2 id="at-a-glance">Paths at a glance</h2>
@@ -44,8 +44,8 @@
                             <tbody>
                                 <tr>
                                     <td><strong>Vercel</strong> (recommended)</td>
-                                    <td><code>dist/</code> built by Vite, including <code>dist/docs/</code></td>
-                                    <td>✅ — Vercel Edge Function</td>
+                                    <td>Vite frontend service, including <code>dist/docs/</code></td>
+                                    <td>✅ — FastAPI backend service</td>
                                     <td>Production, zero-config, automatic previews</td>
                                 </tr>
                                 <tr>
@@ -77,15 +77,15 @@
                     </div>
 
                     <h2 id="vercel">Vercel (recommended)</h2>
-                    <p>Vercel reads <a href="https://github.com/zanesense/abspider-recon/blob/main/vercel.json" target="_blank" rel="noopener"><code>vercel.json</code></a> and runs the production pipeline:</p>
+                    <p>Vercel reads <a href="https://github.com/zanesense/abspider-recon/blob/main/vercel.json" target="_blank" rel="noopener"><code>vercel.json</code></a> and deploys two Services:</p>
                     <ul>
-                        <li><strong>installCommand:</strong> <code>npm ci</code></li>
-                        <li><strong>buildCommand:</strong> <code>npm run build</code> (which is <code>tsc -b &amp;&amp; vite build</code>)</li>
-                        <li><strong>outputDirectory:</strong> <code>dist/</code></li>
+                        <li><strong>Frontend:</strong> the Vite app at <code>/</code>.</li>
+                        <li><strong>Backend:</strong> <code>backend/main.py</code> at <code>/api</code>.</li>
                         <li><strong>Docs rewrites:</strong> <code>/docs</code>, <code>/docs/</code>, and <code>/docs/*</code> resolve to the static documentation copied into <code>dist/docs/</code>.</li>
-                        <li><strong>SPA rewrites:</strong> every other path that does not match a static asset falls through to <code>/index.html</code> (so deep links like <code>/dashboard</code> and <code>/scan/:id</code> work after a refresh).</li>
-                        <li><strong>Proxy function:</strong> <code>api/proxy.ts</code> is auto-deployed as the same-origin <code>/api/proxy</code> function.</li>
+                        <li><strong>Routing:</strong> native service prefixes send <code>/api/*</code> to FastAPI and other requests to Vite.</li>
                     </ul>
+
+                    <p>Set the Vercel project Framework Preset to <strong>Services</strong> before deploying.</p>
 
                     <div class="code-block" data-lang="bash"><span class="c-com"># Install the Vercel CLI if you do not have it</span>
 npm i -g vercel
@@ -98,14 +98,16 @@ vercel</div>
                     <ul>
                         <li><code>VITE_SUPABASE_URL</code></li>
                         <li><code>VITE_SUPABASE_ANON_KEY</code></li>
-                        <li>Optional <code>VITE_*</code> integration keys (Shodan, VirusTotal, SecurityTrails, Hunter.io, Discord webhook)</li>
+                        <li><code>SUPABASE_SERVICE_ROLE_KEY</code> (server-side only; required for API-key storage and provider requests)</li>
                     </ul>
+
+                    <p><code>SUPABASE_URL</code> is an optional server-side override; FastAPI otherwise uses <code>VITE_SUPABASE_URL</code>. Configure provider keys and Discord webhooks per user in dashboard Settings.</p>
 
                     <div class="callout callout-info">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                         <div>
                             <div class="callout-title">No <code>vercel dev</code> for production</div>
-                            <p>The platform always runs the production build, never the Vite dev server. Use <code>npm run dev</code> locally for development, and ship the resulting <code>dist/</code> artifact via Vercel.</p>
+                            <p>The platform builds the Vite frontend and FastAPI backend as separate Services. Use <code>npm run dev</code> locally for frontend development.</p>
                         </div>
                     </div>
 
@@ -153,7 +155,7 @@ VITE_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co \
 VITE_SUPABASE_ANON_KEY=replace-with-your-supabase-anon-key \
 PORT=5000 \
 npm start</div>
-                    <p><code>PORT</code> defaults to <code>5000</code> if unset. The Vercel <code>api/proxy.ts</code> function is not bundled by <code>serve</code>; run <code>backend/main.py</code> separately and route <code>/api/*</code> to it if this deployment needs browser-side CORS fallback.</p>
+                    <p><code>PORT</code> defaults to <code>5000</code> if unset. The FastAPI backend is not bundled by <code>serve</code>; run <code>backend/main.py</code> separately and route <code>/api/*</code> to it if this deployment needs browser-side CORS fallback.</p>
 
                     <h2 id="static">Static host (S3, Caddy, Netlify, Cloudflare Pages, …)</h2>
                     <p>Any host that can serve static files works. The only caveat is the proxy: if your static host does not have edge functions, run the dashboard without the proxy and rely on direct CORS-friendly targets or the CLI.</p>
@@ -161,10 +163,10 @@ npm start</div>
 <span class="c-com"># Upload the contents of dist/ to your static host</span></div>
 
                     <h3>Porting the proxy</h3>
-                    <p>If your host supports edge functions (Cloudflare Workers, Netlify Edge Functions, Deno Deploy, Lambda@Edge), you can port the <code>api/proxy.ts</code> handler. The handler:</p>
+                    <p>If your host supports serverless functions, you can port the <code>backend/main.py</code> proxy contract. The handler:</p>
                     <ol>
-                        <li>Reads <code>?url=</code> from the query string and validates it with <code>new URL()</code>.</li>
-                        <li>Forwards a curated set of <code>allowedHeaders</code> from the original request.</li>
+                        <li>Reads <code>?url=</code> from the query string and validates the target.</li>
+                        <li>Forwards a curated set of headers from the original request.</li>
                         <li>Sets a default Chrome User-Agent if none was provided.</li>
                         <li>Returns the response body with permissive CORS headers and the upstream status code.</li>
                     </ol>

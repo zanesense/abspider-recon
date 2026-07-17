@@ -110,7 +110,7 @@ npm run typecheck</div>
                     <p>Confirm the target accepts incoming requests from your network. If you are behind a corporate proxy or VPN, the dashboard's fetch may be blocked. The CLI is unaffected because it runs in Node.js, not the browser.</p>
 
                     <h3>CORS errors in the browser</h3>
-                    <p>Some targets reject cross-origin requests. The dashboard falls back to the <a href="api-reference.html#cors-pipeline">same-origin proxy</a> automatically. Vercel uses <code>api/proxy.ts</code>; Docker/local backend deployments use FastAPI. If the proxy is also blocked, use the CLI for that target.</p>
+                    <p>Some targets reject cross-origin requests. The dashboard falls back to the <a href="api-reference.html#cors-pipeline">same-origin FastAPI proxy</a> automatically on Vercel, Docker, and local backend deployments. If the proxy is also blocked, use the CLI for that target.</p>
 
                     <h3>Scan times out before completing</h3>
                     <ul>
@@ -193,13 +193,13 @@ npm run typecheck</div>
                         <li>Confirm the right service is selected in the dashboard.</li>
                     </ol>
 
-                    <h2 id="cors">CORS &amp; the Edge proxy</h2>
+                    <h2 id="cors">CORS &amp; the FastAPI proxy</h2>
 
                     <h3>Proxy returns 500</h3>
-                    <p>The upstream fetch failed. Verify the URL is reachable from the Vercel Edge network (try <code>curl</code> on a different network). The proxy is not a generic web proxy — it does not bypass provider challenges.</p>
+                    <p>The upstream fetch failed. Verify the URL is reachable from the Vercel function region (try <code>curl</code> on a different network). The proxy is not a generic web proxy — it does not bypass provider challenges.</p>
 
                     <h3>Proxy returns 400</h3>
-                    <p>The <code>url</code> query parameter is missing or did not parse with <code>new URL()</code>. Make sure the URL is fully qualified (e.g. <code>https://example.com/</code>) and URL-encoded when passed in the query string.</p>
+                    <p>The <code>url</code> query parameter is missing, invalid, or resolves to a blocked address. Make sure the URL is fully qualified (e.g. <code>https://example.com/</code>) and URL-encoded when passed in the query string.</p>
 
                     <h3>Proxy is unavailable in Docker</h3>
                     <p>Make sure the <code>backend</code> service is running. Docker Compose production routes <code>/api/*</code> from Nginx to the FastAPI backend; development requires starting both <code>backend</code> and <code>dev</code>.</p>

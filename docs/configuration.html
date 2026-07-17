@@ -38,7 +38,7 @@
                     </header>
 
                     <h2 id="env">Environment variables</h2>
-                    <p>All variables are namespaced with <code>VITE_</code> so Vite exposes them to the browser bundle. Anything unprefixed stays server-side. The CLI only reads <code>VIRUSTOTAL_API_KEY</code> from your shell environment.</p>
+                    <p>Only public frontend variables use the <code>VITE_</code> prefix. Server credentials remain unprefixed and must never be exposed to the browser bundle. Provider keys and Discord webhooks are configured per user in dashboard Settings. The CLI only reads <code>VIRUSTOTAL_API_KEY</code> from your shell environment.</p>
                     <div class="table-wrap">
                         <table>
                             <thead><tr><th>Variable</th><th style="text-align:center;">Required</th><th>Default</th><th>Description</th></tr></thead>
@@ -56,34 +56,16 @@
                                     <td>Supabase anon publishable key. Protect your data with Row Level Security.</td>
                                 </tr>
                                 <tr>
-                                    <td><code>VITE_SHODAN_API_KEY</code></td>
-                                    <td style="text-align:center;">⛔</td>
+                                    <td><code>SUPABASE_SERVICE_ROLE_KEY</code></td>
+                                    <td style="text-align:center;">API-key features</td>
                                     <td>none</td>
-                                    <td>Enables Shodan-backed lookups where supported.</td>
+                                    <td>Server-side credential used by FastAPI for authenticated API-key storage and provider requests.</td>
                                 </tr>
                                 <tr>
-                                    <td><code>VITE_VIRUSTOTAL_API_KEY</code></td>
-                                    <td style="text-align:center;">⛔</td>
-                                    <td>none</td>
-                                    <td>Enables VirusTotal domain reputation checks in the dashboard.</td>
-                                </tr>
-                                <tr>
-                                    <td><code>VITE_SECURITYTRAILS_API_KEY</code></td>
-                                    <td style="text-align:center;">⛔</td>
-                                    <td>none</td>
-                                    <td>Enables SecurityTrails-backed DNS intelligence where supported.</td>
-                                </tr>
-                                <tr>
-                                    <td><code>VITE_HUNTER_API_KEY</code></td>
-                                    <td style="text-align:center;">⛔</td>
-                                    <td>none</td>
-                                    <td>Enables Hunter.io-backed email intelligence where supported.</td>
-                                </tr>
-                                <tr>
-                                    <td><code>VITE_DISCORD_WEBHOOK_URL</code></td>
-                                    <td style="text-align:center;">⛔</td>
-                                    <td>none</td>
-                                    <td>Sends scan notifications to a Discord webhook. <strong>Treat this as a secret.</strong></td>
+                                    <td><code>SUPABASE_URL</code></td>
+                                    <td style="text-align:center;">optional</td>
+                                    <td><code>VITE_SUPABASE_URL</code></td>
+                                    <td>Optional server-side Supabase URL override for FastAPI.</td>
                                 </tr>
                                 <tr>
                                     <td><code>VITE_DEV_MODE</code></td>
@@ -309,7 +291,7 @@ supabase db push
                     </div>
 
                     <h2 id="cors">CORS bypass configuration</h2>
-                    <p>The dashboard uses a tiered request pipeline. Vercel uses <code>api/proxy.ts</code>; Docker/local backend deployments use the FastAPI proxy at the same <code>/api/proxy</code> route.</p>
+                    <p>The dashboard uses a tiered request pipeline. Vercel Services and Docker/local backend deployments use the FastAPI proxy at the same <code>/api/proxy</code> route.</p>
                     <div class="code-block" data-lang="json">{
   <span class="c-key">"primaryProxy"</span>: <span class="c-str">"https://abspider-recon.vercel.app/api/proxy?url="</span>,
   <span class="c-key">"fallbackProxies"</span>: [
