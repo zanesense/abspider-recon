@@ -179,7 +179,7 @@ async def _http_fetch(
         if (is_https and port != 443) or (not is_https and port != 80):
             host_header = f"{host}:{port}"
 
-        req_headers = dict(headers)
+        req_headers = {key: value for key, value in headers.items() if key.lower() != "accept-encoding"}
         req_headers.setdefault("Host", host_header)
         req_headers.setdefault("Connection", "close")
         req_headers["Accept-Encoding"] = "identity"
