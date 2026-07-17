@@ -179,7 +179,7 @@ flowchart TD
 
 Key design choices:
 
-- **Browser-first dashboard** — the dashboard does the work in the browser using a small `requestManager` and per-module backoff. The Vercel `/api/proxy` function is available in hosted deployments, and the FastAPI proxy is available when you run the backend or Docker stack.
+- **Browser-first dashboard** — the dashboard does the work in the browser using a small `requestManager` and per-module backoff. The FastAPI `/api/proxy` service is available on Vercel, Docker, and local backend deployments.
 - **Direct-first networking** — public endpoints such as Google DNS are called directly when the browser permits it. CORS-sensitive sources such as crt.sh and RDAP can fall back to `/api/proxy`; keyed providers use authenticated `/api/keys/proxy` requests so private keys are attached server-side.
 - **Bounded active modules** — every active module reads payloads from `src/payloads/*.json` and respects the per-mode cap, delay, and concurrency settings.
 - **Deterministic payloads** — the JSON payload files are version-controlled. You can audit, extend, or replace them without touching the runner.
@@ -193,12 +193,8 @@ Key design choices:
 abspider-recon/
 ├── backend/
 │   ├── main.py                       # FastAPI CORS proxy at /api/proxy
-│   └── requirements.txt              # Python backend dependencies
-│
-├── api/
-│   ├── proxy.ts                      # Vercel serverless proxy at /api/proxy
-│   ├── keys.ts                       # Authenticated per-user API-key storage
-│   └── keys/proxy.ts                 # Server-side keyed provider requests
+│   ├── pyproject.toml                # Vercel/Python backend dependencies
+│   └── requirements.txt              # Docker backend dependencies
 │
 ├── docs/
 │   ├── index.html                    # Static documentation site served at /docs/
@@ -357,7 +353,7 @@ npm run cli -- example.com
 npm run build
 ```
 
-`npm run build` runs the strict TypeScript project references (`tsc -b`) and then `vite build`, producing a static bundle in `dist/` and copying the documentation site into `dist/docs/`. Serve `dist/` from any static host, or use the production Docker image. Browser-side CORS fallback uses Vercel `api/proxy.ts` on Vercel and the FastAPI proxy in Docker/self-hosted deployments.
+`npm run build` runs the strict TypeScript project references (`tsc -b`) and then `vite build`, producing a static bundle in `dist/` and copying the documentation site into `dist/docs/`. Serve `dist/` from any static host, or use the production Docker image. Browser-side CORS fallback uses the FastAPI backend on Vercel, Docker, and self-hosted deployments.
 
 ---
 
@@ -369,8 +365,8 @@ ABSpider Recon uses environment variables for the frontend and Supabase migratio
 | --- | :-: | --- | --- |
 | `VITE_SUPABASE_URL` | ✅ | none | Supabase project URL, e.g. `https://YOUR-PROJECT-REF.supabase.co`. |
 | `VITE_SUPABASE_ANON_KEY` | ✅ | none | Supabase anon publishable key. Protect your data with Row Level Security. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Dashboard API-key features | none | Server-side only. Required by Vercel `/api/keys*` functions and the FastAPI backend; never expose it through a `VITE_*` variable. |
-| `SUPABASE_URL` | FastAPI API-key features | none | Server-side Supabase project URL used by `backend/main.py`. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Dashboard API-key features | none | Server-side only. Required by the FastAPI backend; never expose it through a `VITE_*` variable. |
+| `SUPABASE_URL` | FastAPI API-key features | `VITE_SUPABASE_URL` | Optional server-side override for the Supabase project URL used by `backend/main.py`. |
 
 > Vite only exposes variables prefixed with `VITE_` to the browser bundle. Do not put private API keys in Vite env vars unless you intentionally want them bundled into browser-accessible JavaScript.
 
@@ -474,7 +470,7 @@ Operational notes:
 
 There are two ways to consume ABSpider Recon programmatically:
 
-1. **The same-origin proxy** at `GET`, `HEAD`, or `POST /api/proxy?url=<encoded>` — for browser-side CORS fallback through Vercel `api/proxy.ts` or the FastAPI backend.
+1. **The same-origin proxy** at `GET`, `HEAD`, or `POST /api/proxy?url=<encoded>` — for browser-side CORS fallback through the FastAPI backend.
 2. **The CLI JSON output** — pipe `--json` into `jq` or another tool for automations.
 
 See [🔌 API Reference](#-api-reference) for full details.
@@ -572,9 +568,9 @@ sequenceDiagram
 
 ### `GET`, `HEAD`, or `POST /api/proxy`
 
-A same-origin proxy used by the dashboard when direct browser requests fail because of CORS or target-side restrictions. Vercel deployments use [`api/proxy.ts`](api/proxy.ts); Docker and local backend deployments use [`backend/main.py`](backend/main.py). The frontend always calls the same `/api/proxy` path.
+A same-origin proxy used by the dashboard when direct browser requests fail because of CORS or target-side restrictions. Vercel, Docker, and local backend deployments all use [`backend/main.py`](backend/main.py). The frontend always calls the same `/api/proxy` path.
 
-In local development, Vite proxies `/api/*` to `http://localhost:8000` when the FastAPI backend is running. In Docker production, Nginx proxies `/api/*` to the `backend` service. On Vercel, `api/proxy.ts` is deployed as the project function for the same route.
+In local development, Vite proxies `/api/*` to `http://localhost:8000` when the FastAPI backend is running. In Docker production, Nginx proxies `/api/*` to the `backend` service. On Vercel, the `/api` service prefix routes requests to the same FastAPI app.
 
 **Request**
 
@@ -679,7 +675,7 @@ The same finding in the dashboard renders as a card with a "Recheck" button, an 
 ABSpider Recon now has two runtime pieces:
 
 - a static Vite SPA built into `dist/`
-- a same-origin `/api/proxy` implementation: Vercel uses `api/proxy.ts`, while Docker/self-hosted stacks can use the FastAPI backend
+- a FastAPI backend serving same-origin `/api/proxy` and `/api/keys*` routes on Vercel, Docker, and self-hosted stacks
 - a static documentation site copied from `docs/` into `dist/docs/` and served at `/docs/`
 
 The Vite dev server (`npm run dev`, port `5000`) is for local development only. Production paths should serve the built `dist/` bundle.
@@ -687,26 +683,26 @@ The Vite dev server (`npm run dev`, port `5000`) is for local development only. 
 | Path | Frontend | `/api/proxy` support |
 | --- | --- | --- |
 | **Docker production** | `dist/` served by Nginx on container port `8080` | ✅ FastAPI `backend` service on port `8000`, proxied by Nginx |
-| **Vercel** | `dist/` built by Vite, with `dist/docs/` at `/docs/` | ✅ Vercel functions in `api/` |
+| **Vercel** | Vite frontend service, with `dist/docs/` at `/docs/` | ✅ FastAPI backend service |
 | **Self-hosted Node/static** | `dist/` served by `serve` or any static host | ❌ Not bundled; run `backend/main.py` separately and route `/api/*` to it |
 | **Docker development** | Vite dev server on port `5000` | ✅ when `backend` is started alongside `dev` |
 
 ### Vercel
 
-Vercel reads [`vercel.json`](vercel.json) and runs the production frontend pipeline:
+Vercel reads [`vercel.json`](vercel.json) and deploys two Services:
 
-- `installCommand`: `npm ci`
-- `buildCommand`: `npm run build` (which is `tsc -b && vite build`)
-- `outputDirectory`: `dist/`
+- `frontend`: the Vite app rooted at the repository root and routed at `/`.
+- `backend`: [`backend/main.py`](backend/main.py), routed at `/api`.
 - `/docs` rewrites: `/docs`, `/docs/`, and `/docs/*` resolve to the static documentation copied into `dist/docs/`.
-- `/api/proxy`: `api/proxy.ts` is deployed as the same-origin Vercel function for browser-side CORS fallback.
 - SPA rewrites: every other path that does not match a static asset falls through to `/index.html`.
+
+Set the Vercel project's **Framework Preset** to **Services** before deploying. Vercel strips the `/api` service prefix before invoking FastAPI; the app registers matching internal aliases while retaining `/api/*` routes for Docker and local development.
 
 ```bash
 # Install the Vercel CLI if you do not have it
 npm i -g vercel
 
-# Deploy the static dashboard from the project root
+# Deploy both services from the project root
 vercel
 ```
 
@@ -717,7 +713,7 @@ In the Vercel project settings, add:
 - `SUPABASE_SERVICE_ROLE_KEY` (server-side only; required for dashboard API-key storage and keyed provider requests)
 - Configure optional API keys and Discord webhooks from the dashboard **Settings** page after deployment
 
-The current Vercel config does not deploy `backend/main.py`; it uses `api/proxy.ts` for `/api/proxy` instead. Direct browser requests still work for CORS-friendly targets, and the CLI is not affected by browser CORS restrictions.
+Direct browser requests still work for CORS-friendly targets, while all same-origin proxy and API-key requests use the shared FastAPI backend. The CLI is not affected by browser CORS restrictions.
 
 ### Docker production
 

@@ -4,6 +4,10 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 ## Unreleased
 
+### Changed
+
+- **Unified Vercel backend** — Vercel now deploys the existing FastAPI app as the `/api` service alongside the Vite frontend, replacing the duplicate TypeScript proxy and API-key functions while preserving Docker and local `/api/*` routing.
+
 ### Fixed
 
 - **Vercel proxy module outage** — pinned DNS lookups now honor Node's multi-address callback contract, restoring proxy-backed SEO, headers, site info, port checks, and other browser scan modules.

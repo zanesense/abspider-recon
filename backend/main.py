@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse, Response
 
 app = FastAPI(title="ABSpider Proxy API")
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_REST_URL = f"{SUPABASE_URL}/rest/v1"
 SUPABASE_AUTH_URL = f"{SUPABASE_URL}/auth/v1"
@@ -23,10 +23,20 @@ PROVIDER_AUTH = {
     "shodan": {"type": "query", "param": "key"},
     "virustotal": {"type": "header", "header": "x-apikey"},
     "securitytrails": {"type": "header", "header": "APIKEY"},
-    "builtwith": {"type": "query", "param": "key"},
+    "builtwith": {"type": "query", "param": "KEY"},
     "opencage": {"type": "query", "param": "key"},
     "hunterio": {"type": "query", "param": "api_key"},
     "clearbit": {"type": "header", "header": "Authorization", "prefix": "Bearer "},
+}
+
+PROVIDER_HOSTS = {
+    "shodan": "api.shodan.io",
+    "virustotal": "www.virustotal.com",
+    "securitytrails": "api.securitytrails.com",
+    "builtwith": "api.builtwith.com",
+    "opencage": "api.opencagedata.com",
+    "hunterio": "api.hunter.io",
+    "clearbit": "company.clearbit.com",
 }
 
 ALLOWED_HEADERS = {
@@ -258,12 +268,14 @@ async def _http_fetch(
         writer.close()
 
 
+@app.options("/proxy")
 @app.options("/api/proxy")
 async def proxy_options(request: Request):
     origin = request.headers.get("origin", "")
     return Response(status_code=204, headers=get_cors_headers(origin))
 
 
+@app.api_route("/proxy", methods=["GET", "HEAD", "POST"])
 @app.api_route("/api/proxy", methods=["GET", "HEAD", "POST"])
 async def proxy_handler(
     request: Request,
@@ -463,10 +475,17 @@ def _attach_auth(url: str, headers: dict, provider: str, api_key: str) -> tuple[
         headers[config["header"]] = f"{prefix}{api_key}"
     elif config["type"] == "query":
         sep = "&" if "?" in url else "?"
-        url = f"{url}{sep}{config['param']}={api_key}"
+        url = f"{url}{sep}{config['param']}={quote(api_key, safe='')}"
     return url, headers
 
 
+def _is_allowed_provider_url(provider: str, target_url: str) -> bool:
+    parsed = urlparse(target_url)
+    return parsed.scheme == "https" and parsed.hostname == PROVIDER_HOSTS.get(provider)
+
+
+@app.options("/keys")
+@app.options("/keys/proxy")
 @app.options("/api/keys")
 @app.options("/api/keys/proxy")
 async def keys_options(request: Request):
@@ -481,6 +500,7 @@ def _bearer_token(request: Request) -> str | None:
     return auth.removeprefix("Bearer ")
 
 
+@app.get("/keys")
 @app.get("/api/keys")
 async def get_api_keys(request: Request):
     origin = request.headers.get("origin", "")
@@ -496,6 +516,7 @@ async def get_api_keys(request: Request):
     return JSONResponse(content=keys, headers=cors)
 
 
+@app.post("/keys")
 @app.post("/api/keys")
 async def save_api_keys(request: Request):
     origin = request.headers.get("origin", "")
@@ -514,6 +535,7 @@ async def save_api_keys(request: Request):
     return JSONResponse(content={"ok": True}, headers=cors)
 
 
+@app.post("/keys/proxy")
 @app.post("/api/keys/proxy")
 async def proxy_api_key_request(request: Request):
     origin = request.headers.get("origin", "")
@@ -537,6 +559,8 @@ async def proxy_api_key_request(request: Request):
         return JSONResponse(status_code=400, content={"error": "provider and url are required"}, headers=cors)
     if provider not in PROVIDER_AUTH:
         return JSONResponse(status_code=400, content={"error": f"Unknown provider: {provider}"}, headers=cors)
+    if not _is_allowed_provider_url(provider, target_url):
+        return JSONResponse(status_code=400, content={"error": "Provider URL is not allowed"}, headers=cors)
 
     # Allow caller to provide an explicit key (e.g. for testing a new key before saving)
     api_key = body.get("api_key")
