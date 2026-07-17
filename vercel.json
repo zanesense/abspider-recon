@@ -12,11 +12,9 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "backend" } },
     { "source": "/docs", "destination": "/docs/index.html" },
     { "source": "/docs/", "destination": "/docs/index.html" },
-    { "source": "/docs/(.*)", "destination": "/docs/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/docs/(.*)", "destination": "/docs/$1" }
   ],
   "headers": [
     {
