@@ -52,6 +52,12 @@ export const isSSRFTarget = async (url: URL): Promise<boolean> => {
 
 type ResolvedTarget = { url: URL; address: string; family: 4 | 6 };
 
+export const createPinnedLookup = (address: string, family: 4 | 6) =>
+  (_hostname: string, options: { all?: boolean }, callback: (...args: any[]) => void) => {
+    if (options.all) callback(null, [{ address, family }]);
+    else callback(null, address, family);
+  };
+
 const resolvePublicTarget = async (url: URL): Promise<ResolvedTarget> => {
   const host = url.hostname;
   if (BLOCKED_HOSTNAMES.has(host) || isPrivateIP(host) || isPrivateIPv6(host)) {
@@ -70,7 +76,7 @@ const pinnedFetch = (target: ResolvedTarget, init: RequestInit): Promise<Respons
   const req = transport.request(target.url, {
     method: init.method,
     headers,
-    lookup: (_hostname, _options, callback) => callback(null, target.address, target.family),
+    lookup: createPinnedLookup(target.address, target.family),
   }, (upstream) => {
     const chunks: Buffer[] = [];
     upstream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
@@ -252,7 +258,8 @@ export default async function handler(request: any, response: any, fetchTarget =
     response.setHeader('X-ABSpider-Upstream-Headers', encodeURIComponent(JSON.stringify(upstreamHeaders)));
     response.setHeader('X-ABSpider-Target-URL', targetUrl.toString());
     response.send(Buffer.from(await upstream.arrayBuffer()));
-  } catch {
+  } catch (error) {
+    console.error('[Proxy] Failed to fetch target URL:', error);
     sendJson(response, 500, {
       error: 'Failed to fetch target URL',
     }, origin);

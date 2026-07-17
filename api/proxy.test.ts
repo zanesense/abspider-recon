@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import dns from 'node:dns/promises';
-import handler, { isSSRFTarget } from './proxy';
+import handler, { createPinnedLookup, isSSRFTarget } from './proxy';
 import { parseProviderUrl } from './keys/proxy';
 
 vi.mock('node:dns/promises', () => ({
@@ -20,6 +20,13 @@ describe('proxy SSRF validation', () => {
 
     vi.mocked(dns.lookup).mockRejectedValueOnce(new Error('ENOTFOUND'));
     await expect(isSSRFTarget(new URL('https://missing.invalid'))).resolves.toBe(true);
+  });
+
+  it('returns the pinned address in Node multi-address lookup mode', async () => {
+    const lookup = createPinnedLookup('93.184.216.34', 4);
+    await expect(new Promise((resolve, reject) => lookup('example.com', { all: true }, (error, addresses) =>
+      error ? reject(error) : resolve(addresses)
+    ))).resolves.toEqual([{ address: '93.184.216.34', family: 4 }]);
   });
 
   it('restricts authenticated provider requests to the configured HTTPS host', () => {
