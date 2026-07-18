@@ -23,7 +23,7 @@ const Footer: React.FC = () => {
 
           <div className="flex items-center gap-4 sm:gap-6">
             <a
-              href="https://abspider.zanesense.dev/docs/"
+              href="https://abspider.zanesense.dev/docs"
               className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />

@@ -97,7 +97,7 @@
                                 <tr><td><code>/status</code></td><td><code>StatusPage</code></td><td>Public</td><td>System health and API availability</td></tr>
                                 <tr><td><code>/terms</code></td><td><code>LegalPage</code></td><td>Public</td><td>Terms of use</td></tr>
                                 <tr><td><code>/privacy</code></td><td><code>LegalPage</code></td><td>Public</td><td>Privacy policy</td></tr>
-                                <tr><td><code>/docs/</code></td><td>Static docs site</td><td>Public</td><td>Documentation copied from <code>docs/</code> into <code>dist/docs/</code></td></tr>
+                                <tr><td><code>/docs/*</code></td><td><code>DocsPage</code></td><td>Public</td><td>React documentation shell with bundled articles and client-side navigation</td></tr>
                                 <tr><td><code>/login</code></td><td><code>Navigate</code></td><td>Public</td><td>Redirects to landing page; login is shown as a modal</td></tr>
                                 <tr><td><code>/app</code></td><td><code>Index</code></td><td>Public*</td><td>Redirect logic based on session</td></tr>
                                 <tr><td><code>/dashboard</code></td><td><code>DashboardPage</code></td><td>Protected</td><td>Primary authenticated overview</td></tr>
@@ -273,7 +273,7 @@
                         <table>
                             <thead><tr><th>Path</th><th>Front-end served from</th><th><code>api/proxy</code> supported?</th></tr></thead>
                             <tbody>
-                                <tr><td><strong>Vercel</strong> (recommended)</td><td>Vite frontend service, including <code>dist/docs/</code></td><td>✅ — FastAPI backend service</td></tr>
+                                <tr><td><strong>Vercel</strong> (recommended)</td><td>Vite frontend service, including the React <code>/docs</code> route</td><td>✅ — FastAPI backend service</td></tr>
                                 <tr><td><strong>Docker production</strong></td><td><code>dist/</code> served by Nginx</td><td>✅ — FastAPI backend proxied by Nginx</td></tr>
                                 <tr><td><strong>Self-hosted Node</strong></td><td><code>dist/</code> served by <code>serve</code></td><td>❌ — host the proxy separately</td></tr>
                                 <tr><td><strong>Static host</strong> (S3, Caddy, Netlify, …)</td><td><code>dist/</code> uploaded as-is</td><td>❌ — bring your own runtime</td></tr>
@@ -286,13 +286,14 @@
                     <p>The high-level directory map. The dashboard code lives under <code>src/</code>; the published CLI lives under <code>packages/cli/</code>.</p>
                     <div class="diagram">abspider-recon/
 ├── backend/              <span class="lvl-3"># FastAPI proxy and API-key service</span>
-├── docs/                 <span class="lvl-3"># User-facing documentation site</span>
+├── docs/wiki/            <span class="lvl-3"># Supplemental Markdown guides</span>
 ├── packages/
 │   └── cli/              <span class="lvl-3"># Published npm package "abspider"</span>
 ├── public/               <span class="lvl-3"># Favicons, manifest, robots.txt</span>
 ├── scripts/              <span class="lvl-3"># Local CLI runner, favicon helper</span>
 ├── src/
 │   ├── components/       <span class="lvl-3"># Dashboard UI (landing, ui primitives, features)</span>
+│   ├── content/docs/     <span class="lvl-3"># Articles rendered by the React DocsPage</span>
 │   ├── contexts/         <span class="lvl-3"># Theme + notification React contexts</span>
 │   ├── hooks/            <span class="lvl-3"># Custom React hooks</span>
 │   ├── lib/              <span class="lvl-3"># Shared utilities</span>

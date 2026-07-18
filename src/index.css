@@ -123,3 +123,91 @@
     @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
   }
 }
+
+@layer components {
+  .docs-article {
+    @apply max-w-4xl text-[0.95rem] leading-7 text-muted-foreground;
+  }
+
+  .docs-article h1 {
+    @apply mb-5 text-3xl font-black tracking-tight text-foreground sm:text-4xl;
+    text-wrap: balance;
+  }
+
+  .docs-article h2 {
+    @apply mb-4 mt-12 scroll-mt-28 text-2xl font-bold tracking-tight text-foreground;
+    text-wrap: balance;
+  }
+
+  .docs-article h3 { @apply mb-3 mt-8 text-lg font-bold text-foreground; }
+  .docs-article h4 { @apply mb-2 mt-6 font-semibold text-foreground; }
+  .docs-article p { @apply my-4 max-w-[72ch]; text-wrap: pretty; }
+  .docs-article a { @apply font-medium text-primary underline-offset-4 hover:underline; }
+  .docs-article strong { @apply font-semibold text-foreground; }
+  .docs-article ul { @apply my-4 list-disc space-y-2 pl-6; }
+  .docs-article ol { @apply my-4 list-decimal space-y-2 pl-6; }
+  .docs-article li::marker { @apply text-primary; }
+  .docs-article code { @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground; }
+  .docs-article pre,
+  .docs-article .code-block {
+    @apply my-6 overflow-x-auto rounded-xl bg-slate-950 p-5 font-mono text-sm leading-6 text-slate-200;
+  }
+  .docs-article pre code,
+  .docs-article .code-block code { @apply bg-transparent p-0 text-inherit; }
+  .docs-article .c-key { @apply text-cyan-300; }
+  .docs-article .c-str { @apply text-emerald-300; }
+  .docs-article .c-com { @apply text-slate-500; }
+  .docs-article .table-wrap { @apply my-6 overflow-x-auto rounded-xl border border-border; }
+  .docs-article table { @apply w-full min-w-[560px] border-collapse text-left text-sm; }
+  .docs-article th { @apply bg-muted/70 px-4 py-3 font-semibold text-foreground; }
+  .docs-article td { @apply border-t border-border px-4 py-3 align-top; }
+  .docs-article .lede { @apply text-base leading-7 text-foreground/80; }
+  .docs-article .eyebrow { @apply mb-3 text-sm font-semibold text-primary; }
+  .docs-article .meta { @apply mb-8 flex flex-wrap gap-2 text-sm; }
+  .docs-article .badge { @apply inline-flex rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-foreground; }
+  .docs-article .callout {
+    @apply my-6 flex gap-3 rounded-xl border border-border bg-muted/50 p-5 text-sm;
+  }
+  .docs-article .callout .icon { @apply mt-0.5 h-5 w-5 shrink-0 text-primary; }
+  .docs-article .callout-title { @apply font-semibold text-foreground; }
+  .docs-article .callout-warn,
+  .docs-article .callout-warning { @apply border-amber-500/30 bg-amber-500/10; }
+  .docs-article .callout-danger { @apply border-destructive/30 bg-destructive/10; }
+  .docs-article .callout-success { @apply border-emerald-500/30 bg-emerald-500/10; }
+  .docs-article .grid-2,
+  .docs-article .grid-3,
+  .docs-article .grid-4 { @apply my-6 grid gap-4 md:grid-cols-2; }
+  .docs-article .grid-3 { @apply xl:grid-cols-3; }
+  .docs-article .grid-4 { @apply xl:grid-cols-4; }
+  .docs-article .card,
+  .docs-article .card-static,
+  .docs-article .feature-card,
+  .docs-article .metric,
+  .docs-article .panel { @apply rounded-xl border border-border bg-card p-5; }
+  .docs-article .card h3,
+  .docs-article .card-static h3,
+  .docs-article .feature-card h3 { @apply mt-0; }
+  .docs-article .ic { @apply mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary; }
+  .docs-article .ic svg { @apply h-5 w-5; }
+  .docs-article .value { @apply text-2xl font-bold text-foreground; }
+  .docs-article .label { @apply text-sm font-semibold text-foreground; }
+  .docs-article .sub,
+  .docs-article .text-mute { @apply text-sm text-muted-foreground; }
+  .docs-article .tabs { @apply my-6; }
+  .docs-article .tabs-input { @apply sr-only; }
+  .docs-article .tabs-labels { @apply mb-3 flex flex-wrap gap-1 border-b border-border; }
+  .docs-article .tabs-labels label { @apply cursor-pointer px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground; }
+  .docs-article .tabs-panels > * { @apply hidden; }
+  .docs-article #tab-npm:checked ~ .tabs-labels label[for="tab-npm"],
+  .docs-article #tab-bun:checked ~ .tabs-labels label[for="tab-bun"],
+  .docs-article #tab-source:checked ~ .tabs-labels label[for="tab-source"],
+  .docs-article #tab-npm2:checked ~ .tabs-labels label[for="tab-npm2"],
+  .docs-article #tab-bun2:checked ~ .tabs-labels label[for="tab-bun2"],
+  .docs-article #tab-source2:checked ~ .tabs-labels label[for="tab-source2"] { @apply border-b-2 border-primary text-primary; }
+  .docs-article #tab-npm:checked ~ .tabs-panels .panel-npm,
+  .docs-article #tab-bun:checked ~ .tabs-panels .panel-bun,
+  .docs-article #tab-source:checked ~ .tabs-panels .panel-source,
+  .docs-article #tab-npm2:checked ~ .tabs-panels .panel-npm,
+  .docs-article #tab-bun2:checked ~ .tabs-panels .panel-bun,
+  .docs-article #tab-source2:checked ~ .tabs-panels .panel-source { @apply block; }
+}

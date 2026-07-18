@@ -10,7 +10,7 @@ const LINKS = {
     { label: 'Changelog', href: 'https://github.com/zanesense/abspider-recon/blob/main/CHANGELOG.md', ext: true },
   ],
   Resources: [
-    { label: 'Documentation', href: '/docs/', static: true },
+    { label: 'Documentation', href: '/docs' },
     { label: 'Status', href: '/status' },
     { label: 'Security policy', href: 'https://github.com/zanesense/abspider-recon/blob/main/SECURITY.md', ext: true },
     { label: 'Issue tracker', href: 'https://github.com/zanesense/abspider-recon/issues', ext: true },

@@ -11,11 +11,6 @@
       "routePrefix": "/api"
     }
   },
-  "rewrites": [
-    { "source": "/docs", "destination": "/docs/index.html" },
-    { "source": "/docs/", "destination": "/docs/index.html" },
-    { "source": "/docs/(.*)", "destination": "/docs/$1" }
-  ],
   "headers": [
     {
       "source": "/assets/(.*)",

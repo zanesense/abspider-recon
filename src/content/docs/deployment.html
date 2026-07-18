@@ -34,7 +34,7 @@
                     <header class="page-hero">
                         <div class="crumb">Operations · Production</div>
                         <h1>Deployment</h1>
-                        <p class="lede">ABSpider Recon is a Vite SPA, bundled documentation site at <code>/docs/</code>, and FastAPI backend. Vercel deploys the frontend and backend as Services; Docker and local deployments use the same backend contract. <strong>Every supported production path serves the built frontend — never the Vite dev server.</strong></p>
+                        <p class="lede">ABSpider Recon is a Vite SPA with React documentation at <code>/docs</code> and a FastAPI backend. Vercel deploys the frontend and backend as Services; Docker and local deployments use the same backend contract. <strong>Every supported production path serves the built frontend — never the Vite dev server.</strong></p>
                     </header>
 
                     <h2 id="at-a-glance">Paths at a glance</h2>
@@ -44,7 +44,7 @@
                             <tbody>
                                 <tr>
                                     <td><strong>Vercel</strong> (recommended)</td>
-                                    <td>Vite frontend service, including <code>dist/docs/</code></td>
+                                    <td>Vite frontend service, including the React <code>/docs</code> route</td>
                                     <td>✅ — FastAPI backend service</td>
                                     <td>Production, zero-config, automatic previews</td>
                                 </tr>
@@ -81,7 +81,7 @@
                     <ul>
                         <li><strong>Frontend:</strong> the Vite app at <code>/</code>.</li>
                         <li><strong>Backend:</strong> <code>backend/main.py</code> at <code>/api</code>.</li>
-                        <li><strong>Docs rewrites:</strong> <code>/docs</code>, <code>/docs/</code>, and <code>/docs/*</code> resolve to the static documentation copied into <code>dist/docs/</code>.</li>
+                        <li><strong>Documentation:</strong> <code>/docs</code>, <code>/docs/</code>, and article paths resolve through the Vite SPA to <code>DocsPage</code>; <code>/docs/</code> is normalized to <code>/docs</code>.</li>
                         <li><strong>Routing:</strong> native service prefixes send <code>/api/*</code> to FastAPI and other requests to Vite.</li>
                     </ul>
 

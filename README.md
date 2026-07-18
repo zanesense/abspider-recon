@@ -105,7 +105,7 @@ Both surfaces expose the same 35 module names and result categories, with browse
 - 📥 **JSON + PDF reports** — export a dashboard scan as JSON, a styled PDF (`jsPDF` + `jspdf-autotable`), or DOCX.
 - 🧩 **Optional third-party intel** — Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit, and Discord webhooks plug in when you bring your own keys.
 - 🔀 **Smart proxy routing** — browser requests try direct access where appropriate and fall back to the SSRF-protected FastAPI proxy when CORS or upstream behavior requires it. Provider APIs that use private keys go through authenticated server-side endpoints.
-- 📚 **Bundled documentation site** — the static docs in `docs/` are served at `/docs/` in development and copied into `dist/docs/` during production builds.
+- 📚 **React documentation** — every article in `src/content/docs/` is bundled into the shared React page at `/docs`, with the same theme, navigation, and footer as the public site.
 - 🐳 **Container-ready** — production `Dockerfile` (Nginx), `Dockerfile.backend` (FastAPI proxy), and dev `Dockerfile.dev` (Vite) ship in the repo; `docker compose` orchestrates the full stack.
 - ⏱️ **Graceful shutdown** — `Ctrl+C` aborts the CLI cleanly, preserves partial results, and finishes writing any `--output` JSON.
 - 🧪 **Strict pipeline** — ESLint 10, strict TypeScript, the production build, and Vitest run in CI on every push and PR. `npm run audit` is available as a local pre-release check.
@@ -196,9 +196,7 @@ abspider-recon/
 │   ├── pyproject.toml                # Vercel/Python backend dependencies
 │   └── requirements.txt              # Docker backend dependencies
 │
-├── docs/
-│   ├── index.html                    # Static documentation site served at /docs/
-│   └── wiki/                         # Supplemental user, configuration, legal guides
+├── docs/wiki/                        # Supplemental Markdown guides
 │
 ├── packages/
 │   └── cli/                          # Published npm package `abspider`
@@ -215,6 +213,7 @@ abspider-recon/
 │   ├── components/                   # Dashboard UI components and module result views
 │   │   ├── landing/                  # Landing-page sections
 │   │   └── ui/                       # shadcn-style primitives
+│   ├── content/docs/                 # Articles rendered by the React DocsPage
 │   ├── contexts/                     # Theme + notification React contexts
 │   ├── hooks/                        # Custom React hooks
 │   ├── images/                       # Brand assets
@@ -353,7 +352,7 @@ npm run cli -- example.com
 npm run build
 ```
 
-`npm run build` runs the strict TypeScript project references (`tsc -b`) and then `vite build`, producing a static bundle in `dist/` and copying the documentation site into `dist/docs/`. Serve `dist/` from any static host, or use the production Docker image. Browser-side CORS fallback uses the FastAPI backend on Vercel, Docker, and self-hosted deployments.
+`npm run build` runs the strict TypeScript project references (`tsc -b`) and then `vite build`, producing the SPA and its bundled React documentation in `dist/`. Serve `dist/` from any static host, or use the production Docker image. Browser-side CORS fallback uses the FastAPI backend on Vercel, Docker, and self-hosted deployments.
 
 ---
 
@@ -676,14 +675,14 @@ ABSpider Recon now has two runtime pieces:
 
 - a static Vite SPA built into `dist/`
 - a FastAPI backend serving same-origin `/api/proxy` and `/api/keys*` routes on Vercel, Docker, and self-hosted stacks
-- a static documentation site copied from `docs/` into `dist/docs/` and served at `/docs/`
+- a React documentation route that bundles the articles in `src/content/docs/` and serves them from `/docs`
 
 The Vite dev server (`npm run dev`, port `5000`) is for local development only. Production paths should serve the built `dist/` bundle.
 
 | Path | Frontend | `/api/proxy` support |
 | --- | --- | --- |
 | **Docker production** | `dist/` served by Nginx on container port `8080` | ✅ FastAPI `backend` service on port `8000`, proxied by Nginx |
-| **Vercel** | Vite frontend service, with `dist/docs/` at `/docs/` | ✅ FastAPI backend service |
+| **Vercel** | Vite frontend service, including the React `/docs` route | ✅ FastAPI backend service |
 | **Self-hosted Node/static** | `dist/` served by `serve` or any static host | ❌ Not bundled; run `backend/main.py` separately and route `/api/*` to it |
 | **Docker development** | Vite dev server on port `5000` | ✅ when `backend` is started alongside `dev` |
 
@@ -693,7 +692,7 @@ Vercel reads [`vercel.json`](vercel.json) and deploys two Services:
 
 - `frontend`: the Vite app rooted at the repository root and routed at `/`.
 - `backend`: [`backend/main.py`](backend/main.py), routed at `/api`.
-- `/docs` rewrites: `/docs`, `/docs/`, and `/docs/*` resolve to the static documentation copied into `dist/docs/`.
+- `/docs`, `/docs/`, and documentation article paths resolve through the frontend SPA; `/docs/` normalizes to `/docs`.
 - Native service routing sends `/api/*` to FastAPI and all other paths to the Vite frontend.
 
 Set the Vercel project's **Framework Preset** to **Services** before deploying. Vercel strips the `/api` service prefix before invoking FastAPI; the app registers matching internal aliases while retaining `/api/*` routes for Docker and local development.
