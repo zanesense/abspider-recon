@@ -41,6 +41,11 @@ import { createRequestManager, RequestManager } from './requestManager';
 import { getAPIKeys, APIKeys } from './apiKeyService';
 import { calculateSecurityGrade } from './securityGradingService';
 import { supabase } from '@/SupabaseClient';
+import {
+  getScanStatusEventDetail,
+  SCAN_STATUS_EVENT,
+  ScanStatusEventDetail,
+} from './scanStatusEvents';
 
 export interface ScanConfig {
   target: string;
@@ -146,6 +151,14 @@ export interface Scan {
   securityGrade?: number;
   smartScanLevel: number; // Renamed from throttleLevel
 }
+
+const announceScanStatus = (scan: Scan) => {
+  const detail = getScanStatusEventDetail(scan);
+  if (!detail) return;
+  window.dispatchEvent(new CustomEvent<ScanStatusEventDetail>(SCAN_STATUS_EVENT, {
+    detail,
+  }));
+};
 
 interface ScanDbRow {
   scan_id: string;
@@ -677,6 +690,7 @@ const runScan = async (
         completedAt: Date.now(),
       };
       await upsertScanToDatabase(currentScan);
+      announceScanStatus(currentScan);
       console.log(`[ScanService] Scan ${scanId} completed successfully. Security Grade: ${currentScan.securityGrade}`);
 
     } catch (error: any) {
@@ -698,6 +712,7 @@ const runScan = async (
         completedAt: Date.now(),
       };
       await upsertScanToDatabase(currentScan);
+      announceScanStatus(currentScan);
     } finally {
       try {
         const finalScan = activeScans.has(scanId) ? await getScanById(scanId) : null;
@@ -728,6 +743,7 @@ export const pauseScan = async (id: string) => {
       completedAt: Date.now(),
     };
     await upsertScanToDatabase(updatedScan);
+    announceScanStatus(updatedScan);
     console.log(`[ScanService] Scan ${id} paused.`);
   }
 };
@@ -798,6 +814,7 @@ export const stopScan = async (id: string) => {
       completedAt: Date.now() 
     };
     await upsertScanToDatabase(updatedScan);
+    announceScanStatus(updatedScan);
     console.log(`[ScanService] Scan ${id} stopped.`);
   }
 };

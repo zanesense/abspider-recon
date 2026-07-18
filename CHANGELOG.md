@@ -4,6 +4,10 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 
 ## Unreleased
 
+### Added
+
+- **Off-page scan activity** — terminal scan updates now appear in a focused bar above the app header when users are away from Scan Results, with a keyboard-navigable activity modal linking directly to each scan.
+
 ### Changed
 
 - **Unified Vercel backend** — Vercel now deploys the existing FastAPI app as the `/api` service alongside the Vite frontend, replacing the duplicate TypeScript proxy and API-key functions while preserving Docker and local `/api/*` routing.
@@ -24,7 +28,6 @@ All notable changes to ABSpider Recon are tracked here. GitHub Releases may incl
 - **Broken link crawler scope** — `brokenLinkService.ts` now compares parsed hostnames instead of substring matching, preventing crawl of unintended external domains whose URL contains the target domain as a substring.
 - **IPv6 ULA detection for fc01-fcff** — `apiUtils.ts` IPv6 ULA check now covers the full `fc00::/7` range instead of only `fc00:` and `fd*` prefixes.
 - **Toast listener leak** — `use-toast.ts` listener registration no longer re-runs on every state change, preventing unbounded listener accumulation and stale-state bugs.
-- **crypto.randomUUID() crash on HTTP** — `NotificationContext.tsx` now falls back to a timestamp-based ID when `crypto.randomUUID()` is unavailable (non-HTTPS contexts).
 - **Semver `<`/`>` equality** — `cveScannerService.ts` versionInRange now returns `false` when all segments are equal for `<`/`>` operators instead of incorrectly matching patched versions.
 - **SSL altNames suffix matching** — `sslTlsService.ts` altName filtering uses exact match or `.domain` suffix instead of `startsWith`, preventing false-positive matches on unrelated domains.
 - **Meta tag attribute order** — `seoService.ts`, `siteInfoService.ts`, and `techStackService.ts` regexes now match meta tags regardless of `name`/`content` attribute order.

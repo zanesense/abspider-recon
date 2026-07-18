@@ -13,7 +13,6 @@ import DatabaseStatusCard from '@/components/DatabaseStatusCard';
 import APIKeyStatusCard from '@/components/APIKeyStatusCard';
 import VulnerabilitySummaryCard from '@/components/VulnerabilitySummaryCard';
 import AppHeader from '@/components/AppHeader';
-import { useInitialNotifications } from '@/hooks/useInitialNotifications';
 import {
   Dialog,
   DialogContent,
@@ -29,9 +28,6 @@ const DashboardPage = () => {
   const [showBetaNotice, setShowBetaNotice] = useState(
     () => localStorage.getItem(BETA_NOTICE_STORAGE_KEY) !== 'true'
   );
-
-  // Initialize notifications
-  useInitialNotifications();
 
   const dismissBetaNotice = () => {
     localStorage.setItem(BETA_NOTICE_STORAGE_KEY, 'true');

@@ -4,7 +4,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, BrowserRouter, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { NotificationProvider } from "@/contexts/NotificationContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
 import LandingPage from "@/pages/LandingPage";
@@ -27,6 +26,7 @@ import RequireAuth from "@/components/RequireAuth";
 import { useEffect } from "react"; // Import useEffect
 import { cleanupStuckScans, getRunningScanCount } from "@/services/scanService"; // Import new functions
 import { supabase } from "@/SupabaseClient"; // For auth state listening
+import ScanNotificationBar from "@/components/ScanNotificationBar";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,7 +70,6 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <NotificationProvider>
             <TooltipProvider>
               <BrowserRouter>
                 <Toaster />
@@ -91,6 +90,7 @@ function App() {
                       <div className="flex min-h-screen w-full surface-main">
                         <AppSidebar />
                         <SidebarInset className="flex-1 w-full min-w-0 flex flex-col">
+                          <ScanNotificationBar />
                           {/* Removed global header. Individual pages will now manage their own headers. */}
                           <div className="flex-1">
                             <Routes>
@@ -113,7 +113,6 @@ function App() {
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
-        </NotificationProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
