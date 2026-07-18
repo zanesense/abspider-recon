@@ -1,36 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Troubleshooting — ABSpider Recon</title>
-    <meta name="description" content="Common ABSpider Recon issues and how to fix them — installation, authentication, scanning, performance, API integrations, and CORS.">
-    <link rel="stylesheet" href="assets/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-</head>
-<body data-page="troubleshooting">
-    <div class="app">
-        <aside class="sidebar" id="sidebar"></aside>
-        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-        <main class="main">
-            <div class="topbar">
-                <div class="topbar-left">
-                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                    </button>
-                    <nav class="breadcrumb" id="breadcrumb" data-page="Troubleshooting"></nav>
-                </div>
-                <div class="topbar-actions">
-                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
-                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
-                </div>
-            </div>
-
-            <div class="content">
-                <article class="article">
+<article class="article">
                     <header class="page-hero">
                         <div class="crumb">Help · Common issues</div>
                         <h1>Troubleshooting</h1>
@@ -93,7 +61,7 @@ npm run typecheck</div>
 
                     <h3>Sign-in works but no rows are visible</h3>
                     <p>The RLS policies from <code>0002_rls_policies.sql</code> were not applied. Re-apply the migration in the Supabase SQL Editor, or run:</p>
-                    <div class="code-block" data-lang="sql"><span class="c-key">SELECT</span> * <span class="c-key">FROM</span> pg_policies <span class="c-key">WHERE</span> tablename <span class="c-key">IN</span> (<span class="c-str">'scans'</span>, <span class="c-str">'user_settings'</span>, <span class="c-str">'user_profiles'</span>, <span class="c-str">'api_keys'</span>);</div>
+                    <div class="code-block" data-lang="sql"><span class="c-key">SELECT</span> * <span class="c-key">FROM</span> pg_policies <span class="c-key">WHERE</span> tablename <span class="c-key">IN</span> (<span class="c-str">'user_scans'</span>, <span class="c-str">'user_preferences'</span>, <span class="c-str">'user_settings'</span>, <span class="c-str">'user_api_keys'</span>);</div>
 
                     <h2 id="scanning">Scanning</h2>
 
@@ -296,7 +264,7 @@ abspider --version
                     <h2 id="emergency">Emergency fixes</h2>
 
                     <h3>Complete local reset</h3>
-                    <div class="code-block" data-lang="js"><span class="c-com">// ⚠️ Use with caution — this clears all local data</span>
+                    <div class="code-block" data-lang="js"><span class="c-com">// Caution: Use with caution — this clears all local data</span>
 localStorage.clear();
 sessionStorage.clear();
 <span class="c-com">// Refresh the page</span></div>
@@ -328,52 +296,3 @@ sessionStorage.clear();
                         </a>
                     </div>
                 </article>
-
-                <aside class="toc" id="toc"></aside>
-            </div>
-
-            <footer class="footer">
-                <div class="footer-grid">
-                    <div>
-                        <h4>ABSpider Recon</h4>
-                        <p>Professional web reconnaissance platform for security professionals.</p>
-                    </div>
-                    <div>
-                        <h4>Documentation</h4>
-                        <ul>
-                            <li><a href="getting-started.html">Getting Started</a></li>
-                            <li><a href="modules.html">Recon Modules</a></li>
-                            <li><a href="architecture.html">Architecture</a></li>
-                            <li><a href="cli.html">CLI Reference</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4>Operations</h4>
-                        <ul>
-                            <li><a href="configuration.html">Configuration</a></li>
-                            <li><a href="reports.html">Reports</a></li>
-                            <li><a href="deployment.html">Deployment</a></li>
-                            <li><a href="api-reference.html">API Reference</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4>Project</h4>
-                        <ul>
-                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
-                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
-                            <li><a href="security.html">Security Policy</a></li>
-                            <li><a href="troubleshooting.html">Support</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="footer-meta">
-                    <p>© 2026 zanesense. Released under the MIT License.</p>
-                    <p>v2.0.1</p>
-                </div>
-            </footer>
-        </main>
-    </div>
-
-    <script src="assets/nav.js"></script>
-</body>
-</html>

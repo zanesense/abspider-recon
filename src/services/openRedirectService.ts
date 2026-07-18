@@ -8,6 +8,27 @@ const REDIRECT_PARAMS = [
 ];
 
 const TEST_EXTERNAL_URL = 'https://example.com';
+const TEST_EXTERNAL_ORIGIN = new URL(TEST_EXTERNAL_URL).origin;
+
+const pointsToTestOrigin = (value: string, baseUrl: string) => {
+  try {
+    return new URL(value, baseUrl).origin === TEST_EXTERNAL_ORIGIN;
+  } catch {
+    return false;
+  }
+};
+
+const hasExternalRedirectParam = (value: string, baseUrl: string) => {
+  try {
+    const url = new URL(value, baseUrl);
+    return REDIRECT_PARAMS.some((param) => {
+      const candidate = url.searchParams.get(param);
+      return candidate ? pointsToTestOrigin(candidate, baseUrl) : false;
+    });
+  } catch {
+    return false;
+  }
+};
 
 export interface RedirectTest {
   param: string;
@@ -50,30 +71,25 @@ export const performOpenRedirectCheck = async (target: string, requestManager: R
       const location = response.headers.get('location');
       if (location) {
         test.redirectedTo = location;
-        // If redirect points to our external test URL or a different domain, it's vulnerable
-        if (location.includes(TEST_EXTERNAL_URL) || (!location.startsWith('/') && !location.includes(domain))) {
-          test.vulnerable = true;
-        } else if (location.includes(domain)) {
-          const redirectParam = REDIRECT_PARAMS.some(p => {
-            const regex = new RegExp(`[?&]${p}=https?://`, 'i');
-            return regex.test(location);
-          });
-          if (redirectParam) test.vulnerable = true;
-        }
+        test.vulnerable = pointsToTestOrigin(location, baseUrl) || hasExternalRedirectParam(location, baseUrl);
       }
 
       // Also check response body for meta/JS redirects
       if ([200, 302, 301, 307, 308].includes(response.status)) {
         const text = await response.text();
         const document = new DOMParser().parseFromString(text, 'text/html');
-        const metaRedirect = Array.from(document.querySelectorAll('meta[http-equiv]')).some((meta) =>
-          meta.getAttribute('http-equiv')?.toLowerCase() === 'refresh'
-          && meta.getAttribute('content')?.includes(TEST_EXTERNAL_URL)
-        );
-        const scriptRedirect = Array.from(document.scripts).some((script) =>
-          script.textContent?.includes(TEST_EXTERNAL_URL)
-          && /(?:window\.)?location(?:\.href)?\s*=|(?:window\.)?location\.(?:assign|replace)\s*\(/i.test(script.textContent)
-        );
+        const metaRedirect = Array.from(document.querySelectorAll('meta[http-equiv]')).some((meta) => {
+          if (meta.getAttribute('http-equiv')?.toLowerCase() !== 'refresh') return false;
+          const candidate = meta.getAttribute('content')?.match(/(?:^|;)\s*url\s*=\s*["']?([^"']+)["']?\s*$/i)?.[1];
+          return candidate ? pointsToTestOrigin(candidate, baseUrl) : false;
+        });
+        const scriptRedirect = Array.from(document.scripts).some((script) => {
+          const source = script.textContent || '';
+          const assignment = source.match(/(?:window\.)?location(?:\.href)?\s*=\s*(["'])(.*?)\1/i)?.[2];
+          const method = source.match(/(?:window\.)?location\.(?:assign|replace)\s*\(\s*(["'])(.*?)\1\s*\)/i)?.[2];
+          const candidate = assignment || method;
+          return candidate ? pointsToTestOrigin(candidate, baseUrl) : false;
+        });
         if (metaRedirect || scriptRedirect) {
           test.vulnerable = true;
           if (!test.redirectedTo) test.redirectedTo = '(body performs external redirect)';

@@ -157,6 +157,7 @@
   .docs-article .c-key { @apply text-cyan-300; }
   .docs-article .c-str { @apply text-emerald-300; }
   .docs-article .c-com { @apply text-slate-500; }
+  .docs-article .c-typ { @apply text-violet-300; }
   .docs-article .table-wrap { @apply my-6 overflow-x-auto rounded-xl border border-border; }
   .docs-article table { @apply w-full min-w-[560px] border-collapse text-left text-sm; }
   .docs-article th { @apply bg-muted/70 px-4 py-3 font-semibold text-foreground; }
@@ -165,6 +166,9 @@
   .docs-article .eyebrow { @apply mb-3 text-sm font-semibold text-primary; }
   .docs-article .meta { @apply mb-8 flex flex-wrap gap-2 text-sm; }
   .docs-article .badge { @apply inline-flex rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-foreground; }
+  .docs-article .badge-success { @apply border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300; }
+  .docs-article .badge-active { @apply border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300; }
+  .docs-article .badge-info { @apply border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300; }
   .docs-article .callout {
     @apply my-6 flex gap-3 rounded-xl border border-border bg-muted/50 p-5 text-sm;
   }
@@ -193,6 +197,18 @@
   .docs-article .label { @apply text-sm font-semibold text-foreground; }
   .docs-article .sub,
   .docs-article .text-mute { @apply text-sm text-muted-foreground; }
+  .docs-article .diagram { @apply my-6 overflow-x-auto whitespace-pre rounded-xl bg-slate-950 p-5 font-mono text-sm leading-6 text-slate-300; }
+  .docs-article .diagram .lvl-0 { @apply font-semibold text-white; }
+  .docs-article .diagram .lvl-1 { @apply text-cyan-300; }
+  .docs-article .diagram .lvl-2 { @apply text-emerald-300; }
+  .docs-article .diagram .lvl-3 { @apply text-slate-500; }
+  .docs-article .steps { @apply list-none space-y-4 pl-0; counter-reset: docs-step; }
+  .docs-article .steps > li { @apply relative rounded-xl border border-border bg-card py-4 pl-14 pr-4; counter-increment: docs-step; }
+  .docs-article .steps > li::before { content: counter(docs-step); @apply absolute left-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground; }
+  .docs-article .cta-row { @apply my-6 flex flex-wrap gap-3; }
+  .docs-article .btn { @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold no-underline transition-colors; }
+  .docs-article .btn-primary { @apply bg-primary text-primary-foreground hover:bg-primary/90 hover:no-underline; }
+  .docs-article .btn-secondary { @apply border border-border bg-card text-foreground hover:bg-muted hover:no-underline; }
   .docs-article .tabs { @apply my-6; }
   .docs-article .tabs-input { @apply sr-only; }
   .docs-article .tabs-labels { @apply mb-3 flex flex-wrap gap-1 border-b border-border; }

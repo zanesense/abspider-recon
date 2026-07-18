@@ -1,9 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Bug, Menu, X, Sun, Moon } from 'lucide-react';
+import {
+  Bug,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
+  Settings,
+  Sun,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { supabase } from '@/SupabaseClient';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const NAV = [
   { label: 'Features', href: '#features' },
@@ -18,7 +37,9 @@ interface Props { user?: { email?: string; avatar_url?: string } | null; onOpenL
 const LandingHeader = ({ user, onOpenLogin }: Props) => {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(user ?? null);
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -26,10 +47,37 @@ const LandingHeader = ({ user, onOpenLogin }: Props) => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const sessionUser = session?.user;
+      setCurrentUser(sessionUser ? {
+        email: sessionUser.email,
+        avatar_url: sessionUser.user_metadata?.avatar_url,
+      } : null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const sessionUser = session?.user;
+      setCurrentUser(sessionUser ? {
+        email: sessionUser.email,
+        avatar_url: sessionUser.user_metadata?.avatar_url,
+      } : null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleNavClick = (href: string, isRoute?: boolean) => {
     setOpen(false);
     if (isRoute) return;
     document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleOpenScanner = () => currentUser ? navigate('/dashboard') : onOpenLogin();
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setOpen(false);
+    navigate('/');
   };
 
   return (
@@ -64,17 +112,30 @@ const LandingHeader = ({ user, onOpenLogin }: Props) => {
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 cursor-pointer" aria-label="Toggle theme">
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          {user ? (
-            <Link to="/dashboard">
-              <Avatar className="h-8 w-8 cursor-pointer ring-2 ring-primary/30 transition-all hover:ring-primary/60">
-                <AvatarImage src={user.avatar_url} alt={user.email} />
-                <AvatarFallback>{(user.email?.[0] || 'U').toUpperCase()}</AvatarFallback>
-              </Avatar>
-            </Link>
+          {currentUser ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Open account menu">
+                  <Avatar className="h-8 w-8 ring-2 ring-primary/30 transition-all hover:ring-primary/60">
+                    <AvatarImage src={currentUser.avatar_url} alt={currentUser.email || 'Account'} />
+                    <AvatarFallback>{(currentUser.email?.[0] || 'U').toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="truncate font-normal text-muted-foreground">{currentUser.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild><Link to="/dashboard"><LayoutDashboard />Dashboard</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/account-settings"><UserRound />Account settings</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/settings"><Settings />App settings</Link></DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive"><LogOut />Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Button variant="ghost" size="sm" onClick={onOpenLogin} className="cursor-pointer text-sm">Sign in</Button>
           )}
-          <Button size="sm" onClick={onOpenLogin} className="cursor-pointer bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
+          <Button size="sm" onClick={handleOpenScanner} className="cursor-pointer bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
             Open scanner
           </Button>
         </div>
@@ -107,19 +168,24 @@ const LandingHeader = ({ user, onOpenLogin }: Props) => {
             )}
           </div>
           <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
-            {user ? (
-              <Link to="/dashboard" onClick={() => setOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted">
+            {currentUser ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
                 <Avatar className="h-6 w-6">
-                  <AvatarImage src={user.avatar_url} alt={user.email} />
-                  <AvatarFallback>{(user.email?.[0] || 'U').toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={currentUser.avatar_url} alt={currentUser.email || 'Account'} />
+                    <AvatarFallback>{(currentUser.email?.[0] || 'U').toUpperCase()}</AvatarFallback>
                 </Avatar>
-                Dashboard
-              </Link>
+                  <span className="truncate">{currentUser.email}</span>
+                </div>
+                <Link to="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"><LayoutDashboard className="h-4 w-4" />Dashboard</Link>
+                <Link to="/account-settings" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"><UserRound className="h-4 w-4" />Account settings</Link>
+                <Link to="/settings" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"><Settings className="h-4 w-4" />App settings</Link>
+                <button onClick={handleSignOut} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-destructive hover:bg-destructive/10"><LogOut className="h-4 w-4" />Sign out</button>
+              </div>
             ) : (
               <Button variant="outline" size="sm" onClick={() => { setOpen(false); onOpenLogin(); }} className="cursor-pointer">Sign in</Button>
             )}
-            <Button size="sm" onClick={() => { setOpen(false); onOpenLogin(); }} className="cursor-pointer font-semibold">Open scanner</Button>
+            <Button size="sm" onClick={() => { setOpen(false); handleOpenScanner(); }} className="cursor-pointer font-semibold">Open scanner</Button>
           </div>
         </div>
       )}

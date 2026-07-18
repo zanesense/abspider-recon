@@ -1,36 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Reference — ABSpider Recon</title>
-    <meta name="description" content="The same-origin /api/proxy contract, the Supabase schema, and the CLI JSON output shape.">
-    <link rel="stylesheet" href="assets/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-</head>
-<body data-page="api-reference">
-    <div class="app">
-        <aside class="sidebar" id="sidebar"></aside>
-        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-        <main class="main">
-            <div class="topbar">
-                <div class="topbar-left">
-                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                    </button>
-                    <nav class="breadcrumb" id="breadcrumb" data-page="API Reference"></nav>
-                </div>
-                <div class="topbar-actions">
-                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
-                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
-                </div>
-            </div>
-
-            <div class="content">
-                <article class="article">
+<article class="article">
                     <header class="page-hero">
                         <div class="crumb">Reference · Programmatic</div>
                         <h1>API Reference</h1>
@@ -50,7 +18,7 @@
                             <tbody>
                                 <tr>
                                     <td><code>url</code></td>
-                                    <td style="text-align:center;">✅</td>
+                                    <td style="text-align:center;"><span class="badge badge-success">Yes</span></td>
                                     <td>Absolute, fully qualified URL to fetch. Must parse with <code>new URL()</code>.</td>
                                 </tr>
                             </tbody>
@@ -144,8 +112,8 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
   <span class="c-key">"profile"</span>: <span class="c-str">"custom"</span>,
   <span class="c-key">"modules"</span>: { <span class="c-com">/* per-module results */</span> },
   <span class="c-key">"summary"</span>: {
-    <span class="c-key">"modulesRun"</span>: <span class="c-num">21</span>,
-    <span class="c-key">"modulesOk"</span>: <span class="c-num">20</span>,
+    <span class="c-key">"modulesRun"</span>: <span class="c-num">35</span>,
+    <span class="c-key">"modulesOk"</span>: <span class="c-num">34</span>,
     <span class="c-key">"modulesFailed"</span>: <span class="c-num">1</span>,
     <span class="c-key">"findings"</span>: <span class="c-num">4</span>
   }
@@ -159,44 +127,29 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
                             <thead><tr><th>Table</th><th>Key columns</th><th>RLS</th></tr></thead>
                             <tbody>
                                 <tr>
-                                    <td><code>scans</code></td>
-                                    <td><code>id</code> (uuid), <code>user_id</code>, <code>target</code>, <code>status</code>, <code>config</code> (jsonb), <code>results</code> (jsonb), <code>security_grade</code>, <code>elapsed_ms</code>, <code>created_at</code></td>
-                                    <td>✅</td>
+                                    <td><code>user_scans</code></td>
+                                    <td><code>scan_id</code>, <code>user_id</code>, <code>target</code>, <code>status</code>, <code>progress</code>, <code>config</code>, <code>results</code>, <code>errors</code>, <code>elapsed_ms</code>, <code>security_grade</code></td>
+                                    <td><span class="badge badge-success">User scoped</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>user_preferences</code></td>
+                                    <td><code>user_id</code>, theme, language, scan history limit, concurrency, notifications, default profile, export format, retry count, user agent</td>
+                                    <td><span class="badge badge-success">User scoped</span></td>
                                 </tr>
                                 <tr>
                                     <td><code>user_settings</code></td>
-                                    <td><code>user_id</code>, <code>theme</code>, <code>scan_defaults</code> (jsonb), <code>proxy_list</code> (jsonb), <code>webhook_url</code></td>
-                                    <td>✅</td>
+                                    <td><code>user_id</code>, <code>settings</code> (jsonb: Discord webhook, proxy list, default threads, timeout)</td>
+                                    <td><span class="badge badge-success">User scoped</span></td>
                                 </tr>
                                 <tr>
-                                    <td><code>user_profiles</code></td>
-                                    <td><code>user_id</code>, <code>display_name</code>, <code>avatar_url</code>, <code>bio</code>, <code>role</code></td>
-                                    <td>✅</td>
-                                </tr>
-                                <tr>
-                                    <td><code>api_keys</code></td>
-                                    <td><code>user_id</code>, <code>service_name</code>, <code>api_key</code>, <code>is_active</code></td>
-                                    <td>✅</td>
-                                </tr>
-                                <tr>
-                                    <td><code>scheduled_scans</code></td>
-                                    <td><code>user_id</code>, <code>name</code>, <code>target</code>, <code>cron</code>, <code>config</code> (jsonb), <code>enabled</code></td>
-                                    <td>✅</td>
-                                </tr>
-                                <tr>
-                                    <td><code>scan_templates</code></td>
-                                    <td><code>user_id</code>, <code>name</code>, <code>config</code> (jsonb)</td>
-                                    <td>✅</td>
-                                </tr>
-                                <tr>
-                                    <td><code>notification_prefs</code></td>
-                                    <td><code>user_id</code>, <code>channel</code>, <code>enabled</code>, <code>minimum_severity</code></td>
-                                    <td>✅</td>
+                                    <td><code>user_api_keys</code></td>
+                                    <td><code>user_id</code>, <code>api_keys</code> (jsonb); managed through authenticated FastAPI endpoints</td>
+                                    <td><span class="badge badge-info">Service role only</span></td>
                                 </tr>
                                 <tr>
                                     <td><code>storage.avatars</code></td>
-                                    <td>Private bucket keyed by <code>user_id</code></td>
-                                    <td>✅</td>
+                                    <td>Public-read bucket; authenticated users can write only files prefixed with their user ID</td>
+                                    <td><span class="badge badge-success">Owner write</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -215,9 +168,9 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
                     <div class="code-block" data-lang="bash">node scripts/test-proxy.js https://abspider-recon.vercel.app
 
 <span class="c-com"># Sample output</span>
-<span class="c-key">✓</span> OPTIONS preflight returns 200
-<span class="c-key">✓</span> GET example.com returns 200
-<span class="c-key">✓</span> GET https://httpbin.org/status/418 returns 418</div>
+<span class="c-key">PASS</span> OPTIONS preflight returns 200
+<span class="c-key">PASS</span> GET example.com returns 200
+<span class="c-key">PASS</span> GET https://httpbin.org/status/418 returns 418</div>
 
                     <h2 id="rate-limits">Rate limits</h2>
                     <p>The proxy allows 120 requests per client address per 60 seconds and also remains subject to the hosting platform's function limits.</p>
@@ -236,52 +189,3 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
                         </table>
                     </div>
                 </article>
-
-                <aside class="toc" id="toc"></aside>
-            </div>
-
-            <footer class="footer">
-                <div class="footer-grid">
-                    <div>
-                        <h4>ABSpider Recon</h4>
-                        <p>Professional web reconnaissance platform for security professionals.</p>
-                    </div>
-                    <div>
-                        <h4>Documentation</h4>
-                        <ul>
-                            <li><a href="getting-started.html">Getting Started</a></li>
-                            <li><a href="modules.html">Recon Modules</a></li>
-                            <li><a href="architecture.html">Architecture</a></li>
-                            <li><a href="cli.html">CLI Reference</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4>Operations</h4>
-                        <ul>
-                            <li><a href="configuration.html">Configuration</a></li>
-                            <li><a href="reports.html">Reports</a></li>
-                            <li><a href="deployment.html">Deployment</a></li>
-                            <li><a href="api-reference.html">API Reference</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4>Project</h4>
-                        <ul>
-                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
-                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
-                            <li><a href="security.html">Security Policy</a></li>
-                            <li><a href="troubleshooting.html">Support</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="footer-meta">
-                    <p>© 2026 zanesense. Released under the MIT License.</p>
-                    <p>v2.0.1</p>
-                </div>
-            </footer>
-        </main>
-    </div>
-
-    <script src="assets/nav.js"></script>
-</body>
-</html>

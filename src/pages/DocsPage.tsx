@@ -1,6 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
-import { BookOpen, Menu, Search, X } from 'lucide-react';
+import DOMPurify from 'dompurify';
+import {
+  BookOpen,
+  Boxes,
+  Braces,
+  ExternalLink,
+  FileOutput,
+  GitBranch,
+  Menu,
+  Network,
+  Rocket,
+  Search,
+  Server,
+  Settings,
+  ShieldCheck,
+  Terminal,
+  Wrench,
+  X,
+} from 'lucide-react';
 
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
@@ -23,17 +41,17 @@ import security from '@/content/docs/security.html?raw';
 import troubleshooting from '@/content/docs/troubleshooting.html?raw';
 
 const PAGES = [
-  { slug: '', label: 'Overview', source: overview },
-  { slug: 'getting-started', label: 'Getting started', source: gettingStarted },
-  { slug: 'modules', label: 'Recon modules', source: modules },
-  { slug: 'architecture', label: 'Architecture', source: architecture },
-  { slug: 'cli', label: 'CLI reference', source: cli },
-  { slug: 'configuration', label: 'Configuration', source: configuration },
-  { slug: 'reports', label: 'Reports', source: reports },
-  { slug: 'deployment', label: 'Deployment', source: deployment },
-  { slug: 'api-reference', label: 'API reference', source: apiReference },
-  { slug: 'security', label: 'Security & legal', source: security },
-  { slug: 'troubleshooting', label: 'Troubleshooting', source: troubleshooting },
+  { slug: '', label: 'Overview', source: overview, icon: BookOpen, files: ['README.md', 'package.json'] },
+  { slug: 'getting-started', label: 'Getting started', source: gettingStarted, icon: Rocket, files: ['README.md', '.env.example'] },
+  { slug: 'modules', label: 'Recon modules', source: modules, icon: Boxes, files: ['src/services/scanService.ts', 'packages/cli/scripts/abspider-cli.mjs'] },
+  { slug: 'architecture', label: 'Architecture', source: architecture, icon: Network, files: ['src/App.tsx', 'src/services/scanService.ts', 'backend/main.py'] },
+  { slug: 'cli', label: 'CLI reference', source: cli, icon: Terminal, files: ['packages/cli/scripts/abspider-cli.mjs', 'packages/cli/README.md'] },
+  { slug: 'configuration', label: 'Configuration', source: configuration, icon: Settings, files: ['.env.example', 'src/services/settingsService.ts'] },
+  { slug: 'reports', label: 'Reports', source: reports, icon: FileOutput, files: ['src/services/reportService.ts', 'src/utils/reportUtils.ts'] },
+  { slug: 'deployment', label: 'Deployment', source: deployment, icon: Server, files: ['vercel.json', 'docker-compose.yml', 'nginx.conf'] },
+  { slug: 'api-reference', label: 'API reference', source: apiReference, icon: Braces, files: ['backend/main.py', 'supabase/migrations'] },
+  { slug: 'security', label: 'Security & legal', source: security, icon: ShieldCheck, files: ['SECURITY.md', 'src/components/LegalDisclaimer.tsx'] },
+  { slug: 'troubleshooting', label: 'Troubleshooting', source: troubleshooting, icon: Wrench, files: ['README.md', 'backend/main.py'] },
 ] as const;
 
 const articleHtml = (source: string) => {
@@ -48,7 +66,7 @@ const articleHtml = (source: string) => {
     link.setAttribute('href', `/docs${slug ? `/${slug}` : ''}${match[2] || ''}`);
   });
 
-  return article?.innerHTML || '<h1>Documentation unavailable</h1>';
+  return DOMPurify.sanitize(article?.innerHTML || '<h1>Documentation unavailable</h1>');
 };
 
 const DocsPage = () => {
@@ -61,7 +79,6 @@ const DocsPage = () => {
   const html = useMemo(() => page ? articleHtml(page.source) : '', [page]);
 
   useEffect(() => {
-    setMenuOpen(false);
     window.scrollTo({ top: 0 });
   }, [slug]);
 
@@ -99,11 +116,13 @@ const DocsPage = () => {
                   <Link
                     key={item.slug}
                     to={`/docs${item.slug ? `/${item.slug}` : ''}`}
+                    onClick={() => setMenuOpen(false)}
                     className={cn(
                       'block rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted hover:text-foreground',
                       item.slug === slug ? 'bg-primary/10 font-semibold text-primary' : 'text-muted-foreground',
                     )}
                   >
+                    <item.icon className="mr-2 inline h-4 w-4" aria-hidden="true" />
                     {item.label}
                   </Link>
                 ))}
@@ -111,7 +130,28 @@ const DocsPage = () => {
             </aside>
 
             {page ? (
-              <article className="docs-article min-w-0" dangerouslySetInnerHTML={{ __html: html }} />
+              <div className="min-w-0">
+                <div className="mb-8 flex flex-col gap-4 border-b border-border pb-5 text-sm text-muted-foreground sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="mb-2 flex items-center gap-2 font-semibold text-foreground">
+                      <GitBranch className="h-4 w-4 text-primary" aria-hidden="true" />
+                      Repository sources
+                    </div>
+                    <div className="flex max-w-2xl flex-wrap gap-1.5">
+                      {page.files.map((file) => <code key={file} className="rounded bg-muted px-2 py-1 text-xs text-foreground">{file}</code>)}
+                    </div>
+                  </div>
+                  <a
+                    href="https://deepwiki.com/zanesense/abspider-recon"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center gap-1.5 font-medium text-primary hover:underline"
+                  >
+                    DeepWiki reference <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  </a>
+                </div>
+                <article className="docs-article" dangerouslySetInnerHTML={{ __html: html }} />
+              </div>
             ) : (
               <div className="py-20 text-center">
                 <h1 className="text-2xl font-bold">Documentation page not found</h1>

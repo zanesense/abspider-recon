@@ -1,38 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recon Modules — ABSpider Recon</title>
-    <meta name="description" content="Complete reference for all 35 ABSpider Recon reconnaissance modules — passive, active, and utility — with CLI flags and authorization profile.">
-    <link rel="stylesheet" href="assets/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-</head>
-<body data-page="modules">
-    <div class="app">
-        <aside class="sidebar" id="sidebar"></aside>
-        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-        <main class="main">
-            <div class="topbar">
-                <div class="topbar-left">
-                    <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                    </button>
-                    <nav class="breadcrumb" id="breadcrumb" data-page="Recon Modules"></nav>
-                </div>
-                <div class="topbar-actions">
-                    <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
-                    <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
-                </div>
-            </div>
-
-            <div class="content">
-                <article class="article">
+<article class="article">
                     <header class="page-hero">
-                        <div class="crumb">Reference · 21 modules</div>
+                        <div class="crumb">Reference · 35 modules</div>
                         <h1>Reconnaissance Modules</h1>
                         <p class="lede">Every recon module in ABSpider Recon follows a standardized interface: <code>isTested</code>, <code>moduleError</code>, and (for active modules) a <code>vulnerable</code> flag. The <code>ScanResults</code> object aggregates all module outputs into a single typed container.</p>
                     </header>
@@ -51,27 +19,41 @@
                         <table>
                             <thead><tr><th>Module</th><th style="text-align:center;">Dashboard</th><th>CLI flag</th><th>Type</th><th>Purpose</th></tr></thead>
                             <tbody>
-                                <tr><td>Site Info</td><td style="text-align:center;">✅</td><td><code>siteInfo</code></td><td><span class="badge badge-passive">Passive</span></td><td>Status, title, server, IP, and response metadata.</td></tr>
-                                <tr><td>Headers</td><td style="text-align:center;">✅</td><td><code>headers</code></td><td><span class="badge badge-passive">Passive</span></td><td>Scores common security headers (CSP, HSTS, XFO, Referrer-Policy, Permissions-Policy).</td></tr>
-                                <tr><td>WHOIS / RDAP</td><td style="text-align:center;">✅</td><td><code>whois</code></td><td><span class="badge badge-passive">Passive</span></td><td>Domain registration, registrar, nameservers, and creation/expiry dates.</td></tr>
-                                <tr><td>GeoIP</td><td style="text-align:center;">✅</td><td><code>geoip</code></td><td><span class="badge badge-passive">Passive</span></td><td>IP ownership and approximate geolocation.</td></tr>
-                                <tr><td>DNS</td><td style="text-align:center;">✅</td><td><code>dns</code></td><td><span class="badge badge-passive">Passive</span></td><td>A, AAAA, MX, NS, TXT, CNAME, and SOA records.</td></tr>
-                                <tr><td>MX</td><td style="text-align:center;">✅</td><td><code>mx</code></td><td><span class="badge badge-passive">Passive</span></td><td>Mail exchange records and preference order.</td></tr>
-                                <tr><td>Subnet</td><td style="text-align:center;">✅</td><td><code>subnet</code></td><td><span class="badge badge-passive">Passive</span></td><td>Basic IPv4 <code>/24</code> network summary when an IP is available.</td></tr>
-                                <tr><td>Subdomains</td><td style="text-align:center;">✅</td><td><code>subdomains</code></td><td><span class="badge badge-passive">Passive</span></td><td>DNS wordlist, crt.sh certificate transparency, optional SecurityTrails results.</td></tr>
-                                <tr><td>Reverse IP</td><td style="text-align:center;">✅</td><td><code>reverseip</code></td><td><span class="badge badge-passive">Passive</span></td><td>Other domains on the same IP.</td></tr>
-                                <tr><td>VirusTotal</td><td style="text-align:center;">✅</td><td><code>virustotal</code></td><td><span class="badge badge-passive">Passive</span></td><td>Domain reputation when an API key is configured.</td></tr>
-                                <tr><td>SSL / TLS</td><td style="text-align:center;">✅</td><td><code>sslTls</code></td><td><span class="badge badge-passive">Passive</span></td><td>Certificate subject, issuer, SANs, fingerprint, and expiry.</td></tr>
-                                <tr><td>Tech Stack</td><td style="text-align:center;">✅</td><td><code>techStack</code></td><td><span class="badge badge-passive">Passive</span></td><td>Frontend, CMS, analytics, CDN, and server fingerprinting.</td></tr>
-                                <tr><td>SEO</td><td style="text-align:center;">✅</td><td><code>seo</code></td><td><span class="badge badge-passive">Passive</span></td><td>Title, meta description, canonical URL, headings, and link counts.</td></tr>
-                                <tr><td>Ports</td><td style="text-align:center;">✅</td><td><code>ports</code></td><td><span class="badge badge-active">Active</span></td><td>Web, common, or full TCP port profiles with bounded concurrency.</td></tr>
-                                <tr><td>SQL Injection</td><td style="text-align:center;">✅</td><td><code>sqlinjection</code></td><td><span class="badge badge-active">Active</span></td><td>Loads <code>src/payloads/sqli.json</code> and uses baseline-aware SQL error heuristics.</td></tr>
-                                <tr><td>XSS</td><td style="text-align:center;">✅</td><td><code>xss</code></td><td><span class="badge badge-active">Active</span></td><td>Loads <code>src/payloads/xss.json</code> and reports unencoded payload reflection.</td></tr>
-                                <tr><td>LFI</td><td style="text-align:center;">✅</td><td><code>lfi</code></td><td><span class="badge badge-active">Active</span></td><td>Loads <code>src/payloads/lfi.json</code> and matches known file-content markers.</td></tr>
-                                <tr><td>WordPress</td><td style="text-align:center;">✅</td><td><code>wordpress</code></td><td><span class="badge badge-active">Active</span></td><td>Checks common WordPress paths (<code>/wp-login.php</code>, <code>/wp-json/</code>, <code>/xmlrpc.php</code>).</td></tr>
-                                <tr><td>Broken Links</td><td style="text-align:center;">✅</td><td><code>brokenLinks</code></td><td><span class="badge badge-active">Active</span></td><td>Walks discovered links and reports unreachable ones.</td></tr>
-                                <tr><td>CORS</td><td style="text-align:center;">✅</td><td><code>corsMisconfig</code></td><td><span class="badge badge-active">Active</span></td><td>Tests wildcard or reflected arbitrary-origin CORS responses.</td></tr>
-                                <tr><td>WAF Protection</td><td style="text-align:center;">✅</td><td><code>ddosFirewall</code></td><td><span class="badge badge-active">Active</span></td><td>Sends a bounded sequence of HEAD requests and records WAF/CDN and rate-limit signals.</td></tr>
+                                <tr><td>Site Info</td><td><span class="badge badge-success">Available</span></td><td><code>siteInfo</code></td><td><span class="badge badge-passive">Passive</span></td><td>Status, title, server, IP, and response metadata.</td></tr>
+                                <tr><td>Headers</td><td><span class="badge badge-success">Available</span></td><td><code>headers</code></td><td><span class="badge badge-passive">Passive</span></td><td>Scores common security headers.</td></tr>
+                                <tr><td>WHOIS / RDAP</td><td><span class="badge badge-success">Available</span></td><td><code>whois</code></td><td><span class="badge badge-passive">Passive</span></td><td>Domain registration, registrar, nameservers, and lifecycle dates.</td></tr>
+                                <tr><td>GeoIP</td><td><span class="badge badge-success">Available</span></td><td><code>geoip</code></td><td><span class="badge badge-passive">Passive</span></td><td>IP ownership and approximate geolocation.</td></tr>
+                                <tr><td>DNS</td><td><span class="badge badge-success">Available</span></td><td><code>dns</code></td><td><span class="badge badge-passive">Passive</span></td><td>A, AAAA, MX, NS, TXT, CNAME, and SOA records.</td></tr>
+                                <tr><td>MX</td><td><span class="badge badge-success">Available</span></td><td><code>mx</code></td><td><span class="badge badge-passive">Passive</span></td><td>Mail exchange records and preference order.</td></tr>
+                                <tr><td>Subnet</td><td><span class="badge badge-success">Available</span></td><td><code>subnet</code></td><td><span class="badge badge-passive">Passive</span></td><td>IPv4 network summary when an address is available.</td></tr>
+                                <tr><td>Subdomains</td><td><span class="badge badge-success">Available</span></td><td><code>subdomains</code></td><td><span class="badge badge-passive">Passive</span></td><td>DNS, certificate-transparency, and optional SecurityTrails results.</td></tr>
+                                <tr><td>Reverse IP</td><td><span class="badge badge-success">Available</span></td><td><code>reverseip</code></td><td><span class="badge badge-passive">Passive</span></td><td>Other domains observed on the resolved IP.</td></tr>
+                                <tr><td>VirusTotal</td><td><span class="badge badge-success">Available</span></td><td><code>virustotal</code></td><td><span class="badge badge-passive">Passive</span></td><td>Domain reputation when an API key is configured.</td></tr>
+                                <tr><td>SSL / TLS</td><td><span class="badge badge-success">Available</span></td><td><code>sslTls</code></td><td><span class="badge badge-passive">Passive</span></td><td>Certificate subject, issuer, SANs, fingerprint, and expiry.</td></tr>
+                                <tr><td>Tech Stack</td><td><span class="badge badge-success">Available</span></td><td><code>techStack</code></td><td><span class="badge badge-passive">Passive</span></td><td>Frontend, CMS, analytics, CDN, and server fingerprinting.</td></tr>
+                                <tr><td>SEO</td><td><span class="badge badge-success">Available</span></td><td><code>seo</code></td><td><span class="badge badge-passive">Passive</span></td><td>Metadata, canonical URL, headings, links, and image coverage.</td></tr>
+                                <tr><td>CDN Detection</td><td><span class="badge badge-success">Available</span></td><td><code>cdnDetection</code></td><td><span class="badge badge-passive">Passive</span></td><td>Header and CNAME evidence for known CDN providers.</td></tr>
+                                <tr><td>Cloud Provider</td><td><span class="badge badge-success">Available</span></td><td><code>cloudProvider</code></td><td><span class="badge badge-passive">Passive</span></td><td>Infrastructure-provider signatures from headers and DNS.</td></tr>
+                                <tr><td>Email Security</td><td><span class="badge badge-success">Available</span></td><td><code>emailSecurity</code></td><td><span class="badge badge-passive">Passive</span></td><td>SPF, DKIM, and DMARC posture with actionable issues.</td></tr>
+                                <tr><td>Cookie Audit</td><td><span class="badge badge-success">Available</span></td><td><code>cookieAudit</code></td><td><span class="badge badge-passive">Passive</span></td><td>Cookie security attributes and scope analysis.</td></tr>
+                                <tr><td>JavaScript Inspection</td><td><span class="badge badge-success">Available</span></td><td><code>jsInspection</code></td><td><span class="badge badge-passive">Passive</span></td><td>Referenced scripts, endpoints, and exposed-secret patterns.</td></tr>
+                                <tr><td>Email Harvesting</td><td><span class="badge badge-success">Available</span></td><td><code>emailHarvesting</code></td><td><span class="badge badge-passive">Passive</span></td><td>Public email addresses found in target content and metadata.</td></tr>
+                                <tr><td>Robots &amp; Sitemap</td><td><span class="badge badge-success">Available</span></td><td><code>robotsSitemap</code></td><td><span class="badge badge-passive">Passive</span></td><td>Robots directives, sitemap locations, and discovered URLs.</td></tr>
+                                <tr><td>Ports</td><td><span class="badge badge-success">Available</span></td><td><code>ports</code></td><td><span class="badge badge-active">Active</span></td><td>Web, common, or full TCP profiles with bounded concurrency.</td></tr>
+                                <tr><td>SQL Injection</td><td><span class="badge badge-success">Available</span></td><td><code>sqlinjection</code></td><td><span class="badge badge-active">Active</span></td><td>Baseline-aware SQL error and response-difference heuristics.</td></tr>
+                                <tr><td>XSS</td><td><span class="badge badge-success">Available</span></td><td><code>xss</code></td><td><span class="badge badge-active">Active</span></td><td>Reports unencoded payload reflection.</td></tr>
+                                <tr><td>LFI</td><td><span class="badge badge-success">Available</span></td><td><code>lfi</code></td><td><span class="badge badge-active">Active</span></td><td>Matches known file-content markers after traversal probes.</td></tr>
+                                <tr><td>WordPress</td><td><span class="badge badge-success">Available</span></td><td><code>wordpress</code></td><td><span class="badge badge-active">Active</span></td><td>Common WordPress paths, version signals, plugins, and themes.</td></tr>
+                                <tr><td>Broken Links</td><td><span class="badge badge-success">Available</span></td><td><code>brokenLinks</code></td><td><span class="badge badge-active">Active</span></td><td>Walks discovered links and reports unreachable destinations.</td></tr>
+                                <tr><td>CORS</td><td><span class="badge badge-success">Available</span></td><td><code>corsMisconfig</code></td><td><span class="badge badge-active">Active</span></td><td>Tests wildcard and reflected arbitrary-origin responses.</td></tr>
+                                <tr><td>WAF Protection</td><td><span class="badge badge-success">Available</span></td><td><code>ddosFirewall</code></td><td><span class="badge badge-active">Active</span></td><td>Bounded requests that record WAF, CDN, and rate-limit signals.</td></tr>
+                                <tr><td>S3 Bucket Discovery</td><td><span class="badge badge-success">Available</span></td><td><code>s3Bucket</code></td><td><span class="badge badge-active">Active</span></td><td>Tests bounded target-derived bucket names for existence and listing.</td></tr>
+                                <tr><td>Git Exposure</td><td><span class="badge badge-success">Available</span></td><td><code>gitExposure</code></td><td><span class="badge badge-active">Active</span></td><td>Checks high-risk Git metadata and repository files.</td></tr>
+                                <tr><td>Open Redirect</td><td><span class="badge badge-success">Available</span></td><td><code>openRedirect</code></td><td><span class="badge badge-active">Active</span></td><td>Tests common redirect parameters with a controlled external URL.</td></tr>
+                                <tr><td>CVE Scanner</td><td><span class="badge badge-success">Available</span></td><td><code>cveScanner</code></td><td><span class="badge badge-active">Active</span></td><td>Maps detected technology versions to the bundled CVE catalog.</td></tr>
+                                <tr><td>GraphQL</td><td><span class="badge badge-success">Available</span></td><td><code>graphQL</code></td><td><span class="badge badge-active">Active</span></td><td>Discovers endpoints and checks accessibility and introspection.</td></tr>
+                                <tr><td>Rate Limiting</td><td><span class="badge badge-success">Available</span></td><td><code>rateLimit</code></td><td><span class="badge badge-active">Active</span></td><td>Records blocking behavior and rate-limit headers over 20 requests.</td></tr>
+                                <tr><td>CSRF Detection</td><td><span class="badge badge-success">Available</span></td><td><code>csrfDetection</code></td><td><span class="badge badge-active">Active</span></td><td>Inspects state-changing forms for anti-CSRF controls.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -196,6 +178,34 @@
                     </ul>
                     <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: seo</span></p>
 
+                    <h3 id="cdn-detection">CDN Detection</h3>
+                    <p>Correlates response headers and DNS CNAME records with known CDN signatures, preserving the evidence behind every match.</p>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: cdnDetection</span></p>
+
+                    <h3 id="cloud-provider">Cloud Provider Detection</h3>
+                    <p>Identifies hosting and cloud infrastructure from server headers, provider-specific response headers, and DNS evidence.</p>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: cloudProvider</span></p>
+
+                    <h3 id="email-security">Email Security</h3>
+                    <p>Evaluates SPF, common DKIM selectors, and DMARC policy, returning raw records, validation state, and configuration issues.</p>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: emailSecurity</span></p>
+
+                    <h3 id="cookie-audit">Cookie Audit</h3>
+                    <p>Reviews observed cookies for <code>Secure</code>, <code>HttpOnly</code>, <code>SameSite</code>, domain, path, and expiry controls.</p>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: cookieAudit</span></p>
+
+                    <h3 id="javascript-inspection">JavaScript Inspection</h3>
+                    <p>Enumerates referenced scripts and extracts endpoints, source-map references, and patterns that may indicate exposed credentials or sensitive configuration.</p>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: jsInspection</span></p>
+
+                    <h3 id="email-harvesting">Email Harvesting</h3>
+                    <p>Finds publicly exposed email addresses in page content and metadata, normalizes duplicates, and records the discovery source.</p>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: emailHarvesting</span></p>
+
+                    <h3 id="robots-sitemap">Robots and Sitemap</h3>
+                    <p>Parses <code>robots.txt</code>, follows declared sitemap locations, and records directives and URLs that can refine an authorized assessment.</p>
+                    <p class="text-mute"><span class="badge badge-passive">Passive</span> <span class="badge badge-muted">CLI: robotsSitemap</span></p>
+
                     <h2 id="active">Active Reconnaissance</h2>
                     <p>Active modules perform direct, heuristic-based testing. Every active module loads its payloads from a version-controlled JSON file (<code>src/payloads/*.json</code>) and respects the per-mode cap, delay, and concurrency settings.</p>
 
@@ -279,6 +289,34 @@
                     </ul>
                     <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: ddosFirewall</span></p>
 
+                    <h3 id="s3-bucket">S3 Bucket Discovery</h3>
+                    <p>Generates a bounded set of bucket names from the target hostname and records existence, access state, listing exposure, and HTTP status.</p>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: s3Bucket</span></p>
+
+                    <h3 id="git-exposure">Git Exposure</h3>
+                    <p>Checks a curated set of high-risk Git paths such as <code>/.git/HEAD</code> and configuration files, separating confirmed exposure from blocked or absent files.</p>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: gitExposure</span></p>
+
+                    <h3 id="open-redirect">Open Redirect</h3>
+                    <p>Tests common redirect parameters with a controlled external destination and validates both response redirects and reflected client-side targets.</p>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: openRedirect</span></p>
+
+                    <h3 id="cve-scanner">CVE Scanner</h3>
+                    <p>Fingerprints supported technologies and compares detected versions with the bundled CVE catalog. Matches are leads for validation, not proof of exploitability.</p>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: cveScanner</span></p>
+
+                    <h3 id="graphql">GraphQL</h3>
+                    <p>Checks common GraphQL endpoint paths, records reachability, and determines whether schema introspection is exposed.</p>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: graphQL</span></p>
+
+                    <h3 id="rate-limit">Rate Limiting</h3>
+                    <p>Sends 20 bounded requests and records response codes, timing, rate-limit headers, and whether the target begins blocking traffic.</p>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: rateLimit</span></p>
+
+                    <h3 id="csrf-detection">CSRF Detection</h3>
+                    <p>Analyzes state-changing forms for token fields, same-site cookie defenses, and other anti-CSRF signals. Findings require manual workflow validation.</p>
+                    <p class="text-mute"><span class="badge badge-active">Active</span> <span class="badge badge-muted">CLI: csrfDetection</span></p>
+
                     <h2 id="utility">Utility Modules</h2>
                     <p>Helper tools that operate on data gathered by other modules.</p>
 
@@ -346,52 +384,3 @@
                         <li>Document each new payload pattern in your PR.</li>
                     </ol>
                 </article>
-
-                <aside class="toc" id="toc"></aside>
-            </div>
-
-            <footer class="footer">
-                <div class="footer-grid">
-                    <div>
-                        <h4>ABSpider Recon</h4>
-                        <p>Professional web reconnaissance platform for security professionals.</p>
-                    </div>
-                    <div>
-                        <h4>Documentation</h4>
-                        <ul>
-                            <li><a href="getting-started.html">Getting Started</a></li>
-                            <li><a href="modules.html">Recon Modules</a></li>
-                            <li><a href="architecture.html">Architecture</a></li>
-                            <li><a href="cli.html">CLI Reference</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4>Operations</h4>
-                        <ul>
-                            <li><a href="configuration.html">Configuration</a></li>
-                            <li><a href="reports.html">Reports</a></li>
-                            <li><a href="deployment.html">Deployment</a></li>
-                            <li><a href="api-reference.html">API Reference</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4>Project</h4>
-                        <ul>
-                            <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
-                            <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
-                            <li><a href="security.html">Security Policy</a></li>
-                            <li><a href="troubleshooting.html">Support</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="footer-meta">
-                    <p>© 2026 zanesense. Released under the MIT License.</p>
-                    <p>v2.0.1</p>
-                </div>
-            </footer>
-        </main>
-    </div>
-
-    <script src="assets/nav.js"></script>
-</body>
-</html>

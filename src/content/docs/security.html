@@ -1,36 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Security & Legal — ABSpider Recon</title>
-    <meta name="description" content="Legal framework, authorized use, vulnerability disclosure, and security best practices for ABSpider Recon.">
-    <link rel="stylesheet" href="assets/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-</head>
-<body data-page="security">
-    <div class="app">
-        <aside class="sidebar" id="sidebar"></aside>
-        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-        <main class="main">
-        <div class="topbar">
-            <div class="topbar-left">
-                <button class="mobile-toggle" id="mobileToggle" aria-label="Open navigation">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                </button>
-                <nav class="breadcrumb" id="breadcrumb" data-page="Security & Legal"></nav>
-            </div>
-            <div class="topbar-actions">
-                <a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a>
-                <a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a>
-            </div>
-        </div>
-
-        <div class="content">
-            <article class="article">
+<article class="article">
                 <header class="page-hero">
                     <div class="crumb">Policy · Responsible use</div>
                     <h1>Security &amp; Legal</h1>
@@ -146,7 +114,7 @@
                     <li><strong>Hard caps</strong> — thread count ≤ 100, payload count ≤ 1000, DDoS-request limit ≤ 250, regardless of <code>--mode</code>.</li>
                     <li><strong>Authorization acknowledgment</strong> — the dashboard and CLI print a confirmation step before every scan.</li>
                     <li><strong>Internal-IP &amp; metadata filter</strong> — the CLI and dashboard refuse to scan internal targets by default. Override only with an explicit environment variable.</li>
-                    <li><strong>Audit log</strong> — every scan writes a row to <code>scans</code> with operator, target, mode, and timestamp.</li>
+                    <li><strong>Workspace history</strong> — every persisted scan writes a user-scoped row to <code>user_scans</code> with target, configuration, status, timing, and results.</li>
                 </ul>
 
                 <h2 id="bounty-clauses">Bug-bounty clauses</h2>
@@ -177,52 +145,3 @@
 
                 <p>By using ABSpider Recon, you confirm that you have read, understood, and agree to this policy and to all applicable laws.</p>
             </article>
-
-            <aside class="toc" id="toc"></aside>
-        </div>
-
-        <footer class="footer">
-            <div class="footer-grid">
-                <div>
-                    <h4>ABSpider Recon</h4>
-                    <p>Professional web reconnaissance platform for security professionals.</p>
-                </div>
-                <div>
-                    <h4>Documentation</h4>
-                    <ul>
-                        <li><a href="getting-started.html">Getting Started</a></li>
-                        <li><a href="modules.html">Recon Modules</a></li>
-                        <li><a href="architecture.html">Architecture</a></li>
-                        <li><a href="cli.html">CLI Reference</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Operations</h4>
-                    <ul>
-                        <li><a href="configuration.html">Configuration</a></li>
-                        <li><a href="reports.html">Reports</a></li>
-                        <li><a href="deployment.html">Deployment</a></li>
-                        <li><a href="api-reference.html">API Reference</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Project</h4>
-                    <ul>
-                        <li><a href="https://github.com/zanesense/abspider-recon" target="_blank" rel="noopener">GitHub</a></li>
-                        <li><a href="https://abspider.zanesense.dev" target="_blank" rel="noopener">Live Demo</a></li>
-                        <li><a href="security.html">Security Policy</a></li>
-                        <li><a href="troubleshooting.html">Support</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-meta">
-                <p>© 2026 zanesense. Released under the MIT License.</p>
-                <p>v2.0.1</p>
-            </div>
-        </footer>
-    </main>
-    </div>
-
-    <script src="assets/nav.js"></script>
-</body>
-</html>
