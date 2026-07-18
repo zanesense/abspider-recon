@@ -75,7 +75,7 @@ def get_cors_headers(origin: str) -> dict:
     allow_origin = origin if origin in ALLOWED_ORIGINS else "null"
     return {
         "Access-Control-Allow-Origin": allow_origin,
-        "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, HEAD, POST, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         "Access-Control-Expose-Headers": "X-ABSpider-Proxy, X-ABSpider-Target-URL, X-ABSpider-Upstream-Server, X-ABSpider-Upstream-Headers",
         "Vary": "Origin",
@@ -456,6 +456,20 @@ async def _supabase_upsert_keys(user_id: str, api_keys: dict) -> bool:
         return resp.status_code in (200, 201)
 
 
+async def _supabase_delete_user(user_id: str) -> bool:
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        return False
+    async with httpx.AsyncClient() as c:
+        resp = await c.delete(
+            f"{SUPABASE_AUTH_URL}/admin/users/{user_id}",
+            headers={
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            },
+        )
+        return resp.status_code in (200, 204)
+
+
 def _authenticate_user(user: dict | None, cors: dict) -> JSONResponse | None:
     if user is None:
         return JSONResponse(status_code=401, content={"error": "Invalid or expired token"}, headers=cors)
@@ -486,8 +500,10 @@ def _is_allowed_provider_url(provider: str, target_url: str) -> bool:
 
 @app.options("/keys")
 @app.options("/keys/proxy")
+@app.options("/account")
 @app.options("/api/keys")
 @app.options("/api/keys/proxy")
+@app.options("/api/account")
 async def keys_options(request: Request):
     origin = request.headers.get("origin", "")
     return Response(status_code=204, headers=get_cors_headers(origin))
@@ -533,6 +549,23 @@ async def save_api_keys(request: Request):
     if not ok:
         return JSONResponse(status_code=500, content={"error": "Failed to save API keys"}, headers=cors)
     return JSONResponse(content={"ok": True}, headers=cors)
+
+
+@app.delete("/account")
+@app.delete("/api/account")
+async def delete_account(request: Request):
+    origin = request.headers.get("origin", "")
+    cors = get_cors_headers(origin)
+    token = _bearer_token(request)
+    if not token:
+        return JSONResponse(status_code=401, content={"error": "Missing Authorization header"}, headers=cors)
+    user = await _supabase_get_user(token)
+    err = _authenticate_user(user, cors)
+    if err:
+        return err
+    if not await _supabase_delete_user(user["id"]):
+        return JSONResponse(status_code=500, content={"error": "Failed to delete account"}, headers=cors)
+    return Response(status_code=204, headers=cors)
 
 
 @app.post("/keys/proxy")

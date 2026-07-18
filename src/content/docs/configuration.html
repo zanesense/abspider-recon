@@ -80,8 +80,8 @@ supabase db push
                             <thead><tr><th>Table</th><th>Used for</th></tr></thead>
                             <tbody>
                                 <tr><td><code>user_scans</code></td><td>Per-user scan history, progress, config, results, errors, timing, and grade</td></tr>
-                                <tr><td><code>user_preferences</code></td><td>Theme, history limits, notifications, scan profile, export format, and retry defaults</td></tr>
-                                <tr><td><code>user_settings</code></td><td>Runtime settings JSON for Discord webhook, proxy list, threads, and timeout</td></tr>
+                                <tr><td><code>user_preferences</code></td><td>Compatibility schema for persisted preferences; the current dashboard does not expose inactive preference controls</td></tr>
+                                <tr><td><code>user_settings</code></td><td>Runtime settings JSON for the Discord webhook and proxy list</td></tr>
                                 <tr><td><code>user_api_keys</code></td><td>Provider keys managed by authenticated FastAPI endpoints; browser access is denied by RLS</td></tr>
                                 <tr><td><code>storage.avatars</code></td><td>Public-read avatar bucket with owner-only writes and a 5 MB file limit</td></tr>
                             </tbody>
@@ -95,37 +95,14 @@ supabase db push
 <span class="c-key">&lt;p&gt;&lt;a</span> <span class="c-key">href=</span><span class="c-str">"{{ .ConfirmationURL }}"</span><span class="c-key">&gt;</span>Sign In to ABSpider<span class="c-key">&lt;/a&gt;&lt;/p&gt;</span>
 <span class="c-key">&lt;p&gt;&lt;small&gt;</span>This link expires in 1 hour.<span class="c-key">&lt;/small&gt;&lt;/p&gt;</span></div>
 
-                    <h2 id="user-prefs">User preferences</h2>
-                    <p>Preferences are stored in <code>user_preferences</code>; runtime scanner settings are stored as JSON in <code>user_settings</code>. Both are scoped by <code>user_id</code>.</p>
+                    <h2 id="user-prefs">Dashboard settings</h2>
+                    <p>The dashboard exposes only settings with active runtime consumers. The Discord webhook and proxy list are stored in <code>user_settings</code>; provider keys are managed by the authenticated FastAPI backend. Scan threads, modules, payload counts, and proxy usage are selected for each scan on the New Scan page.</p>
 
-                    <h3>Theme &amp; appearance</h3>
-                    <ul>
-                        <li>Theme: <code>light</code> or <code>dark</code></li>
-                        <li>Remembered light/dark theme in <code>localStorage</code></li>
-                        <li>Remember-me session preference for browser restart behavior</li>
-                        <li>Animation intensity (full / reduced — respects <code>prefers-reduced-motion</code>)</li>
-                    </ul>
+                    <h3>Theme</h3>
+                    <p>The light/dark theme control is available in the application navigation and is remembered in <code>localStorage</code> under <code>abspider-theme</code>.</p>
 
-                    <h3>Scanning defaults</h3>
-                    <div class="code-block" data-lang="json">{
-  <span class="c-key">"threads"</span>: <span class="c-num">5</span>,
-  <span class="c-key">"requestDelay"</span>: <span class="c-num">250</span>,
-  <span class="c-key">"retryAttempts"</span>: <span class="c-num">3</span>,
-  <span class="c-key">"retryDelay"</span>: <span class="c-num">1000</span>,
-  <span class="c-key">"connectionTimeout"</span>: <span class="c-num">10000</span>,
-  <span class="c-key">"requestTimeout"</span>: <span class="c-num">30000</span>,
-  <span class="c-key">"scanTimeout"</span>: <span class="c-num">300000</span>,
-  <span class="c-key">"followRedirects"</span>: <span class="c-num">true</span>,
-  <span class="c-key">"maxRedirects"</span>: <span class="c-num">5</span>,
-  <span class="c-key">"validateSSL"</span>: <span class="c-num">true</span>,
-  <span class="c-key">"userAgent"</span>: <span class="c-str">"abspider/2.0.1"</span>
-}</div>
-
-                    <h3>Scan history</h3>
-                    <ul>
-                        <li><strong>Auto-save scans</strong> — persist completed scans to Supabase (default: on)</li>
-                        <li><strong>Scan history limit</strong> — cap local storage from 10 to 1000 scans</li>
-                    </ul>
+                    <h3>Account settings</h3>
+                    <p>Account Settings manages Supabase user metadata, avatar upload, password changes, data export, and permanent account deletion. Account deletion is authenticated by the FastAPI backend and uses the server-side Supabase service role; the key is never exposed to the browser.</p>
 
                     <h2 id="proxy">Proxy configuration</h2>
                     <p>Configure multiple proxies for automatic rotation. The dashboard uses them in a round-robin or random strategy to avoid rate limiting.</p>
@@ -200,10 +177,16 @@ supabase db push
                                     <td><a href="https://securitytrails.com/" target="_blank" rel="noopener">securitytrails.com</a></td>
                                 </tr>
                                 <tr>
-                                    <td>Hunter.io</td>
-                                    <td>Email discovery and verification</td>
-                                    <td>25 searches / month</td>
-                                    <td><a href="https://hunter.io/api" target="_blank" rel="noopener">hunter.io</a></td>
+                                    <td>BuiltWith</td>
+                                    <td>Technology-stack enrichment</td>
+                                    <td>Depends on plan</td>
+                                    <td><a href="https://api.builtwith.com/" target="_blank" rel="noopener">api.builtwith.com</a></td>
+                                </tr>
+                                <tr>
+                                    <td>OpenCage</td>
+                                    <td>Reverse-geocoding enrichment</td>
+                                    <td>Depends on plan</td>
+                                    <td><a href="https://opencagedata.com/api" target="_blank" rel="noopener">opencagedata.com</a></td>
                                 </tr>
                             </tbody>
                         </table>

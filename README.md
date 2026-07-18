@@ -103,7 +103,7 @@ Both surfaces expose the same 35 module names and result categories, with browse
 - 🔐 **Flexible auth** — Supabase email/password and magic-link sign-in protect dashboard history; "Remember me" keeps sessions across browser restarts, while unchecked sessions are cleared after the browser session ends.
 - 📊 **Per-user scan history** — Supabase PostgreSQL with row-level security, plus per-user API keys, preferences, and Discord webhook config.
 - 📥 **JSON + PDF reports** — export a dashboard scan as JSON, a styled PDF (`jsPDF` + `jspdf-autotable`), or DOCX.
-- 🧩 **Optional third-party intel** — Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit, and Discord webhooks plug in when you bring your own keys.
+- 🧩 **Optional third-party intel** — Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, and Discord webhooks plug in when you bring your own keys.
 - 🔀 **Smart proxy routing** — browser requests try direct access where appropriate and fall back to the SSRF-protected FastAPI proxy when CORS or upstream behavior requires it. Provider APIs that use private keys go through authenticated server-side endpoints.
 - 📚 **React documentation** — every article in `src/content/docs/` is bundled into the shared React page at `/docs`, with the same theme, navigation, and footer as the public site.
 - 🐳 **Container-ready** — production `Dockerfile` (Nginx), `Dockerfile.backend` (FastAPI proxy), and dev `Dockerfile.dev` (Vite) ship in the repo; `docker compose` orchestrates the full stack.
@@ -274,7 +274,7 @@ abspider-recon/
 - **Node.js** ≥ 20 (CI runs on Node 20; the published CLI requires Node ≥ 20).
 - **npm** ≥ 9 with the committed `package-lock.json` (a `bun.lock` is also present for Bun users).
 - **Supabase** project for the dashboard auth, persisted scan history, and per-user settings.
-- **Optional API keys** for enhanced modules (Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit, Discord).
+- **Optional API keys** for enhanced modules (Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Discord).
 - **Docker**, only if you want containerized deployment.
 
 > The CLI can run **without** Supabase or any third-party keys. Core passive modules (DNS, WHOIS, headers, SSL, ports) work out of the box on a fresh clone.
@@ -369,7 +369,7 @@ ABSpider Recon uses environment variables for the frontend and Supabase migratio
 
 > Vite only exposes variables prefixed with `VITE_` to the browser bundle. Do not put private API keys in Vite env vars unless you intentionally want them bundled into browser-accessible JavaScript.
 
-Dashboard API keys and Discord webhook URLs are configured per user in **Settings** and stored in Supabase. The current settings UI supports Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit, and Discord webhooks.
+Dashboard API keys and Discord webhook URLs are configured per user in **Settings** and stored in Supabase. The current settings UI supports Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, and Discord webhooks.
 
 Copy the template to start:
 

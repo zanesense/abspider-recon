@@ -82,7 +82,6 @@ npm run typecheck</div>
 
                     <h3>Scan times out before completing</h3>
                     <ul>
-                        <li>Increase the timeout in <em>Settings → Scanning defaults</em>.</li>
                         <li>Reduce the number of enabled modules.</li>
                         <li>Lower the thread count.</li>
                         <li>Try during off-peak hours if the target is rate-limited.</li>
@@ -123,7 +122,6 @@ npm run typecheck</div>
 
                     <h3>High memory usage</h3>
                     <ul>
-                        <li>Reduce the scan history limit in <em>Settings → Data Management</em>.</li>
                         <li>Clear old scans from <em>All Scans</em>.</li>
                         <li>Lower the thread count.</li>
                         <li>Restart the browser periodically.</li>
@@ -189,7 +187,7 @@ npm run typecheck</div>
                     <p>A specific module hit an unrecoverable error. The other modules still complete. Check the browser console for the underlying error and verify the relevant API key if the module needs one.</p>
 
                     <h3>"Storage quota exceeded"</h3>
-                    <p>The browser's <code>localStorage</code> is full. Reduce the scan history limit in <em>Settings → Data Management</em> and clear old scans.</p>
+                    <p>The browser's <code>localStorage</code> is full. Remove saved scan templates and clear old browser data for the site. Scan records themselves are stored in Supabase.</p>
 
                     <h3>"Invalid target format"</h3>
                     <p>The dashboard accepts base domains (<code>example.com</code>), full URLs (<code>https://example.com</code>), and IPs (<code>192.168.1.1</code>). It does not accept paths — use the base domain only.</p>

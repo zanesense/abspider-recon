@@ -101,6 +101,19 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
                         <li><strong>WAF challenge helpers</strong> — small set of <code>wafChallengeService.ts</code> heuristics that may unblock a target. <em>Detection only</em> — the module never evades controls.</li>
                     </ol>
 
+                    <h2 id="account">Account deletion</h2>
+                    <p><code>DELETE /api/account</code> permanently deletes the authenticated Supabase user. The browser sends the active access token as a Bearer token; FastAPI validates that token, derives the user ID from it, and calls the Supabase Admin API with the server-only service-role key. Foreign-key cascades remove the user's scan, settings, preference, and provider-key rows.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>204</code></td><td>The account was deleted.</td></tr>
+                                <tr><td><code>401</code></td><td>The Bearer token is missing, expired, or invalid.</td></tr>
+                                <tr><td><code>500</code></td><td>Supabase rejected the server-side deletion.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <h2 id="cli-json">CLI JSON output</h2>
                     <p>Pass <code>--json</code> to print the full result tree to stdout, or <code>--output &lt;file&gt;</code> to write a pretty-formatted copy to disk. The shape is the same whether you run a single module or every module. See <a href="cli.html#json-output">the CLI reference</a> for the full schema and a worked example.</p>
                     <div class="code-block" data-lang="json">{
@@ -138,7 +151,7 @@ fetch('/api/proxy?url=' + encodeURIComponent(targetUrl))
                                 </tr>
                                 <tr>
                                     <td><code>user_settings</code></td>
-                                    <td><code>user_id</code>, <code>settings</code> (jsonb: Discord webhook, proxy list, default threads, timeout)</td>
+                                    <td><code>user_id</code>, <code>settings</code> (jsonb: Discord webhook and proxy list)</td>
                                     <td><span class="badge badge-success">User scoped</span></td>
                                 </tr>
                                 <tr>

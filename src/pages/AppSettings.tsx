@@ -1,198 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Shield, Settings, Palette, Globe, Clock, Database, Zap, User, Bell, Download, Upload, Trash2, RefreshCw } from 'lucide-react';
+import { Save, TestTube, Key, CheckCircle, XCircle, AlertCircle, Loader2, Globe, User, Bell, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl, Settings as BaseSettings } from '@/services/settingsService';
+import { getSettings, saveSettings, testDiscordWebhook, isValidDiscordWebhookUrl, Settings } from '@/services/settingsService';
 import { getAPIKeys, saveAPIKeys, APIKeys } from '@/services/apiKeyService';
 import {
   testShodanAPI,
   testVirusTotalAPI,
   testSecurityTrailsAPI,
   testBuiltWithAPI,
-  testClearbitAPI,
   testOpenCageAPI,
-  testHunterAPI,
 } from '@/services/apiTestService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/SupabaseClient';
 import AppHeader from '@/components/AppHeader';
-import { getUserPreferences, saveUserPreferences, getDefaultPreferences, UserPreferences as DBUserPreferences } from '@/services/userPreferencesService';
+import { parseSettingsImport } from '@/services/settingsImportService';
 
-interface ExtendedSettings {
-  discordWebhook: string;
-  proxyList: string;
-  defaultThreads: number;
-  timeout: number;
-  theme: 'light' | 'dark' | 'system';
-  language: string;
-  autoSave: boolean;
-  scanHistory: number;
-  maxConcurrentScans: number;
-  enableNotifications: boolean;
-  enableSounds: boolean;
-  defaultScanProfile: string;
-  exportFormat: 'json' | 'csv' | 'pdf';
-  retryAttempts: number;
-  userAgent: string;
-}
-
-interface UserPreferences {
-  id?: string;
-  user_id: string;
-  theme: string;
-  language: string;
-  auto_save: boolean;
-  scan_history_limit: number;
-  max_concurrent_scans: number;
-  enable_notifications: boolean;
-  enable_sounds: boolean;
-  default_scan_profile: string;
-  export_format: string;
-  retry_attempts: number;
-  user_agent: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-type APIKeyService = keyof APIKeys;
-
+type APIKeyService = 'shodan' | 'virustotal' | 'securitytrails' | 'builtwith' | 'opencage';
+const DEFAULT_SETTINGS: Settings = { discordWebhook: '', proxyList: '' };
 const AppSettings = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [apiKeyTestStatus, setApiKeyTestStatus] = useState<Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>>({} as Record<APIKeyService, 'success' | 'error' | 'testing' | undefined>);
-  const [userPreferences, setUserPreferences] = useState<ExtendedSettings>({
-    discordWebhook: '',
-    proxyList: '',
-    defaultThreads: 20,
-    timeout: 30,
-    theme: 'system',
-    language: 'en',
-    autoSave: true,
-    scanHistory: 100,
-    maxConcurrentScans: 3,
-    enableNotifications: true,
-    enableSounds: false,
-    defaultScanProfile: 'balanced',
-    exportFormat: 'json',
-    retryAttempts: 3,
-    userAgent: 'ABSpider/1.0 (Security Scanner)'
-  });
-  const [userId, setUserId] = useState<string | null>(null);
-
-  // Load user preferences from database
-  const loadUserPreferences = async (userId: string) => {
-    try {
-      const data = await getUserPreferences(userId);
-
-      if (data) {
-        setUserPreferences(prev => ({
-          ...prev,
-          theme: data.theme,
-          language: data.language,
-          autoSave: data.auto_save,
-          scanHistory: data.scan_history_limit,
-          maxConcurrentScans: data.max_concurrent_scans,
-          enableNotifications: data.enable_notifications,
-          enableSounds: data.enable_sounds,
-          defaultScanProfile: data.default_scan_profile,
-          exportFormat: data.export_format,
-          retryAttempts: data.retry_attempts,
-          userAgent: data.user_agent
-        }));
-      }
-    } catch (error: any) {
-      console.error('Failed to load user preferences:', error);
-    }
-  };
-
-  // Get current user
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        await loadUserPreferences(user.id);
-      }
-    };
-    getCurrentUser();
-  }, []);
-
-  // Save user preferences to database
-  const saveUserPreferencesHandler = async () => {
-    if (!userId) return;
-
-    try {
-      const preferencesData: Omit<DBUserPreferences, 'id' | 'created_at' | 'updated_at'> = {
-        user_id: userId,
-        theme: userPreferences.theme,
-        language: userPreferences.language,
-        auto_save: userPreferences.autoSave,
-        scan_history_limit: userPreferences.scanHistory,
-        max_concurrent_scans: userPreferences.maxConcurrentScans,
-        enable_notifications: userPreferences.enableNotifications,
-        enable_sounds: userPreferences.enableSounds,
-        default_scan_profile: userPreferences.defaultScanProfile as 'quick' | 'balanced' | 'comprehensive' | 'stealth',
-        export_format: userPreferences.exportFormat,
-        retry_attempts: userPreferences.retryAttempts,
-        user_agent: userPreferences.userAgent
-      };
-
-      await saveUserPreferences(preferencesData);
-
-      toast({
-        title: "Preferences Saved",
-        description: "Your user preferences have been saved successfully.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Save Failed",
-        description: error.message || "Failed to save user preferences.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleResetPreferences = async () => {
-    if (!confirm("Are you sure you want to reset all preferences to default values?")) {
-      return;
-    }
-
-    setUserPreferences({
-      discordWebhook: '',
-      proxyList: '',
-      defaultThreads: 20,
-      timeout: 30,
-      theme: 'system',
-      language: 'en',
-      autoSave: true,
-      scanHistory: 100,
-      maxConcurrentScans: 3,
-      enableNotifications: true,
-      enableSounds: false,
-      defaultScanProfile: 'balanced',
-      exportFormat: 'json',
-      retryAttempts: 3,
-      userAgent: 'ABSpider/1.0 (Security Scanner)'
-    });
-
-    await saveUserPreferencesHandler();
-  };
-
   const handleExportSettings = () => {
     const settingsData = {
-      userPreferences,
+      settings,
       apiKeys,
       exportedAt: new Date().toISOString(),
       version: '1.0'
@@ -221,10 +60,10 @@ const AppSettings = () => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const importedData = JSON.parse(e.target?.result as string);
+        const importedData = parseSettingsImport(e.target?.result as string);
         
-        if (importedData.userPreferences) {
-          setUserPreferences(prev => ({ ...prev, ...importedData.userPreferences }));
+        if (importedData.settings) {
+          queryClient.setQueryData(['appSettings'], { ...settings, ...importedData.settings });
         }
         
         if (importedData.apiKeys) {
@@ -244,14 +83,12 @@ const AppSettings = () => {
       }
     };
     reader.readAsText(file);
+    event.currentTarget.value = '';
   };
   // Fetch general settings using react-query
-  const { data: settings = userPreferences, isLoading: isLoadingSettings, isError: isErrorSettings } = useQuery<ExtendedSettings>({
+  const { data: settings = DEFAULT_SETTINGS, isLoading: isLoadingSettings, isError: isErrorSettings } = useQuery<Settings>({
     queryKey: ['appSettings'],
-    queryFn: async () => {
-      const baseSettings = await getSettings();
-      return { ...userPreferences, ...baseSettings };
-    },
+    queryFn: getSettings,
   });
 
   // Mutation for saving general settings
@@ -259,17 +96,6 @@ const AppSettings = () => {
     mutationFn: saveSettings,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appSettings'] });
-      toast({
-        title: "Settings Saved",
-        description: "Your general settings have been saved successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save general settings.",
-        variant: "destructive",
-      });
     },
   });
 
@@ -284,24 +110,13 @@ const AppSettings = () => {
     mutationFn: saveAPIKeys,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
-      toast({
-        title: "API Keys Saved",
-        description: "Your API keys have been saved successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save API keys.",
-        variant: "destructive",
-      });
     },
   });
 
   const handleSaveAllSettings = async () => {
     try {
       // Validate Discord webhook before saving
-      if (userPreferences.discordWebhook && !isValidDiscordWebhookUrl(userPreferences.discordWebhook)) {
+      if (settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook)) {
         toast({
           title: "Validation Error",
           description: "Invalid Discord webhook URL format. Please correct it before saving.",
@@ -311,18 +126,10 @@ const AppSettings = () => {
       }
 
       // Save general settings
-      await saveSettingsMutation.mutateAsync({
-        discordWebhook: userPreferences.discordWebhook,
-        proxyList: userPreferences.proxyList,
-        defaultThreads: userPreferences.defaultThreads,
-        timeout: userPreferences.timeout
-      } as BaseSettings);
+      await saveSettingsMutation.mutateAsync(settings);
 
       // Save API keys
       await saveApiKeysMutation.mutateAsync(apiKeys);
-
-      // Save user preferences
-      await saveUserPreferencesHandler();
 
       toast({
         title: "All Settings Saved",
@@ -338,7 +145,7 @@ const AppSettings = () => {
   };
 
   const handleTestWebhook = async () => {
-    if (!userPreferences.discordWebhook) {
+    if (!settings.discordWebhook) {
       toast({
         title: "Error",
         description: "Please enter a Discord webhook URL",
@@ -348,7 +155,7 @@ const AppSettings = () => {
     }
 
     // Validate the URL before testing
-    if (!isValidDiscordWebhookUrl(userPreferences.discordWebhook)) {
+    if (!isValidDiscordWebhookUrl(settings.discordWebhook)) {
       toast({
         title: "Validation Error",
         description: "Invalid Discord webhook URL format. Please correct it.",
@@ -360,7 +167,7 @@ const AppSettings = () => {
     setIsTestingWebhook(true);
     
     try {
-      await testDiscordWebhook(userPreferences.discordWebhook);
+      await testDiscordWebhook(settings.discordWebhook);
       toast({
         title: "Webhook Test Successful",
         description: "Check your Discord channel for the test message",
@@ -396,9 +203,7 @@ const AppSettings = () => {
         case 'virustotal': result = await testVirusTotalAPI(key); break;
         case 'securitytrails': result = await testSecurityTrailsAPI(key); break;
         case 'builtwith': result = await testBuiltWithAPI(key); break;
-        case 'clearbit': result = await testClearbitAPI(key); break;
         case 'opencage': result = await testOpenCageAPI(key); break;
-        case 'hunterio': result = await testHunterAPI(key); break; // Add Hunter.io test
         default: throw new Error('Unknown API service');
       }
 
@@ -436,10 +241,6 @@ const AppSettings = () => {
   };
 
   const isTestingAPI = (service: APIKeyService) => apiKeyTestStatus[service] === 'testing';
-
-  const totalApiKeys = 7; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit
-  const configuredApiKeys = Object.values(apiKeys).filter(key => typeof key === 'string' && key.trim().length > 0).length;
-
 
   if (isLoadingSettings || isLoadingApiKeys) {
     return (
@@ -494,301 +295,17 @@ const AppSettings = () => {
             className="hidden"
             onChange={handleImportSettings}
           />
-          <Link to="/account-settings">
-            <Button variant="outline" size="sm" className="gap-2 bg-gradient-to-r from-muted-foreground/10 to-muted-foreground/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+          <Button asChild variant="outline" size="sm" className="gap-2 bg-gradient-to-r from-muted-foreground/10 to-muted-foreground/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <Link to="/account-settings">
               <User className="h-4 w-4" />
               Account
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </AppHeader>
       
       <main className="flex-1 overflow-auto p-4 sm:p-6 surface-main">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* User Preferences */}
-          <SurfaceCard color="blue">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-                <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                  <Settings className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <span className="font-semibold">User Preferences</span>
-              </CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
-                Customize your ABSpider experience
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="theme">Theme</Label>
-                    <Select
-                      value={userPreferences.theme}
-                      onValueChange={(value: 'light' | 'dark' | 'system') => 
-                        setUserPreferences(prev => ({ ...prev, theme: value }))
-                      }
-                    >
-                      <SelectTrigger className="bg-muted/30 border-border">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="system">System</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="language">Language</Label>
-                    <Select
-                      value={userPreferences.language}
-                      onValueChange={(value) => 
-                        setUserPreferences(prev => ({ ...prev, language: value }))
-                      }
-                    >
-                      <SelectTrigger className="bg-muted/30 border-border">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="es">Español</SelectItem>
-                        <SelectItem value="fr">Français</SelectItem>
-                        <SelectItem value="de">Deutsch</SelectItem>
-                        <SelectItem value="zh">中文</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="defaultScanProfile">Default Scan Profile</Label>
-                    <Select
-                      value={userPreferences.defaultScanProfile}
-                      onValueChange={(value) => 
-                        setUserPreferences(prev => ({ ...prev, defaultScanProfile: value }))
-                      }
-                    >
-                      <SelectTrigger className="bg-muted/30 border-border">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="quick">Quick Scan</SelectItem>
-                        <SelectItem value="balanced">Balanced</SelectItem>
-                        <SelectItem value="comprehensive">Comprehensive</SelectItem>
-                        <SelectItem value="stealth">Stealth Mode</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="exportFormat">Default Export Format</Label>
-                    <Select
-                      value={userPreferences.exportFormat}
-                      onValueChange={(value: 'json' | 'csv' | 'pdf') => 
-                        setUserPreferences(prev => ({ ...prev, exportFormat: value }))
-                      }
-                    >
-                      <SelectTrigger className="bg-muted/30 border-border">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="json">JSON</SelectItem>
-                        <SelectItem value="csv">CSV</SelectItem>
-                        <SelectItem value="pdf">PDF</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="scanHistory">Scan History Limit</Label>
-                    <Input
-                      id="scanHistory"
-                      type="number"
-                      min="10"
-                      max="1000"
-                      value={userPreferences.scanHistory}
-                      onChange={(e) => setUserPreferences(prev => ({ 
-                        ...prev, 
-                        scanHistory: parseInt(e.target.value) || 100 
-                      }))}
-                      className="bg-muted/30 border-border focus:border-primary"
-                    />
-                    <p className="text-xs text-muted-foreground">Maximum number of scans to keep in history</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="maxConcurrentScans">Max Concurrent Scans</Label>
-                    <Input
-                      id="maxConcurrentScans"
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={userPreferences.maxConcurrentScans}
-                      onChange={(e) => setUserPreferences(prev => ({ 
-                        ...prev, 
-                        maxConcurrentScans: parseInt(e.target.value) || 3 
-                      }))}
-                      className="bg-muted/30 border-border focus:border-primary"
-                    />
-                    <p className="text-xs text-muted-foreground">Maximum number of simultaneous scans</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="retryAttempts">Retry Attempts</Label>
-                    <Input
-                      id="retryAttempts"
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={userPreferences.retryAttempts}
-                      onChange={(e) => setUserPreferences(prev => ({ 
-                        ...prev, 
-                        retryAttempts: parseInt(e.target.value) || 3 
-                      }))}
-                      className="bg-muted/30 border-border focus:border-primary"
-                    />
-                    <p className="text-xs text-muted-foreground">Number of retry attempts for failed requests</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="autoSave">Auto-save Settings</Label>
-                        <p className="text-xs text-muted-foreground">Automatically save changes</p>
-                      </div>
-                      <Switch
-                        id="autoSave"
-                        checked={userPreferences.autoSave}
-                        onCheckedChange={(checked) => 
-                          setUserPreferences(prev => ({ ...prev, autoSave: checked }))
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="enableNotifications">Enable Notifications</Label>
-                        <p className="text-xs text-muted-foreground">Show scan completion notifications</p>
-                      </div>
-                      <Switch
-                        id="enableNotifications"
-                        checked={userPreferences.enableNotifications}
-                        onCheckedChange={(checked) => 
-                          setUserPreferences(prev => ({ ...prev, enableNotifications: checked }))
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="enableSounds">Enable Sounds</Label>
-                        <p className="text-xs text-muted-foreground">Play notification sounds</p>
-                      </div>
-                      <Switch
-                        id="enableSounds"
-                        checked={userPreferences.enableSounds}
-                        onCheckedChange={(checked) => 
-                          setUserPreferences(prev => ({ ...prev, enableSounds: checked }))
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label htmlFor="userAgent">Custom User Agent</Label>
-                <Input
-                  id="userAgent"
-                  type="text"
-                  value={userPreferences.userAgent}
-                  onChange={(e) => setUserPreferences(prev => ({ 
-                    ...prev, 
-                    userAgent: e.target.value 
-                  }))}
-                  className="bg-muted/30 border-border focus:border-primary"
-                  placeholder="ABSpider/1.0 (Security Scanner)"
-                />
-                <p className="text-xs text-muted-foreground">Custom user agent string for HTTP requests</p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={saveUserPreferencesHandler}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  Save Preferences
-                </Button>
-                <Button
-                  onClick={handleResetPreferences}
-                  variant="outline"
-                  className="gap-2 text-destructive hover:text-destructive"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Reset to Defaults
-                </Button>
-              </div>
-            </CardContent>
-          </SurfaceCard>
-
-          {/* General Settings */}
-          <SurfaceCard color="emerald">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-                <div className="p-2 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                  <Zap className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <span className="font-semibold">Scanning Configuration</span>
-              </CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
-                Configure default scanning parameters
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="defaultThreads">Default Threads</Label>
-                  <Input
-                    id="defaultThreads"
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={userPreferences.defaultThreads}
-                    onChange={(e) => setUserPreferences(prev => ({ 
-                      ...prev, 
-                      defaultThreads: parseInt(e.target.value) || 20 
-                    }))}
-                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
-                  />
-                  <p className="text-xs text-muted-foreground">Concurrent scanning threads (1-50)</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timeout">Request Timeout (seconds)</Label>
-                  <Input
-                    id="timeout"
-                    type="number"
-                    min="5"
-                    max="120"
-                    value={userPreferences.timeout}
-                    onChange={(e) => setUserPreferences(prev => ({ 
-                      ...prev, 
-                      timeout: parseInt(e.target.value) || 30 
-                    }))}
-                    className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
-                  />
-                  <p className="text-xs text-muted-foreground">Maximum wait time for requests</p>
-                </div>
-              </div>
-            </CardContent>
-          </SurfaceCard>
-
           {/* Discord Webhook */}
           <SurfaceCard color="violet">
             <CardHeader>
@@ -809,14 +326,11 @@ const AppSettings = () => {
                   id="discordWebhook"
                   type="url"
                   placeholder="https://discord.com/api/webhooks/..."
-                  value={userPreferences.discordWebhook}
-                  onChange={(e) => setUserPreferences(prev => ({ 
-                    ...prev, 
-                    discordWebhook: e.target.value 
-                  }))}
+                  value={settings.discordWebhook}
+                  onChange={(e) => queryClient.setQueryData(['appSettings'], { ...settings, discordWebhook: e.target.value })}
                   className="bg-muted/30 border-border focus:border-primary focus:ring-primary"
                 />
-                {userPreferences.discordWebhook && !isValidDiscordWebhookUrl(userPreferences.discordWebhook) && (
+                {settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook) && (
                   <p className="text-xs text-destructive flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" /> Invalid Discord webhook URL format.
                   </p>
@@ -824,7 +338,7 @@ const AppSettings = () => {
               </div>
               <Button
                 onClick={handleTestWebhook}
-                disabled={isTestingWebhook || (userPreferences.discordWebhook && !isValidDiscordWebhookUrl(userPreferences.discordWebhook))}
+                disabled={isTestingWebhook || Boolean(settings.discordWebhook && !isValidDiscordWebhookUrl(settings.discordWebhook))}
                 variant="outline"
                 className="border-border text-foreground hover:bg-muted/50"
               >
@@ -862,11 +376,8 @@ const AppSettings = () => {
                 <Textarea
                   id="proxyList"
                   placeholder="http://proxy1.example.com:8080&#10;http://proxy2.example.com:8080"
-                  value={userPreferences.proxyList}
-                  onChange={(e) => setUserPreferences(prev => ({ 
-                    ...prev, 
-                    proxyList: e.target.value 
-                  }))}
+                  value={settings.proxyList}
+                  onChange={(e) => queryClient.setQueryData(['appSettings'], { ...settings, proxyList: e.target.value })}
                   className="font-mono text-sm min-h-32 bg-muted/30 border-border focus:border-primary focus:ring-primary"
                 />
               </div>
@@ -895,6 +406,7 @@ const AppSettings = () => {
                     <div className="flex items-center gap-2">
                       {getStatusIcon('shodan')}
                       <Button
+                        aria-label="Test Shodan API key"
                         onClick={() => handleTestAPIKey('shodan')}
                         disabled={isTestingAPI('shodan')}
                         variant="outline"
@@ -923,6 +435,7 @@ const AppSettings = () => {
                     <div className="flex items-center gap-2">
                       {getStatusIcon('virustotal')}
                       <Button
+                        aria-label="Test VirusTotal API key"
                         onClick={() => handleTestAPIKey('virustotal')}
                         disabled={isTestingAPI('virustotal')}
                         variant="outline"
@@ -951,6 +464,7 @@ const AppSettings = () => {
                     <div className="flex items-center gap-2">
                       {getStatusIcon('securitytrails')}
                       <Button
+                        aria-label="Test SecurityTrails API key"
                         onClick={() => handleTestAPIKey('securitytrails')}
                         disabled={isTestingAPI('securitytrails')}
                         variant="outline"
@@ -979,6 +493,7 @@ const AppSettings = () => {
                     <div className="flex items-center gap-2">
                       {getStatusIcon('builtwith')}
                       <Button
+                        aria-label="Test BuiltWith API key"
                         onClick={() => handleTestAPIKey('builtwith')}
                         disabled={isTestingAPI('builtwith')}
                         variant="outline"
@@ -1007,6 +522,7 @@ const AppSettings = () => {
                     <div className="flex items-center gap-2">
                       {getStatusIcon('opencage')}
                       <Button
+                        aria-label="Test OpenCage API key"
                         onClick={() => handleTestAPIKey('opencage')}
                         disabled={isTestingAPI('opencage')}
                         variant="outline"
@@ -1028,61 +544,6 @@ const AppSettings = () => {
                   <p className="text-xs text-muted-foreground">Enhanced geocoding, reverse geocoding, and detailed location data</p>
                 </div>
 
-                {/* Hunter.io */}
-                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="hunterio" className="text-base font-semibold">Hunter.io API Key</Label>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon('hunterio')}
-                      <Button
-                        onClick={() => handleTestAPIKey('hunterio')}
-                        disabled={isTestingAPI('hunterio')}
-                        variant="outline"
-                        size="sm"
-                        className="border-border text-foreground hover:bg-muted/50"
-                      >
-                        {isTestingAPI('hunterio') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  <Input
-                    id="hunterio"
-                    type="password"
-                    placeholder="Enter Hunter.io API key"
-                    value={apiKeys.hunterio || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, hunterio: e.target.value as string })}
-                    className="bg-background border-border focus:border-primary focus:ring-primary"
-                  />
-                  <p className="text-xs text-muted-foreground">Email discovery, domain search, and email verification</p>
-                </div>
-
-                {/* Clearbit */}
-                <div className="space-y-2 p-4 border border-border rounded-lg bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="clearbit" className="text-base font-semibold">Clearbit API Key</Label>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon('clearbit')}
-                      <Button
-                        onClick={() => handleTestAPIKey('clearbit')}
-                        disabled={isTestingAPI('clearbit')}
-                        variant="outline"
-                        size="sm"
-                        className="border-border text-foreground hover:bg-muted/50"
-                      >
-                        {isTestingAPI('clearbit') ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  <Input
-                    id="clearbit"
-                    type="password"
-                    placeholder="Enter Clearbit API key"
-                    value={apiKeys.clearbit || ''}
-                    onChange={(e) => queryClient.setQueryData(['apiKeys'], { ...apiKeys, clearbit: e.target.value as string })}
-                    className="bg-background border-border focus:border-primary focus:ring-primary"
-                  />
-                  <p className="text-xs text-muted-foreground">Company data enrichment, logo API, and business intelligence</p>
-                </div>
               </div>
               
             </CardContent>
@@ -1091,11 +552,14 @@ const AppSettings = () => {
           <div className="flex gap-2">
             <Button
               onClick={handleSaveAllSettings}
+              disabled={saveSettingsMutation.isPending || saveApiKeysMutation.isPending}
               size="lg"
               className="flex-1 bg-gradient-to-r from-primary via-primary/70 to-primary/40 shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 text-primary-foreground"
             >
-              <Save className="h-4 w-4 mr-2" />
-              Save All Settings
+              {saveSettingsMutation.isPending || saveApiKeysMutation.isPending
+                ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                : <Save className="h-4 w-4 mr-2" />}
+              {saveSettingsMutation.isPending || saveApiKeysMutation.isPending ? 'Saving...' : 'Save All Settings'}
             </Button>
           </div>
         </div>

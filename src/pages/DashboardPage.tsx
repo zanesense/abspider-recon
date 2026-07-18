@@ -45,8 +45,9 @@ const DashboardPage = () => {
     queryFn: getAPIKeys,
   });
 
-  const totalApiKeys = 7; // Shodan, VirusTotal, SecurityTrails, BuiltWith, OpenCage, Hunter.io, Clearbit
-  const configuredApiKeys = Object.values(apiKeys).filter(key => typeof key === 'string' && key.trim().length > 0).length;
+  const supportedApiKeys = ['shodan', 'virustotal', 'securitytrails', 'builtwith', 'opencage'] as const;
+  const totalApiKeys = supportedApiKeys.length;
+  const configuredApiKeys = supportedApiKeys.filter(key => apiKeys[key]?.trim()).length;
 
   return (
     <div className="flex flex-col h-full w-full">

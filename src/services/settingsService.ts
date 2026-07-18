@@ -3,15 +3,11 @@ import { supabase } from '@/SupabaseClient';
 export interface Settings {
   discordWebhook: string;
   proxyList: string;
-  defaultThreads: number;
-  timeout: number;
 }
 
 const defaultSettings: Settings = {
   discordWebhook: '',
   proxyList: '',
-  defaultThreads: 20,
-  timeout: 30,
 };
 
 // Define the structure for the Supabase table row
@@ -21,29 +17,19 @@ interface UserSettingsRow {
 }
 
 export const getSettings = async (): Promise<Settings> => {
-  try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
-    if (!session?.user) {
-      console.warn('[Settings] No active session, returning default settings.');
-      return defaultSettings;
-    }
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!session?.user) throw new Error('No active user session.');
 
-    const { data, error } = await supabase
-      .from('user_settings')
-      .select('settings')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('settings')
+    .eq('user_id', session.user.id)
+    .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means 'no rows found', which is fine
-      throw error;
-    }
+  if (error && error.code !== 'PGRST116') throw error;
 
-    return data?.settings || defaultSettings;
-  } catch (error: any) {
-    console.error('[Settings] Failed to load from Supabase:', error.message);
-    return defaultSettings;
-  }
+  return { ...defaultSettings, ...(data?.settings ?? {}) };
 };
 
 export const saveSettings = async (settings: Settings) => {

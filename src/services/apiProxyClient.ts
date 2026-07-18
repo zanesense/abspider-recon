@@ -18,13 +18,21 @@ async function request(path: string, options?: RequestInit): Promise<Response> {
 export async function fetchAPIKeys(): Promise<Record<string, string>> {
   const resp = await request('/api/keys');
   if (!resp.ok) {
-    console.error('[API Proxy] Failed to fetch API keys:', resp.status, await resp.text().catch(() => ''));
-    return {};
+    const text = await resp.text().catch(() => 'Unknown error');
+    throw new Error(`Failed to load API keys: ${resp.status} ${text}`);
   }
   const data = await resp.json();
   // Guard: server could return null or a non-object (e.g. on misconfiguration); treat as empty
   if (!data || typeof data !== 'object' || Array.isArray(data)) return {};
   return data as Record<string, string>;
+}
+
+export async function deleteAccount(): Promise<void> {
+  const resp = await request('/api/account', { method: 'DELETE' });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => 'Unknown error');
+    throw new Error(`Failed to delete account: ${resp.status} ${text}`);
+  }
 }
 
 export async function saveAPIKeysToBackend(keys: Record<string, string>): Promise<void> {

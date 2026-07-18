@@ -72,9 +72,7 @@ create table if not exists public.user_settings (
   user_id    uuid        primary key references auth.users (id) on delete cascade,
   settings   jsonb       not null default jsonb_build_object(
     'discordWebhook', '',
-    'proxyList',      '',
-    'defaultThreads', 20,
-    'timeout',        30
+    'proxyList',      ''
   ),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

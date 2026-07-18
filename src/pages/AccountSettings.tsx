@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2, Shield, ArrowLeft, UserCircle, Zap, Save, KeyRound, CheckCircle, XCircle, Mail, Calendar, Activity, Trash2, Download, Upload, Camera } from 'lucide-react';
+import { Loader2, Shield, ArrowLeft, UserCircle, Save, KeyRound, CheckCircle, XCircle, Mail, Calendar, Activity, Trash2, Download, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/SupabaseClient';
 import { useNavigate } from 'react-router-dom';
@@ -11,11 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import AppHeader from '@/components/AppHeader';
 import { format, formatDistanceToNow } from 'date-fns';
+import { deleteAccount } from '@/services/apiProxyClient';
 
 const AccountSettings = () => {
   const { toast } = useToast();
@@ -37,8 +35,8 @@ const AccountSettings = () => {
   const [loadingProfileUpdate, setLoadingProfileUpdate] = useState(false);
   const [loadingPasswordChange, setLoadingPasswordChange] = useState(false);
   const [loadingAvatarUpload, setLoadingAvatarUpload] = useState(false);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [scanNotifications, setScanNotifications] = useState(true);
+  const [loadingDataExport, setLoadingDataExport] = useState(false);
+  const [loadingAccountDeletion, setLoadingAccountDeletion] = useState(false);
   const passwordsMatch = newPassword === confirmPassword && newPassword.length > 0;
 
   useEffect(() => {
@@ -46,26 +44,23 @@ const AccountSettings = () => {
       setLoadingUser(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setUserEmail(user.email);
-          setUserId(user.id);
-          setFirstName(user.user_metadata.first_name || '');
-          setLastName(user.user_metadata.last_name || '');
-          setBio(user.user_metadata.bio || '');
-          setAvatarUrl(user.user_metadata.avatar_url || '');
-          setRole(user.user_metadata.role || 'Security Analyst');
-          setCreatedAt(user.created_at ? format(new Date(user.created_at), 'PPP') : 'N/A');
-          setLastSignIn(user.last_sign_in_at ? formatDistanceToNow(new Date(user.last_sign_in_at), { addSuffix: true }) : 'Never');
-          setEmailNotifications(user.user_metadata.email_notifications !== false);
-          setScanNotifications(user.user_metadata.scan_notifications !== false);
+        if (!user) throw new Error('No active user session.');
+        setUserEmail(user.email);
+        setUserId(user.id);
+        setFirstName(user.user_metadata.first_name || '');
+        setLastName(user.user_metadata.last_name || '');
+        setBio(user.user_metadata.bio || '');
+        setAvatarUrl(user.user_metadata.avatar_url || '');
+        setRole(user.user_metadata.role || 'Security Analyst');
+        setCreatedAt(user.created_at ? format(new Date(user.created_at), 'PPP') : 'N/A');
+        setLastSignIn(user.last_sign_in_at ? formatDistanceToNow(new Date(user.last_sign_in_at), { addSuffix: true }) : 'Never');
 
-          // Get scan count — PK is scan_id, not id
-          const { data: scans } = await supabase
-            .from('user_scans')
-            .select('scan_id')
-            .eq('user_id', user.id);
-          setScanCount(scans?.length || 0);
-        }
+        const { count, error: scanError } = await supabase
+          .from('user_scans')
+          .select('scan_id', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        if (scanError) throw scanError;
+        setScanCount(count || 0);
       } catch (error: any) {
         console.error('Failed to fetch user info:', error.message);
         toast({
@@ -78,7 +73,7 @@ const AccountSettings = () => {
       }
     };
     fetchUser();
-  }, []);
+  }, [toast]);
 
   const handleProfileUpdate = async () => {
     setLoadingProfileUpdate(true);
@@ -87,10 +82,8 @@ const AccountSettings = () => {
         data: { 
           first_name: firstName, 
           last_name: lastName,
-          bio: bio,
-          role: role,
-          email_notifications: emailNotifications,
-          scan_notifications: scanNotifications
+          bio,
+          role,
         },
       });
 
@@ -122,6 +115,14 @@ const AccountSettings = () => {
         description: "Avatar image must be less than 2MB.",
         variant: "destructive",
       });
+      return;
+    }
+    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) {
+      toast({ title: "Invalid File", description: "Use a PNG, JPEG, WebP, or GIF image.", variant: "destructive" });
+      return;
+    }
+    if (!userId) {
+      toast({ title: "Upload Failed", description: "No active user session.", variant: "destructive" });
       return;
     }
 
@@ -168,37 +169,30 @@ const AccountSettings = () => {
       return;
     }
 
+    setLoadingAccountDeletion(true);
     try {
-      // Delete user scans first
-      const { error: scanError } = await supabase
-        .from('user_scans')
-        .delete()
-        .eq('user_id', userId);
-
-      if (scanError) throw scanError;
-
-      // Note: Supabase doesn't allow direct user deletion from client
-      // This would typically be handled by an admin function
-      toast({
-        title: "Account Deletion Requested",
-        description: "Please contact support to complete account deletion.",
-        variant: "destructive",
-      });
+      await deleteAccount();
+      await supabase.auth.signOut();
+      navigate('/', { replace: true });
     } catch (error: any) {
       toast({
         title: "Deletion Failed",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoadingAccountDeletion(false);
     }
   };
 
   const handleExportData = async () => {
+    setLoadingDataExport(true);
     try {
-      const { data: scans } = await supabase
+      const { data: scans, error } = await supabase
         .from('user_scans')
         .select('*')
         .eq('user_id', userId);
+      if (error) throw error;
 
       const userData = {
         profile: {
@@ -234,6 +228,8 @@ const AccountSettings = () => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoadingDataExport(false);
     }
   };
 
@@ -364,6 +360,7 @@ const AccountSettings = () => {
                   <Button
                     size="sm"
                     variant="secondary"
+                    aria-label="Upload profile picture"
                     className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
                     disabled={loadingAvatarUpload}
                     onClick={() => document.getElementById('avatar-upload')?.click()}
@@ -485,36 +482,6 @@ const AccountSettings = () => {
                 />
               </div>
 
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Notification Preferences</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="email-notifications">Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive scan updates via email</p>
-                    </div>
-                    <Switch
-                      id="email-notifications"
-                      checked={emailNotifications}
-                      onCheckedChange={setEmailNotifications}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="scan-notifications">Scan Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Get notified when scans complete</p>
-                    </div>
-                    <Switch
-                      id="scan-notifications"
-                      checked={scanNotifications}
-                      onCheckedChange={setScanNotifications}
-                    />
-                  </div>
-                </div>
-              </div>
-
               <Button
                 onClick={handleProfileUpdate}
                 disabled={loadingProfileUpdate}
@@ -630,11 +597,12 @@ const AccountSettings = () => {
                 </div>
                 <Button
                   onClick={handleExportData}
+                  disabled={loadingDataExport}
                   variant="outline"
                   className="gap-2"
                 >
-                  <Download className="h-4 w-4" />
-                  Export
+                  {loadingDataExport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {loadingDataExport ? 'Exporting...' : 'Export'}
                 </Button>
               </div>
               
@@ -645,35 +613,14 @@ const AccountSettings = () => {
                 </div>
                 <Button
                   onClick={handleDeleteAccount}
+                  disabled={loadingAccountDeletion}
                   variant="destructive"
                   className="gap-2"
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
+                  {loadingAccountDeletion ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  {loadingAccountDeletion ? 'Deleting...' : 'Delete'}
                 </Button>
               </div>
-            </CardContent>
-          </SurfaceCard>
-
-          {/* 2FA Coming Soon */}
-          <SurfaceCard color="indigo">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                <Shield className="h-5 w-5" />
-                Two-Factor Authentication (2FA)
-              </CardTitle>
-              <CardDescription>
-                Add an extra layer of security to your account
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Alert className="bg-blue-500/10 border-blue-500/50">
-                <Zap className="h-4 w-4 text-blue-600 dark:text-blue-500" />
-                <AlertTitle className="text-blue-600 dark:text-blue-400">Coming Soon!</AlertTitle>
-                <AlertDescription className="text-sm text-blue-600 dark:text-blue-300">
-                  Two-Factor Authentication will be available in a future update to enhance your account security.
-                </AlertDescription>
-              </Alert>
             </CardContent>
           </SurfaceCard>
         </div>
