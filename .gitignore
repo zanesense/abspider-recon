@@ -33,6 +33,7 @@ blob-report
 
 # Agent/local analysis output
 .bug-hunter/
+.impeccable/
 graphify-out/
 AGENTS.md
 
